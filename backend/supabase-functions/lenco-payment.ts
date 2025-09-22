@@ -107,7 +107,7 @@ serve(async (req) => {
       throw new Error('Payment gateway not configured');
     }
 
-    const lencoResponse = await fetch('https://api.lenco.ng/v2/payments/initialize', {
+    const lencoResponse = await fetch('https://api.lenco.co/access/v2/payments/initialize', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${lencoApiKey}`,
