@@ -54,7 +54,7 @@ export interface PaymentStatus {
 export const getPaymentConfig = (): PaymentConfig => {
   const config: PaymentConfig = {
     publicKey: import.meta.env.VITE_LENCO_PUBLIC_KEY || '',
-    apiUrl: import.meta.env.VITE_LENCO_API_URL || 'https://api.lenco.ng/v2',
+    apiUrl: import.meta.env.VITE_LENCO_API_URL || 'https://api.lenco.co/access/v2',
     currency: import.meta.env.VITE_PAYMENT_CURRENCY || 'ZMK',
     country: import.meta.env.VITE_PAYMENT_COUNTRY || 'ZM',
     platformFeePercentage: parseFloat(import.meta.env.VITE_PLATFORM_FEE_PERCENTAGE || '2'),

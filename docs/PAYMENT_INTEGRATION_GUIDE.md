@@ -63,10 +63,10 @@ VITE_SUPABASE_URL="https://your-project.supabase.co"
 VITE_SUPABASE_KEY="your-anon-key"
 
 # Lenco Payment Gateway Configuration
-VITE_LENCO_PUBLIC_KEY="pk_test_your_lenco_public_key"
-LENCO_SECRET_KEY="sk_test_your_lenco_secret_key"
-LENCO_WEBHOOK_SECRET="whsec_your_webhook_secret"
-VITE_LENCO_API_URL="https://api.lenco.ng/v2"
+VITE_LENCO_PUBLIC_KEY="pub-dea560c94d379a23e7b85a265d7bb9acbd585481e6e1393e"
+LENCO_SECRET_KEY="843a2b242591e9a58370da44e11bb2575b20780f27c8efe39a6ed24ecba0b668"
+LENCO_WEBHOOK_SECRET="bc09f682f3bbbf3d851b125b9914984c272471e16cd2a4f14f9406706f7c98cd293bf0d"
+VITE_LENCO_API_URL="https://api.lenco.co/access/v2"
 
 # Payment Configuration
 VITE_PAYMENT_CURRENCY="ZMK"
@@ -121,7 +121,9 @@ VITE_APP_NAME="WATHACI CONNECT"
    ```
 4. **Set function secrets**
    ```bash
-   supabase secrets set LENCO_SECRET_KEY="<your-secret-key>" LENCO_WEBHOOK_SECRET="<your-webhook-secret>"
+   supabase secrets set \
+     LENCO_SECRET_KEY="843a2b242591e9a58370da44e11bb2575b20780f27c8efe39a6ed24ecba0b668" \
+     LENCO_WEBHOOK_SECRET="bc09f682f3bbbf3d851b125b9914984c272471e16cd2a4f14f9406706f7c98cd293bf0d"
    ```
 5. **Verify deployment** – note the generated URL:
    `https://<project-ref>.functions.supabase.co/lenco-webhook`

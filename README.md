@@ -21,7 +21,7 @@ Update the new `.env` file with production values:
 - `VITE_LENCO_PUBLIC_KEY` – Lenco public API key (`pk_live_*` in production).
 - `LENCO_SECRET_KEY` – Lenco secret API key (`sk_live_*` in production).
 - `LENCO_WEBHOOK_SECRET` – Secret used to validate Lenco webhooks.
-- `VITE_LENCO_API_URL` – Lenco API base URL, usually `https://api.lenco.ng/v2`.
+- `VITE_LENCO_API_URL` – Lenco API base URL, `https://api.lenco.co/access/v2`.
 - `VITE_PAYMENT_CURRENCY` – ISO currency code for payments, e.g. `ZMK`.
 - `VITE_PAYMENT_COUNTRY` – ISO country code, e.g. `ZM`.
 - `VITE_PLATFORM_FEE_PERCENTAGE` – Platform fee percentage applied to each payment.

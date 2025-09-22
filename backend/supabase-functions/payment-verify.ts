@@ -31,7 +31,7 @@ serve(async (req) => {
 
     // Verify payment with Lenco
     const lencoApiKey = Deno.env.get('LENCO_SECRET_KEY');
-    const verifyResponse = await fetch(`https://api.lenco.ng/v2/payments/verify/${reference}`, {
+    const verifyResponse = await fetch(`https://api.lenco.co/access/v2/payments/verify/${reference}`, {
       headers: {
         'Authorization': `Bearer ${lencoApiKey}`,
         'Content-Type': 'application/json',
