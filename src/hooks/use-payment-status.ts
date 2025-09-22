@@ -26,6 +26,10 @@ export interface PaymentStatusHookReturn {
   startTracking: (reference: string) => void;
   stopTracking: () => void;
   refresh: () => Promise<void>;
+  trackingStartTime: number | null;
+  pollingStartTime: number | null;
+  lastUpdated: number | null;
+  isTracking: boolean;
 }
 
 export const usePaymentStatus = (
@@ -38,6 +42,9 @@ export const usePaymentStatus = (
   const [currentReference, setCurrentReference] = useState<string | null>(null);
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [realtimeChannel, setRealtimeChannel] = useState<any>(null);
+  const [trackingStartTime, setTrackingStartTime] = useState<number | null>(null);
+  const [pollingStartTime, setPollingStartTime] = useState<number | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const { toast } = useToast();
 
   const fetchPaymentStatus = useCallback(async (reference: string): Promise<PaymentStatus | null> => {
@@ -63,9 +70,14 @@ export const usePaymentStatus = (
   const updateStatus = useCallback((newStatus: PaymentStatus) => {
     const previousStatus = paymentStatus?.status;
     setPaymentStatus(newStatus);
-    
+    setLastUpdated(Date.now());
+
     if (onStatusChange) {
       onStatusChange(newStatus);
+    }
+
+    if (['completed', 'failed', 'cancelled'].includes(newStatus.status)) {
+      stopTracking();
     }
 
     // Show toast notifications for status changes
@@ -101,7 +113,23 @@ export const usePaymentStatus = (
           break;
       }
     }
-  }, [paymentStatus, onStatusChange, autoToast, toast]);
+  }, [autoToast, onStatusChange, paymentStatus, stopTracking, toast]);
+
+  const stopTracking = useCallback(() => {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      setPollingInterval(null);
+    }
+
+    if (realtimeChannel) {
+      supabase.removeChannel(realtimeChannel);
+      setRealtimeChannel(null);
+    }
+
+    setCurrentReference(null);
+    setLoading(false);
+    setPollingStartTime(null);
+  }, [pollingInterval, realtimeChannel]);
 
   const setupRealtimeSubscription = useCallback((reference: string) => {
     const channel = supabase
@@ -130,14 +158,15 @@ export const usePaymentStatus = (
       });
 
     setRealtimeChannel(channel);
-  }, [updateStatus]);
+  }, [updateStatus, stopTracking]);
 
   const startPolling = useCallback((reference: string) => {
+    setPollingStartTime(Date.now());
     const interval = setInterval(async () => {
       const status = await fetchPaymentStatus(reference);
       if (status) {
         updateStatus(status);
-        
+
         // Stop polling if payment is complete or failed
         if (['completed', 'failed', 'cancelled'].includes(status.status)) {
           stopTracking();
@@ -146,7 +175,7 @@ export const usePaymentStatus = (
     }, 5000); // Poll every 5 seconds
 
     setPollingInterval(interval);
-  }, [fetchPaymentStatus, updateStatus]);
+  }, [fetchPaymentStatus, updateStatus, stopTracking]);
 
   const startTracking = useCallback((reference: string) => {
     if (currentReference === reference) {
@@ -156,6 +185,7 @@ export const usePaymentStatus = (
     // Stop any existing tracking
     stopTracking();
 
+    setTrackingStartTime(Date.now());
     setCurrentReference(reference);
     setLoading(true);
     setError(null);
@@ -178,22 +208,7 @@ export const usePaymentStatus = (
       setError(err.message || 'Failed to fetch payment status');
       setLoading(false);
     });
-  }, [currentReference, fetchPaymentStatus, updateStatus, setupRealtimeSubscription, startPolling]);
-
-  const stopTracking = useCallback(() => {
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-      setPollingInterval(null);
-    }
-
-    if (realtimeChannel) {
-      supabase.removeChannel(realtimeChannel);
-      setRealtimeChannel(null);
-    }
-
-    setCurrentReference(null);
-    setLoading(false);
-  }, [pollingInterval, realtimeChannel]);
+  }, [currentReference, fetchPaymentStatus, setupRealtimeSubscription, startPolling, stopTracking, updateStatus]);
 
   const refresh = useCallback(async () => {
     if (!currentReference) return;
@@ -203,6 +218,7 @@ export const usePaymentStatus = (
       const status = await fetchPaymentStatus(currentReference);
       if (status) {
         updateStatus(status);
+        setLastUpdated(Date.now());
       }
     } catch (err: any) {
       setError(err.message || 'Failed to refresh payment status');
@@ -224,7 +240,11 @@ export const usePaymentStatus = (
     error,
     startTracking,
     stopTracking,
-    refresh
+    refresh,
+    trackingStartTime,
+    pollingStartTime,
+    lastUpdated,
+    isTracking: Boolean(currentReference)
   };
 };
 
