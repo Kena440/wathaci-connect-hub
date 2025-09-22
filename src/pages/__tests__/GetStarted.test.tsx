@@ -22,7 +22,7 @@ beforeAll(() => {
     unobserve() {}
     disconnect() {}
   }
-  // @ts-ignore
+  // @ts-expect-error - ResizeObserver global assignment for testing
   global.ResizeObserver = ResizeObserver;
 });
 

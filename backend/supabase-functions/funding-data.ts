@@ -24,9 +24,9 @@ export interface Professional {
 
 // Helper to work in both Deno (Supabase Edge Functions) and Node (tests)
 function getEnv(key: string): string | undefined {
-  // @ts-ignore - Deno may not exist in Node environment
+  // @ts-expect-error - Deno may not exist in Node environment
   if (typeof Deno !== 'undefined' && Deno?.env) {
-    // @ts-ignore
+    // @ts-expect-error - Deno global is not available in Node environment
     return Deno.env.get(key);
   }
   return process.env[key];

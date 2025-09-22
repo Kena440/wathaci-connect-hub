@@ -42,6 +42,7 @@ export const PaymentStatusTracker = ({
 }: PaymentStatusTrackerProps) => {
   const [isVisible, setIsVisible] = useState(true);
   const [showDetailedView, setShowDetailedView] = useState(showDetails);
+  const [localTrackingStartTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
 
   const {
@@ -65,24 +66,27 @@ export const PaymentStatusTracker = ({
 
   // Update elapsed time
   useEffect(() => {
-    if (!trackingStartTime) {
+    // Use the tracking start time from hook if available, otherwise use local
+    const startTime = trackingStartTime || localTrackingStartTime;
+    
+    if (!startTime) {
       setElapsedTime(0);
       return;
     }
 
     // Set immediately so UI updates without waiting for interval tick
-    setElapsedTime(Date.now() - trackingStartTime);
+    setElapsedTime(Date.now() - startTime);
 
     if (!isTracking) {
       return;
     }
 
     const interval = setInterval(() => {
-      setElapsedTime(Date.now() - trackingStartTime);
+      setElapsedTime(Date.now() - startTime);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isTracking, trackingStartTime]);
+  }, [isTracking, trackingStartTime, localTrackingStartTime]);
 
   // Auto-hide after completion
   useEffect(() => {
