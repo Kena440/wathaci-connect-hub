@@ -42,7 +42,6 @@ export const PaymentStatusTracker = ({
 }: PaymentStatusTrackerProps) => {
   const [isVisible, setIsVisible] = useState(true);
   const [showDetailedView, setShowDetailedView] = useState(showDetails);
-  const [trackingStartTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
 
   const {
@@ -51,7 +50,11 @@ export const PaymentStatusTracker = ({
     error,
     startTracking,
     stopTracking,
-    refresh
+    refresh,
+    trackingStartTime,
+    pollingStartTime,
+    lastUpdated,
+    isTracking
   } = usePaymentStatus(true, (status) => {
     if (status.status === 'completed' && onComplete) {
       onComplete(status);
@@ -62,12 +65,24 @@ export const PaymentStatusTracker = ({
 
   // Update elapsed time
   useEffect(() => {
+    if (!trackingStartTime) {
+      setElapsedTime(0);
+      return;
+    }
+
+    // Set immediately so UI updates without waiting for interval tick
+    setElapsedTime(Date.now() - trackingStartTime);
+
+    if (!isTracking) {
+      return;
+    }
+
     const interval = setInterval(() => {
       setElapsedTime(Date.now() - trackingStartTime);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [trackingStartTime]);
+  }, [isTracking, trackingStartTime]);
 
   // Auto-hide after completion
   useEffect(() => {
@@ -92,10 +107,14 @@ export const PaymentStatusTracker = ({
 
   // Stop tracking after max time
   useEffect(() => {
+    if (!isTracking) {
+      return;
+    }
+
     if (maxTrackingTime && elapsedTime > maxTrackingTime) {
       stopTracking();
     }
-  }, [elapsedTime, maxTrackingTime, stopTracking]);
+  }, [elapsedTime, isTracking, maxTrackingTime, stopTracking]);
 
   const getStatusIcon = () => {
     if (loading) {
@@ -264,6 +283,29 @@ export const PaymentStatusTracker = ({
                   <div className="flex justify-between">
                     <span className="text-gray-500">Gateway:</span>
                     <span>{paymentStatus.gateway_response}</span>
+                  </div>
+                )}
+
+                {(trackingStartTime || pollingStartTime || lastUpdated) && (
+                  <div className="space-y-1 text-xs text-gray-500">
+                    {trackingStartTime && (
+                      <div className="flex justify-between">
+                        <span>Tracking started:</span>
+                        <span>{new Date(trackingStartTime).toLocaleTimeString()}</span>
+                      </div>
+                    )}
+                    {pollingStartTime && (
+                      <div className="flex justify-between">
+                        <span>Polling since:</span>
+                        <span>{new Date(pollingStartTime).toLocaleTimeString()}</span>
+                      </div>
+                    )}
+                    {lastUpdated && (
+                      <div className="flex justify-between">
+                        <span>Last updated:</span>
+                        <span>{new Date(lastUpdated).toLocaleTimeString()}</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
