@@ -8,41 +8,49 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 const FundingHub = () => {
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">AI-Powered Funding Hub</h1>
-          <p className="text-gray-600">
-            Discover live funding opportunities and get matched with expert professionals using advanced AI
-          </p>
+      <div 
+        className="min-h-screen bg-center bg-cover"
+        style={{
+          backgroundImage: "url('/images/Funding%20Hub.png')",
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-50/70 via-white/60 to-green-50/70" />
+        <div className="relative container mx-auto px-4 py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">AI-Powered Funding Hub</h1>
+            <p className="text-gray-600">
+              Discover live funding opportunities and get matched with expert professionals using advanced AI
+            </p>
+          </div>
+
+          <Tabs defaultValue="live-matcher" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="matcher">AI Matcher</TabsTrigger>
+              <TabsTrigger value="live-matcher">Live Opportunities</TabsTrigger>
+              <TabsTrigger value="ai-analyzer">AI Analyzer</TabsTrigger>
+              <TabsTrigger value="discovery">Discovery Hub</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="matcher">
+              <FundingMatcher />
+            </TabsContent>
+
+            <TabsContent value="live-matcher">
+              <LiveFundingMatcher />
+            </TabsContent>
+
+            <TabsContent value="ai-analyzer">
+              <div className="p-8 text-center">
+                <h3 className="text-xl font-semibold mb-4">AI Analyzer Coming Soon</h3>
+                <p className="text-gray-600">Advanced AI analysis features will be available soon.</p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="discovery">
+              <FundingHubComponent />
+            </TabsContent>
+          </Tabs>
         </div>
-
-        <Tabs defaultValue="live-matcher" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="matcher">AI Matcher</TabsTrigger>
-            <TabsTrigger value="live-matcher">Live Opportunities</TabsTrigger>
-            <TabsTrigger value="ai-analyzer">AI Analyzer</TabsTrigger>
-            <TabsTrigger value="discovery">Discovery Hub</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="matcher">
-            <FundingMatcher />
-          </TabsContent>
-
-          <TabsContent value="live-matcher">
-            <LiveFundingMatcher />
-          </TabsContent>
-
-          <TabsContent value="ai-analyzer">
-            <div className="p-8 text-center">
-              <h3 className="text-xl font-semibold mb-4">AI Analyzer Coming Soon</h3>
-              <p className="text-gray-600">Advanced AI analysis features will be available soon.</p>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="discovery">
-            <FundingHubComponent />
-          </TabsContent>
-        </Tabs>
       </div>
     </AppLayout>
   );
