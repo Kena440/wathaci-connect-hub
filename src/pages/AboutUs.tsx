@@ -85,7 +85,7 @@ export default function AboutUs() {
                       alt={member.name}
                       loading="lazy"
                       decoding="async"
-                      className="w-20 h-20 rounded-full mx-auto mb-4 object-cover"
+                      className="w-40 h-40 rounded-full mx-auto mb-4 object-cover"
                     />
                     <CardTitle className="text-xl">{member.name}</CardTitle>
                     <p className="text-gray-600">{member.title}</p>
