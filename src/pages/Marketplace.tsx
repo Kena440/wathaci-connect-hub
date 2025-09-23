@@ -82,16 +82,17 @@ const Marketplace = () => {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 relative">
         <div 
-          className="relative py-16 bg-center bg-cover text-white"
+          className="fixed inset-0 bg-center bg-cover"
           style={{
             backgroundImage:
               "url('/images/ChatGPT%20Image%20Sep%2023%2C%202025%2C%2001_52_19%20PM.png')",
           }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/70 to-emerald-600/70" />
-          <div className="relative max-w-6xl mx-auto px-6 text-center">
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/70 to-emerald-600/70" />
+        <div className="relative z-10 py-16 text-white">
+          <div className="max-w-6xl mx-auto px-6 text-center">
             <h1 className="text-5xl font-bold mb-4">AI-Powered Marketplace</h1>
             <p className="text-xl mb-8">Discover services from freelancers, partners, and resources with intelligent AI analysis</p>
             
@@ -132,10 +133,10 @@ const Marketplace = () => {
         </div>
 
         {/* Subscription Banner for Marketplace */}
-        <div className="max-w-6xl mx-auto px-6 py-6">
+        <div className="relative z-10 max-w-6xl mx-auto px-6 py-6 bg-gray-50">
           <SubscriptionBanner compact={true} />
         </div>
-        <div className="max-w-6xl mx-auto px-6 py-12">
+        <div className="relative z-10 max-w-6xl mx-auto px-6 py-12 bg-gray-50">
           {activeTab === 'integrated' && (
             <ComplianceGate requireCompliance={false}>
               <div className="space-y-8">

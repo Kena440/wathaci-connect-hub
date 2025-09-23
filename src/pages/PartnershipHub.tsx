@@ -93,17 +93,18 @@ export const PartnershipHub = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white relative">
       <Header />
       
       <div 
-        className="relative py-16 bg-center bg-cover text-white"
+        className="fixed inset-0 bg-center bg-cover"
         style={{
           backgroundImage: "url('/images/Marketplace.png')",
         }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-50/70 via-white/60 to-green-50/70" />
-        <div className="relative max-w-6xl mx-auto px-6 text-center">
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-orange-50/70 via-white/60 to-green-50/70" />
+      <div className="relative z-10 py-16 text-gray-900">
+        <div className="max-w-6xl mx-auto px-6 text-center">
           <Handshake className="w-16 h-16 mx-auto mb-6 text-gray-900" />
           <h1 className="text-4xl font-bold mb-4 text-gray-900">Partnership Hub</h1>
           <p className="text-xl text-gray-700 max-w-2xl mx-auto">
@@ -112,7 +113,7 @@ export const PartnershipHub = () => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-16">
+      <div className="relative z-10 max-w-6xl mx-auto px-6 py-16 bg-white">
         <Tabs defaultValue="overview" className="space-y-8">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
