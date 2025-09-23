@@ -83,8 +83,15 @@ const Marketplace = () => {
   return (
     <AppLayout>
       <div className="min-h-screen bg-gray-50">
-        <div className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white py-16">
-          <div className="max-w-6xl mx-auto px-6 text-center">
+        <div 
+          className="relative py-16 bg-center bg-cover text-white"
+          style={{
+            backgroundImage:
+              "url('/images/ChatGPT%20Image%20Sep%2023%2C%202025%2C%2001_52_19%20PM.png')",
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/70 to-emerald-600/70" />
+          <div className="relative max-w-6xl mx-auto px-6 text-center">
             <h1 className="text-5xl font-bold mb-4">AI-Powered Marketplace</h1>
             <p className="text-xl mb-8">Discover services from freelancers, partners, and resources with intelligent AI analysis</p>
             
