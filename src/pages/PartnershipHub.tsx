@@ -97,9 +97,10 @@ export const PartnershipHub = () => {
       <Header />
       
       <div 
-        className="relative py-16 bg-center bg-cover text-white"
+        className="relative py-16 bg-center bg-no-repeat text-white"
         style={{
-          backgroundImage: "url('/images/Marketplace.png')",
+          backgroundImage: "url('/images/Partnership%20Hub.png')",
+          backgroundSize: "80%",
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-orange-50/70 via-white/60 to-green-50/70" />
