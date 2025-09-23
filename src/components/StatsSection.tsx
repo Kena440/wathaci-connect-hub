@@ -210,7 +210,7 @@ const StatsSection = () => {
 
         <div className="mt-12 text-center bg-white p-8 rounded-xl shadow-lg">
           <h3 className="text-xl font-bold text-gray-900 mb-4">
-            Why Invest in Our Platform?
+            Why Invest in WATHACI Connect?
           </h3>
           <div className="grid md:grid-cols-3 gap-6 text-left">
             <div>
