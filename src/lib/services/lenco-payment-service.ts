@@ -17,6 +17,7 @@ import {
   getPlatformFeePercentage
 } from '../payment-config';
 import { logger } from '../logger';
+import { supabase } from '../supabase-enhanced';
 
 export class LencoPaymentService {
   private config: PaymentConfig;
@@ -74,8 +75,18 @@ export class LencoPaymentService {
         callback_url: `${window.location.origin}/payment/callback`,
       };
 
-      // Call Lenco API
-      const response = await this.callLencoAPI('/payments/initialize', 'POST', paymentRequest);
+      // Call payment service via Supabase edge function
+      const response = await this.callPaymentService('initialize', {
+        amount: Math.round(paymentRequest.amount * 100), // Convert to kobo/ngwee
+        currency: paymentRequest.currency,
+        email: paymentRequest.email,
+        name: paymentRequest.name,
+        phone: paymentRequest.phone,
+        description: paymentRequest.description,
+        paymentMethod: paymentRequest.payment_method,
+        provider: paymentRequest.provider,
+        metadata: paymentRequest.metadata
+      });
       
       if (response.success) {
         // Store payment reference for tracking
@@ -84,9 +95,9 @@ export class LencoPaymentService {
         return {
           success: true,
           data: {
-            payment_url: response.data.authorization_url || response.data.payment_url,
+            payment_url: response.data?.payment_url || response.data?.authorization_url,
             reference: reference,
-            access_code: response.data.access_code
+            access_code: response.data?.access_code
           }
         };
       } else {
@@ -111,7 +122,9 @@ export class LencoPaymentService {
     try {
       this.ensureConfig();
 
-      const response = await this.callLencoAPI(`/payments/verify/${reference}`, 'GET');
+      const response = await this.callPaymentService('verify', {
+        reference
+      });
       
       return {
         reference,
@@ -263,30 +276,36 @@ export class LencoPaymentService {
   }
 
   /**
-   * Call Lenco API
+   * Call payment service via Supabase edge function
    */
-  private async callLencoAPI(endpoint: string, method: 'GET' | 'POST' = 'GET', data?: any): Promise<any> {
-    const url = `${this.config.apiUrl}${endpoint}`;
-    const headers: Record<string, string> = {
-      'Authorization': `Bearer ${this.config.publicKey}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    };
+  private async callPaymentService(action: string, data?: any): Promise<any> {
+    try {
+      const { data: response, error } = await supabase.functions.invoke('lenco-payment', {
+        body: {
+          action,
+          ...data
+        }
+      });
 
-    const options: RequestInit = {
-      method,
-      headers,
-      ...(data && method === 'POST' && { body: JSON.stringify(data) })
-    };
+      if (error) {
+        throw new Error(error.message || 'Payment service error');
+      }
 
-    const response = await fetch(url, options);
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Network error' }));
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+      if (!response.success) {
+        throw new Error(response.error || response.message || 'Payment service failed');
+      }
+
+      return response;
+    } catch (error: any) {
+      // Enhanced error handling for common network issues
+      if (error.message?.includes('fetch')) {
+        throw new Error('Network connection error. Please check your internet connection and try again.');
+      }
+      if (error.message?.includes('Failed to fetch')) {
+        throw new Error('Unable to connect to payment service. Please try again later.');
+      }
+      throw error;
     }
-
-    return response.json();
   }
 
   /**
