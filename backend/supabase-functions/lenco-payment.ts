@@ -65,17 +65,90 @@ serve(async (req) => {
     }
 
     const requestBody = await req.json();
-    
-    // Handle both old and new request formats
-    let amount, paymentMethod, phoneNumber, provider, description, email, name, metadata;
-    
-    if (requestBody.action) {
-      // New format with action
-      ({ amount, paymentMethod, phoneNumber, provider, description, email, name, metadata } = requestBody);
-    } else {
-      // Old format (backward compatibility)
-      ({ amount, paymentMethod, phoneNumber, provider, description, email, name, metadata } = requestBody);
+    const action = typeof requestBody.action === 'string'
+      ? requestBody.action.toLowerCase()
+      : 'initialize';
+
+    if (action === 'verify') {
+      const { reference: verifyReference } = requestBody;
+
+      if (!verifyReference) {
+        throw new Error('Payment reference is required');
+      }
+
+      const lencoApiKey = Deno.env.get('LENCO_SECRET_KEY');
+      if (!lencoApiKey) {
+        throw new Error('Payment gateway not configured');
+      }
+
+      const verifyResponse = await fetch(`https://api.lenco.co/access/v2/payments/verify/${verifyReference}`, {
+        headers: {
+          'Authorization': `Bearer ${lencoApiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const verifyData = await verifyResponse.json();
+
+      if (!verifyResponse.ok) {
+        logger.error('Payment verification failed', verifyData, {
+          userId,
+          paymentReference: verifyReference,
+        });
+        throw new Error(verifyData.message || 'Payment verification failed');
+      }
+
+      const paymentStatus = verifyData.data.status === 'success' ? 'completed' : 'failed';
+
+      const { error: updateError } = await supabaseClient
+        .from('payments')
+        .update({
+          status: paymentStatus,
+          lenco_transaction_id: verifyData.data.id,
+          gateway_response: verifyData.data.gateway_response,
+          paid_at: verifyData.data.paid_at,
+          updated_at: new Date().toISOString()
+        })
+        .eq('reference', verifyReference);
+
+      if (updateError) {
+        logger.error('Database update error', updateError, {
+          userId,
+          paymentReference: verifyReference,
+        });
+      }
+
+      const response: LencoApiResponse = {
+        success: true,
+        data: {
+          reference: verifyReference,
+          status: paymentStatus,
+          amount: verifyData.data.amount,
+          currency: verifyData.data.currency,
+          id: verifyData.data.id,
+          gateway_response: verifyData.data.gateway_response,
+          paid_at: verifyData.data.paid_at,
+          metadata: verifyData.data.metadata
+        }
+      };
+
+      return new Response(JSON.stringify(response), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
     }
+
+    // Default to payment initialization
+    const {
+      amount,
+      paymentMethod,
+      phoneNumber,
+      provider,
+      description,
+      email,
+      name,
+      metadata
+    }: PaymentRequest & { metadata?: Record<string, any> } = requestBody;
 
     // Validate payment request
     if (!amount || amount < 5) {
@@ -181,7 +254,6 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
-
   } catch (error) {
     logger.error('Payment Function Error', error, {
       userId,
@@ -190,12 +262,14 @@ serve(async (req) => {
 
     const errorResponse: LencoApiResponse = {
       success: false,
-      error: error.message || 'Internal server error'
+      error: error instanceof Error ? error.message : 'Internal server error'
     };
+
+    const message = error instanceof Error ? error.message : '';
 
     return new Response(JSON.stringify(errorResponse), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: error.message.includes('Unauthorized') ? 401 : 500,
+      status: ['Unauthorized', 'Missing authorization header'].includes(message) ? 401 : 500,
     });
   }
 });
