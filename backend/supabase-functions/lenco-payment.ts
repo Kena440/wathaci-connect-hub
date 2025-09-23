@@ -64,8 +64,20 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { amount, paymentMethod, phoneNumber, provider, description, email, name, metadata }: PaymentRequest =
-      await req.json();
+    const requestBody = await req.json();
+    const { action } = requestBody;
+
+    if (!action) {
+      throw new Error('Missing action parameter');
+    }
+
+    if (action === 'initialize') {
+      return await handlePaymentInitialize(requestBody, user, req, supabaseClient, userId);
+    } else if (action === 'verify') {
+      return await handlePaymentVerify(requestBody, user);
+    } else {
+      throw new Error('Invalid action');
+    }
 
     // Validate payment request
     if (!amount || amount < 5) {
