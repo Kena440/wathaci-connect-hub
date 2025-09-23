@@ -161,7 +161,7 @@ if (!paymentService.isConfigured()) {
 // Create payment request
 const paymentRequest = {
   amount: 100,
-  email: 'user@example.com',
+  email: 'user@example.com', // Optional - can be omitted
   name: 'John Doe',
   description: 'Service payment'
 };
@@ -240,7 +240,7 @@ Process a mobile money payment.
 - `amount` (number): Payment amount in Kwacha
 - `phone` (string): Zambian mobile number (096/076/097/077/095xxxxxxx)
 - `provider` (string): 'mtn', 'airtel', or 'zamtel'
-- `email` (string): User email address
+- `email` (string, optional): User email address
 - `name` (string): User full name
 - `description` (string): Payment description
 
@@ -252,7 +252,7 @@ Process a card payment.
 
 **Parameters:**
 - `amount` (number): Payment amount in Kwacha
-- `email` (string): User email address
+- `email` (string, optional): User email address
 - `name` (string): User full name
 - `description` (string): Payment description
 - `phone` (string, optional): Phone number
