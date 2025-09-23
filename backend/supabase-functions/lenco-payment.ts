@@ -64,8 +64,18 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { amount, paymentMethod, phoneNumber, provider, description, email, name, metadata }: PaymentRequest =
-      await req.json();
+    const requestBody = await req.json();
+    
+    // Handle both old and new request formats
+    let amount, paymentMethod, phoneNumber, provider, description, email, name, metadata;
+    
+    if (requestBody.action) {
+      // New format with action
+      ({ amount, paymentMethod, phoneNumber, provider, description, email, name, metadata } = requestBody);
+    } else {
+      // Old format (backward compatibility)
+      ({ amount, paymentMethod, phoneNumber, provider, description, email, name, metadata } = requestBody);
+    }
 
     // Validate payment request
     if (!amount || amount < 5) {
@@ -85,7 +95,7 @@ serve(async (req) => {
 
     // Prepare Lenco payment request
     const lencoRequest = {
-      amount: Math.round(amount * 100), // Convert to kobo/ngwee
+      amount: typeof amount === 'number' && amount > 10000 ? amount : Math.round(amount * 100), // Handle pre-converted amounts
       currency: 'ZMK',
       email,
       name,
@@ -132,7 +142,7 @@ serve(async (req) => {
       .insert({
         reference,
         user_id: user.id,
-        amount,
+        amount: typeof amount === 'number' && amount > 10000 ? amount / 100 : amount, // Store in base currency units
         currency: 'ZMK',
         status: 'pending',
         payment_method: paymentMethod,
@@ -162,7 +172,7 @@ serve(async (req) => {
         reference,
         payment_url: lencoData.data?.authorization_url,
         access_code: lencoData.data?.access_code,
-        amount,
+        amount: typeof amount === 'number' && amount > 10000 ? amount / 100 : amount,
         currency: 'ZMK'
       }
     };
