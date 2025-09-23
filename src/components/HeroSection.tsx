@@ -11,7 +11,7 @@ const HeroSection = () => {
           "url('/images/ChatGPT%20Image%20Sep%2014%2C%202025%2C%2011_09_30%20PM.png')",
       }}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-orange-50/90 via-white/90 to-green-50/90" />
+      <div className="absolute inset-0 bg-gradient-to-br from-orange-50/95 via-white/92 to-green-50/95" />
       <div className="relative max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">
           <div className="mb-8">
