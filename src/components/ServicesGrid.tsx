@@ -26,7 +26,7 @@ const services = [
   {
     title: 'SME Support & Business Management',
     description: 'Dedicated support for small and medium enterprises growth',
-    image: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?w=400&h=300&fit=crop&auto=format',
+    image: '/images/Farmer Dexter.png',
     color: 'bg-purple-50 border-purple-200',
     details: 'We offer comprehensive SME support including business plan development, market research, operational optimization, digital transformation guidance, and access to funding opportunities. Our programs are designed specifically for the Zambian market dynamics.'
   },
