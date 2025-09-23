@@ -56,8 +56,14 @@ const SignIn = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50 flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
+    <div 
+      className="min-h-screen bg-center bg-cover flex items-center justify-center p-6 relative"
+      style={{
+        backgroundImage: "url('/images/Partnership%20Hub.png')",
+      }}
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-orange-50/70 via-white/60 to-green-50/70" />
+      <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <img
             src="https://d64gsuwffb70l.cloudfront.net/686a39ec793daf0c658a746a_1753699300137_a4fb9790.png"
