@@ -10,6 +10,13 @@ vi.mock('@/contexts/AppContext', () => ({
   useAppContext: vi.fn(),
 }));
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => key,
+    i18n: { language: 'en', changeLanguage: vi.fn() }
+  }),
+}));
+
 vi.mock('../NotificationCenter', () => ({
   NotificationCenter: () => <div data-testid="notification-center" />,
 }));
@@ -36,6 +43,7 @@ describe('Header', () => {
   it('renders navigation links and sign in button when unauthenticated', () => {
     mockUseAppContext.mockReturnValue({
       user: null,
+      profile: null,
       signOut: vi.fn(),
       loading: false,
     });
@@ -53,6 +61,7 @@ describe('Header', () => {
   it('shows sign out option for authenticated users', async () => {
     mockUseAppContext.mockReturnValue({
       user: { email: 'user@example.com', profile_completed: true },
+      profile: null, // Profile not loaded yet
       signOut: vi.fn(),
       loading: false,
     });
@@ -62,12 +71,13 @@ describe('Header', () => {
     const userButton = screen.getByText('user');
     await userEvent.click(userButton);
 
-    expect(screen.getByText('Sign Out')).toBeInTheDocument();
+    expect(screen.getByText('signOut')).toBeInTheDocument();
   });
 
   it('toggles mobile menu', async () => {
     mockUseAppContext.mockReturnValue({
       user: null,
+      profile: null,
       signOut: vi.fn(),
       loading: false,
     });
@@ -80,6 +90,32 @@ describe('Header', () => {
     await userEvent.click(toggle!);
 
     expect(screen.getAllByRole('navigation')).toHaveLength(2);
+  });
+
+  it('displays first name when profile is loaded', () => {
+    mockUseAppContext.mockReturnValue({
+      user: { email: 'john.doe@example.com', profile_completed: true },
+      profile: { first_name: 'John', last_name: 'Doe' },
+      signOut: vi.fn(),
+      loading: false,
+    });
+
+    renderHeader();
+
+    expect(screen.getByText('John')).toBeInTheDocument();
+  });
+
+  it('falls back to email prefix when profile first_name is not available', () => {
+    mockUseAppContext.mockReturnValue({
+      user: { email: 'john.doe@example.com', profile_completed: true },
+      profile: { last_name: 'Doe' }, // no first_name
+      signOut: vi.fn(),
+      loading: false,
+    });
+
+    renderHeader();
+
+    expect(screen.getByText('john.doe')).toBeInTheDocument();
   });
 });
 
