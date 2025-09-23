@@ -77,7 +77,7 @@ const Header = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="text-gray-700 hover:bg-orange-100">
                   <Globe className="w-4 h-4 mr-2" />
-                  {i18n.language.toUpperCase()}
+                  {(i18n.language || 'en').toUpperCase()}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
