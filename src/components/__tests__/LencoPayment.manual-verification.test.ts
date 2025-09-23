@@ -16,8 +16,8 @@ describe('Manual Verification Functions', () => {
       expect(result.valid).toBe(true);
       expect(result.errors).toHaveLength(0);
       expect(result.calculations.totalAmount).toBe(100);
-      expect(result.calculations.platformFee).toBe(2);
-      expect(result.calculations.providerAmount).toBe(98);
+      expect(result.calculations.platformFee).toBe(5);
+      expect(result.calculations.providerAmount).toBe(95);
     });
 
     it('should validate a correct Airtel payment', () => {
@@ -33,8 +33,8 @@ describe('Manual Verification Functions', () => {
       
       expect(result.valid).toBe(true);
       expect(result.calculations.totalAmount).toBe(50);
-      expect(result.calculations.platformFee).toBe(1);
-      expect(result.calculations.providerAmount).toBe(49);
+      expect(result.calculations.platformFee).toBe(2.5);
+      expect(result.calculations.providerAmount).toBe(47.5);
     });
 
     it('should reject invalid payment data', () => {
@@ -75,7 +75,7 @@ describe('Manual Verification Functions', () => {
       demoPayments.forEach(demo => {
         const result = validatePaymentRequest(demo.data);
         expect(result.valid).toBe(true);
-        expect(result.calculations.feePercentage).toBe(2);
+        expect(result.calculations.feePercentage).toBe(5);
       });
     });
 

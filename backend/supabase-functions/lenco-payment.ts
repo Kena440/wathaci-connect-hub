@@ -65,18 +65,16 @@ serve(async (req) => {
     }
 
     const requestBody = await req.json();
-    const { action } = requestBody;
-
-    if (!action) {
-      throw new Error('Missing action parameter');
-    }
-
-    if (action === 'initialize') {
-      return await handlePaymentInitialize(requestBody, user, req, supabaseClient, userId);
-    } else if (action === 'verify') {
-      return await handlePaymentVerify(requestBody, user);
+    
+    // Handle both old and new request formats
+    let amount, paymentMethod, phoneNumber, provider, description, email, name, metadata;
+    
+    if (requestBody.action) {
+      // New format with action
+      ({ amount, paymentMethod, phoneNumber, provider, description, email, name, metadata } = requestBody);
     } else {
-      throw new Error('Invalid action');
+      // Old format (backward compatibility)
+      ({ amount, paymentMethod, phoneNumber, provider, description, email, name, metadata } = requestBody);
     }
 
     // Validate payment request
@@ -97,7 +95,7 @@ serve(async (req) => {
 
     // Prepare Lenco payment request
     const lencoRequest = {
-      amount: Math.round(amount * 100), // Convert to kobo/ngwee
+      amount: typeof amount === 'number' && amount > 10000 ? amount : Math.round(amount * 100), // Handle pre-converted amounts
       currency: 'ZMK',
       email,
       name,
@@ -144,7 +142,7 @@ serve(async (req) => {
       .insert({
         reference,
         user_id: user.id,
-        amount,
+        amount: typeof amount === 'number' && amount > 10000 ? amount / 100 : amount, // Store in base currency units
         currency: 'ZMK',
         status: 'pending',
         payment_method: paymentMethod,
@@ -174,7 +172,7 @@ serve(async (req) => {
         reference,
         payment_url: lencoData.data?.authorization_url,
         access_code: lencoData.data?.access_code,
-        amount,
+        amount: typeof amount === 'number' && amount > 10000 ? amount / 100 : amount,
         currency: 'ZMK'
       }
     };
