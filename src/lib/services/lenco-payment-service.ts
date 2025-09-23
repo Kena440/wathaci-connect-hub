@@ -25,12 +25,33 @@ export class LencoPaymentService {
     this.isConfigValid = validatePaymentConfig(this.config);
   }
 
+  private refreshConfig(): void {
+    const latestConfig = getPaymentConfig();
+    const hasChanged = JSON.stringify(this.config) !== JSON.stringify(latestConfig);
+
+    if (hasChanged) {
+      this.config = latestConfig;
+      this.isConfigValid = validatePaymentConfig(this.config);
+    }
+  }
+
+  private ensureConfig(): void {
+    if (!this.isConfigValid) {
+      this.config = getPaymentConfig();
+      this.isConfigValid = validatePaymentConfig(this.config);
+    } else {
+      this.refreshConfig();
+    }
+  }
+
   /**
    * Initialize payment with Lenco
    */
   async initializePayment(request: Omit<LencoPaymentRequest, 'reference'>): Promise<LencoPaymentResponse> {
     let reference: string | undefined;
     try {
+      this.ensureConfig();
+
       if (!this.isConfigValid) {
         throw new Error('Payment configuration is invalid. Please check environment variables.');
       }
@@ -86,6 +107,8 @@ export class LencoPaymentService {
    */
   async verifyPayment(reference: string): Promise<PaymentStatus> {
     try {
+      this.ensureConfig();
+
       const response = await this.callLencoAPI(`/payments/verify/${reference}`, 'GET');
       
       return {
@@ -131,6 +154,8 @@ export class LencoPaymentService {
       };
     }
 
+    this.ensureConfig();
+
     return this.initializePayment({
       ...request,
       payment_method: 'mobile_money',
@@ -151,6 +176,8 @@ export class LencoPaymentService {
     description: string;
     phone?: string;
   }): Promise<LencoPaymentResponse> {
+    this.ensureConfig();
+
     return this.initializePayment({
       ...request,
       phone: request.phone || '',
@@ -170,6 +197,8 @@ export class LencoPaymentService {
     totalAmount: number;
     providerReceives: number;
   } {
+    this.ensureConfig();
+
     const platformFee = calculatePlatformFee(amount, this.config.platformFeePercentage);
     return {
       baseAmount: amount,
@@ -278,6 +307,7 @@ export class LencoPaymentService {
    * Get payment configuration
    */
   getConfig(): PaymentConfig {
+    this.refreshConfig();
     return { ...this.config };
   }
 
@@ -285,6 +315,7 @@ export class LencoPaymentService {
    * Check if service is properly configured
    */
   isConfigured(): boolean {
+    this.ensureConfig();
     return this.isConfigValid;
   }
 }
