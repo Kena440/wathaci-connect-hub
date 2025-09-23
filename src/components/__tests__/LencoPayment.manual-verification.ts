@@ -51,7 +51,7 @@ export const manualVerificationSteps = {
         { amount: "50", expectedFee: "1.00", expectedProvider: "49.00" },
         { amount: "25", expectedFee: "0.50", expectedProvider: "24.50" }
       ],
-      expected: "Platform fee should always be 2% of total amount"
+      expected: "Platform fee varies by transaction type: 5% for marketplace/resource, 0% for donations/subscriptions"
     },
     
     {
@@ -71,12 +71,40 @@ export const manualVerificationSteps = {
 
   testScenarios: [
     {
-      scenario: "Small Donation Payment",
-      amount: 10,
+      scenario: "Small Donation Payment (No Fee)",
+      amount: 50,
       provider: "mtn",
       phone: "0971234567",
-      expectedFee: 0.20,
-      expectedNet: 9.80
+      expectedFee: 0.00,
+      expectedNet: 50.00,
+      transactionType: "donation"
+    },
+    {
+      scenario: "Marketplace Transaction (5% Fee)",
+      amount: 100,
+      provider: "airtel",
+      phone: "0971234567", 
+      expectedFee: 5.00,
+      expectedNet: 95.00,
+      transactionType: "marketplace"
+    },
+    {
+      scenario: "Resource Purchase (5% Fee)",
+      amount: 75,
+      provider: "zamtel",
+      phone: "0951234567",
+      expectedFee: 3.75,
+      expectedNet: 71.25,
+      transactionType: "resource"
+    },
+    {
+      scenario: "Subscription Payment (No Fee)",
+      amount: 180,
+      provider: "mtn",
+      phone: "0961234567",
+      expectedFee: 0.00,
+      expectedNet: 180.00,
+      transactionType: "subscription"
     },
     {
       scenario: "Medium Subscription Payment",
@@ -87,18 +115,19 @@ export const manualVerificationSteps = {
       expectedNet: 98.00
     },
     {
-      scenario: "Large Enterprise Payment",
+      scenario: "Large Enterprise Payment (5% Fee)",
       amount: 2000,
       provider: "zamtel",
       phone: "0951234567", 
-      expectedFee: 40.00,
-      expectedNet: 1960.00
+      expectedFee: 100.00,
+      expectedNet: 1900.00,
+      transactionType: "marketplace"
     }
   ],
 
   verificationChecklist: [
     "✓ LencoPayment component renders correctly",
-    "✓ Fee calculation shows 2% platform fee",
+    "✓ Fee calculation varies by transaction type: 5% marketplace/resource, 0% donations/subscriptions",
     "✓ Provider receives 98% of payment amount",
     "✓ Mobile money providers (MTN, Airtel, Zamtel) are available",
     "✓ Phone number validation works for Zambian formats",
@@ -175,8 +204,10 @@ export function validatePaymentRequest(paymentData: {
     }
   }
 
-  // Calculate and validate fees
-  const fee = paymentData.amount * 0.02;
+  // Calculate and validate fees based on transaction type
+  const transactionType = paymentData.description?.toLowerCase().includes('donation') ? 'donation' : 'marketplace';
+  const feePercentage = transactionType === 'donation' ? 0 : 5; // 0% for donations, 5% for marketplace
+  const fee = paymentData.amount * (feePercentage / 100);
   const providerAmount = paymentData.amount - fee;
 
   return {
@@ -185,7 +216,8 @@ export function validatePaymentRequest(paymentData: {
       totalAmount: paymentData.amount,
       platformFee: fee,
       providerAmount: providerAmount,
-      feePercentage: 2
+      feePercentage: feePercentage,
+      transactionType: transactionType
     }
   };
 }

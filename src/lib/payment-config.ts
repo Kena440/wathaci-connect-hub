@@ -14,6 +14,8 @@ export interface PaymentConfig {
   environment: 'development' | 'production';
 }
 
+export type TransactionType = 'marketplace' | 'resource' | 'donation' | 'subscription';
+
 export interface LencoPaymentRequest {
   amount: number;
   currency: string;
@@ -98,7 +100,7 @@ export const getPaymentConfig = (): PaymentConfig => {
     apiUrl: resolveRuntimeValue('VITE_LENCO_API_URL') || 'https://api.lenco.co/access/v2',
     currency: resolveRuntimeValue('VITE_PAYMENT_CURRENCY') || 'ZMK',
     country: resolveRuntimeValue('VITE_PAYMENT_COUNTRY') || 'ZM',
-    platformFeePercentage: parseFloat(resolveRuntimeValue('VITE_PLATFORM_FEE_PERCENTAGE') || '2'),
+    platformFeePercentage: parseFloat(resolveRuntimeValue('VITE_PLATFORM_FEE_PERCENTAGE') || '5'),
     minAmount: parseFloat(resolveRuntimeValue('VITE_MIN_PAYMENT_AMOUNT') || '5'),
     maxAmount: parseFloat(resolveRuntimeValue('VITE_MAX_PAYMENT_AMOUNT') || '1000000'),
     environment,
@@ -122,9 +124,28 @@ export const validatePaymentConfig = (config: PaymentConfig): boolean => {
   return true;
 };
 
-// Calculate platform fee
-export const calculatePlatformFee = (amount: number, feePercentage: number): number => {
+// Calculate platform fee based on transaction type
+export const calculatePlatformFee = (amount: number, feePercentage: number, transactionType?: TransactionType): number => {
+  // Exempt donations and subscriptions from platform fees
+  if (transactionType === 'donation' || transactionType === 'subscription') {
+    return 0;
+  }
+  
+  // Apply platform fee for marketplace and resource transactions
   return Math.round((amount * feePercentage / 100) * 100) / 100;
+};
+
+// Get platform fee percentage based on transaction type
+export const getPlatformFeePercentage = (transactionType?: TransactionType): number => {
+  const config = getPaymentConfig();
+  
+  // Exempt donations and subscriptions from platform fees
+  if (transactionType === 'donation' || transactionType === 'subscription') {
+    return 0;
+  }
+  
+  // Use configured fee percentage for marketplace and resource transactions (5%)
+  return config.platformFeePercentage;
 };
 
 // Generate payment reference

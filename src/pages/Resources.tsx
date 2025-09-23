@@ -414,6 +414,7 @@ const Resources = () => {
               <LencoPayment
                 amount={selectedResource.price}
                 description={`Access to ${selectedResource.title}`}
+                transactionType="resource"
                 onSuccess={handleResourcePaymentSuccess}
                 onCancel={() => setSelectedResource(null)}
               />
@@ -430,6 +431,7 @@ const Resources = () => {
               <LencoPayment
                 amount={selectedWebinar.price}
                 description={`Registration for ${selectedWebinar.title}`}
+                transactionType="resource"
                 onSuccess={handleWebinarPaymentSuccess}
                 onCancel={() => setSelectedWebinar(null)}
               />

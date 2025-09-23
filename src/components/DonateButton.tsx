@@ -49,6 +49,7 @@ export const DonateButton = () => {
             <LencoPayment
               amount={selectedAmount}
               description={`Donation to support SME development - ${selectedAmount}`}
+              transactionType="donation"
               onSuccess={handleDonationSuccess}
               onCancel={() => setIsOpen(false)}
             />

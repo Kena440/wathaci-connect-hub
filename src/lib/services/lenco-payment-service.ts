@@ -8,11 +8,13 @@ import {
   LencoPaymentRequest,
   LencoPaymentResponse,
   PaymentStatus,
+  TransactionType,
   getPaymentConfig,
   validatePaymentConfig,
   generatePaymentReference,
   validatePhoneNumber,
-  calculatePlatformFee
+  calculatePlatformFee,
+  getPlatformFeePercentage
 } from '../payment-config';
 import { logger } from '../logger';
 
@@ -145,6 +147,7 @@ export class LencoPaymentService {
     email?: string;
     name: string;
     description: string;
+    transactionType?: TransactionType;
   }): Promise<LencoPaymentResponse> {
     // Validate phone number
     if (!validatePhoneNumber(request.phone, this.config.country)) {
@@ -161,7 +164,8 @@ export class LencoPaymentService {
       payment_method: 'mobile_money',
       metadata: {
         payment_type: 'mobile_money',
-        provider: request.provider
+        provider: request.provider,
+        transaction_type: request.transactionType
       }
     });
   }
@@ -175,6 +179,7 @@ export class LencoPaymentService {
     name: string;
     description: string;
     phone?: string;
+    transactionType?: TransactionType;
   }): Promise<LencoPaymentResponse> {
     this.ensureConfig();
 
@@ -183,7 +188,8 @@ export class LencoPaymentService {
       phone: request.phone || '',
       payment_method: 'card',
       metadata: {
-        payment_type: 'card'
+        payment_type: 'card',
+        transaction_type: request.transactionType
       }
     });
   }
@@ -191,20 +197,23 @@ export class LencoPaymentService {
   /**
    * Calculate total with fees
    */
-  calculatePaymentTotal(amount: number): {
+  calculatePaymentTotal(amount: number, transactionType?: TransactionType): {
     baseAmount: number;
     platformFee: number;
     totalAmount: number;
     providerReceives: number;
+    feePercentage: number;
   } {
     this.ensureConfig();
 
-    const platformFee = calculatePlatformFee(amount, this.config.platformFeePercentage);
+    const feePercentage = getPlatformFeePercentage(transactionType);
+    const platformFee = calculatePlatformFee(amount, feePercentage, transactionType);
     return {
       baseAmount: amount,
       platformFee,
       totalAmount: amount,
-      providerReceives: amount - platformFee
+      providerReceives: amount - platformFee,
+      feePercentage
     };
   }
 

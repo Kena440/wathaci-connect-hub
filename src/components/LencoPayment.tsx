@@ -9,19 +9,20 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { lencoPaymentService } from '@/lib/services/lenco-payment-service';
-import { validatePhoneNumber, formatAmount } from '@/lib/payment-config';
+import { validatePhoneNumber, formatAmount, TransactionType } from '@/lib/payment-config';
 import { useAppContext } from '@/contexts/AppContext';
 import { PaymentStatusTracker } from '@/components/PaymentStatusTracker';
 
 interface LencoPaymentProps {
   amount: string | number;
   description: string;
+  transactionType?: TransactionType;
   onSuccess?: (data: any) => void;
   onCancel?: () => void;
   onError?: (error: any) => void;
 }
 
-export const LencoPayment = ({ amount, description, onSuccess, onCancel, onError }: LencoPaymentProps) => {
+export const LencoPayment = ({ amount, description, transactionType = 'marketplace', onSuccess, onCancel, onError }: LencoPaymentProps) => {
   const [paymentMethod, setPaymentMethod] = useState<string>('mobile_money');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [provider, setProvider] = useState('');
@@ -35,7 +36,7 @@ export const LencoPayment = ({ amount, description, onSuccess, onCancel, onError
 
   // Calculate payment breakdown
   const totalAmount = typeof amount === 'string' ? parseFloat(amount.toString().replace(/[^\d.]/g, '')) : parseFloat(amount.toString());
-  const paymentBreakdown = lencoPaymentService.calculatePaymentTotal(totalAmount);
+  const paymentBreakdown = lencoPaymentService.calculatePaymentTotal(totalAmount, transactionType);
 
   // Validate configuration
   const isConfigured = lencoPaymentService.isConfigured();
@@ -97,7 +98,8 @@ export const LencoPayment = ({ amount, description, onSuccess, onCancel, onError
           name: profile?.first_name && profile?.last_name 
             ? `${profile.first_name} ${profile.last_name}` 
             : profile?.business_name || user?.email || 'Anonymous User',
-          description
+          description,
+          transactionType
         });
       } else {
         paymentResponse = await lencoPaymentService.processCardPayment({
@@ -107,7 +109,8 @@ export const LencoPayment = ({ amount, description, onSuccess, onCancel, onError
             ? `${profile.first_name} ${profile.last_name}` 
             : profile?.business_name || user?.email || 'Anonymous User',
           description,
-          phone: phoneNumber || undefined
+          phone: phoneNumber || undefined,
+          transactionType
         });
       }
 
@@ -203,10 +206,17 @@ export const LencoPayment = ({ amount, description, onSuccess, onCancel, onError
                   <span>Total Amount:</span>
                   <span className="font-semibold">{formatAmount(paymentBreakdown.totalAmount)}</span>
                 </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Platform Fee (2%):</span>
-                  <span>{formatAmount(paymentBreakdown.platformFee)}</span>
-                </div>
+                {paymentBreakdown.feePercentage > 0 ? (
+                  <div className="flex justify-between text-gray-600">
+                    <span>Platform Fee ({paymentBreakdown.feePercentage}%):</span>
+                    <span>{formatAmount(paymentBreakdown.platformFee)}</span>
+                  </div>
+                ) : (
+                  <div className="flex justify-between text-green-600">
+                    <span>Platform Fee:</span>
+                    <span>FREE ({transactionType === 'donation' ? 'Donation' : 'Subscription'} - No fees)</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-green-600 font-semibold">
                   <span>Provider Receives:</span>
                   <span>{formatAmount(paymentBreakdown.providerReceives)}</span>

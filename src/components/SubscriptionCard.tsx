@@ -218,6 +218,7 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
             <LencoPayment
               amount={plan.lencoAmount / 100}
               description={`${plan.name} Plan - ${plan.price}${plan.period}`}
+              transactionType="subscription"
               onSuccess={handlePaymentSuccess}
               onCancel={() => {
                 setShowPayment(false);
@@ -310,6 +311,7 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
           <LencoPayment
             amount={plan.lencoAmount / 100}
             description={`${plan.name} Plan Subscription - ${plan.price}${plan.period}`}
+            transactionType="subscription"
             onSuccess={handlePaymentSuccess}
             onCancel={() => {
               setShowPayment(false);

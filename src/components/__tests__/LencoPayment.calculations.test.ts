@@ -1,4 +1,6 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect, beforeAll } from '@jest/globals';
+import { lencoPaymentService } from '../../lib/services/lenco-payment-service';
+import { calculatePlatformFee, getPlatformFeePercentage } from '../../lib/payment-config';
 
 // Test the subscription plans data and Lenco amount calculations
 describe('Lenco Payment Amount Calculations', () => {
@@ -228,6 +230,87 @@ describe('Lenco Payment Amount Calculations', () => {
         expect(plan.lencoAmount).toBeGreaterThanOrEqual(1000); // At least K10
         expect(plan.lencoAmount).toBeLessThanOrEqual(500000); // At most K5000
       });
+    });
+  });
+
+  describe('New Platform Fee Structure (5% for marketplace/resource, 0% for donations/subscriptions)', () => {
+    const testCases = [
+      { amount: 100, transactionType: 'marketplace', expectedFeePercentage: 5, expectedFee: 5, expectedProvider: 95 },
+      { amount: 200, transactionType: 'resource', expectedFeePercentage: 5, expectedFee: 10, expectedProvider: 190 },
+      { amount: 50, transactionType: 'donation', expectedFeePercentage: 0, expectedFee: 0, expectedProvider: 50 },
+      { amount: 100, transactionType: 'subscription', expectedFeePercentage: 0, expectedFee: 0, expectedProvider: 100 }
+    ];
+
+    testCases.forEach(({ amount, transactionType, expectedFeePercentage, expectedFee, expectedProvider }) => {
+      it(`should calculate correct fees for ${transactionType} transaction (${expectedFeePercentage}%)`, () => {
+        const feePercentage = getPlatformFeePercentage(transactionType as any);
+        expect(feePercentage).toBe(expectedFeePercentage);
+
+        const platformFee = calculatePlatformFee(amount, feePercentage, transactionType as any);
+        expect(platformFee).toBe(expectedFee);
+
+        const breakdown = lencoPaymentService.calculatePaymentTotal(amount, transactionType as any);
+        expect(breakdown.platformFee).toBe(expectedFee);
+        expect(breakdown.providerReceives).toBe(expectedProvider);
+        expect(breakdown.feePercentage).toBe(expectedFeePercentage);
+      });
+    });
+
+    it('should exempt donations from platform fees', () => {
+      const testAmounts = [10, 50, 100, 500, 1000];
+      
+      testAmounts.forEach(amount => {
+        const breakdown = lencoPaymentService.calculatePaymentTotal(amount, 'donation');
+        expect(breakdown.platformFee).toBe(0);
+        expect(breakdown.providerReceives).toBe(amount);
+        expect(breakdown.feePercentage).toBe(0);
+      });
+    });
+
+    it('should exempt subscriptions from platform fees (maintain existing rates)', () => {
+      subscriptionPlans.forEach((plan: any) => {
+        const amount = plan.lencoAmount / 100; // Convert from cents to dollars
+        const breakdown = lencoPaymentService.calculatePaymentTotal(amount, 'subscription');
+        
+        // Subscriptions should have no platform fees
+        expect(breakdown.platformFee).toBe(0);
+        expect(breakdown.providerReceives).toBe(amount);
+        expect(breakdown.feePercentage).toBe(0);
+      });
+    });
+
+    it('should apply 5% fee to marketplace transactions', () => {
+      const testAmounts = [100, 250, 500, 1000];
+      
+      testAmounts.forEach(amount => {
+        const breakdown = lencoPaymentService.calculatePaymentTotal(amount, 'marketplace');
+        const expectedFee = Math.round((amount * 0.05) * 100) / 100;
+        expect(breakdown.platformFee).toBe(expectedFee);
+        expect(breakdown.providerReceives).toBe(amount - expectedFee);
+        expect(breakdown.feePercentage).toBe(5);
+      });
+    });
+
+    it('should apply 5% fee to resource transactions', () => {
+      const testAmounts = [20, 50, 75, 150];
+      
+      testAmounts.forEach(amount => {
+        const breakdown = lencoPaymentService.calculatePaymentTotal(amount, 'resource');
+        const expectedFee = Math.round((amount * 0.05) * 100) / 100;
+        expect(breakdown.platformFee).toBe(expectedFee);
+        expect(breakdown.providerReceives).toBe(amount - expectedFee);
+        expect(breakdown.feePercentage).toBe(5);
+      });
+    });
+
+    it('should default to marketplace transaction type when none specified', () => {
+      const amount = 100;
+      const breakdown = lencoPaymentService.calculatePaymentTotal(amount);
+      
+      // Should default to 5% fee like marketplace
+      expect(breakdown.feePercentage).toBe(5);
+      expect(breakdown.platformFee).toBe(5);
+      expect(breakdown.providerReceives).toBe(95);
     });
   });
 });

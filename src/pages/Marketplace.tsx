@@ -215,6 +215,7 @@ const Marketplace = () => {
               <LencoPayment
                 amount={total}
                 description="Marketplace purchase"
+                transactionType="marketplace"
                 onSuccess={handleCheckoutSuccess}
                 onCancel={() => setIsCheckoutOpen(false)}
               />
