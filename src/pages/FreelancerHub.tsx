@@ -14,8 +14,14 @@ const FreelancerHub = () => {
   return (
     <AppLayout>
       <div className="min-h-screen bg-gray-50">
-        <div className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white py-16">
-          <div className="max-w-6xl mx-auto px-6">
+        <div 
+          className="relative py-16 bg-center bg-cover text-white"
+          style={{
+            backgroundImage: "url('/images/Freelancer Hub.png')",
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/70 via-emerald-600/60 to-blue-800/70" />
+          <div className="relative max-w-6xl mx-auto px-6">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-5xl font-bold mb-4">Freelancer Hub</h1>
