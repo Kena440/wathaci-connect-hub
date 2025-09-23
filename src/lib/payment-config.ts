@@ -51,16 +51,57 @@ export interface PaymentStatus {
 }
 
 // Load configuration from environment variables
+const DEFAULT_DEV_PUBLIC_KEY = 'pub-dea560c94d379a23e7b85a265d7bb9acbd585481e6e1393e';
+
+const resolveRuntimeValue = (key: string): string | undefined => {
+  try {
+    const viteValue = (import.meta as any)?.env?.[key];
+    if (viteValue) {
+      return viteValue as string;
+    }
+  } catch (error) {
+    // import.meta is not available (e.g. during Jest tests)
+  }
+
+  if (typeof globalThis !== 'undefined') {
+    const runtimeValue = (globalThis as any).__APP_CONFIG__?.[key];
+    if (runtimeValue) {
+      return runtimeValue as string;
+    }
+  }
+
+  if (typeof process !== 'undefined' && process.env) {
+    const processValue = process.env[key];
+    if (processValue) {
+      return processValue;
+    }
+  }
+
+  return undefined;
+};
+
 export const getPaymentConfig = (): PaymentConfig => {
+  const environment = (resolveRuntimeValue('VITE_APP_ENV') as 'development' | 'production') || 'development';
+
+  let publicKey = resolveRuntimeValue('VITE_LENCO_PUBLIC_KEY') || '';
+  if (!publicKey) {
+    publicKey = resolveRuntimeValue('LENCO_PUBLIC_KEY') || '';
+  }
+
+  if (!publicKey && environment === 'development') {
+    console.warn('Payment Warning: Missing VITE_LENCO_PUBLIC_KEY. Falling back to default development key.');
+    publicKey = DEFAULT_DEV_PUBLIC_KEY;
+  }
+
   const config: PaymentConfig = {
-    publicKey: import.meta.env.VITE_LENCO_PUBLIC_KEY || '',
-    apiUrl: import.meta.env.VITE_LENCO_API_URL || 'https://api.lenco.co/access/v2',
-    currency: import.meta.env.VITE_PAYMENT_CURRENCY || 'ZMK',
-    country: import.meta.env.VITE_PAYMENT_COUNTRY || 'ZM',
-    platformFeePercentage: parseFloat(import.meta.env.VITE_PLATFORM_FEE_PERCENTAGE || '2'),
-    minAmount: parseFloat(import.meta.env.VITE_MIN_PAYMENT_AMOUNT || '5'),
-    maxAmount: parseFloat(import.meta.env.VITE_MAX_PAYMENT_AMOUNT || '1000000'),
-    environment: (import.meta.env.VITE_APP_ENV as 'development' | 'production') || 'development'
+    publicKey,
+    apiUrl: resolveRuntimeValue('VITE_LENCO_API_URL') || 'https://api.lenco.co/access/v2',
+    currency: resolveRuntimeValue('VITE_PAYMENT_CURRENCY') || 'ZMK',
+    country: resolveRuntimeValue('VITE_PAYMENT_COUNTRY') || 'ZM',
+    platformFeePercentage: parseFloat(resolveRuntimeValue('VITE_PLATFORM_FEE_PERCENTAGE') || '2'),
+    minAmount: parseFloat(resolveRuntimeValue('VITE_MIN_PAYMENT_AMOUNT') || '5'),
+    maxAmount: parseFloat(resolveRuntimeValue('VITE_MAX_PAYMENT_AMOUNT') || '1000000'),
+    environment,
   };
 
   return config;
