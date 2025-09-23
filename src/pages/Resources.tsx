@@ -210,15 +210,16 @@ const Resources = () => {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 relative">
         <div 
-          className="relative py-16 bg-center bg-cover text-white"
+          className="fixed inset-0 bg-center bg-cover"
           style={{
             backgroundImage: "url('/images/ChatGPT%20Image%20Sep%2023%2C%202025%2C%2002_02_31%20PM.png')",
           }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/70 to-blue-600/70" />
-          <div className="relative max-w-6xl mx-auto px-6 text-center">
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/70 to-blue-600/70" />
+        <div className="relative z-10 py-16 text-white">
+          <div className="max-w-6xl mx-auto px-6 text-center">
             <h1 className="text-5xl font-bold mb-4">Business Resources</h1>
             <p className="text-xl mb-8">Tools, templates, and knowledge to grow your business</p>
             
@@ -248,7 +249,7 @@ const Resources = () => {
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto px-6 py-12">
+        <div className="relative z-10 max-w-6xl mx-auto px-6 py-12 bg-gray-50">
           {activeTab === 'documents' && (
             <div>
               <div className="flex gap-4 mb-8">
