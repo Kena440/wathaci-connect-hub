@@ -9,8 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Building, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Lock, Building, Eye, EyeOff, Phone } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
+import { validatePhoneNumber } from '@/lib/payment-config';
 
 // Validation schema
 const getStartedSchema = z
@@ -21,6 +22,15 @@ const getStartedSchema = z
       .string()
       .min(1, 'Email is required')
       .email('Please enter a valid email address'),
+    mobileNumber: z
+      .string()
+      .optional()
+      .refine((phone) => {
+        if (!phone || phone.trim() === '') return true; // Optional field
+        return validatePhoneNumber(phone);
+      }, {
+        message: 'Please enter a valid mobile money number (e.g., +260 96 1234567)',
+      }),
     password: z
       .string()
       .min(8, 'Password must be at least 8 characters long')
@@ -63,6 +73,7 @@ export const GetStarted = () => {
       firstName: '',
       lastName: '',
       email: '',
+      mobileNumber: '',
       password: '',
       confirmPassword: '',
       company: '',
@@ -81,6 +92,7 @@ export const GetStarted = () => {
         last_name: data.lastName,
         company: data.company,
         account_type: data.accountType,
+        mobile_number: data.mobileNumber || null,
         full_name: `${data.firstName} ${data.lastName}`,
         profile_completed: false,
       });
@@ -160,6 +172,26 @@ export const GetStarted = () => {
             {errors.email && (
               <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="mobileNumber">Mobile Number (Optional)</Label>
+            <div className="relative">
+              <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                id="mobileNumber"
+                type="tel"
+                placeholder="e.g., +260 96 1234567"
+                {...register('mobileNumber')}
+                className={`pl-10 ${errors.mobileNumber ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
+              />
+            </div>
+            {errors.mobileNumber && (
+              <p className="text-sm text-red-600 mt-1">{errors.mobileNumber.message}</p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Add your mobile number for mobile money payments (MTN, Airtel, Zamtel)
+            </p>
           </div>
 
           <div className="space-y-2">
