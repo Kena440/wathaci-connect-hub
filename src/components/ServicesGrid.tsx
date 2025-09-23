@@ -12,7 +12,7 @@ const services = [
   {
     title: 'Risk Management & Compliance',
     description: 'Comprehensive risk assessment and regulatory compliance support',
-    image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=300&fit=crop&auto=format',
+    image: '/images/20201104_145059.jpg',
     color: 'bg-emerald-50 border-emerald-200',
     details: 'We provide thorough risk assessments, compliance audits, policy development, and regulatory monitoring. Our team stays updated with ZRA, SEC, and Bank of Zambia requirements to ensure your business remains compliant while minimizing operational risks.'
   },
@@ -26,7 +26,7 @@ const services = [
   {
     title: 'SME Support & Business Management',
     description: 'Dedicated support for small and medium enterprises growth',
-    image: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?w=400&h=300&fit=crop&auto=format',
+    image: '/images/Farmer Dexter.png',
     color: 'bg-purple-50 border-purple-200',
     details: 'We offer comprehensive SME support including business plan development, market research, operational optimization, digital transformation guidance, and access to funding opportunities. Our programs are designed specifically for the Zambian market dynamics.'
   },
@@ -40,7 +40,7 @@ const services = [
   {
     title: 'Training & Capacity Building',
     description: 'Skills development and professional training programs',
-    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop&auto=format',
+    image: '/images/Sowing Class.jpg',
     color: 'bg-indigo-50 border-indigo-200',
     details: 'We deliver customized training programs in corporate governance, financial management, leadership development, and technical skills. Our capacity building initiatives focus on empowering Zambian professionals and organizations with practical, applicable knowledge.'
   }

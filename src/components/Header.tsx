@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, signOut, loading } = useAppContext();
+  const { user, profile, signOut, loading } = useAppContext();
   const { t, i18n } = useTranslation();
 
   const navItems = [
@@ -32,6 +32,15 @@ const Header = () => {
   const handleSignOut = async () => {
     await signOut();
     setIsMenuOpen(false);
+  };
+
+  // Helper function to get display name for profile button
+  const getDisplayName = () => {
+    if (profile?.first_name) {
+      return profile.first_name;
+    }
+    // Fallback to email prefix if profile not loaded or first_name not available
+    return user?.email?.split('@')[0] || 'Profile';
   };
 
   const showGetStarted = !user || !user.profile_completed;
@@ -96,7 +105,7 @@ const Header = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="flex items-center gap-2 border-orange-300 hover:bg-orange-50">
                     <User className="w-4 h-4" />
-                    {user.email.split('@')[0]}
+                    {getDisplayName()}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -169,7 +178,7 @@ const Header = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="w-full border-orange-300">
                       <Globe className="w-4 h-4 mr-2" />
-                      {i18n.language.toUpperCase()}
+                      {(i18n.language || 'en').toUpperCase()}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
