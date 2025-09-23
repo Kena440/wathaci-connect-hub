@@ -17,7 +17,7 @@ export interface PaymentConfig {
 export interface LencoPaymentRequest {
   amount: number;
   currency: string;
-  email: string;
+  email?: string;
   phone: string;
   name: string;
   description: string;

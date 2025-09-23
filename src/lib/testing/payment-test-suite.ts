@@ -94,6 +94,19 @@ export class PaymentTestSuite {
       category: 'validation'
     },
     {
+      name: 'Missing Email',
+      description: 'Test payment without email (should pass since email is now optional)',
+      testData: {
+        amount: 50,
+        phone: '0978123456',
+        provider: 'mtn',
+        name: 'Test User',
+        description: 'Test payment'
+      },
+      expectedResult: 'success',
+      category: 'validation'
+    },
+    {
       name: 'Amount Below Minimum',
       description: 'Test payment with amount below minimum',
       testData: {
