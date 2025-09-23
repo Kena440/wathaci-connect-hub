@@ -31,7 +31,7 @@ export const LencoPayment = ({ amount, description, onSuccess, onCancel, onError
   const [paymentReference, setPaymentReference] = useState<string | null>(null);
   const [showStatusTracker, setShowStatusTracker] = useState(false);
   const { toast } = useToast();
-  const { user } = useAppContext();
+  const { user, profile } = useAppContext();
 
   // Calculate payment breakdown
   const totalAmount = typeof amount === 'string' ? parseFloat(amount.toString().replace(/[^\d.]/g, '')) : parseFloat(amount.toString());
@@ -55,9 +55,7 @@ export const LencoPayment = ({ amount, description, onSuccess, onCancel, onError
       newErrors.amount = 'Maximum payment amount is K1,000,000.00';
     }
 
-    if (!user?.email) {
-      newErrors.user = 'User email is required for payment processing';
-    }
+
 
     if (paymentMethod === 'mobile_money') {
       if (!provider) {
@@ -95,15 +93,19 @@ export const LencoPayment = ({ amount, description, onSuccess, onCancel, onError
           amount: totalAmount,
           phone: phoneNumber,
           provider: provider as 'mtn' | 'airtel' | 'zamtel',
-          email: user?.email || '',
-          name: user?.full_name || user?.email || 'Anonymous User',
+          email: user?.email || undefined,
+          name: profile?.first_name && profile?.last_name 
+            ? `${profile.first_name} ${profile.last_name}` 
+            : profile?.business_name || user?.email || 'Anonymous User',
           description
         });
       } else {
         paymentResponse = await lencoPaymentService.processCardPayment({
           amount: totalAmount,
-          email: user?.email || '',
-          name: user?.full_name || user?.email || 'Anonymous User',
+          email: user?.email || undefined,
+          name: profile?.first_name && profile?.last_name 
+            ? `${profile.first_name} ${profile.last_name}` 
+            : profile?.business_name || user?.email || 'Anonymous User',
           description,
           phone: phoneNumber || undefined
         });

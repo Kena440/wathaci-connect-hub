@@ -47,7 +47,7 @@ export class LencoPaymentService {
   /**
    * Initialize payment with Lenco
    */
-  async initializePayment(request: Omit<LencoPaymentRequest, 'reference'>): Promise<LencoPaymentResponse> {
+  async initializePayment(request: Omit<LencoPaymentRequest, 'reference' | 'currency'>): Promise<LencoPaymentResponse> {
     let reference: string | undefined;
     try {
       this.ensureConfig();
@@ -142,7 +142,7 @@ export class LencoPaymentService {
     amount: number;
     phone: string;
     provider: 'mtn' | 'airtel' | 'zamtel';
-    email: string;
+    email?: string;
     name: string;
     description: string;
   }): Promise<LencoPaymentResponse> {
@@ -171,7 +171,7 @@ export class LencoPaymentService {
    */
   async processCardPayment(request: {
     amount: number;
-    email: string;
+    email?: string;
     name: string;
     description: string;
     phone?: string;
@@ -211,7 +211,7 @@ export class LencoPaymentService {
   /**
    * Validate payment request
    */
-  private validatePaymentRequest(request: Omit<LencoPaymentRequest, 'reference'>): {
+  private validatePaymentRequest(request: Omit<LencoPaymentRequest, 'reference' | 'currency'>): {
     isValid: boolean;
     error?: string;
   } {
@@ -223,8 +223,8 @@ export class LencoPaymentService {
       return { isValid: false, error: `Maximum payment amount is ${this.config.maxAmount}` };
     }
 
-    if (!request.email || !this.isValidEmail(request.email)) {
-      return { isValid: false, error: 'Valid email address is required' };
+    if (request.email && !this.isValidEmail(request.email)) {
+      return { isValid: false, error: 'Valid email address format is required' };
     }
 
     if (!request.name || request.name.trim().length < 2) {
