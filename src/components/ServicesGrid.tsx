@@ -40,7 +40,7 @@ const services = [
   {
     title: 'Training & Capacity Building',
     description: 'Skills development and professional training programs',
-    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop&auto=format',
+    image: '/images/Sowing Class.jpg',
     color: 'bg-indigo-50 border-indigo-200',
     details: 'We deliver customized training programs in corporate governance, financial management, leadership development, and technical skills. Our capacity building initiatives focus on empowering Zambian professionals and organizations with practical, applicable knowledge.'
   }
