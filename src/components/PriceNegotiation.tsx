@@ -146,6 +146,7 @@ const PriceNegotiation = ({
             <LencoPayment
               amount={taxCalculation?.netAmount?.toString() || totalAmount.toString()}
               description={`Payment for ${serviceTitle} - ZRA tax compliant`}
+              transactionType="marketplace"
               onSuccess={handlePaymentSuccess}
               onError={(error) => console.error('Payment failed:', error)}
             />

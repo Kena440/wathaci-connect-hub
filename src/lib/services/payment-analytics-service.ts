@@ -3,6 +3,8 @@
  * Comprehensive analytics for payments and subscriptions
  */
 
+import { getPlatformFeePercentage, TransactionType } from '../payment-config';
+
 export interface PaymentAnalytics {
   totalRevenue: number;
   transactionCount: number;
@@ -36,6 +38,7 @@ export interface RevenueBreakdown {
   subscriptions: number;
   services: number;
   other: number;
+  donations: number;
   platformFees: number;
   providerPayouts: number;
 }
@@ -154,25 +157,35 @@ export class PaymentAnalyticsService {
       let subscriptions = 0;
       let services = 0;
       let other = 0;
+      let donations = 0;
 
       completedPayments.forEach(payment => {
-        if (payment.description.toLowerCase().includes('subscription')) {
+        const description = payment.description.toLowerCase();
+        if (description.includes('subscription')) {
           subscriptions += payment.amount;
-        } else if (payment.description.toLowerCase().includes('service')) {
+        } else if (description.includes('service')) {
           services += payment.amount;
+        } else if (description.includes('donation')) {
+          donations += payment.amount;
         } else {
           other += payment.amount;
         }
       });
 
-      const totalRevenue = subscriptions + services + other;
-      const platformFees = totalRevenue * 0.02; // 2% platform fee
+      // Calculate platform fees based on transaction types
+      // Donations and subscriptions are exempt from platform fees
+      const marketplaceAndResourceRevenue = services + other;
+      const feePercentage = getPlatformFeePercentage('marketplace'); // 5% for marketplace/resource transactions
+      const platformFees = marketplaceAndResourceRevenue * (feePercentage / 100);
+      
+      const totalRevenue = subscriptions + services + other + donations;
       const providerPayouts = totalRevenue - platformFees;
 
       return {
         subscriptions,
         services,
         other,
+        donations,
         platformFees,
         providerPayouts
       };

@@ -68,6 +68,7 @@ export const PaymentWithNegotiation = ({
             <LencoPayment
               amount={taxCalculation?.netAmount?.toString() || currentPrice.toString()}
               description={`Payment for ${serviceTitle} (incl. ZRA tax)`}
+              transactionType="marketplace"
               onSuccess={() => {
                 setShowPayment(false);
                 toast({ title: "Payment Successful!" });
