@@ -12,7 +12,7 @@ const services = [
   {
     title: 'Risk Management & Compliance',
     description: 'Comprehensive risk assessment and regulatory compliance support',
-    image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=300&fit=crop&auto=format',
+    image: '/images/20201104_145059.jpg',
     color: 'bg-emerald-50 border-emerald-200',
     details: 'We provide thorough risk assessments, compliance audits, policy development, and regulatory monitoring. Our team stays updated with ZRA, SEC, and Bank of Zambia requirements to ensure your business remains compliant while minimizing operational risks.'
   },
