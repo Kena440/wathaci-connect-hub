@@ -13,15 +13,16 @@ const FreelancerHub = () => {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 relative">
         <div 
-          className="relative py-16 bg-center bg-cover text-white"
+          className="fixed inset-0 bg-center bg-cover"
           style={{
             backgroundImage: "url('/images/Freelancer Hub.png')",
           }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/70 via-emerald-600/60 to-blue-800/70" />
-          <div className="relative max-w-6xl mx-auto px-6">
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/70 via-emerald-600/60 to-blue-800/70" />
+        <div className="relative z-10 py-16 text-white">
+          <div className="max-w-6xl mx-auto px-6">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-5xl font-bold mb-4">Freelancer Hub</h1>
@@ -32,7 +33,7 @@ const FreelancerHub = () => {
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto px-6 py-12">
+        <div className="relative z-10 max-w-6xl mx-auto px-6 py-12 bg-gray-50">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
             <TabsList className="grid w-full grid-cols-4 lg:w-fit lg:grid-cols-4">
               <TabsTrigger value="matcher" className="flex items-center gap-2">

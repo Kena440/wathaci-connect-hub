@@ -106,12 +106,13 @@ export const GetStarted = () => {
   };
 
   return (
-    <div 
-      className="min-h-screen bg-center bg-cover flex items-center justify-center p-4 relative"
-      style={{
-        backgroundImage: "url('/images/Partnership%20Hub.png')",
-      }}
-    >
+    <div className="min-h-screen flex items-center justify-center p-4 relative">
+      <div 
+        className="fixed inset-0 bg-center bg-cover"
+        style={{
+          backgroundImage: "url('/images/Partnership%20Hub.png')",
+        }}
+      />
       <div className="absolute inset-0 bg-gradient-to-br from-orange-50/70 via-white/60 to-green-50/70" />
       <Card className="w-full max-w-lg relative z-10">
       <CardHeader className="text-center">

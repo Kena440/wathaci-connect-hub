@@ -37,15 +37,15 @@ export default function AboutUs() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 relative">
         <div 
-          className="relative min-h-screen bg-center bg-cover"
+          className="fixed inset-0 bg-center bg-cover"
           style={{
             backgroundImage: "url('/images/ChatGPT%20Image%20Sep%2023%2C%202025%2C%2002_49_07%20PM.png')",
           }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-white/70 to-blue-50/60" />
-          <div className="relative container mx-auto px-4 py-8 max-w-4xl space-y-8">
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-white/70 to-blue-50/60" />
+        <div className="relative z-10 container mx-auto px-4 py-8 max-w-4xl space-y-8 min-h-screen">
           <Link
             to="/"
             className="inline-flex items-center text-sm text-blue-600 hover:underline"
@@ -116,7 +116,6 @@ export default function AboutUs() {
           </Card>
         </div>
       </div>
-    </div>
     </AppLayout>
   );
 }

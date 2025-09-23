@@ -56,12 +56,13 @@ const SignIn = () => {
   };
 
   return (
-    <div 
-      className="min-h-screen bg-center bg-cover flex items-center justify-center p-6 relative"
-      style={{
-        backgroundImage: "url('/images/Partnership%20Hub.png')",
-      }}
-    >
+    <div className="min-h-screen flex items-center justify-center p-6 relative">
+      <div 
+        className="fixed inset-0 bg-center bg-cover"
+        style={{
+          backgroundImage: "url('/images/Partnership%20Hub.png')",
+        }}
+      />
       <div className="absolute inset-0 bg-gradient-to-br from-orange-50/70 via-white/60 to-green-50/70" />
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
