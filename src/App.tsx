@@ -23,6 +23,7 @@ import TermsOfService from "./pages/TermsOfService";
 import Messages from "./pages/Messages";
 import AboutUs from "./pages/AboutUs";
 import TestError from "./pages/TestError";
+import { SMEAssessment } from "./pages/SMEAssessment";
 import { PrivateRoute } from "./components/PrivateRoute";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,14 @@ export const AppRoutes = () => (
       element={
         <PrivateRoute>
           <Messages />
+        </PrivateRoute>
+      }
+    />
+    <Route
+      path="/sme-assessment"
+      element={
+        <PrivateRoute>
+          <SMEAssessment />
         </PrivateRoute>
       }
     />

@@ -149,7 +149,12 @@ export const ProfileSetup = () => {
         description: "Your profile has been successfully saved.",
       });
 
-      navigate('/profile-review');
+      // Navigate SME users to needs assessment, others to profile review
+      if (selectedAccountType === 'sme' || selectedAccountType === 'sole_proprietor') {
+        navigate('/sme-assessment');
+      } else {
+        navigate('/profile-review');
+      }
     } catch (error: any) {
       toast({
         title: "Error",
