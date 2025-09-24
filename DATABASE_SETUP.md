@@ -104,6 +104,7 @@ Manages payment transactions:
 - account_type: TEXT (sole_proprietor, professional, sme, investor, donor, government)
 - profile_completed: BOOLEAN
 - first_name: TEXT
+- middle_name: TEXT
 - last_name: TEXT
 - phone: TEXT
 - country: TEXT
