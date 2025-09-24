@@ -189,6 +189,69 @@ export interface Service {
 }
 
 // ================================
+// SME Needs Assessment Types
+// ================================
+
+export interface SMENeedsAssessment {
+  id: string;
+  user_id: string;
+  
+  // Financial Health
+  monthly_revenue: number;
+  monthly_expenses: number;
+  cash_flow_positive: boolean;
+  debt_obligations: number;
+  financial_records_organized: boolean;
+  
+  // Operations & Technology
+  key_operational_challenges: string[];
+  technology_gaps: string[];
+  automation_level: 'manual' | 'partially_automated' | 'fully_automated';
+  
+  // Market & Customers
+  target_market_clarity: 1 | 2 | 3 | 4 | 5; // 1-5 scale
+  customer_acquisition_challenges: string[];
+  competitive_position: 'weak' | 'average' | 'strong';
+  
+  // Compliance & Legal  
+  regulatory_compliance_status: 'non_compliant' | 'partially_compliant' | 'fully_compliant';
+  legal_structure_optimized: boolean;
+  intellectual_property_protected: boolean;
+  
+  // Strategic Planning
+  growth_strategy_defined: boolean;
+  funding_requirements: {
+    amount: number;
+    purpose: string;
+    timeline: string;
+  };
+  key_performance_metrics_tracked: boolean;
+  
+  // Professional Support Needs
+  immediate_support_areas: string[];
+  budget_for_professional_services: number;
+  
+  // Assessment Results
+  overall_score: number;
+  identified_gaps: string[];
+  priority_areas: string[];
+  
+  completed_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AssessmentRecommendation {
+  id: string;
+  assessment_id: string;
+  professional_id: string;
+  match_score: number;
+  recommended_for: string[];
+  ai_reasoning: string;
+  created_at: string;
+}
+
+// ================================
 // Connection and Messaging Types
 // ================================
 
