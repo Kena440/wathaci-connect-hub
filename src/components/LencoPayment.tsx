@@ -96,7 +96,7 @@ export const LencoPayment = ({ amount, description, transactionType = 'marketpla
           provider: provider as 'mtn' | 'airtel' | 'zamtel',
           email: user?.email || undefined,
           name: profile?.first_name && profile?.last_name 
-            ? `${profile.first_name} ${profile.last_name}` 
+            ? `${profile.first_name}${profile.middle_name ? ` ${profile.middle_name}` : ''} ${profile.last_name}` 
             : profile?.business_name || user?.email || 'Anonymous User',
           description,
           transactionType
@@ -106,7 +106,7 @@ export const LencoPayment = ({ amount, description, transactionType = 'marketpla
           amount: totalAmount,
           email: user?.email || undefined,
           name: profile?.first_name && profile?.last_name 
-            ? `${profile.first_name} ${profile.last_name}` 
+            ? `${profile.first_name}${profile.middle_name ? ` ${profile.middle_name}` : ''} ${profile.last_name}` 
             : profile?.business_name || user?.email || 'Anonymous User',
           description,
           phone: phoneNumber || undefined,
