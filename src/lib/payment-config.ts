@@ -98,7 +98,7 @@ export const getPaymentConfig = (): PaymentConfig => {
   const config: PaymentConfig = {
     publicKey,
     apiUrl: resolveRuntimeValue('VITE_LENCO_API_URL') || 'https://api.lenco.co/access/v2',
-    currency: resolveRuntimeValue('VITE_PAYMENT_CURRENCY') || 'ZMK',
+    currency: resolveRuntimeValue('VITE_PAYMENT_CURRENCY') || 'ZMW',
     country: resolveRuntimeValue('VITE_PAYMENT_COUNTRY') || 'ZM',
     platformFeePercentage: parseFloat(resolveRuntimeValue('VITE_PLATFORM_FEE_PERCENTAGE') || '5'),
     minAmount: parseFloat(resolveRuntimeValue('VITE_MIN_PAYMENT_AMOUNT') || '5'),
@@ -170,7 +170,11 @@ export const validatePhoneNumber = (phone: string, country: string = 'ZM'): bool
 };
 
 // Format amount for display
-export const formatAmount = (amount: number, currency: string = 'ZMK'): string => {
+export const formatAmount = (amount: number, currency: string = 'ZMW'): string => {
+  if (currency === 'ZMW') {
+    // Display ZMW instead of K for clarity
+    return `ZMW ${amount.toFixed(2)}`;
+  }
   return new Intl.NumberFormat('en-ZM', {
     style: 'currency',
     currency: currency,

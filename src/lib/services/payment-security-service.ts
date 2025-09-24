@@ -19,8 +19,8 @@ export interface ComplianceData {
 }
 
 export class PaymentSecurityService {
-  private readonly MAX_DAILY_AMOUNT = 50000; // K50,000
-  private readonly MAX_TRANSACTION_AMOUNT = 10000; // K10,000
+  private readonly MAX_DAILY_AMOUNT = 50000; // ZMW 50,000
+  private readonly MAX_TRANSACTION_AMOUNT = 10000; // ZMW 10,000
   private readonly SUSPICIOUS_PATTERNS = [
     'rapid_transactions',
     'unusual_amount',

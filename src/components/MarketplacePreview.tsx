@@ -52,7 +52,7 @@ const MarketplacePreview = () => {
                 Affordable monthly packages for ongoing business support
               </p>
               <div className="text-2xl font-bold text-emerald-600 mb-4">
-                From K500/month
+                From ZMW 500/month
               </div>
               <Link to="/marketplace">
                 <Button className="w-full bg-emerald-600 hover:bg-emerald-700">

@@ -66,7 +66,7 @@ const ImpactDashboard = () => {
             {[
               { activity: 'Youth Employment Program Launch', impact: '50 new jobs', date: '2 days ago' },
               { activity: 'Women Entrepreneurs Training', impact: '25 businesses trained', date: '1 week ago' },
-              { activity: 'Rural SME Funding Round', impact: 'K500,000 distributed', date: '2 weeks ago' }
+              { activity: 'Rural SME Funding Round', impact: 'ZMW 500,000 distributed', date: '2 weeks ago' }
             ].map((item, index) => (
               <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                 <div>

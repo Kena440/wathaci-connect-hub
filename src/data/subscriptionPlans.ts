@@ -16,7 +16,7 @@ export const subscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'basic-monthly',
     name: 'Basic Monthly',
-    price: 'K25',
+    price: 'ZMW 25',
     period: '/month',
     description: 'Perfect for getting started',
     features: ['Platform access', 'Basic matching', 'Email support', '5 connections/month'],
@@ -28,7 +28,7 @@ export const subscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'basic-quarterly',
     name: 'Basic Quarterly',
-    price: 'K60',
+    price: 'ZMW 60',
     period: '/3 months',
     description: 'Save 20% with quarterly billing',
     features: ['Everything in Basic Monthly', '15 connections/month', 'Priority support'],
@@ -42,7 +42,7 @@ export const subscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'pro-monthly',
     name: 'Professional Monthly',
-    price: 'K75',
+    price: 'ZMW 75',
     period: '/month',
     description: 'For growing businesses',
     features: ['AI-powered matching', 'Unlimited connections', 'Advanced analytics', 'Phone support'],
@@ -54,7 +54,7 @@ export const subscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'pro-quarterly',
     name: 'Professional Quarterly',
-    price: 'K180',
+    price: 'ZMW 180',
     period: '/3 months',
     description: 'Best value for professionals',
     features: ['Everything in Pro Monthly', 'Custom integrations', 'Dedicated support'],
@@ -68,7 +68,7 @@ export const subscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'enterprise-monthly',
     name: 'Enterprise Monthly',
-    price: 'K200',
+    price: 'ZMW 200',
     period: '/month',
     description: 'For large organizations',
     features: ['White-label solution', 'API access', 'Custom features', 'Account manager'],
@@ -80,7 +80,7 @@ export const subscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'enterprise-annual',
     name: 'Enterprise Annual',
-    price: 'K2000',
+    price: 'ZMW 2000',
     period: '/year',
     description: 'Maximum value for enterprises',
     features: ['Everything in Enterprise Monthly', 'Priority development', 'SLA guarantee'],

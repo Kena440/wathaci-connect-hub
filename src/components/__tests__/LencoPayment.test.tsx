@@ -41,26 +41,26 @@ describe('LencoPayment Component', () => {
       
       expect(screen.getByText('Secure Payment Portal')).toBeInTheDocument();
       expect(screen.getByText('Test payment')).toBeInTheDocument();
-      expect(screen.getByText('K100.00')).toBeInTheDocument();
+      expect(screen.getByText('ZMW 100.00')).toBeInTheDocument();
     });
 
     it('calculates and displays fee breakdown correctly', () => {
       render(<LencoPayment {...defaultProps} amount="100" />);
       
-      // Total amount: K100.00
-      expect(screen.getByText('K100.00')).toBeInTheDocument();
-      // Platform fee (2%): K2.00  
-      expect(screen.getByText('K2.00')).toBeInTheDocument();
-      // Provider receives: K98.00
-      expect(screen.getByText('K98.00')).toBeInTheDocument();
+      // Total amount: ZMW 100.00
+      expect(screen.getByText('ZMW 100.00')).toBeInTheDocument();
+      // Platform fee (2%): ZMW 2.00  
+      expect(screen.getByText('ZMW 2.00')).toBeInTheDocument();
+      // Provider receives: ZMW 98.00
+      expect(screen.getByText('ZMW 98.00')).toBeInTheDocument();
     });
 
     it('handles numeric amount prop correctly', () => {
       render(<LencoPayment {...defaultProps} amount={150.50} />);
       
-      expect(screen.getByText('K150.50')).toBeInTheDocument();
-      expect(screen.getByText('K3.01')).toBeInTheDocument(); // 2% fee
-      expect(screen.getByText('K147.49')).toBeInTheDocument(); // Provider amount
+      expect(screen.getByText('ZMW 150.50')).toBeInTheDocument();
+      expect(screen.getByText('ZMW 3.01')).toBeInTheDocument(); // 2% fee
+      expect(screen.getByText('ZMW 147.49')).toBeInTheDocument(); // Provider amount
     });
 
     it('renders mobile money form by default', () => {
@@ -335,24 +335,24 @@ describe('LencoPayment Component', () => {
     it('handles string amount with currency symbols', () => {
       render(<LencoPayment {...defaultProps} amount="K 100.50" />);
       
-      expect(screen.getByText('K100.50')).toBeInTheDocument();
-      expect(screen.getByText('K2.01')).toBeInTheDocument(); // 2% fee
+      expect(screen.getByText('ZMW 100.50')).toBeInTheDocument();
+      expect(screen.getByText('ZMW 2.01')).toBeInTheDocument(); // 2% fee
     });
 
     it('handles very small amounts', () => {
       render(<LencoPayment {...defaultProps} amount="1" />);
       
-      expect(screen.getByText('K1.00')).toBeInTheDocument();
-      expect(screen.getByText('K0.02')).toBeInTheDocument(); // 2% fee
-      expect(screen.getByText('K0.98')).toBeInTheDocument(); // Provider amount
+      expect(screen.getByText('ZMW 1.00')).toBeInTheDocument();
+      expect(screen.getByText('ZMW 0.02')).toBeInTheDocument(); // 2% fee
+      expect(screen.getByText('ZMW 0.98')).toBeInTheDocument(); // Provider amount
     });
 
     it('handles large amounts', () => {
       render(<LencoPayment {...defaultProps} amount="10000" />);
       
-      expect(screen.getByText('K10000.00')).toBeInTheDocument();
-      expect(screen.getByText('K200.00')).toBeInTheDocument(); // 2% fee
-      expect(screen.getByText('K9800.00')).toBeInTheDocument(); // Provider amount
+      expect(screen.getByText('ZMW 10000.00')).toBeInTheDocument();
+      expect(screen.getByText('ZMW 200.00')).toBeInTheDocument(); // 2% fee
+      expect(screen.getByText('ZMW 9800.00')).toBeInTheDocument(); // Provider amount
     });
   });
 });

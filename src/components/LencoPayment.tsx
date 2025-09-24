@@ -49,11 +49,11 @@ export const LencoPayment = ({ amount, description, transactionType = 'marketpla
     }
 
     if (totalAmount < 5) {
-      newErrors.amount = 'Minimum payment amount is K5.00';
+      newErrors.amount = 'Minimum payment amount is ZMW 5.00';
     }
 
     if (totalAmount > 1000000) {
-      newErrors.amount = 'Maximum payment amount is K1,000,000.00';
+      newErrors.amount = 'Maximum payment amount is ZMW 1,000,000.00';
     }
 
 
