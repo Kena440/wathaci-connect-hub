@@ -159,7 +159,7 @@ export const SMENeedsAssessment = ({ onComplete, onSkip }: SMENeedsAssessmentPro
 
   const calculateAssessmentScore = (data: AssessmentFormData): number => {
     let score = 0;
-    let maxScore = 100;
+    const maxScore = 100;
 
     // Financial health (25 points)
     if (data.cash_flow_positive) score += 8;
