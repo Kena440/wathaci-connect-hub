@@ -120,9 +120,9 @@ export const FreelancerDirectory = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all-prices">All Prices</SelectItem>
-              <SelectItem value="low">Under K150/hr</SelectItem>
-              <SelectItem value="medium">K150-250/hr</SelectItem>
-              <SelectItem value="high">K250+/hr</SelectItem>
+              <SelectItem value="low">Under ZMW 150/hr</SelectItem>
+              <SelectItem value="medium">ZMW 150-250/hr</SelectItem>
+              <SelectItem value="high">ZMW 250+/hr</SelectItem>
             </SelectContent>
           </Select>
         </div>

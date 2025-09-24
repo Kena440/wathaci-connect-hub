@@ -44,7 +44,7 @@ describe('DonateButton Accessibility Tests', () => {
     expect(amountButtons.length).toBeGreaterThan(1);
     
     // Check accessibility after selecting an amount
-    const firstAmountButton = screen.getByRole('button', { name: 'K50' });
+    const firstAmountButton = screen.getByRole('button', { name: 'ZMW 50' });
     fireEvent.click(firstAmountButton);
     
     const results = await axe(container);

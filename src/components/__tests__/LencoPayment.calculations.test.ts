@@ -15,12 +15,12 @@ describe('Lenco Payment Amount Calculations', () => {
       console.warn('Could not import subscription plans:', error);
       // Fallback data for testing
       subscriptionPlans = [
-        { id: '1', name: 'Individual Basic', price: 'K25', lencoAmount: 2500 },
-        { id: '2', name: 'Individual Standard', price: 'K60', lencoAmount: 6000 },
-        { id: '3', name: 'Business Basic', price: 'K75', lencoAmount: 7500 },
-        { id: '4', name: 'Business Standard', price: 'K180', lencoAmount: 18000 },
-        { id: '5', name: 'Professional', price: 'K200', lencoAmount: 20000 },
-        { id: '6', name: 'Enterprise', price: 'K2000', lencoAmount: 200000 }
+        { id: '1', name: 'Individual Basic', price: 'ZMW 25', lencoAmount: 2500 },
+        { id: '2', name: 'Individual Standard', price: 'ZMW 60', lencoAmount: 6000 },
+        { id: '3', name: 'Business Basic', price: 'ZMW 75', lencoAmount: 7500 },
+        { id: '4', name: 'Business Standard', price: 'ZMW 180', lencoAmount: 18000 },
+        { id: '5', name: 'Professional', price: 'ZMW 200', lencoAmount: 20000 },
+        { id: '6', name: 'Enterprise', price: 'ZMW 2000', lencoAmount: 200000 }
       ];
     }
   });
@@ -36,7 +36,7 @@ describe('Lenco Payment Amount Calculations', () => {
         expect(typeof plan.lencoAmount).toBe('number');
         expect(plan.lencoAmount).toBeGreaterThan(0);
         
-        // Extract numeric price from string (e.g., "K25" -> 25)
+        // Extract numeric price from string (e.g., "ZMW 25" -> 25)
         const numericPrice = parseFloat(plan.price.replace(/[^\d.]/g, ''));
         
         // Lenco amount should be price * 100 (converting to cents/kobo)
@@ -76,7 +76,7 @@ describe('Lenco Payment Amount Calculations', () => {
     it('should handle string amounts correctly', () => {
       const testCases = [
         { input: '100.00', expected: 100.00 },
-        { input: 'K 150.50', expected: 150.50 },
+        { input: 'ZMW 150.50', expected: 150.50 },
         { input: '25', expected: 25.00 },
         { input: '1000.99', expected: 1000.99 }
       ];
@@ -219,16 +219,16 @@ describe('Lenco Payment Amount Calculations', () => {
 
     it('should ensure subscription plans are within reasonable ranges', () => {
       subscriptionPlans.forEach((plan: any) => {
-        // Extract numeric price from string (e.g., "K25" -> 25)
+        // Extract numeric price from string (e.g., "ZMW 25" -> 25)
         const priceInKwacha = parseFloat(plan.price.replace(/[^\d.]/g, ''));
         
-        // Subscription prices should be reasonable (between K10 and K5000)
+        // Subscription prices should be reasonable (between ZMW 10 and ZMW 5000)
         expect(priceInKwacha).toBeGreaterThanOrEqual(10);
         expect(priceInKwacha).toBeLessThanOrEqual(5000);
         
         // Lenco amounts should be reasonable
-        expect(plan.lencoAmount).toBeGreaterThanOrEqual(1000); // At least K10
-        expect(plan.lencoAmount).toBeLessThanOrEqual(500000); // At most K5000
+        expect(plan.lencoAmount).toBeGreaterThanOrEqual(1000); // At least ZMW 10
+        expect(plan.lencoAmount).toBeLessThanOrEqual(500000); // At most ZMW 5000
       });
     });
   });

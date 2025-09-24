@@ -71,10 +71,10 @@ describe('Lenco Payment Integration in Components', () => {
       
       await waitFor(() => {
         // Should show amount options
-        expect(screen.getByText('K10')).toBeInTheDocument();
-        expect(screen.getByText('K25')).toBeInTheDocument();
-        expect(screen.getByText('K50')).toBeInTheDocument();
-        expect(screen.getByText('K100')).toBeInTheDocument();
+        expect(screen.getByText('ZMW 10')).toBeInTheDocument();
+        expect(screen.getByText('ZMW 25')).toBeInTheDocument();
+        expect(screen.getByText('ZMW 50')).toBeInTheDocument();
+        expect(screen.getByText('ZMW 100')).toBeInTheDocument();
       });
     });
 
@@ -87,7 +87,7 @@ describe('Lenco Payment Integration in Components', () => {
       await user.click(donateButton);
       
       await waitFor(async () => {
-        const amount50Button = screen.getByText('K50');
+        const amount50Button = screen.getByText('ZMW 50');
         await user.click(amount50Button);
       });
       
@@ -107,7 +107,7 @@ describe('Lenco Payment Integration in Components', () => {
       await user.click(donateButton);
       
       await waitFor(async () => {
-        const amount25Button = screen.getByText('K25');
+        const amount25Button = screen.getByText('ZMW 25');
         await user.click(amount25Button);
       });
       
@@ -158,7 +158,7 @@ describe('Lenco Payment Integration in Components', () => {
       id: '1',
       name: 'Basic Plan',
       description: 'Basic subscription plan',
-      price: 'K50',
+      price: 'ZMW 50',
       lencoAmount: 5000,
       currency: 'ZMW',
       interval: 'monthly',
@@ -181,7 +181,7 @@ describe('Lenco Payment Integration in Components', () => {
       
       expect(screen.getByText('Basic Plan')).toBeInTheDocument();
       expect(screen.getByText('Basic subscription plan')).toBeInTheDocument();
-      expect(screen.getByText(/K50/)).toBeInTheDocument();
+      expect(screen.getByText(/ZMW 50/)).toBeInTheDocument();
     });
 
     it('shows subscribe button for non-current plans', () => {
@@ -316,7 +316,7 @@ describe('Lenco Payment Integration in Components', () => {
       await user.click(donateButton);
       
       await waitFor(async () => {
-        const amount10Button = screen.getByText('K10');
+        const amount10Button = screen.getByText('ZMW 10');
         await user.click(amount10Button);
       });
       
@@ -357,7 +357,7 @@ describe('Lenco Payment Integration in Components', () => {
         id: '1',
         name: 'Premium Plan',
         description: 'Premium features',
-        price: 'K100',
+        price: 'ZMW 100',
         lencoAmount: 10000,
         currency: 'ZMW',
         interval: 'monthly',

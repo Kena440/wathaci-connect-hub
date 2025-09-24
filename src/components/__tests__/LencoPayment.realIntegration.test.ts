@@ -267,7 +267,7 @@ testSuite('Lenco Payment Real Integration Tests', () => {
 
   describe('Business Rules Validation', () => {
     it('should enforce minimum payment amounts', () => {
-      const minimumAmount = 1; // K1 minimum
+      const minimumAmount = 1; // ZMW 1 minimum
       const testAmounts = [0.50, 0.99, 1.00, 5.00];
       
       testAmounts.forEach(amount => {
@@ -277,7 +277,7 @@ testSuite('Lenco Payment Real Integration Tests', () => {
     });
 
     it('should enforce maximum payment amounts', () => {
-      const maximumAmount = 100000; // K100,000 maximum
+      const maximumAmount = 100000; // ZMW 100,000 maximum
       const testAmounts = [50000, 100000, 100001, 200000];
       
       testAmounts.forEach(amount => {
