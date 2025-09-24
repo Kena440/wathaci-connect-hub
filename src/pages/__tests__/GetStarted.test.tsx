@@ -110,5 +110,19 @@ describe('GetStarted Validation', () => {
       expect(submitButton).toBeDisabled();
     });
   });
+
+  it('allows optional middle name to be entered', async () => {
+    render(<GetStartedWrapper />);
+
+    const middleNameInput = screen.getByLabelText(/middle name/i);
+    expect(middleNameInput).toBeInTheDocument();
+    
+    fireEvent.change(middleNameInput, { target: { value: 'Michael' } });
+    expect(middleNameInput).toHaveValue('Michael');
+    
+    // Middle name should be optional - form should be submittable without it
+    fireEvent.change(middleNameInput, { target: { value: '' } });
+    expect(middleNameInput).toHaveValue('');
+  });
 });
 
