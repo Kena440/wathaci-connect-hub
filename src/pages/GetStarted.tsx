@@ -17,6 +17,7 @@ import { validatePhoneNumber } from '@/lib/payment-config';
 const getStartedSchema = z
   .object({
     firstName: z.string().min(1, 'First name is required'),
+    middleName: z.string().optional(),
     lastName: z.string().min(1, 'Last name is required'),
     email: z
       .string()
@@ -71,6 +72,7 @@ export const GetStarted = () => {
     mode: 'onChange',
     defaultValues: {
       firstName: '',
+      middleName: '',
       lastName: '',
       email: '',
       mobileNumber: '',
@@ -89,11 +91,12 @@ export const GetStarted = () => {
     try {
       await signUp(data.email, data.password, {
         first_name: data.firstName,
+        middle_name: data.middleName || null,
         last_name: data.lastName,
         company: data.company,
         account_type: data.accountType,
         mobile_number: data.mobileNumber || null,
-        full_name: `${data.firstName} ${data.lastName}`,
+        full_name: `${data.firstName}${data.middleName ? ` ${data.middleName}` : ''} ${data.lastName}`,
         profile_completed: false,
       });
 
@@ -162,6 +165,19 @@ export const GetStarted = () => {
                 <p className="text-sm text-red-600 mt-1">{errors.lastName.message}</p>
               )}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="middleName">Middle Name (Optional)</Label>
+            <Input
+              id="middleName"
+              placeholder="Middle name"
+              {...register('middleName')}
+              className={errors.middleName ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}
+            />
+            {errors.middleName && (
+              <p className="text-sm text-red-600 mt-1">{errors.middleName.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
