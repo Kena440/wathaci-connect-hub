@@ -149,9 +149,17 @@ export const ProfileSetup = () => {
         description: "Your profile has been successfully saved.",
       });
 
-      // Navigate SME users to needs assessment, others to profile review
+      // Navigate users to appropriate needs assessment based on account type
       if (selectedAccountType === 'sme' || selectedAccountType === 'sole_proprietor') {
         navigate('/sme-assessment');
+      } else if (selectedAccountType === 'investor') {
+        navigate('/investor-assessment');
+      } else if (selectedAccountType === 'donor') {
+        navigate('/donor-assessment');
+      } else if (selectedAccountType === 'professional') {
+        navigate('/professional-assessment');
+      } else if (selectedAccountType === 'government') {
+        navigate('/government-assessment');
       } else {
         navigate('/profile-review');
       }

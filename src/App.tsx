@@ -25,6 +25,10 @@ import AboutUs from "./pages/AboutUs";
 import TestError from "./pages/TestError";
 import { SMEAssessment } from "./pages/SMEAssessment";
 import { SMEAssessmentDemo } from "./pages/SMEAssessmentDemo";
+import { InvestorAssessment } from "./pages/InvestorAssessment";
+import { DonorAssessment } from "./pages/DonorAssessment";
+import { ProfessionalAssessment } from "./pages/ProfessionalAssessment";
+import { GovernmentAssessment } from "./pages/GovernmentAssessment";
 import { PrivateRoute } from "./components/PrivateRoute";
 
 const queryClient = new QueryClient();
@@ -66,6 +70,38 @@ export const AppRoutes = () => (
       element={
         <PrivateRoute>
           <SMEAssessment />
+        </PrivateRoute>
+      }
+    />
+    <Route
+      path="/investor-assessment"
+      element={
+        <PrivateRoute>
+          <InvestorAssessment />
+        </PrivateRoute>
+      }
+    />
+    <Route
+      path="/donor-assessment"
+      element={
+        <PrivateRoute>
+          <DonorAssessment />
+        </PrivateRoute>
+      }
+    />
+    <Route
+      path="/professional-assessment"
+      element={
+        <PrivateRoute>
+          <ProfessionalAssessment />
+        </PrivateRoute>
+      }
+    />
+    <Route
+      path="/government-assessment"  
+      element={
+        <PrivateRoute>
+          <GovernmentAssessment />
         </PrivateRoute>
       }
     />
