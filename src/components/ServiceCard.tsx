@@ -41,7 +41,7 @@ export const ServiceCard = ({
       <CardContent>
         <p className="text-gray-700 mb-4">{description}</p>
         <div className="mb-4">
-          <span className="text-2xl font-bold text-green-600">K{price}</span>
+          <span className="text-2xl font-bold text-green-600">ZMW {price}</span>
           <span className="text-gray-500 ml-1">starting from</span>
         </div>
         {showDetails && (

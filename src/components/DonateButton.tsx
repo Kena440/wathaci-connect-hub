@@ -8,7 +8,7 @@ export const DonateButton = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState('');
 
-  const donationAmounts = ['K50', 'K100', 'K250', 'K500', 'K1000'];
+  const donationAmounts = ['ZMW 50', 'ZMW 100', 'ZMW 250', 'ZMW 500', 'ZMW 1000'];
 
   const handleDonationSuccess = () => {
     setIsOpen(false);

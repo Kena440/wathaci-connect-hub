@@ -40,7 +40,7 @@ const SoleProprietorDashboard = () => {
             <CardTitle className="text-sm font-medium text-gray-600">Revenue (YTD)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">K45,200</div>
+            <div className="text-2xl font-bold">ZMW 45,200</div>
             <p className="text-xs text-green-600">+12% vs last year</p>
           </CardContent>
         </Card>
@@ -89,7 +89,7 @@ const SoleProprietorDashboard = () => {
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Average Order Value</span>
-                    <span className="font-medium">K356</span>
+                    <span className="font-medium">ZMW 356</span>
                   </div>
                 </div>
               </CardContent>
