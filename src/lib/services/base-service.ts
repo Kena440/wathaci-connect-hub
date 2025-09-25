@@ -3,7 +3,7 @@
  * and utilities that other service classes can extend.
  */
 
-import { supabase, withErrorHandling, withRetry } from '@/lib/supabase-enhanced';
+import { supabase, withErrorHandling } from '@/lib/supabase-enhanced';
 import type { DatabaseResponse, PaginatedResponse, PaginationParams } from '@/@types/database';
 
 export abstract class BaseService<T = any> {
@@ -212,17 +212,14 @@ export abstract class BaseService<T = any> {
   }
 
   /**
-   * Execute a custom query with retry logic
+   * Execute a custom query (simplified - no retry logic)
    */
   async executeWithRetry<R>(
     operation: () => Promise<{ data: R | null; error: any }>,
     context: string,
     maxRetries: number = 3
   ): Promise<DatabaseResponse<R>> {
-    return withRetry(
-      () => withErrorHandling(operation, context),
-      maxRetries
-    );
+    return withErrorHandling(operation, context);
   }
 
   /**

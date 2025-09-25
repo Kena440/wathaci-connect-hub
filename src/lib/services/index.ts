@@ -32,11 +32,7 @@ export {
 // Enhanced Supabase client and utilities
 export { 
   supabase, 
-  testConnection, 
-  healthCheck, 
-  withErrorHandling, 
-  withRetry,
-  getSupabaseClient 
+  withErrorHandling
 } from '../supabase-enhanced';
 
 // Database types
