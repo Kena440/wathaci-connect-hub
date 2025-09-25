@@ -314,6 +314,35 @@ export const GetStarted = () => {
           <Button type="submit" className="w-full" disabled={!isValid || loading}>
             {loading ? 'Creating Account...' : 'Create Account'}
           </Button>
+          
+          {/* Development bypass for testing - only show in dev mode */}
+          {import.meta.env.DEV && (
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full mt-2" 
+              onClick={async () => {
+                setLoading(true);
+                setServerError('');
+                try {
+                  await signUp('dev-test@example.com', 'DevTest123!', {
+                    first_name: 'Dev',
+                    last_name: 'Test',
+                    account_type: 'sole_proprietor',
+                    full_name: 'Dev Test',
+                    profile_completed: false,
+                  });
+                  navigate('/profile-setup');
+                } catch (error: any) {
+                  setServerError(`Development Test: ${error.message}`);
+                } finally {
+                  setLoading(false);
+                }
+              }}
+            >
+              🔧 Dev Test Sign-Up (Bypass Form)
+            </Button>
+          )}
         </form>
 
         <div className="text-center text-sm text-gray-600">
