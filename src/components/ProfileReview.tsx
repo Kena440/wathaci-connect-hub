@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAppContext } from '@/contexts/AppContext';
@@ -29,9 +29,9 @@ export const ProfileReview = () => {
     }
 
     fetchProfile();
-  }, [user, navigate]);
+  }, [user, navigate, fetchProfile]);
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -52,7 +52,7 @@ export const ProfileReview = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
 
   const handleEditProfile = () => {
     navigate('/profile-setup');

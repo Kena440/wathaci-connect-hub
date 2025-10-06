@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
@@ -35,9 +35,9 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
     if (amount > 0 && fromCurrency) {
       convertCurrency();
     }
-  }, [amount, fromCurrency]);
+  }, [amount, fromCurrency, convertCurrency]);
 
-  const convertCurrency = async () => {
+  const convertCurrency = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('currency-converter', {
@@ -59,7 +59,7 @@ export const CurrencyConverter: React.FC<CurrencyConverterProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [amount, fromCurrency, onConversionResult]);
 
   const formatCurrency = (amount: number, currency: string) => {
     const currencyInfo = currencies.find(c => c.code === currency);

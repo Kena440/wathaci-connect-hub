@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,9 +28,9 @@ export const NegotiationHistory = ({ serviceId, userId }: NegotiationHistoryProp
 
   useEffect(() => {
     fetchNegotiations();
-  }, [serviceId, userId]);
+  }, [serviceId, userId, fetchNegotiations]);
 
-  const fetchNegotiations = async () => {
+  const fetchNegotiations = useCallback(async () => {
     try {
       let query = supabase
         .from('negotiation_history')
@@ -52,7 +52,7 @@ export const NegotiationHistory = ({ serviceId, userId }: NegotiationHistoryProp
     } finally {
       setLoading(false);
     }
-  };
+  }, [serviceId, userId]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {

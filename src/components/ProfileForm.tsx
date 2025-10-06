@@ -93,7 +93,7 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
       setPhoneError('');
       setPaymentPhoneError('');
     }
-  }, [formData.country]);
+  }, [formData.country, formData.phone, formData.payment_phone, formData.use_same_phone]);
 
   const handleInputChange = (field: string, value: any) => {
     if (field === 'phone') {

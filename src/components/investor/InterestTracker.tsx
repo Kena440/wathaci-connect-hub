@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,9 +30,9 @@ const InterestTracker = () => {
     if (user) {
       fetchInterests();
     }
-  }, [user]);
+  }, [user, fetchInterests]);
 
-  const fetchInterests = async () => {
+  const fetchInterests = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('investor_interests')
@@ -54,7 +54,7 @@ const InterestTracker = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

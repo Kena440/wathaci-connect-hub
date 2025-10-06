@@ -29,5 +29,12 @@ export default tseslint.config(
       // Disabling it keeps linting focused on more actionable issues.
       "@typescript-eslint/no-explicit-any": "off",
     },
+  },
+  // Override for UI components (shadcn/ui) to suppress react-refresh warnings
+  {
+    files: ["src/components/ui/*.{ts,tsx}", "src/components/theme-provider.tsx", "src/contexts/AppContext.tsx"],
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
   }
 );

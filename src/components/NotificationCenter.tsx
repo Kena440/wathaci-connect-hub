@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Bell, X, CheckCircle, Users, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -28,9 +28,9 @@ export const NotificationCenter: React.FC = () => {
       fetchNotifications();
       subscribeToNotifications();
     }
-  }, [user?.id]);
+  }, [user?.id, fetchNotifications, subscribeToNotifications]);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('notifications')
@@ -46,9 +46,9 @@ export const NotificationCenter: React.FC = () => {
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
-  };
+  }, [user?.id]);
 
-  const subscribeToNotifications = () => {
+  const subscribeToNotifications = useCallback(() => {
     const subscription = supabase
       .channel('notifications')
       .on('postgres_changes', 
@@ -66,7 +66,7 @@ export const NotificationCenter: React.FC = () => {
       .subscribe();
 
     return () => subscription.unsubscribe();
-  };
+  }, [user?.id]);
 
   const markAsRead = async (notificationId: string) => {
     try {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { ProfileForm } from '@/components/ProfileForm';
@@ -32,9 +32,9 @@ export const ProfileSetup = () => {
     }
     
     checkExistingProfile();
-  }, [user, navigate]);
+  }, [user, navigate, checkExistingProfile]);
 
-  const checkExistingProfile = async () => {
+  const checkExistingProfile = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -65,7 +65,7 @@ export const ProfileSetup = () => {
         variant: "destructive",
       });
     }
-  };
+  }, [user, toast]);
 
   const handleAccountTypeSelect = async () => {
     if (!selectedAccountType || !user) return;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,7 +42,7 @@ export const DueDiligenceUpload = ({ onComplianceChange }: { onComplianceChange?
 
   useEffect(() => {
     checkCompliance();
-  }, [documents]);
+  }, [documents, checkCompliance]);
 
   const loadDocuments = async () => {
     try {
@@ -62,7 +62,7 @@ export const DueDiligenceUpload = ({ onComplianceChange }: { onComplianceChange?
     }
   };
 
-  const checkCompliance = () => {
+  const checkCompliance = useCallback(() => {
     const requiredDocs = REQUIRED_DOCUMENTS.filter(doc => doc.required);
     const uploadedRequiredDocs = requiredDocs.filter(reqDoc => 
       documents.some(doc => 
@@ -73,7 +73,7 @@ export const DueDiligenceUpload = ({ onComplianceChange }: { onComplianceChange?
     
     const isCompliant = uploadedRequiredDocs.length === requiredDocs.length;
     onComplianceChange?.(isCompliant);
-  };
+  }, [documents, onComplianceChange]);
 
   const handleFileUpload = async () => {
     if (!selectedFile || !selectedType) return;
