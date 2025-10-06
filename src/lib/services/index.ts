@@ -23,6 +23,17 @@ export {
   transactionService 
 } from './subscription-service';
 
+// Import services for registry
+import { 
+  userService, 
+  profileService 
+} from './user-service';
+
+import { 
+  subscriptionService, 
+  transactionService 
+} from './subscription-service';
+
 // Enhanced Supabase client and utilities
 export { 
   supabase, 

@@ -1,20 +1,21 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from '@jest/globals';
+import '@testing-library/jest-dom';
 
 import { Header } from '../Header';
 import { useAppContext } from '@/contexts/AppContext';
 
-vi.mock('@/contexts/AppContext', () => ({
-  useAppContext: vi.fn(),
+jest.mock('@/contexts/AppContext', () => ({
+  useAppContext: jest.fn(),
 }));
 
-vi.mock('../NotificationCenter', () => ({
+jest.mock('../NotificationCenter', () => ({
   NotificationCenter: () => <div data-testid="notification-center" />,
 }));
 
-vi.mock('../DonateButton', () => ({
+jest.mock('../DonateButton', () => ({
   DonateButton: () => <div>Donate</div>,
 }));
 
@@ -27,34 +28,46 @@ const renderHeader = () => {
 };
 
 describe('Header', () => {
-  const mockUseAppContext = useAppContext as unknown as vi.Mock;
+  const mockUseAppContext = useAppContext as jest.MockedFunction<typeof useAppContext>;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders navigation links and sign in button when unauthenticated', () => {
     mockUseAppContext.mockReturnValue({
       user: null,
-      signOut: vi.fn(),
+      signOut: jest.fn(),
       loading: false,
+      sidebarOpen: false,
+      toggleSidebar: jest.fn(),
+      profile: null,
+      signIn: jest.fn(),
+      signUp: jest.fn(),
+      refreshUser: jest.fn(),
     });
 
     renderHeader();
 
     const navLinks = ['Home', 'Marketplace', 'Freelancer Hub', 'Resources', 'Partnership Hub'];
     navLinks.forEach((text) => {
-      expect(screen.getByText(text)).toBeInTheDocument();
+      expect(screen.getByText(text)).toBeTruthy();
     });
 
-    expect(screen.getByText('Sign In')).toBeInTheDocument();
+    expect(screen.getByText('Sign In')).toBeTruthy();
   });
 
   it('shows sign out option for authenticated users', async () => {
     mockUseAppContext.mockReturnValue({
-      user: { email: 'user@example.com', profile_completed: true },
-      signOut: vi.fn(),
+      user: { email: 'user@example.com', id: '123' } as any,
+      signOut: jest.fn(),
       loading: false,
+      sidebarOpen: false,
+      toggleSidebar: jest.fn(),
+      profile: null,
+      signIn: jest.fn(),
+      signUp: jest.fn(),
+      refreshUser: jest.fn(),
     });
 
     renderHeader();
@@ -62,14 +75,20 @@ describe('Header', () => {
     const userButton = screen.getByText('user');
     await userEvent.click(userButton);
 
-    expect(screen.getByText('Sign Out')).toBeInTheDocument();
+    expect(screen.getByText('Sign Out')).toBeTruthy();
   });
 
   it('toggles mobile menu', async () => {
     mockUseAppContext.mockReturnValue({
       user: null,
-      signOut: vi.fn(),
+      signOut: jest.fn(),
       loading: false,
+      sidebarOpen: false,
+      toggleSidebar: jest.fn(),
+      profile: null,
+      signIn: jest.fn(),
+      signUp: jest.fn(),
+      refreshUser: jest.fn(),
     });
 
     const { container } = renderHeader();

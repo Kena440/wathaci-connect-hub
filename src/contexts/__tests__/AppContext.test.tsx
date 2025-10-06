@@ -19,10 +19,18 @@ jest.mock('@/components/ui/use-toast', () => ({
   toast: jest.fn(),
 }));
 
-const mockSupabase = supabase as jest.Mocked<typeof supabase>;
+const mockSupabase = supabase as jest.Mocked<typeof supabase> & {
+  auth: {
+    getUser: jest.MockedFunction<any>;
+    signInWithPassword: jest.MockedFunction<any>;
+    signUp: jest.MockedFunction<any>;
+    signOut: jest.MockedFunction<any>;
+    onAuthStateChange: jest.MockedFunction<any>;
+  };
+};
 const mockToast = toast as jest.MockedFunction<typeof toast>;
 
-const mockProfileChain = (profile = { profile_completed: false, account_type: null }) => ({
+const mockProfileChain = (profile = { profile_completed: false, account_type: null as string | null }) => ({
   select: jest.fn().mockReturnThis(),
   eq: jest.fn().mockReturnThis(),
   single: jest.fn().mockResolvedValue({ data: profile }),
