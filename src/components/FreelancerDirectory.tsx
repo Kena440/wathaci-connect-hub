@@ -24,13 +24,14 @@ interface Freelancer {
   profile_image_url?: string;
   availability_status: string;
   years_experience: number;
+  category?: string | null;
 }
 
 export const FreelancerDirectory = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('');
-  const [priceRange, setPriceRange] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedLocation, setSelectedLocation] = useState('all-locations');
+  const [priceRange, setPriceRange] = useState('all-prices');
   const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -54,19 +55,23 @@ export const FreelancerDirectory = () => {
     }
   };
 
-  const filteredFreelancers = freelancers.filter(freelancer => {
+  const filteredFreelancers = freelancers.filter((freelancer) => {
     const matchesSearch = freelancer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          freelancer.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          freelancer.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesLocation = !selectedLocation || selectedLocation === 'all-locations' || 
+
+    const matchesCategory = selectedCategory === 'all' || !selectedCategory
+      ? true
+      : freelancer.category?.toLowerCase() === selectedCategory.toLowerCase();
+
+    const matchesLocation = !selectedLocation || selectedLocation === 'all-locations' ||
                            freelancer.location.toLowerCase().includes(selectedLocation.toLowerCase());
-    const matchesPrice = !priceRange || priceRange === 'all-prices' || 
+    const matchesPrice = !priceRange || priceRange === 'all-prices' ||
       (priceRange === 'low' && freelancer.hourly_rate < 25) ||
       (priceRange === 'medium' && freelancer.hourly_rate >= 25 && freelancer.hourly_rate < 50) ||
       (priceRange === 'high' && freelancer.hourly_rate >= 50);
 
-    return matchesSearch && matchesLocation && matchesPrice;
+    return matchesSearch && matchesCategory && matchesLocation && matchesPrice;
   });
 
   return (
@@ -215,8 +220,8 @@ export const FreelancerDirectory = () => {
       ) : filteredFreelancers.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">No freelancers found matching your criteria.</p>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => {
               setSearchTerm('');
               setSelectedCategory('all');
