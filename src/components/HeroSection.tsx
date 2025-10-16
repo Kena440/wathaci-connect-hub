@@ -27,7 +27,7 @@ const HeroSection = () => {
             className="h-full w-full object-cover brightness-105 contrast-110"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-br from-white/90 via-white/85 to-white/75 backdrop-blur-[1px]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-white/95 via-white/90 to-white/85 backdrop-blur-[1px]" />
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-6">
