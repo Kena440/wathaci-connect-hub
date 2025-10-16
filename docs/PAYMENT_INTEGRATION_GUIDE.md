@@ -66,6 +66,7 @@ VITE_SUPABASE_KEY="your-anon-key"
 VITE_LENCO_PUBLIC_KEY="pub-dea560c94d379a23e7b85a265d7bb9acbd585481e6e1393e"
 LENCO_SECRET_KEY="843a2b242591e9a58370da44e11bb2575b20780f27c8efe39a6ed24ecba0b668"
 LENCO_WEBHOOK_SECRET="bc09f682f3bbbf3d851b125b9914984c272471e16cd2a4f14f9406706f7c98cd293bf0d"
+LENCO_WEBHOOK_URL="https://your-project.functions.supabase.co/payment-webhook"
 VITE_LENCO_API_URL="https://api.lenco.co/access/v2"
 
 # Payment Configuration
@@ -123,7 +124,8 @@ VITE_APP_NAME="WATHACI CONNECT"
    ```bash
    supabase secrets set \
      LENCO_SECRET_KEY="843a2b242591e9a58370da44e11bb2575b20780f27c8efe39a6ed24ecba0b668" \
-     LENCO_WEBHOOK_SECRET="bc09f682f3bbbf3d851b125b9914984c272471e16cd2a4f14f9406706f7c98cd293bf0d"
+     LENCO_WEBHOOK_SECRET="bc09f682f3bbbf3d851b125b9914984c272471e16cd2a4f14f9406706f7c98cd293bf0d" \
+     LENCO_WEBHOOK_URL="https://<project-ref>.functions.supabase.co/payment-webhook"
    ```
 5. **Verify deployment** – note the generated URL:
    `https://<project-ref>.functions.supabase.co/lenco-webhook`
@@ -134,6 +136,7 @@ VITE_APP_NAME="WATHACI CONNECT"
 2. In the Lenco dashboard, open **Developer > Webhooks**.
 3. Add the function URL as your webhook endpoint.
 4. Use the same `LENCO_WEBHOOK_SECRET` value to validate incoming requests.
+5. Set `LENCO_WEBHOOK_URL` in your environment (backend and frontend) so readiness checks can validate the deployed endpoint.
 
 ### Environment Variables
 
@@ -344,6 +347,16 @@ const sanitizedData = paymentSecurityService.sanitizePaymentData(paymentData);
 - Set daily/monthly transaction limits
 
 ## Testing
+
+### 0. Configuration Readiness
+
+Before initiating payments, verify the environment with the readiness endpoint:
+
+```bash
+curl -s https://your-backend.example.com/api/payment/readiness | jq
+```
+
+The response should report a `ready` status with no errors. Address any warnings before processing live transactions.
 
 ### 1. Payment Test Suite
 

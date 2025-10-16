@@ -12,6 +12,7 @@ export interface PaymentConfig {
   minAmount: number;
   maxAmount: number;
   environment: 'development' | 'production';
+  webhookUrl?: string;
 }
 
 export type TransactionType = 'marketplace' | 'resource' | 'donation' | 'subscription';
@@ -90,6 +91,8 @@ const resolveRuntimeValue = (key: string): string | undefined => {
   return undefined;
 };
 
+export const getPaymentEnvValue = (key: string): string | undefined => resolveRuntimeValue(key);
+
 export const getPaymentConfig = (): PaymentConfig => {
   const environment = (resolveRuntimeValue('VITE_APP_ENV') as 'development' | 'production') || 'development';
 
@@ -112,6 +115,7 @@ export const getPaymentConfig = (): PaymentConfig => {
     minAmount: parseFloat(resolveRuntimeValue('VITE_MIN_PAYMENT_AMOUNT') || '5'),
     maxAmount: parseFloat(resolveRuntimeValue('VITE_MAX_PAYMENT_AMOUNT') || '1000000'),
     environment,
+    webhookUrl: resolveRuntimeValue('VITE_LENCO_WEBHOOK_URL') || resolveRuntimeValue('LENCO_WEBHOOK_URL') || undefined,
   };
 
   return config;
@@ -123,10 +127,21 @@ export const validatePaymentConfig = (config: PaymentConfig): boolean => {
     console.warn('Payment Warning: Lenco public key not configured - payment features will be disabled');
     return false;
   }
-  
+
   if (!config.apiUrl) {
     console.warn('Payment Warning: Lenco API URL not configured - payment features will be disabled');
     return false;
+  }
+
+  if (config.environment === 'production' && config.publicKey.startsWith('pk_test_')) {
+    console.error('Payment Error: Production environment is using a test public key (pk_test_).');
+    return false;
+  }
+
+  if (!config.webhookUrl) {
+    console.warn('Payment Warning: Lenco webhook URL not configured - webhook events will not be received');
+  } else if (!/^https:\/\//i.test(config.webhookUrl)) {
+    console.warn('Payment Warning: Lenco webhook URL must be HTTPS');
   }
 
   return true;
