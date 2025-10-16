@@ -30,6 +30,11 @@ Update the new `.env` file with production values:
 - `VITE_APP_ENV` – Set to `production` for live deployments.
 - `VITE_APP_NAME` – Application display name.
 
+When deploying to Vercel (or another hosting provider), add **both** `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` to the project
+environment variables along with any server-side keys (such as `SUPABASE_SERVICE_ROLE_KEY` if you run edge functions). Double
+check that the variables are present in every environment (Preview, Development, and Production) so the application can connect
+to Supabase without runtime errors.
+
 ## Testing
 
 Lighthouse and automated accessibility checks are available via npm scripts.
