@@ -1,7 +1,11 @@
 const express = require('express');
-const { randomUUID } = require('crypto');
 const Joi = require('joi');
 const validate = require('../middleware/validate');
+const {
+  registerUser,
+  DuplicateRegistrationError,
+  RegistrationStoreError,
+} = require('../services/registration-store');
 
 const router = express.Router();
 
@@ -25,30 +29,23 @@ const userSchema = Joi.object({
   mobileNumber: Joi.string().trim().allow('', null).optional(),
 });
 
-const registeredUsers = new Map();
+router.post('/', validate(userSchema), async (req, res) => {
+  try {
+    const user = await registerUser(req.body);
+    return res.status(201).json({ user });
+  } catch (error) {
+    if (error instanceof DuplicateRegistrationError) {
+      return res.status(409).json({ error: 'User already registered' });
+    }
 
-router.post('/', validate(userSchema), (req, res) => {
-  const { firstName, lastName, email, accountType, company, mobileNumber } = req.body;
-  const normalizedEmail = email.toLowerCase();
+    if (error instanceof RegistrationStoreError) {
+      console.error('[routes/users] Registration store error:', error);
+      return res.status(500).json({ error: 'Unable to save registration. Please try again later.' });
+    }
 
-  if (registeredUsers.has(normalizedEmail)) {
-    return res.status(409).json({ error: 'User already registered' });
+    console.error('[routes/users] Unexpected error:', error);
+    return res.status(500).json({ error: 'Failed to register user' });
   }
-
-  const user = {
-    id: randomUUID(),
-    firstName,
-    lastName,
-    email: normalizedEmail,
-    accountType,
-    company: company ? company : null,
-    mobileNumber: mobileNumber ? mobileNumber : null,
-    registeredAt: new Date().toISOString(),
-  };
-
-  registeredUsers.set(normalizedEmail, user);
-
-  return res.status(201).json({ user });
 });
 
 module.exports = router;
