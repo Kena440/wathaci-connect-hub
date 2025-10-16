@@ -149,6 +149,7 @@ if command -v supabase &> /dev/null; then
     echo "3. supabase functions deploy lenco-payment"
     echo "4. supabase functions deploy payment-verify"
     echo "5. supabase functions deploy payment-webhook"
+    echo "6. supabase functions deploy freelancer-matcher"
     
 else
     echo -e "${YELLOW}⚠️  Supabase CLI not installed${NC}"
