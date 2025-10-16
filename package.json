@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "test": "node --test",
+    "test": "NODE_ENV=test ALLOW_IN_MEMORY_REGISTRATION=true node --test",
     "test:jest": "jest",
     "test:jest:watch": "jest --watch",
     "test:accessibility": "jest --testPathPatterns=\"accessibility\"",
