@@ -16,6 +16,7 @@ export interface User {
   account_type?: AccountType;
   created_at?: string;
   updated_at?: string;
+  user_metadata?: Record<string, any>;
 }
 
 export type AccountType = 
