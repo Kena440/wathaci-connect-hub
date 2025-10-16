@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, TrendingUp, Users, Clock } from 'lucide-react';
 import { supabase } from '@/lib/supabase-enhanced';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface Recommendation {
   id: string;
@@ -31,6 +32,7 @@ const AIRecommendations = ({
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'personalized' | 'trending' | 'similar'>('personalized');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fetchRecommendations = useCallback(async () => {
     setIsLoading(true);
@@ -48,34 +50,14 @@ const AIRecommendations = ({
 
       if (data?.recommendations) {
         setRecommendations(data.recommendations);
+        setErrorMessage(null);
+      } else {
+        setRecommendations([]);
       }
     } catch (error) {
       console.error('Failed to fetch recommendations:', error);
-      // Fallback mock data
-      setRecommendations([
-        {
-          id: '1',
-          type: 'service',
-          title: 'Business Registration Service',
-          description: 'Complete PACRA registration with legal support',
-          price: 1500,
-          rating: 4.8,
-          image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop',
-          reason: 'Based on your business setup needs',
-          confidence: 0.92
-        },
-        {
-          id: '2',
-          type: 'professional',
-          title: 'Tax Consultant - Sarah Mwanza',
-          description: 'Expert in SME tax compliance and planning',
-          price: 250,
-          rating: 4.9,
-          image: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop',
-          reason: 'Highly rated in your area',
-          confidence: 0.88
-        }
-      ]);
+      setRecommendations([]);
+      setErrorMessage('Recommendations are currently unavailable. Please try again in a moment.');
     } finally {
       setIsLoading(false);
     }
@@ -117,6 +99,13 @@ const AIRecommendations = ({
         </div>
       </div>
 
+      {errorMessage && (
+        <Alert variant="destructive">
+          <AlertTitle>Unable to load recommendations</AlertTitle>
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
+
       {isLoading ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map(i => (
@@ -130,7 +119,7 @@ const AIRecommendations = ({
             </Card>
           ))}
         </div>
-      ) : (
+      ) : recommendations.length > 0 ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {recommendations.map(rec => (
             <Card key={rec.id} className="hover:shadow-lg transition-shadow">
@@ -173,6 +162,12 @@ const AIRecommendations = ({
             </Card>
           ))}
         </div>
+      ) : (
+        <Card>
+          <CardContent className="py-10 text-center text-gray-500">
+            No recommendations are available yet. Try refining your search or check back soon.
+          </CardContent>
+        </Card>
       )}
     </div>
   );

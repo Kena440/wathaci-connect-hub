@@ -3,7 +3,8 @@
  * Comprehensive analytics for payments and subscriptions
  */
 
-import { getPlatformFeePercentage, TransactionType } from '../payment-config';
+import { getPlatformFeePercentage } from '../payment-config';
+import { supabase } from '../supabase-enhanced';
 
 export interface PaymentAnalytics {
   totalRevenue: number;
@@ -44,6 +45,8 @@ export interface RevenueBreakdown {
 }
 
 export class PaymentAnalyticsService {
+  private readonly HIGH_VALUE_USER_THRESHOLD = 5000; // ZMW 5,000 in completed payments
+
   /**
    * Get comprehensive payment analytics for a date range
    */
@@ -53,20 +56,17 @@ export class PaymentAnalyticsService {
     userId?: string
   ): Promise<PaymentAnalytics> {
     try {
-      // This would typically involve complex database queries
-      // For now, we'll simulate with realistic data
-      
       const payments = await this.getPaymentsInRange(startDate, endDate, userId);
       const completedPayments = payments.filter(p => p.status === 'completed');
-      
+
       const totalRevenue = completedPayments.reduce((sum, p) => sum + p.amount, 0);
       const transactionCount = completedPayments.length;
       const averageTransactionValue = transactionCount > 0 ? totalRevenue / transactionCount : 0;
       const successRate = payments.length > 0 ? (completedPayments.length / payments.length) * 100 : 0;
-      
+
       const paymentMethodStats = this.calculatePaymentMethodStats(completedPayments);
-      const monthlyTrends = await this.calculateMonthlyTrends(startDate, endDate, userId);
-      const userSegmentation = await this.calculateUserSegmentation(startDate, endDate);
+      const monthlyTrends = this.calculateMonthlyTrends(payments);
+      const userSegmentation = await this.calculateUserSegmentation(payments, startDate);
 
       return {
         totalRevenue,
@@ -116,13 +116,16 @@ export class PaymentAnalyticsService {
       if (filters?.paymentMethod) {
         filteredPayments = filteredPayments.filter(p => p.payment_method === filters.paymentMethod);
       }
-      
+
       if (filters?.startDate) {
-        filteredPayments = filteredPayments.filter(p => p.created_at >= filters.startDate!);
+        const start = new Date(filters.startDate);
+        filteredPayments = filteredPayments.filter(p => new Date(p.created_at) >= start);
       }
-      
+
       if (filters?.endDate) {
-        filteredPayments = filteredPayments.filter(p => p.created_at <= filters.endDate!);
+        const end = new Date(filters.endDate);
+        end.setUTCHours(23, 59, 59, 999);
+        filteredPayments = filteredPayments.filter(p => new Date(p.created_at) <= end);
       }
 
       const total = filteredPayments.length;
@@ -328,57 +331,55 @@ export class PaymentAnalyticsService {
     endDate: string,
     userId?: string
   ): Promise<PaymentHistoryItem[]> {
-    // Simulate database query
-    const mockPayments: PaymentHistoryItem[] = [
-      {
-        id: '1',
-        reference: 'WC_1234567890_ABC123',
-        amount: 100,
-        currency: 'ZMK',
-        status: 'completed',
-        payment_method: 'mobile_money',
-        provider: 'mtn',
-        description: 'Professional Monthly Subscription',
-        created_at: '2024-01-15T10:30:00Z',
-        paid_at: '2024-01-15T10:31:00Z',
-        user_id: userId || 'user123'
-      },
-      {
-        id: '2',
-        reference: 'WC_1234567891_DEF456',
-        amount: 250,
-        currency: 'ZMK',
-        status: 'completed',
-        payment_method: 'card',
-        description: 'Service Payment - Web Development',
-        created_at: '2024-01-14T14:20:00Z',
-        paid_at: '2024-01-14T14:21:00Z',
-        user_id: userId || 'user456'
-      },
-      {
-        id: '3',
-        reference: 'WC_1234567892_GHI789',
-        amount: 50,
-        currency: 'ZMK',
-        status: 'failed',
-        payment_method: 'mobile_money',
-        provider: 'airtel',
-        description: 'Basic Monthly Subscription',
-        created_at: '2024-01-13T09:15:00Z',
-        user_id: userId || 'user789'
-      }
-    ];
+    const { start, end } = this.getDateRangeBounds(startDate, endDate);
 
-    return mockPayments.filter(p => {
-      const paymentDate = p.created_at.split('T')[0];
-      return paymentDate >= startDate && paymentDate <= endDate && 
-             (!userId || p.user_id === userId);
-    });
+    let query = supabase
+      .from('payments')
+      .select(
+        'id, reference, amount, currency, status, payment_method, provider, description, created_at, paid_at, user_id, metadata'
+      )
+      .gte('created_at', start)
+      .lte('created_at', end)
+      .order('created_at', { ascending: true });
+
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new Error(error.message || 'Failed to fetch payments');
+    }
+
+    return (data || []).map((payment) => ({
+      ...payment,
+      amount: typeof payment.amount === 'number' ? payment.amount : Number(payment.amount) || 0,
+      metadata: payment.metadata ?? undefined,
+    })) as PaymentHistoryItem[];
   }
 
   private async getUserPayments(userId: string): Promise<PaymentHistoryItem[]> {
-    // Simulate user-specific payment history
-    return this.getPaymentsInRange('2024-01-01', '2024-12-31', userId);
+    const today = new Date();
+    const endDate = today.toISOString().split('T')[0];
+    return this.getPaymentsInRange('2000-01-01', endDate, userId);
+  }
+
+  private getDateRangeBounds(startDate: string, endDate: string): { start: string; end: string } {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      throw new Error('Invalid date range provided');
+    }
+
+    start.setUTCHours(0, 0, 0, 0);
+    end.setUTCHours(23, 59, 59, 999);
+
+    return {
+      start: start.toISOString(),
+      end: end.toISOString()
+    };
   }
 
   private calculatePaymentMethodStats(payments: PaymentHistoryItem[]): Array<{ method: string; count: number; percentage: number }> {
@@ -410,23 +411,90 @@ export class PaymentAnalyticsService {
       .sort((a, b) => b.count - a.count);
   }
 
-  private async calculateMonthlyTrends(startDate: string, endDate: string, userId?: string): Promise<Array<{ month: string; revenue: number; transactions: number }>> {
-    // Simulate monthly trend calculation
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    return months.map(month => ({
-      month,
-      revenue: Math.random() * 10000,
-      transactions: Math.floor(Math.random() * 100)
-    }));
+  private calculateMonthlyTrends(payments: PaymentHistoryItem[]): Array<{ month: string; revenue: number; transactions: number }> {
+    if (payments.length === 0) {
+      return [];
+    }
+
+    const monthlySummary = new Map<string, { revenue: number; transactions: number; order: number }>();
+
+    payments.forEach(payment => {
+      const paymentDate = new Date(payment.created_at);
+      if (Number.isNaN(paymentDate.getTime())) {
+        return;
+      }
+
+      const monthKey = `${paymentDate.getUTCFullYear()}-${String(paymentDate.getUTCMonth() + 1).padStart(2, '0')}`;
+      const existing = monthlySummary.get(monthKey) || { revenue: 0, transactions: 0, order: paymentDate.getTime() };
+
+      if (payment.status === 'completed') {
+        existing.revenue += payment.amount;
+      }
+
+      existing.transactions += 1;
+      existing.order = Math.min(existing.order, paymentDate.getTime());
+      monthlySummary.set(monthKey, existing);
+    });
+
+    return Array.from(monthlySummary.entries())
+      .sort((a, b) => a[1].order - b[1].order)
+      .map(([monthKey, summary]) => ({
+        month: this.formatMonthLabel(monthKey),
+        revenue: Number(summary.revenue.toFixed(2)),
+        transactions: summary.transactions
+      }));
   }
 
-  private async calculateUserSegmentation(startDate: string, endDate: string): Promise<{ newUsers: number; returningUsers: number; highValueUsers: number }> {
-    // Simulate user segmentation
-    return {
-      newUsers: Math.floor(Math.random() * 50),
-      returningUsers: Math.floor(Math.random() * 200),
-      highValueUsers: Math.floor(Math.random() * 20)
-    };
+  private async calculateUserSegmentation(
+    payments: PaymentHistoryItem[],
+    startDate: string
+  ): Promise<{ newUsers: number; returningUsers: number; highValueUsers: number }> {
+    if (payments.length === 0) {
+      return { newUsers: 0, returningUsers: 0, highValueUsers: 0 };
+    }
+
+    const uniqueUserIds = Array.from(new Set(payments.map(payment => payment.user_id).filter(Boolean)));
+
+    if (uniqueUserIds.length === 0) {
+      return { newUsers: 0, returningUsers: 0, highValueUsers: 0 };
+    }
+
+    const { start } = this.getDateRangeBounds(startDate, startDate);
+
+    const { data: priorPayments, error } = await supabase
+      .from('payments')
+      .select('user_id')
+      .in('user_id', uniqueUserIds)
+      .lt('created_at', start);
+
+    if (error) {
+      throw new Error(error.message || 'Failed to load historical payment data');
+    }
+
+    const returningUserIds = new Set((priorPayments || []).map(payment => payment.user_id));
+
+    const newUsers = uniqueUserIds.filter(id => !returningUserIds.has(id)).length;
+    const returningUsers = uniqueUserIds.length - newUsers;
+
+    const completedTotals = payments
+      .filter(payment => payment.status === 'completed')
+      .reduce((totals, payment) => {
+        const current = totals.get(payment.user_id) || 0;
+        totals.set(payment.user_id, current + payment.amount);
+        return totals;
+      }, new Map<string, number>());
+
+    const highValueUsers = Array.from(completedTotals.values())
+      .filter(total => total >= this.HIGH_VALUE_USER_THRESHOLD)
+      .length;
+
+    return { newUsers, returningUsers, highValueUsers };
+  }
+
+  private formatMonthLabel(monthKey: string): string {
+    const [year, month] = monthKey.split('-');
+    const parsedDate = new Date(Date.UTC(Number(year), Number(month) - 1, 1));
+    return parsedDate.toLocaleString('en-US', { month: 'short', year: 'numeric' });
   }
 }
 
