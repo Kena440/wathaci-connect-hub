@@ -18,6 +18,21 @@ class RegistrationStoreError extends Error {
 }
 
 const fallbackRegistrations = new Map();
+const allowInMemoryRegistrations = ['true', '1', 'yes'].includes(
+  (process.env.ALLOW_IN_MEMORY_REGISTRATIONS || '').toLowerCase()
+);
+
+let hasLoggedFallbackWarning = false;
+
+const warnFallbackUsage = () => {
+  if (hasLoggedFallbackWarning || allowInMemoryRegistrations) {
+    return;
+  }
+  hasLoggedFallbackWarning = true;
+  console.warn(
+    '[registration-store] In-memory registration fallback is disabled. Configure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to persist registrations.'
+  );
+};
 
 const sanitizeString = (value) => {
   if (value === undefined || value === null) return null;
@@ -98,7 +113,16 @@ const registerUser = async (payload) => {
     throw new RegistrationStoreError('Registration email is required after sanitization');
   }
 
-  if (isSupabaseConfigured()) {
+  const supabaseAvailable = isSupabaseConfigured();
+
+  if (!supabaseAvailable && !allowInMemoryRegistrations) {
+    warnFallbackUsage();
+    throw new RegistrationStoreError(
+      'Supabase is not configured. Configure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY before accepting registrations.'
+    );
+  }
+
+  if (supabaseAvailable) {
     try {
       return await storeInSupabase(record);
     } catch (error) {
@@ -106,8 +130,25 @@ const registerUser = async (payload) => {
         throw error;
       }
 
-      console.error('[registration-store] Supabase insert failed, falling back to in-memory storage', error);
+      console.error('[registration-store] Supabase insert failed', error);
+      if (!allowInMemoryRegistrations) {
+        throw error instanceof RegistrationStoreError
+          ? error
+          : new RegistrationStoreError('Failed to persist registration to Supabase', { cause: error });
+      }
     }
+  }
+
+  if (!allowInMemoryRegistrations) {
+    warnFallbackUsage();
+    throw new RegistrationStoreError('Registration storage is unavailable. Please try again later.');
+  }
+
+  if (!hasLoggedFallbackWarning) {
+    console.warn(
+      '[registration-store] Using in-memory registration fallback. Configure Supabase credentials to persist production data.'
+    );
+    hasLoggedFallbackWarning = true;
   }
 
   return storeInMemory(record);

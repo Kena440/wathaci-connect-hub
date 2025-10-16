@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { CountrySelect } from '@/components/CountrySelect';
@@ -320,12 +321,21 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
                 {formData.payment_method === 'phone' && (
                   <div>
                     <Label>Payment Phone Number</Label>
-                    <Input 
+                    <Input
                       value={formData.payment_phone}
                       onChange={(e) => handleInputChange('payment_phone', e.target.value)}
                       placeholder="Country code will be auto-filled"
                     />
                   </div>
+                )}
+
+                {formData.payment_method === 'card' && (
+                  <Alert>
+                    <AlertDescription>
+                      Card payments are processed securely by Lenco. We will record that you prefer card billing, but card numbers
+                      are collected on the Lenco checkout and never stored in this form.
+                    </AlertDescription>
+                  </Alert>
                 )}
               </div>
             )}

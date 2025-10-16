@@ -100,45 +100,110 @@ export const ProfileSetup = () => {
     setSelectedAccountType('');
   };
 
-  const handleProfileSubmit = async (profileData: any) => {
-    if (!user) return;
-    
-    setLoading(true);
-    
-    try {
-      let paymentData = {};
-      if (profileData.use_same_phone) {
-        paymentData = {
-          payment_phone: profileData.phone,
-          payment_method: 'phone'
-        };
+  const sanitizeProfileFields = (data: any) => {
+    const sanitized = { ...data };
+    delete sanitized.card_number;
+    delete sanitized.card_expiry;
+    delete sanitized.card_token;
+    delete sanitized.card_details;
+    return sanitized;
+  };
+
+  const buildCardDetails = (data: any) => {
+    const rawNumber = typeof data.card_number === 'string' ? data.card_number.replace(/\D/g, '') : '';
+    const last4 = rawNumber.length >= 4 ? rawNumber.slice(-4) : undefined;
+    const rawExpiry = typeof data.card_expiry === 'string' ? data.card_expiry.trim() : '';
+
+    const cardDetails: Record<string, any> = {
+      provider: 'lenco',
+      status: 'external_gateway',
+      setup_required: true,
+    };
+
+    if (last4) {
+      cardDetails.last4 = last4;
+    }
+
+    if (rawExpiry) {
+      const [month, year] = rawExpiry.split('/').map(part => part.trim());
+      if (month && year) {
+        cardDetails.exp_month = month;
+        cardDetails.exp_year = year.length === 2 ? `20${year}` : year;
       } else {
-        if (profileData.payment_method === 'card') {
-          paymentData = {
-            payment_method: 'card',
-            card_details: {
-              number: profileData.card_number,
-              expiry: profileData.card_expiry
-            }
-          };
-        } else {
-          paymentData = {
-            payment_method: 'phone',
-            payment_phone: profileData.payment_phone
-          };
-        }
+        cardDetails.expiry = rawExpiry;
+      }
+    }
+
+    return cardDetails;
+  };
+
+  const buildPaymentMetadata = (data: any) => {
+    if (data.use_same_phone) {
+      return {
+        payment_method: 'phone' as const,
+        payment_phone: data.phone || null,
+        card_details: null,
+      };
+    }
+
+    if (data.payment_method === 'card') {
+      return {
+        payment_method: 'card' as const,
+        payment_phone: null,
+        card_details: buildCardDetails(data),
+      };
+    }
+
+    return {
+      payment_method: 'phone' as const,
+      payment_phone: data.payment_phone || null,
+      card_details: null,
+    };
+  };
+
+  const cleanPayload = (payload: Record<string, any>): Record<string, any> => {
+    return Object.entries(payload).reduce((acc, [key, value]) => {
+      if (value === undefined) {
+        return acc;
       }
 
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          email: user.email,
-          ...profileData,
-          ...paymentData,
-          profile_completed: true,
-          updated_at: new Date().toISOString()
-        });
+      if (Array.isArray(value)) {
+        acc[key] = value.map(item => (typeof item === 'object' && item !== null ? cleanPayload(item) : item));
+        return acc;
+      }
+
+      if (value && typeof value === 'object' && !(value instanceof Date)) {
+        const cleanedObject = cleanPayload(value);
+        if (Object.keys(cleanedObject).length > 0) {
+          acc[key] = cleanedObject;
+        }
+        return acc;
+      }
+
+      acc[key] = value;
+      return acc;
+    }, {} as Record<string, any>);
+  };
+
+  const handleProfileSubmit = async (profileData: any) => {
+    if (!user) return;
+
+    setLoading(true);
+
+    try {
+      const sanitizedProfile = sanitizeProfileFields(profileData);
+      const paymentData = buildPaymentMetadata(profileData);
+
+      const payload = cleanPayload({
+        id: user.id,
+        email: user.email,
+        ...sanitizedProfile,
+        ...paymentData,
+        profile_completed: true,
+        updated_at: new Date().toISOString(),
+      });
+
+      const { error } = await supabase.from('profiles').upsert(payload);
 
       if (error) throw error;
 

@@ -1,4 +1,5 @@
 const express = require('express');
+const { logPaymentReadiness } = require('./lib/payment-readiness');
 
 let helmet;
 try {
@@ -15,6 +16,8 @@ try {
 }
 
 const app = express();
+
+logPaymentReadiness();
 
 app.use(express.json());
 
@@ -56,8 +59,10 @@ app.use((req, res, next) => {
 
 const userRoutes = require('./routes/users');
 const logRoutes = require('./routes/logs');
+const paymentRoutes = require('./routes/payment');
 app.use('/users', userRoutes);
 app.use('/api/logs', logRoutes);
+app.use('/api/payment', paymentRoutes);
 
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
