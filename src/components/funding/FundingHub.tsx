@@ -124,7 +124,7 @@ export const FundingHub = () => {
             />
           ))}
         </div>
-        )}
-      </div>
-    );
-  };
+      )}
+    </div>
+  );
+};

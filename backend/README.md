@@ -13,6 +13,13 @@ Run the backend tests with:
 npm --prefix backend test
 ```
 
+## API Endpoints
+
+- `POST /users` – Validates and echoes user payloads using Joi.
+- `POST /api/logs` – Accepts client-side error and activity logs, sanitizes payloads, stores a rolling in-memory history, and
+  prints them to the server console for monitoring.
+- `GET /api/logs` – Returns the most recent log entries for operational diagnostics.
+
 
 ## Supabase Edge Functions
 

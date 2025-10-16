@@ -27,7 +27,9 @@ const limiter = rateLimit({
 app.use(limiter); // Basic rate limiting
 
 const userRoutes = require('./routes/users');
+const logRoutes = require('./routes/logs');
 app.use('/users', userRoutes);
+app.use('/api/logs', logRoutes);
 
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
