@@ -69,19 +69,29 @@ export const ProfileSetup = () => {
 
   const handleAccountTypeSelect = async () => {
     if (!selectedAccountType || !user) return;
-    
+
     setLoading(true);
     try {
-      const { error } = await supabase
+      const payload: Record<string, any> = {
+        id: user.id,
+        email: user.email,
+        account_type: selectedAccountType,
+      };
+
+      if (!existingProfile) {
+        payload.created_at = new Date().toISOString();
+      }
+
+      const { data, error } = await supabase
         .from('profiles')
-        .upsert({ 
-          id: user.id,
-          email: user.email,
-          account_type: selectedAccountType,
-          created_at: new Date().toISOString()
-        });
+        .upsert(payload, { onConflict: 'id' })
+        .select()
+        .single();
 
       if (error) throw error;
+      if (data) {
+        setExistingProfile(data);
+      }
       await refreshUser();
       setShowProfileForm(true);
     } catch (error: any) {

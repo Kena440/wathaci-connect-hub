@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +14,34 @@ import { ImageUpload } from '@/components/ImageUpload';
 import { ArrowLeft } from 'lucide-react';
 import { sectors, countries } from '../data/countries';
 
+const normalizeInitialData = (initialData?: Record<string, any>) => {
+  if (!initialData) {
+    return {};
+  }
+
+  const { card_details, ...rest } = initialData;
+
+  return {
+    ...rest,
+    card_number: card_details?.number ? card_details.number.replace(/\D/g, '') : initialData.card_number || '',
+    card_expiry: card_details?.expiry || initialData.card_expiry || '',
+  };
+};
+
+const formatCardNumberForDisplay = (value: string) =>
+  value.replace(/\D/g, '').slice(0, 16).replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+
+const sanitizeCardNumber = (value: string) => value.replace(/\D/g, '').slice(0, 16);
+
+const formatExpiryInput = (value: string) => {
+  const digitsOnly = value.replace(/\D/g, '').slice(0, 4);
+  if (digitsOnly.length <= 2) {
+    return digitsOnly;
+  }
+
+  return `${digitsOnly.slice(0, 2)}/${digitsOnly.slice(2)}`;
+};
+
 interface ProfileFormProps {
   accountType: string;
   onSubmit: (data: any) => void;
@@ -23,6 +51,7 @@ interface ProfileFormProps {
 }
 
 export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initialData }: ProfileFormProps) => {
+  const normalizedInitialData = useMemo(() => normalizeInitialData(initialData), [initialData]);
   const [formData, setFormData] = useState<Record<string, any>>({
     payment_method: 'phone',
     use_same_phone: true,
@@ -32,8 +61,18 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
     payment_phone: '',
     profile_image_url: null,
     linkedin_url: '',
-    ...initialData
+    card_number: '',
+    card_expiry: '',
+    ...normalizedInitialData
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      ...normalizedInitialData,
+    }));
+  }, [normalizedInitialData]);
 
   // Auto-populate country code when country changes
   useEffect(() => {
@@ -82,6 +121,79 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
 
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev: any) => ({ ...prev, [field]: value }));
+    setErrors((prev) => {
+      if (!prev[field]) {
+        return prev;
+      }
+
+      const { [field]: _removed, ...rest } = prev;
+      return rest;
+    });
+  };
+
+  const handleCardNumberChange = (value: string) => {
+    const sanitized = sanitizeCardNumber(value);
+    handleInputChange('card_number', sanitized);
+  };
+
+  const handleCardExpiryChange = (value: string) => {
+    handleInputChange('card_expiry', formatExpiryInput(value));
+  };
+
+  const validateForm = () => {
+    const nextErrors: Record<string, string> = {};
+
+    if (!formData.use_same_phone) {
+      if (formData.payment_method === 'phone') {
+        if (!formData.payment_phone || !formData.payment_phone.trim()) {
+          nextErrors.payment_phone = 'Enter the mobile money number used for payments.';
+        }
+      } else if (formData.payment_method === 'card') {
+        if (!formData.card_number || formData.card_number.length !== 16) {
+          nextErrors.card_number = 'Enter a valid 16-digit card number.';
+        }
+
+        if (!formData.card_expiry || !/^(0[1-9]|1[0-2])\/\d{2}$/.test(formData.card_expiry)) {
+          nextErrors.card_expiry = 'Enter a valid expiry in MM/YY format.';
+        }
+      }
+    }
+
+    return nextErrors;
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const validationErrors = validateForm();
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    setErrors({});
+
+    const submissionData = {
+      ...formData,
+      card_number:
+        !formData.use_same_phone && formData.payment_method === 'card'
+          ? formData.card_number
+          : undefined,
+      card_expiry:
+        !formData.use_same_phone && formData.payment_method === 'card'
+          ? formData.card_expiry
+          : undefined,
+    };
+
+    if (submissionData.card_number === undefined) {
+      delete submissionData.card_number;
+    }
+
+    if (submissionData.card_expiry === undefined) {
+      delete submissionData.card_expiry;
+    }
+
+    onSubmit(submissionData);
   };
 
   const handleAddressChange = (address: string, coordinates?: { lat: number; lng: number }) => {
@@ -229,7 +341,7 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
         </div>
       </CardHeader>
       <CardContent>
-        <form onSubmit={(e) => { e.preventDefault(); onSubmit(formData); }} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Location Fields */}
           <CountrySelect
             onCountryChange={(country) => handleInputChange('country', country)}
@@ -247,9 +359,9 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Phone Number</Label>
-              <Input 
+              <Input
                 value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)} 
+                onChange={(e) => handleInputChange('phone', e.target.value)}
                 placeholder="Country code will be auto-filled"
               />
             </div>
@@ -293,19 +405,46 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
             <h3 className="text-lg font-semibold mb-4">Payment Information</h3>
             
             <div className="flex items-center space-x-2 mb-4">
-              <Checkbox 
+              <Checkbox
                 id="same-phone"
                 checked={formData.use_same_phone}
-                onCheckedChange={(checked) => handleInputChange('use_same_phone', checked)}
+                onCheckedChange={(checked) => {
+                  const useSame = checked === true;
+                  setFormData((prev) => ({
+                    ...prev,
+                    use_same_phone: useSame,
+                    payment_method: useSame ? 'phone' : prev.payment_method,
+                    ...(useSame
+                      ? { payment_phone: prev.phone, card_number: '', card_expiry: '' }
+                      : {}),
+                  }));
+                  if (useSame) {
+                    setErrors((prev) => {
+                      const { payment_phone, card_number, card_expiry, ...rest } = prev;
+                      return rest;
+                    });
+                  }
+                }}
               />
               <Label htmlFor="same-phone">Use the same phone number for subscription payments</Label>
             </div>
 
             {!formData.use_same_phone && (
               <div className="space-y-4">
-                <RadioGroup 
-                  value={formData.payment_method} 
-                  onValueChange={(value) => handleInputChange('payment_method', value)}
+                <RadioGroup
+                  value={formData.payment_method}
+                  onValueChange={(value) => {
+                    handleInputChange('payment_method', value);
+                    setErrors((prev) => {
+                      if (value === 'card') {
+                        const { payment_phone, ...rest } = prev;
+                        return rest;
+                      }
+
+                      const { card_number, card_expiry, ...rest } = prev;
+                      return rest;
+                    });
+                  }}
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="phone" id="phone" />
@@ -320,11 +459,52 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
                 {formData.payment_method === 'phone' && (
                   <div>
                     <Label>Payment Phone Number</Label>
-                    <Input 
+                    <Input
                       value={formData.payment_phone}
                       onChange={(e) => handleInputChange('payment_phone', e.target.value)}
                       placeholder="Country code will be auto-filled"
                     />
+                    {errors.payment_phone && (
+                      <p className="text-sm text-destructive mt-1">{errors.payment_phone}</p>
+                    )}
+                  </div>
+                )}
+
+                {formData.payment_method === 'card' && (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="card-number">Card Number</Label>
+                      <Input
+                        id="card-number"
+                        inputMode="numeric"
+                        autoComplete="cc-number"
+                        value={formatCardNumberForDisplay(formData.card_number || '')}
+                        onChange={(e) => handleCardNumberChange(e.target.value)}
+                        placeholder="1234 5678 9012 3456"
+                      />
+                      {errors.card_number && (
+                        <p className="text-sm text-destructive mt-1">{errors.card_number}</p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="card-expiry">Expiry (MM/YY)</Label>
+                        <Input
+                          id="card-expiry"
+                          inputMode="numeric"
+                          autoComplete="cc-exp"
+                          value={formData.card_expiry || ''}
+                          onChange={(e) => handleCardExpiryChange(e.target.value)}
+                          placeholder="MM/YY"
+                        />
+                        {errors.card_expiry && (
+                          <p className="text-sm text-destructive mt-1">{errors.card_expiry}</p>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Payments are securely processed. Card details are required to activate your subscription.
+                    </p>
                   </div>
                 )}
               </div>
