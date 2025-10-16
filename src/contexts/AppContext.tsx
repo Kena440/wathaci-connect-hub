@@ -86,7 +86,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const signIn = async (email: string, password: string) => {
     const { data: user, error } = await userService.signIn(email, password);
     
-    if (error) throw error;
+    if (error) {
+      // Provide user-friendly error messages
+      let errorMessage = error.message || 'Failed to sign in';
+      
+      // Check for common error patterns and provide helpful messages
+      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
+      } else if (errorMessage.includes('Invalid login credentials')) {
+        errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+      } else if (errorMessage.includes('Email not confirmed')) {
+        errorMessage = 'Please verify your email address before signing in. Check your inbox for the verification link.';
+      }
+      
+      throw new Error(errorMessage);
+    }
     
     toast({
       title: "Welcome back!",
@@ -100,7 +114,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const signUp = async (email: string, password: string, userData?: any) => {
     const { data: user, error } = await userService.signUp(email, password);
     
-    if (error) throw error;
+    if (error) {
+      // Provide user-friendly error messages
+      let errorMessage = error.message || 'Failed to create account';
+      
+      // Check for common error patterns and provide helpful messages
+      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
+      } else if (errorMessage.includes('already exists') || errorMessage.includes('already registered')) {
+        errorMessage = 'An account with this email already exists. Please sign in instead or use a different email.';
+      } else if (errorMessage.includes('password')) {
+        errorMessage = 'Password does not meet requirements. Please use a stronger password.';
+      }
+      
+      throw new Error(errorMessage);
+    }
     
     if (user && userData) {
       const { error: profileError } = await profileService.createProfile(user.id, {
@@ -108,7 +136,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ...userData
       });
       
-      if (profileError) throw profileError;
+      if (profileError) {
+        let profileErrorMessage = 'Failed to create user profile';
+        
+        if (profileError.message?.includes('network') || profileError.message?.includes('fetch')) {
+          profileErrorMessage = 'Account created but profile setup failed due to network issues. Please try signing in.';
+        }
+        
+        throw new Error(profileErrorMessage);
+      }
     }
     
     toast({

@@ -99,7 +99,12 @@ export const GetStarted = () => {
 
       navigate('/profile-setup');
     } catch (error: any) {
-      setServerError(error.message);
+      // Display user-friendly error message
+      const errorMessage = error.message || 'Failed to create account. Please try again.';
+      setServerError(errorMessage);
+      
+      // Log the full error for debugging
+      console.error('Sign up error:', error);
     } finally {
       setLoading(false);
     }

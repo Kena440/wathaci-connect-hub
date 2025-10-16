@@ -49,7 +49,12 @@ const SignIn = () => {
       await signIn(data.email, data.password);
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in');
+      // Display user-friendly error message
+      const errorMessage = err.message || 'Failed to sign in. Please try again.';
+      setError(errorMessage);
+      
+      // Log the full error for debugging
+      console.error('Sign in error:', err);
     } finally {
       setLoading(false);
     }
