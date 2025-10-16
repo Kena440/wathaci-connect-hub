@@ -22,7 +22,7 @@ const Index: React.FC = () => {
                 "url('/images/ChatGPT%20Image%20Sep%2014%2C%202025%2C%2011_09_30%20PM.png')",
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-white/70 to-green-50/60" />
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-white/10 to-green-50/20" />
         </div>
         <div className="relative z-10">
           <HeroSection />
