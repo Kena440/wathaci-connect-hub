@@ -40,7 +40,12 @@ router.post('/', validate(userSchema), async (req, res) => {
 
     if (error instanceof RegistrationStoreError) {
       console.error('[routes/users] Registration store error:', error);
-      return res.status(500).json({ error: 'Unable to save registration. Please try again later.' });
+      const status = error.status ?? 500;
+      const message =
+        status === 503
+          ? 'Registrations are temporarily unavailable. Please contact support.'
+          : 'Unable to save registration. Please try again later.';
+      return res.status(status).json({ error: message });
     }
 
     console.error('[routes/users] Unexpected error:', error);

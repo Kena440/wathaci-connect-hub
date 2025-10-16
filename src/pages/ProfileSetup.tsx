@@ -106,27 +106,84 @@ export const ProfileSetup = () => {
     setLoading(true);
     
     try {
-      let paymentData = {};
+      const sanitizeValue = (value?: string | null) => {
+        if (!value) return null;
+        return value.trim() || null;
+      };
+
+      const extractCardDetails = (cardNumber: string, expiry: string) => {
+        const normalizedNumber = cardNumber.replace(/\D/g, '');
+        if (normalizedNumber.length < 12) {
+          throw new Error('Please enter a valid card number.');
+        }
+
+        const expiryMatch = expiry.replace(/\s/g, '').match(/^(\d{2})\/(\d{2}|\d{4})$/);
+        if (!expiryMatch) {
+          throw new Error('Please enter the card expiry in MM/YY format.');
+        }
+
+        const month = Number(expiryMatch[1]);
+        if (month < 1 || month > 12) {
+          throw new Error('Please enter a valid expiry month.');
+        }
+
+        let year = expiryMatch[2];
+        if (year.length === 2) {
+          year = `20${year}`;
+        }
+
+        return {
+          last4: normalizedNumber.slice(-4),
+          expiry_month: month,
+          expiry_year: Number(year),
+        };
+      };
+
+      const {
+        card_number,
+        card_expiry,
+        card_details: _ignoredCardDetails,
+        ...profilePayload
+      } = profileData;
+
+      let paymentData: Record<string, unknown> = {};
       if (profileData.use_same_phone) {
+        const phone = sanitizeValue(profileData.phone);
+        if (!phone) {
+          throw new Error('Please provide a phone number for subscription payments.');
+        }
+
         paymentData = {
-          payment_phone: profileData.phone,
-          payment_method: 'phone'
+          payment_phone: phone,
+          payment_method: 'phone',
+        };
+      } else if (profileData.payment_method === 'card') {
+        let cardDetails = null;
+
+        if (card_number && card_expiry) {
+          cardDetails = extractCardDetails(card_number, card_expiry);
+        } else if (existingProfile?.card_details) {
+          cardDetails = existingProfile.card_details;
+        }
+
+        if (!cardDetails) {
+          throw new Error('Card details are required to process subscription payments.');
+        }
+
+        paymentData = {
+          payment_method: 'card',
+          card_details: cardDetails,
         };
       } else {
-        if (profileData.payment_method === 'card') {
-          paymentData = {
-            payment_method: 'card',
-            card_details: {
-              number: profileData.card_number,
-              expiry: profileData.card_expiry
-            }
-          };
-        } else {
-          paymentData = {
-            payment_method: 'phone',
-            payment_phone: profileData.payment_phone
-          };
+        const paymentPhone = sanitizeValue(profileData.payment_phone);
+        if (!paymentPhone) {
+          throw new Error('Please provide the mobile money number to charge.');
         }
+
+        paymentData = {
+          payment_method: 'phone',
+          payment_phone: paymentPhone,
+        };
       }
 
       const { error } = await supabase
@@ -134,7 +191,7 @@ export const ProfileSetup = () => {
         .upsert({
           id: user.id,
           email: user.email,
-          ...profileData,
+          ...profilePayload,
           ...paymentData,
           profile_completed: true,
           updated_at: new Date().toISOString()
