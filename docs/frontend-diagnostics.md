@@ -33,7 +33,7 @@ paths, expected payloads, and potential sources of client-side errors.
   information, sector selections, and conditional payment metadata before a
   second `upsert`. On success it triggers `refreshUser()` to reload the profile
   in context and routes to an account-type-specific assessment page.
-- The associated `ProfileForm` component serialises the complex form state (e.g.
+- The associated `ProfileForm` component serializes the complex form state (e.g.
   country-aware phone formatting, qualification arrays, address coordinates)
   and submits it back to `handleProfileSubmit` unchanged, so the Supabase call
   receives the same data the user enters.
