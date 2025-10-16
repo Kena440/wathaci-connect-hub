@@ -22,7 +22,7 @@ beforeAll(() => {
     unobserve() {}
     disconnect() {}
   }
-  // @ts-expect-error
+  // @ts-expect-error: jsdom environment in tests does not provide ResizeObserver
   global.ResizeObserver = ResizeObserver;
 });
 
