@@ -87,11 +87,30 @@ export class LencoPaymentService {
         provider: paymentRequest.provider,
         metadata: paymentRequest.metadata
       });
-      
+
       if (response.success) {
-        // Store payment reference for tracking
-        localStorage.setItem('currentPaymentRef', reference);
-        
+        // Store payment reference for tracking with context
+        if (typeof window !== 'undefined' && window.localStorage) {
+          try {
+            const storedPayload = {
+              reference,
+              amount: request.amount,
+              description: request.description,
+              transactionType: paymentRequest.metadata?.transaction_type,
+              createdAt: new Date().toISOString(),
+              metadata: paymentRequest.metadata,
+            };
+            window.localStorage.setItem('currentPaymentRef', JSON.stringify(storedPayload));
+          } catch (storageError) {
+            // Fallback to storing just the reference if JSON serialization fails
+            try {
+              window.localStorage.setItem('currentPaymentRef', reference);
+            } catch {
+              // ignore storage errors in non-browser environments
+            }
+          }
+        }
+
         return {
           success: true,
           data: {
@@ -161,6 +180,7 @@ export class LencoPaymentService {
     name: string;
     description: string;
     transactionType?: TransactionType;
+    metadata?: Record<string, any>;
   }): Promise<LencoPaymentResponse> {
     // Validate phone number
     if (!validatePhoneNumber(request.phone, this.config.country)) {
@@ -178,7 +198,8 @@ export class LencoPaymentService {
       metadata: {
         payment_type: 'mobile_money',
         provider: request.provider,
-        transaction_type: request.transactionType
+        transaction_type: request.transactionType,
+        ...request.metadata,
       }
     });
   }
@@ -193,6 +214,7 @@ export class LencoPaymentService {
     description: string;
     phone?: string;
     transactionType?: TransactionType;
+    metadata?: Record<string, any>;
   }): Promise<LencoPaymentResponse> {
     this.ensureConfig();
 
@@ -202,7 +224,8 @@ export class LencoPaymentService {
       payment_method: 'card',
       metadata: {
         payment_type: 'card',
-        transaction_type: request.transactionType
+        transaction_type: request.transactionType,
+        ...request.metadata,
       }
     });
   }

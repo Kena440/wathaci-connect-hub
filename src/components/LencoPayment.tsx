@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Smartphone, CreditCard, Banknote, Info, AlertCircle, Shield, CheckCircle } from 'lucide-react';
+import { Smartphone, CreditCard, Info, AlertCircle, Shield, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -20,9 +20,34 @@ interface LencoPaymentProps {
   onSuccess?: (data: any) => void;
   onCancel?: () => void;
   onError?: (error: any) => void;
+  metadata?: Record<string, any>;
+  onInitialized?: (data: { reference: string; payment_url?: string }) => void;
+  resumePendingPayment?: boolean;
+  initialReference?: string | null;
 }
 
-export const LencoPayment = ({ amount, description, transactionType = 'marketplace', onSuccess, onCancel, onError }: LencoPaymentProps) => {
+const PAYMENT_STORAGE_KEY = 'currentPaymentRef';
+
+interface StoredPaymentReference {
+  reference: string;
+  description?: string;
+  amount?: number;
+  transactionType?: TransactionType;
+  createdAt?: string;
+}
+
+export const LencoPayment = ({
+  amount,
+  description,
+  transactionType = 'marketplace',
+  onSuccess,
+  onCancel,
+  onError,
+  metadata,
+  onInitialized,
+  resumePendingPayment = true,
+  initialReference = null,
+}: LencoPaymentProps) => {
   const [paymentMethod, setPaymentMethod] = useState<string>('mobile_money');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [provider, setProvider] = useState('');
@@ -31,12 +56,24 @@ export const LencoPayment = ({ amount, description, transactionType = 'marketpla
   const [showBreakdown, setShowBreakdown] = useState(true);
   const [paymentReference, setPaymentReference] = useState<string | null>(null);
   const [showStatusTracker, setShowStatusTracker] = useState(false);
+  const [hasResumedPayment, setHasResumedPayment] = useState(false);
   const { toast } = useToast();
   const { user, profile } = useAppContext();
 
   // Calculate payment breakdown
   const totalAmount = typeof amount === 'string' ? parseFloat(amount.toString().replace(/[^\d.]/g, '')) : parseFloat(amount.toString());
   const paymentBreakdown = lencoPaymentService.calculatePaymentTotal(totalAmount, transactionType);
+
+  const mergedMetadata = useMemo(() => {
+    const baseMetadata = {
+      user_id: user?.id,
+      transaction_context: transactionType,
+      ...metadata,
+    };
+
+    // Remove undefined values to avoid serialisation issues
+    return Object.fromEntries(Object.entries(baseMetadata).filter(([, value]) => value !== undefined));
+  }, [metadata, transactionType, user?.id]);
 
   // Validate configuration
   const isConfigured = lencoPaymentService.isConfigured();
@@ -95,28 +132,32 @@ export const LencoPayment = ({ amount, description, transactionType = 'marketpla
           phone: phoneNumber,
           provider: provider as 'mtn' | 'airtel' | 'zamtel',
           email: user?.email || undefined,
-          name: profile?.first_name && profile?.last_name 
-            ? `${profile.first_name} ${profile.last_name}` 
+          name: profile?.first_name && profile?.last_name
+            ? `${profile.first_name} ${profile.last_name}`
             : profile?.business_name || user?.email || 'Anonymous User',
           description,
-          transactionType
+          transactionType,
+          metadata: mergedMetadata,
         });
       } else {
         paymentResponse = await lencoPaymentService.processCardPayment({
           amount: totalAmount,
           email: user?.email || undefined,
-          name: profile?.first_name && profile?.last_name 
-            ? `${profile.first_name} ${profile.last_name}` 
+          name: profile?.first_name && profile?.last_name
+            ? `${profile.first_name} ${profile.last_name}`
             : profile?.business_name || user?.email || 'Anonymous User',
           description,
           phone: phoneNumber || undefined,
-          transactionType
+          transactionType,
+          metadata: mergedMetadata,
         });
       }
 
       if (paymentResponse.success && paymentResponse.data) {
         setPaymentReference(paymentResponse.data.reference);
         setShowStatusTracker(true);
+        setHasResumedPayment(true);
+        onInitialized?.(paymentResponse.data);
 
         toast({
           title: "Payment Initialized",
@@ -161,12 +202,92 @@ export const LencoPayment = ({ amount, description, transactionType = 'marketpla
   const handlePaymentComplete = (paymentData: any) => {
     setShowStatusTracker(false);
     setPaymentReference(null);
+    setHasResumedPayment(false);
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.removeItem(PAYMENT_STORAGE_KEY);
+      } catch (error) {
+        console.warn('Failed to clear stored payment reference', error);
+      }
+    }
     onSuccess?.(paymentData);
   };
 
   const handlePaymentFailed = (paymentData: any) => {
     onError?.(paymentData);
   };
+
+  const handleCancel = () => {
+    setShowStatusTracker(false);
+    setPaymentReference(null);
+    setHasResumedPayment(false);
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.removeItem(PAYMENT_STORAGE_KEY);
+      } catch (error) {
+        console.warn('Failed to clear stored payment reference', error);
+      }
+    }
+    onCancel?.();
+  };
+
+  // Clear mobile money specific errors when payment method changes
+  useEffect(() => {
+    if (paymentMethod === 'card' && (errors.provider || errors.phone)) {
+      setErrors((prev) => {
+        const { provider: _providerError, phone: _phoneError, ...rest } = prev;
+        return rest;
+      });
+    }
+  }, [errors.phone, errors.provider, paymentMethod]);
+
+  // Resume tracking for pending payments stored locally
+  useEffect(() => {
+    if (!resumePendingPayment || hasResumedPayment) {
+      return;
+    }
+
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return;
+    }
+
+    try {
+      const stored = window.localStorage.getItem(PAYMENT_STORAGE_KEY);
+      if (!stored) {
+        return;
+      }
+
+      let parsed: StoredPaymentReference | null = null;
+      try {
+        parsed = JSON.parse(stored);
+      } catch {
+        parsed = stored ? { reference: stored } as StoredPaymentReference : null;
+      }
+
+      if (parsed?.reference) {
+        if (!transactionType || !parsed.transactionType || parsed.transactionType === transactionType) {
+          setPaymentReference(parsed.reference);
+          setShowStatusTracker(true);
+          setHasResumedPayment(true);
+          toast({
+            title: "Resuming payment tracking",
+            description: "We found an in-progress payment and restored live tracking.",
+          });
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to resume stored payment reference', error);
+      window.localStorage.removeItem(PAYMENT_STORAGE_KEY);
+    }
+  }, [resumePendingPayment, transactionType, hasResumedPayment, toast]);
+
+  // Allow parent components to provide an initial reference (e.g., pending subscription)
+  useEffect(() => {
+    if (initialReference && !paymentReference) {
+      setPaymentReference(initialReference);
+      setShowStatusTracker(true);
+    }
+  }, [initialReference, paymentReference]);
 
   if (!isConfigured) {
     return (
@@ -276,7 +397,19 @@ export const LencoPayment = ({ amount, description, transactionType = 'marketpla
             <>
               <div>
                 <Label>Mobile Money Provider</Label>
-                <Select value={provider} onValueChange={setProvider}>
+                <Select
+                  value={provider}
+                  onValueChange={(value) => {
+                    setProvider(value);
+                    if (errors.provider) {
+                      setErrors((prev) => {
+                        const newErrors = { ...prev };
+                        delete newErrors.provider;
+                        return newErrors;
+                      });
+                    }
+                  }}
+                >
                   <SelectTrigger className={errors.provider ? 'border-red-500' : ''}>
                     <SelectValue placeholder="Select provider" />
                   </SelectTrigger>
@@ -325,17 +458,17 @@ export const LencoPayment = ({ amount, description, transactionType = 'marketpla
 
           {/* Action Buttons */}
           <div className="flex gap-2 pt-4">
-            <Button 
-              variant="outline" 
-              onClick={onCancel}
+            <Button
+              variant="outline"
+              onClick={handleCancel}
               className="flex-1"
               disabled={loading}
             >
               Cancel
             </Button>
-            <Button 
-              onClick={handlePayment} 
-              disabled={loading || Object.keys(errors).length > 0}
+            <Button
+              onClick={handlePayment}
+              disabled={loading}
               className="flex-1"
             >
               {loading ? 'Processing...' : `Pay ${formatAmount(paymentBreakdown.totalAmount)}`}
