@@ -45,12 +45,30 @@ API still works, but data is kept only in memory.
 Run the SQL files in [`backend/supabase`](./supabase) to provision the required
 tables and policies:
 
+- [`core_schema.sql`](supabase/core_schema.sql) creates the foundational
+  `profiles`, `subscription_plans`, `user_subscriptions`, `transactions`, and
+  `payments` tables, including row-level security (RLS) rules for customer
+  isolation and helper triggers that keep `updated_at` timestamps fresh.
 - [`registrations.sql`](supabase/registrations.sql) creates the
   `registrations` table that stores validated sign-up submissions.
 - [`frontend_logs.sql`](supabase/frontend_logs.sql) creates the
   `frontend_logs` table for centralized logging.
 - [`profiles_policies.sql`](supabase/profiles_policies.sql) contains the
   policies used by the existing Supabase profile features.
+
+After the tables exist, run `profiles_policies.sql` to (re)enable the
+automation that seeds a profile row for every new Supabase auth user and
+confirms that authenticated clients can access only their own profile
+information. You can validate the behaviour by:
+
+1. Creating a test user through Supabase Auth and confirming that a matching
+   row appears instantly in `public.profiles`.
+2. Running a `select` against `public.profiles` with the test user's session to
+   verify that only a single row is returned.
+3. Repeating the query with a different user's session (or the anon key) to
+   ensure that cross-account data is not exposed.
+4. Using the service role key to confirm that administrators can still manage
+   every row despite RLS.
 
 ## Supabase Edge Functions
 
