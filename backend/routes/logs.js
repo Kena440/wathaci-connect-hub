@@ -4,6 +4,29 @@ const sanitizeHtml = require('sanitize-html');
 
 const router = express.Router();
 
+const LOGS_API_TOKEN = process.env.LOGS_API_TOKEN;
+
+const extractToken = (authorizationHeader = '') => {
+  const header = authorizationHeader.trim();
+  if (header.toLowerCase().startsWith('bearer ')) {
+    return header.slice(7).trim();
+  }
+  return null;
+};
+
+const requireLogHistoryAuth = (req, res, next) => {
+  if (!LOGS_API_TOKEN) {
+    return res.status(503).json({ error: 'Log history access is not configured' });
+  }
+
+  const providedToken = extractToken(req.get('authorization') || '');
+  if (!providedToken || providedToken !== LOGS_API_TOKEN) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  next();
+};
+
 const sanitizeValue = (value) => {
   if (typeof value === 'string') {
     const sanitized = sanitizeHtml(value, {
@@ -73,7 +96,7 @@ router.post('/', (req, res) => {
   return res.status(201).json({ status: 'received' });
 });
 
-router.get('/', (_req, res) => {
+router.get('/', requireLogHistoryAuth, (_req, res) => {
   const recentLogs = Array.isArray(res.app.locals.logs) ? res.app.locals.logs.slice(-50) : [];
   res.json({ logs: recentLogs });
 });

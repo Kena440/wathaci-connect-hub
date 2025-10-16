@@ -19,7 +19,9 @@ npm --prefix backend test
   registration in memory.
 - `POST /api/logs` – Accepts client-side error and activity logs, sanitizes payloads, stores a rolling in-memory history (up to 1000 entries), and
   prints them to the server console for monitoring.
-- `GET /api/logs` – Returns the most recent 50 log entries for operational diagnostics.
+- `GET /api/logs` – Returns the most recent 50 log entries for operational diagnostics. **Requires** the
+  `LOGS_API_TOKEN` bearer token for authentication. Set this token in your environment to protect
+  log history access.
 
 
 ## Supabase Edge Functions
