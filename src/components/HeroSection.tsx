@@ -5,14 +5,37 @@ import { Link } from 'react-router-dom';
 const HeroSection = () => {
   return (
     <section className="relative overflow-hidden py-20">
+      <div className="absolute inset-0 -z-20 pointer-events-none" aria-hidden="true">
+        <img
+          src="/images/20201104_145059.jpg"
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover object-center brightness-110"
+        />
+        <img
+          src="/images/PopCorn.jpg"
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="absolute bottom-[-10%] right-[-5%] hidden md:block h-[70%] w-auto max-w-2xl rounded-3xl object-cover shadow-2xl opacity-90"
+        />
+        <img
+          src="/images/Sowing Class.jpg"
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="absolute -top-8 -left-20 hidden lg:block h-[60%] w-auto max-w-xl rounded-3xl object-cover shadow-xl opacity-90"
+        />
+      </div>
       <div
         className="absolute inset-0 -z-10 pointer-events-none"
         aria-hidden="true"
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-200/80 via-white to-emerald-200/80" />
-        <div className="absolute inset-0 bg-white/30 md:bg-white/25 backdrop-blur-sm" />
-        <div className="absolute -top-32 -left-24 h-80 w-80 rounded-full bg-orange-400/35 blur-3xl" />
-        <div className="absolute -bottom-40 right-0 h-96 w-96 rounded-full bg-emerald-400/30 blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-200/60 via-white/80 to-emerald-200/60" />
+        <div className="absolute inset-0 bg-white/15 md:bg-white/10 backdrop-blur-[2px]" />
+        <div className="absolute -top-32 -left-24 h-80 w-80 rounded-full bg-orange-400/40 blur-2xl" />
+        <div className="absolute -bottom-40 right-0 h-96 w-96 rounded-full bg-emerald-400/35 blur-2xl" />
       </div>
       <div className="relative z-10 max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">
