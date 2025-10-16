@@ -29,14 +29,16 @@ export const AccessGate = ({ children, feature }: AccessGateProps) => {
       }
 
       // Check subscription status
-      const { data: subscription } = await supabase
-        .from('subscriptions')
-        .select('*')
+      const { data: subscriptions, error: subscriptionError } = await supabase
+        .from('user_subscriptions')
+        .select('id, end_date, payment_status, status')
         .eq('user_id', user.id)
         .eq('status', 'active')
-        .single();
+        .eq('payment_status', 'paid')
+        .order('end_date', { ascending: false })
+        .limit(1);
 
-      if (subscription) {
+      if (!subscriptionError && subscriptions && subscriptions.length > 0) {
         setHasAccess(true);
         setLoading(false);
         return;
