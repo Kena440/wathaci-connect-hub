@@ -3,7 +3,8 @@
  * Comprehensive analytics for payments and subscriptions
  */
 
-import { getPlatformFeePercentage, TransactionType } from '../payment-config';
+import { getPlatformFeePercentage } from '../payment-config';
+import { supabase } from '../supabase-enhanced';
 
 export interface PaymentAnalytics {
   totalRevenue: number;
@@ -53,20 +54,17 @@ export class PaymentAnalyticsService {
     userId?: string
   ): Promise<PaymentAnalytics> {
     try {
-      // This would typically involve complex database queries
-      // For now, we'll simulate with realistic data
-      
       const payments = await this.getPaymentsInRange(startDate, endDate, userId);
       const completedPayments = payments.filter(p => p.status === 'completed');
-      
+
       const totalRevenue = completedPayments.reduce((sum, p) => sum + p.amount, 0);
       const transactionCount = completedPayments.length;
       const averageTransactionValue = transactionCount > 0 ? totalRevenue / transactionCount : 0;
       const successRate = payments.length > 0 ? (completedPayments.length / payments.length) * 100 : 0;
-      
+
       const paymentMethodStats = this.calculatePaymentMethodStats(completedPayments);
-      const monthlyTrends = await this.calculateMonthlyTrends(startDate, endDate, userId);
-      const userSegmentation = await this.calculateUserSegmentation(startDate, endDate);
+      const monthlyTrends = this.calculateMonthlyTrends(payments);
+      const userSegmentation = this.calculateUserSegmentation(payments);
 
       return {
         totalRevenue,
@@ -104,9 +102,8 @@ export class PaymentAnalyticsService {
     totalPages: number;
   }> {
     try {
-      // Simulate database query with filters
       const allPayments = await this.getUserPayments(userId);
-      
+
       let filteredPayments = allPayments;
       
       if (filters?.status) {
@@ -118,12 +115,24 @@ export class PaymentAnalyticsService {
       }
       
       if (filters?.startDate) {
-        filteredPayments = filteredPayments.filter(p => p.created_at >= filters.startDate!);
+        const start = new Date(filters.startDate);
+        if (!Number.isNaN(start.getTime())) {
+          filteredPayments = filteredPayments.filter(p => new Date(p.created_at) >= start);
+        }
       }
-      
+
       if (filters?.endDate) {
-        filteredPayments = filteredPayments.filter(p => p.created_at <= filters.endDate!);
+        const end = new Date(filters.endDate);
+        if (!Number.isNaN(end.getTime())) {
+          filteredPayments = filteredPayments.filter(p => new Date(p.created_at) <= end);
+        }
       }
+
+      filteredPayments = [...filteredPayments].sort((a, b) => {
+        const dateA = new Date(a.created_at).getTime();
+        const dateB = new Date(b.created_at).getTime();
+        return dateB - dateA;
+      });
 
       const total = filteredPayments.length;
       const totalPages = Math.ceil(total / limit);
@@ -328,57 +337,61 @@ export class PaymentAnalyticsService {
     endDate: string,
     userId?: string
   ): Promise<PaymentHistoryItem[]> {
-    // Simulate database query
-    const mockPayments: PaymentHistoryItem[] = [
-      {
-        id: '1',
-        reference: 'WC_1234567890_ABC123',
-        amount: 100,
-        currency: 'ZMK',
-        status: 'completed',
-        payment_method: 'mobile_money',
-        provider: 'mtn',
-        description: 'Professional Monthly Subscription',
-        created_at: '2024-01-15T10:30:00Z',
-        paid_at: '2024-01-15T10:31:00Z',
-        user_id: userId || 'user123'
-      },
-      {
-        id: '2',
-        reference: 'WC_1234567891_DEF456',
-        amount: 250,
-        currency: 'ZMK',
-        status: 'completed',
-        payment_method: 'card',
-        description: 'Service Payment - Web Development',
-        created_at: '2024-01-14T14:20:00Z',
-        paid_at: '2024-01-14T14:21:00Z',
-        user_id: userId || 'user456'
-      },
-      {
-        id: '3',
-        reference: 'WC_1234567892_GHI789',
-        amount: 50,
-        currency: 'ZMK',
-        status: 'failed',
-        payment_method: 'mobile_money',
-        provider: 'airtel',
-        description: 'Basic Monthly Subscription',
-        created_at: '2024-01-13T09:15:00Z',
-        user_id: userId || 'user789'
-      }
-    ];
+    const start = this.normalizeDate(startDate);
+    const end = this.normalizeDate(endDate, true);
 
-    return mockPayments.filter(p => {
-      const paymentDate = p.created_at.split('T')[0];
-      return paymentDate >= startDate && paymentDate <= endDate && 
-             (!userId || p.user_id === userId);
+    let query = supabase
+      .from('payments')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (start) {
+      query = query.gte('created_at', start);
+    }
+
+    if (end) {
+      query = query.lte('created_at', end);
+    }
+
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      if ((error as any)?.code === '42P01') {
+        return [];
+      }
+
+      console.error('Error fetching payments from Supabase:', error);
+      throw new Error(error.message || 'Failed to fetch payment data');
+    }
+
+    return (data ?? []).map((payment: any) => {
+      const amount = typeof payment.amount === 'number' ? payment.amount : Number(payment.amount ?? 0);
+      return {
+        id: payment.id,
+        reference: payment.reference,
+        amount: Number.isFinite(amount) ? amount : 0,
+        currency: payment.currency || 'ZMW',
+        status: payment.status,
+        payment_method: payment.payment_method,
+        provider: payment.provider || payment.payment_provider || undefined,
+        description: payment.description || '',
+        created_at: payment.created_at,
+        paid_at: payment.paid_at || payment.processed_at || undefined,
+        user_id: payment.user_id,
+        metadata: typeof payment.metadata === 'object' && payment.metadata !== null
+          ? payment.metadata
+          : undefined,
+      } as PaymentHistoryItem;
     });
   }
 
   private async getUserPayments(userId: string): Promise<PaymentHistoryItem[]> {
-    // Simulate user-specific payment history
-    return this.getPaymentsInRange('2024-01-01', '2024-12-31', userId);
+    const today = new Date().toISOString();
+    return this.getPaymentsInRange('1970-01-01', today, userId);
   }
 
   private calculatePaymentMethodStats(payments: PaymentHistoryItem[]): Array<{ method: string; count: number; percentage: number }> {
@@ -410,23 +423,96 @@ export class PaymentAnalyticsService {
       .sort((a, b) => b.count - a.count);
   }
 
-  private async calculateMonthlyTrends(startDate: string, endDate: string, userId?: string): Promise<Array<{ month: string; revenue: number; transactions: number }>> {
-    // Simulate monthly trend calculation
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    return months.map(month => ({
-      month,
-      revenue: Math.random() * 10000,
-      transactions: Math.floor(Math.random() * 100)
-    }));
+  private calculateMonthlyTrends(payments: PaymentHistoryItem[]): Array<{ month: string; revenue: number; transactions: number }> {
+    const formatter = new Intl.DateTimeFormat('en', { month: 'short' });
+    const monthly = new Map<string, { month: string; revenue: number; transactions: number; order: number }>();
+
+    payments.forEach((payment) => {
+      if (!payment.created_at) {
+        return;
+      }
+
+      const createdAt = new Date(payment.created_at);
+      if (Number.isNaN(createdAt.getTime())) {
+        return;
+      }
+
+      const order = createdAt.getUTCFullYear() * 12 + createdAt.getUTCMonth();
+      const key = `${createdAt.getUTCFullYear()}-${createdAt.getUTCMonth()}`;
+
+      if (!monthly.has(key)) {
+        monthly.set(key, {
+          month: formatter.format(createdAt),
+          revenue: 0,
+          transactions: 0,
+          order,
+        });
+      }
+
+      const entry = monthly.get(key)!;
+      entry.transactions += 1;
+
+      if (payment.status === 'completed') {
+        entry.revenue += payment.amount;
+      }
+    });
+
+    return Array.from(monthly.values())
+      .sort((a, b) => a.order - b.order)
+      .map(({ month, revenue, transactions }) => ({ month, revenue, transactions }));
   }
 
-  private async calculateUserSegmentation(startDate: string, endDate: string): Promise<{ newUsers: number; returningUsers: number; highValueUsers: number }> {
-    // Simulate user segmentation
-    return {
-      newUsers: Math.floor(Math.random() * 50),
-      returningUsers: Math.floor(Math.random() * 200),
-      highValueUsers: Math.floor(Math.random() * 20)
-    };
+  private calculateUserSegmentation(payments: PaymentHistoryItem[]): { newUsers: number; returningUsers: number; highValueUsers: number } {
+    const HIGH_VALUE_THRESHOLD = 1000;
+    const userStats = new Map<string, { count: number; total: number }>();
+
+    payments
+      .filter((payment) => payment.status === 'completed')
+      .forEach((payment) => {
+        if (!payment.user_id) {
+          return;
+        }
+
+        const stats = userStats.get(payment.user_id) || { count: 0, total: 0 };
+        stats.count += 1;
+        stats.total += payment.amount;
+        userStats.set(payment.user_id, stats);
+      });
+
+    let newUsers = 0;
+    let returningUsers = 0;
+    let highValueUsers = 0;
+
+    userStats.forEach(({ count, total }) => {
+      if (count <= 1) {
+        newUsers += 1;
+      } else {
+        returningUsers += 1;
+      }
+
+      if (total >= HIGH_VALUE_THRESHOLD) {
+        highValueUsers += 1;
+      }
+    });
+
+    return { newUsers, returningUsers, highValueUsers };
+  }
+
+  private normalizeDate(date: string, endOfDay: boolean = false): string | undefined {
+    if (!date) {
+      return undefined;
+    }
+
+    const value = date.includes('T')
+      ? date
+      : `${date}T${endOfDay ? '23:59:59' : '00:00:00'}Z`;
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return undefined;
+    }
+
+    return parsed.toISOString();
   }
 }
 

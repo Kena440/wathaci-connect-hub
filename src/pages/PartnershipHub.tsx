@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -51,8 +51,15 @@ const partnerTypes = [
   }
 ];
 
-// Mock data removed for launch - replace with real partner data from database
-const currentPartners: any[] = [];
+interface PartnerProfile {
+  id: string;
+  name: string;
+  type?: string;
+  description?: string | null;
+  logoUrl?: string | null;
+  status?: string | null;
+  isVerified?: boolean;
+}
 
 export const PartnershipHub = () => {
   const [formData, setFormData] = useState({
@@ -60,6 +67,67 @@ export const PartnershipHub = () => {
   });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [partners, setPartners] = useState<PartnerProfile[]>([]);
+  const [partnersLoading, setPartnersLoading] = useState(true);
+  const [partnersError, setPartnersError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPartners = async () => {
+      setPartnersLoading(true);
+      setPartnersError(null);
+
+      const mapPartner = (record: any): PartnerProfile => ({
+        id: record.id,
+        name: record.name || record.company_name || 'Partner',
+        type: record.type || record.partnership_type || record.category || 'Partner',
+        description: record.description || record.overview || record.summary || null,
+        logoUrl: record.logo_url || record.logo || null,
+        status: record.status || null,
+        isVerified: record.is_verified ?? record.verified ?? false,
+      });
+
+      const candidateTables = ['partners', 'partner_profiles'];
+
+      try {
+        for (const table of candidateTables) {
+          const { data, error } = await supabase
+            .from(table)
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (error) {
+            // Ignore missing table errors and try the next candidate
+            if ((error as any)?.code === '42P01') {
+              continue;
+            }
+            throw error;
+          }
+
+          if (data && data.length > 0) {
+            const normalized = data
+              .map(mapPartner)
+              .filter((partner) => {
+                const status = partner.status?.toLowerCase();
+                return !status || (status !== 'inactive' && status !== 'archived');
+              });
+            setPartners(normalized);
+            setPartnersLoading(false);
+            return;
+          }
+        }
+
+        setPartners([]);
+      } catch (error) {
+        console.error('Error loading partners:', error);
+        setPartners([]);
+        setPartnersError('We could not load partners right now. Please try again later.');
+      } finally {
+        setPartnersLoading(false);
+      }
+    };
+
+    fetchPartners();
+  }, []);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -207,28 +275,45 @@ export const PartnershipHub = () => {
           </TabsContent>
 
           <TabsContent value="current" className="space-y-8">
-            {currentPartners.length === 0 ? (
+            {partnersLoading ? (
+              <div className="text-center py-12 text-gray-500">Loading partners...</div>
+            ) : partnersError ? (
+              <div className="text-center py-12 text-red-500">{partnersError}</div>
+            ) : partners.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-gray-500 text-lg">Our partner network is growing!</p>
                 <p className="text-gray-400 mt-2">We're actively building partnerships with leading organizations. Join us!</p>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {currentPartners.map((partner, index) => (
-                  <Card key={index} className="hover:shadow-lg transition-shadow">
-                    <CardHeader className="text-center">
-                      <div className="text-4xl mb-4">{partner.logo}</div>
+                {partners.map((partner) => (
+                  <Card key={partner.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader className="text-center space-y-3">
+                      {partner.logoUrl ? (
+                        <img
+                          src={partner.logoUrl}
+                          alt={partner.name}
+                          className="h-16 mx-auto object-contain"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <Star className="w-10 h-10 mx-auto text-orange-500" />
+                      )}
                       <CardTitle className="text-xl">{partner.name}</CardTitle>
-                      <Badge variant="secondary" className="mt-2">{partner.type}</Badge>
+                      {partner.type && (
+                        <Badge variant="secondary" className="mt-2 capitalize">{partner.type}</Badge>
+                      )}
                     </CardHeader>
                     <CardContent>
-                      <p className="text-gray-600 text-center mb-4">{partner.description}</p>
-                      {partner.status === 'verified' && (
+                      {partner.description && (
+                        <p className="text-gray-600 text-center mb-4">{partner.description}</p>
+                      )}
+                      {partner.isVerified || partner.status === 'verified' ? (
                         <div className="flex items-center justify-center gap-1 text-green-600">
                           <CheckCircle className="w-4 h-4" />
                           <span className="text-sm">Verified Partner</span>
                         </div>
-                      )}
+                      ) : null}
                     </CardContent>
                   </Card>
                 ))}

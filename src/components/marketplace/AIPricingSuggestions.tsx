@@ -32,6 +32,7 @@ const AIPricingSuggestions = ({
   const [location, setLocation] = useState('Lusaka');
   const [suggestions, setSuggestions] = useState<PricingSuggestion | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [marketData, setMarketData] = useState({
     averagePrice: 0,
     priceRange: { min: 0, max: 0 },
@@ -57,25 +58,18 @@ const AIPricingSuggestions = ({
 
       if (data?.pricing) {
         setSuggestions(data.pricing);
-        setMarketData(data.marketData || marketData);
+        setMarketData(prev => data.marketData || prev);
+        setError(null);
+      } else {
+        setSuggestions(null);
+        setError('No pricing insights are available yet. Provide more details and try again.');
+        setMarketData({ averagePrice: 0, priceRange: { min: 0, max: 0 }, competitorCount: 0 });
       }
     } catch (error) {
       console.error('Pricing analysis error:', error);
-      // Fallback mock data
-      setSuggestions({
-        suggestedPrice: 1200,
-        minPrice: 800,
-        maxPrice: 1800,
-        marketAverage: 1100,
-        confidence: 0.85,
-        factors: ['Market demand', 'Service complexity', 'Location premium', 'Experience level'],
-        reasoning: 'Based on similar services in Lusaka, your pricing should be competitive while reflecting quality.'
-      });
-      setMarketData({
-        averagePrice: 1100,
-        priceRange: { min: 600, max: 2000 },
-        competitorCount: 23
-      });
+      setSuggestions(null);
+      setError('We could not analyze pricing right now. Please try again later.');
+      setMarketData({ averagePrice: 0, priceRange: { min: 0, max: 0 }, competitorCount: 0 });
     } finally {
       setIsLoading(false);
     }
@@ -133,7 +127,7 @@ const AIPricingSuggestions = ({
         </CardContent>
       </Card>
 
-      {suggestions && (
+      {(suggestions || error) && (
         <div className="grid md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
@@ -143,88 +137,96 @@ const AIPricingSuggestions = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-3xl font-bold text-blue-600 mb-1">
-                  K{suggestions.suggestedPrice}
-                </div>
-                <Badge className="bg-blue-600">
-                  AI Recommended ({Math.round(suggestions.confidence * 100)}% confidence)
-                </Badge>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Market Average:</span>
-                  <span className="font-semibold">K{suggestions.marketAverage}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Price Range:</span>
-                  <span className="font-semibold">K{suggestions.minPrice} - K{suggestions.maxPrice}</span>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => onPriceSelect(suggestions.minPrice)}
-                >
-                  Use Min (K{suggestions.minPrice})
-                </Button>
-                <Button 
-                  size="sm"
-                  onClick={() => onPriceSelect(suggestions.suggestedPrice)}
-                >
-                  Use Suggested
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => onPriceSelect(suggestions.maxPrice)}
-                >
-                  Use Max (K{suggestions.maxPrice})
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-purple-500" />
-                Market Insights
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <h4 className="font-semibold">Key Factors:</h4>
-                <div className="space-y-1">
-                  {suggestions.factors.map((factor, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                      <span className="text-sm">{factor}</span>
+              {suggestions ? (
+                <>
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <div className="text-3xl font-bold text-blue-600 mb-1">
+                      K{suggestions.suggestedPrice}
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <Badge className="bg-blue-600">
+                      AI Recommended ({Math.round(suggestions.confidence * 100)}% confidence)
+                    </Badge>
+                  </div>
 
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <h4 className="font-semibold mb-2">AI Analysis:</h4>
-                <p className="text-sm text-gray-700">{suggestions.reasoning}</p>
-              </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>Market Average:</span>
+                      <span className="font-semibold">K{suggestions.marketAverage}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Price Range:</span>
+                      <span className="font-semibold">K{suggestions.minPrice} - K{suggestions.maxPrice}</span>
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div>
-                  <div className="text-lg font-bold text-purple-600">{marketData.competitorCount}</div>
-                  <div className="text-xs text-gray-500">Competitors</div>
-                </div>
-                <div>
-                  <div className="text-lg font-bold text-purple-600">K{marketData.averagePrice}</div>
-                  <div className="text-xs text-gray-500">Market Avg</div>
-                </div>
-              </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onPriceSelect(suggestions.minPrice)}
+                    >
+                      Use Min (K{suggestions.minPrice})
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => onPriceSelect(suggestions.suggestedPrice)}
+                    >
+                      Use Suggested
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onPriceSelect(suggestions.maxPrice)}
+                    >
+                      Use Max (K{suggestions.maxPrice})
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-gray-500 text-center">{error}</p>
+              )}
             </CardContent>
           </Card>
+
+          {suggestions && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-purple-500" />
+                  Market Insights
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <h4 className="font-semibold">Key Factors:</h4>
+                  <div className="space-y-1">
+                    {suggestions.factors.map((factor, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <span className="text-sm">{factor}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <h4 className="font-semibold mb-2">AI Analysis:</h4>
+                  <p className="text-sm text-gray-700">{suggestions.reasoning}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div>
+                    <div className="text-lg font-bold text-purple-600">{marketData.competitorCount}</div>
+                    <div className="text-xs text-gray-500">Competitors</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold text-purple-600">K{marketData.averagePrice}</div>
+                    <div className="text-xs text-gray-500">Market Avg</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
     </div>

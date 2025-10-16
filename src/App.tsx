@@ -24,7 +24,6 @@ import Messages from "./pages/Messages";
 import AboutUs from "./pages/AboutUs";
 import TestError from "./pages/TestError";
 import { SMEAssessment } from "./pages/SMEAssessment";
-import { SMEAssessmentDemo } from "./pages/SMEAssessmentDemo";
 import { InvestorAssessment } from "./pages/InvestorAssessment";
 import { DonorAssessment } from "./pages/DonorAssessment";
 import { ProfessionalAssessment } from "./pages/ProfessionalAssessment";
@@ -105,7 +104,6 @@ export const AppRoutes = () => (
         </PrivateRoute>
       }
     />
-    <Route path="/sme-assessment-demo" element={<SMEAssessmentDemo />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
