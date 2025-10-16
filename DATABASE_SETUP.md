@@ -325,6 +325,28 @@ The enhanced setup maintains backward compatibility with existing code:
 4. **Authentication**: All operations respect Supabase authentication state
 5. **Environment Variables**: Sensitive configuration is in environment variables
 
+### Supabase RLS & Profile Provisioning
+
+To guarantee that every authenticated user can manage only their own profile, run the SQL automation in
+[`backend/supabase/profiles_policies.sql`](backend/supabase/profiles_policies.sql). The script:
+
+1. Enables RLS on `public.profiles`.
+2. Creates policies that allow users to read, insert, and update only the row that matches their `auth.uid()`.
+3. Creates (or replaces) a `public.handle_new_auth_user()` trigger function that inserts a fresh profile record when a new
+   `auth.users` entry is created, defaulting to the `sole_proprietor` account type and stamping UTC timestamps.
+4. Recreates the `on_auth_user_created` trigger so duplicate trigger errors are avoided during re-runs.
+
+> ℹ️ The function performs an `ON CONFLICT` upsert to avoid duplicate-key errors if retries occur. You can safely re-run the
+> script whenever policies or trigger logic need to be refreshed.
+
+After executing the script, confirm that:
+
+- Anonymous clients can only select/update the profile whose `id` matches their authenticated user.
+- The trigger creates a profile row immediately after a new account is registered (check the Supabase table or the
+  `handle_new_auth_user` logs).
+- Service-role operations (e.g., via the dashboard or admin scripts) can still manage all rows because RLS bypasses service
+  keys by default.
+
 ## Monitoring and Health Checks
 
 Use the built-in health check functionality:
