@@ -7,24 +7,17 @@ import { createClient } from '@supabase/supabase-js';
 type SupabaseClientLike = ReturnType<typeof createClient> | ReturnType<typeof createMockSupabaseClient>;
 
 const resolveEnvValue = (key: string): string | undefined => {
-  try {
-    const viteValue = (import.meta as any)?.env?.[key];
-    if (viteValue) {
-      return viteValue as string;
-    }
-  } catch (error) {
-    // import.meta may not be available in test environments
+  // Check process.env first (works in test and Node environments)
+  if (typeof process !== 'undefined' && process.env?.[key]) {
+    return process.env[key];
   }
 
+  // Check globalThis for runtime config
   if (typeof globalThis !== 'undefined') {
     const runtimeValue = (globalThis as any)?.__APP_CONFIG__?.[key];
     if (runtimeValue) {
       return runtimeValue as string;
     }
-  }
-
-  if (typeof process !== 'undefined' && process.env?.[key]) {
-    return process.env[key];
   }
 
   return undefined;
