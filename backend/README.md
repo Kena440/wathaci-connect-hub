@@ -91,6 +91,7 @@ supabase functions deploy lenco-payment
 supabase functions deploy payment-verify
 supabase functions deploy payment-webhook
 supabase functions deploy freelancer-matcher
+supabase functions deploy lenco-webhook
 ```
 
 Make sure the Supabase CLI is authenticated (`supabase login`) and linked to the
