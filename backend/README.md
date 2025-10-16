@@ -13,6 +13,13 @@ Run the backend tests with:
 npm --prefix backend test
 ```
 
+## Log Collection Endpoint
+
+- `POST /api/logs` stores application logs sent from the frontend or edge functions.
+- `GET /api/logs/history` returns the most recent log entries and **requires** the
+  `LOGS_API_TOKEN` bearer token. Set this token in your environment to protect
+  log history access.
+
 
 ## Supabase Edge Functions
 
