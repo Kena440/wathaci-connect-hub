@@ -59,7 +59,6 @@ const resolveRuntimeValue = (key: string): string | undefined => {
   try {
     const importMeta = (() => {
       try {
-        // eslint-disable-next-line no-eval
         return (0, eval)('import.meta');
       } catch {
         return undefined;

@@ -82,7 +82,6 @@ const buildFallbackSuggestions = (userProfile: any): CollaborationSuggestion[] =
 const resolveRuntimeConfig = (key: string): string | undefined => {
   const importMeta = (() => {
     try {
-      // eslint-disable-next-line no-eval
       return (0, eval)('import.meta');
     } catch {
       return undefined;
