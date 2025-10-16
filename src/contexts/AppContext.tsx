@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { userService, profileService, supabase } from '@/lib/services';
+import { userService, profileService, supabase, isSupabaseConfigured } from '@/lib/services';
 import { toast } from '@/components/ui/use-toast';
 import type { User, Profile } from '@/@types/database';
+import { localAuthService, localProfileService } from '@/lib/services/local-auth-service';
 
 interface AppContextType {
   sidebarOpen: boolean;
@@ -37,6 +38,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const usingLocalAuth = !isSupabaseConfigured;
+
   const toggleSidebar = () => {
     setSidebarOpen(prev => !prev);
   };
@@ -46,7 +49,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setLoading(true);
       
       // Get the current authenticated user
-      const { data: authUser, error: userError } = await userService.getCurrentUser();
+      const { data: authUser, error: userError } = usingLocalAuth
+        ? await localAuthService.getCurrentUser()
+        : await userService.getCurrentUser();
       
       if (userError || !authUser) {
         setUser(null);
@@ -57,7 +62,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setUser(authUser);
 
       // Get the user's profile
-      const { data: userProfile, error: profileError } = await profileService.getByUserId(authUser.id);
+      const { data: userProfile, error: profileError } = usingLocalAuth
+        ? await localProfileService.getByUserId(authUser.id)
+        : await profileService.getByUserId(authUser.id);
       
       if (profileError) {
         console.error('Error fetching user profile:', profileError);
@@ -84,43 +91,58 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const signIn = async (email: string, password: string) => {
-    const { data: user, error } = await userService.signIn(email, password);
-    
+    const { error } = usingLocalAuth
+      ? await localAuthService.signIn(email, password)
+      : await userService.signIn(email, password);
+
     if (error) throw error;
-    
+
     toast({
       title: "Welcome back!",
       description: "You have been signed in successfully.",
     });
-    
+
     // Refresh user data after successful sign in
     await refreshUser();
   };
 
   const signUp = async (email: string, password: string, userData?: any) => {
-    const { data: user, error } = await userService.signUp(email, password);
-    
+    const { data: createdUser, error } = usingLocalAuth
+      ? await localAuthService.signUp(email, password)
+      : await userService.signUp(email, password);
+
     if (error) throw error;
-    
-    if (user && userData) {
-      const { error: profileError } = await profileService.createProfile(user.id, {
-        email: user.email,
-        ...userData
-      });
-      
+
+    if (createdUser && userData) {
+      const { error: profileError } = usingLocalAuth
+        ? await localProfileService.createProfile(createdUser.id, {
+          email: createdUser.email,
+          ...userData
+        })
+        : await profileService.createProfile(createdUser.id, {
+          email: createdUser.email,
+          ...userData
+        });
+
       if (profileError) throw profileError;
     }
-    
+
     toast({
       title: "Account created!",
       description: "Please check your email to verify your account.",
     });
+
+    if (usingLocalAuth) {
+      await refreshUser();
+    }
   };
 
   const signOut = async () => {
     try {
-      const { error } = await userService.signOut();
-      
+      const { error } = usingLocalAuth
+        ? await localAuthService.signOut()
+        : await userService.signOut();
+
       if (error) throw error;
       
       setUser(null);
@@ -144,6 +166,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     refreshUser();
 
     // Listen for auth changes
+    if (usingLocalAuth) {
+      const { data: { subscription } } = localAuthService.onAuthStateChange(async (event) => {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          await refreshUser();
+        }
+
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setProfile(null);
+          setLoading(false);
+        }
+      });
+
+      return () => subscription.unsubscribe();
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {

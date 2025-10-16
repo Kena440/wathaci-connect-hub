@@ -4,24 +4,51 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
+const env = typeof import.meta !== 'undefined' ? import.meta.env : {};
 
-if (!supabaseUrl) {
-  throw new Error('Missing VITE_SUPABASE_URL environment variable');
-}
+const supabaseUrl = env?.VITE_SUPABASE_URL || process.env?.VITE_SUPABASE_URL || '';
+const supabaseKey = env?.VITE_SUPABASE_KEY || process.env?.VITE_SUPABASE_KEY || '';
 
-if (!supabaseKey) {
-  throw new Error('Missing VITE_SUPABASE_KEY environment variable');
-}
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseKey);
 
-export const supabase = createClient(supabaseUrl, supabaseKey, {
+const createSupabaseStub = () => {
+  const missingVars = [
+    !supabaseUrl && 'VITE_SUPABASE_URL',
+    !supabaseKey && 'VITE_SUPABASE_KEY'
+  ].filter(Boolean);
+
+  const message = missingVars.length
+    ? `Supabase client is not configured. Missing environment variable${missingVars.length > 1 ? 's' : ''}: ${missingVars.join(', ')}`
+    : 'Supabase client is not configured.';
+
+  const thrower = () => {
+    throw new Error(message);
+  };
+
+  return new Proxy({} as Record<string, any>, {
+    get: (_, prop) => {
+      if (prop === 'auth') {
+        return {
+          signInWithPassword: thrower,
+          signUp: thrower,
+          signOut: thrower,
+          getUser: thrower,
+          onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => void 0 } } }),
+        };
+      }
+
+      return thrower;
+    },
+  });
+};
+
+export const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true
   }
-});
+}) : createSupabaseStub();
 
 // Simple error handling wrapper
 export const withErrorHandling = async <T>(
