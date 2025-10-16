@@ -3,7 +3,11 @@ const sanitizeHtml = require('sanitize-html');
 
 const sanitizeObject = (obj) => {
   if (typeof obj === 'string') {
-    return sanitizeHtml(obj);
+    return sanitizeHtml(obj, {
+      allowedTags: [],
+      allowedAttributes: {},
+      allowedSchemes: ['http', 'https', 'mailto', 'tel'],
+    });
   }
   if (Array.isArray(obj)) {
     return obj.map(sanitizeObject);

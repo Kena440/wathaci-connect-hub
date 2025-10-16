@@ -12,6 +12,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Building, Eye, EyeOff, Phone } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { validatePhoneNumber } from '@/lib/payment-config';
+import { registerUser } from '@/lib/api/register-user';
 
 // Validation schema
 const getStartedSchema = z
@@ -95,6 +96,18 @@ export const GetStarted = () => {
         mobile_number: data.mobileNumber || null,
         full_name: `${data.firstName} ${data.lastName}`,
         profile_completed: false,
+      });
+
+      const trimmedCompany = data.company?.trim();
+      const trimmedMobile = data.mobileNumber?.trim();
+
+      await registerUser({
+        firstName: data.firstName.trim(),
+        lastName: data.lastName.trim(),
+        email: data.email.trim(),
+        accountType: data.accountType,
+        company: trimmedCompany ? trimmedCompany : null,
+        mobileNumber: trimmedMobile ? trimmedMobile : null,
       });
 
       navigate('/profile-setup');
@@ -322,10 +335,10 @@ export const GetStarted = () => {
           
           {/* Development bypass for testing - only show in dev mode */}
           {import.meta.env.DEV && (
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="w-full mt-2" 
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full mt-2"
               onClick={async () => {
                 setLoading(true);
                 setServerError('');
@@ -336,6 +349,15 @@ export const GetStarted = () => {
                     account_type: 'sole_proprietor',
                     full_name: 'Dev Test',
                     profile_completed: false,
+                  });
+
+                  await registerUser({
+                    firstName: 'Dev',
+                    lastName: 'Test',
+                    email: 'dev-test@example.com',
+                    accountType: 'sole_proprietor',
+                    company: null,
+                    mobileNumber: null,
                   });
                   navigate('/profile-setup');
                 } catch (error: any) {
