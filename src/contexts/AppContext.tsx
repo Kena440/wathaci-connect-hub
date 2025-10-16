@@ -1,5 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { userService, profileService, supabase } from '@/lib/services';
+import {
+  userService,
+  profileService,
+  supabase,
+  OFFLINE_ACCOUNT_METADATA_KEY,
+  OFFLINE_PROFILE_METADATA_KEY,
+} from '@/lib/services';
 import { toast } from '@/components/ui/use-toast';
 import type { User, Profile } from '@/@types/database';
 
@@ -19,6 +25,49 @@ interface AppContextType {
   signOut: () => Promise<void>;
   refreshUser: () => Promise<AuthState>;
 }
+
+const OFFLINE_SESSION_STORAGE_KEY = 'wathaci_offline_session';
+const isBrowserEnvironment = typeof window !== 'undefined';
+
+const loadOfflineSession = (): AuthState | null => {
+  if (!isBrowserEnvironment) {
+    return null;
+  }
+
+  const raw = window.localStorage.getItem(OFFLINE_SESSION_STORAGE_KEY);
+
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as AuthState;
+    return parsed;
+  } catch (error) {
+    console.warn('Failed to parse offline session payload:', error);
+    return null;
+  }
+};
+
+const persistOfflineSession = (state: AuthState) => {
+  if (!isBrowserEnvironment) {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(OFFLINE_SESSION_STORAGE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.warn('Unable to persist offline session state:', error);
+  }
+};
+
+const clearOfflineSession = () => {
+  if (!isBrowserEnvironment) {
+    return;
+  }
+
+  window.localStorage.removeItem(OFFLINE_SESSION_STORAGE_KEY);
+};
 
 const defaultAppContext: AppContextType = {
   sidebarOpen: false,
@@ -49,6 +98,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const refreshUser = async (): Promise<AuthState> => {
     let currentUser: User | null = null;
     let currentProfile: Profile | null = null;
+    const offlineSession = loadOfflineSession();
+
+    const resolveOfflineSession = (): AuthState => {
+      if (offlineSession?.user) {
+        currentUser = offlineSession.user;
+        currentProfile = offlineSession.profile;
+        setUser(offlineSession.user);
+        setProfile(offlineSession.profile);
+        return { user: offlineSession.user, profile: offlineSession.profile };
+      }
+
+      setUser(null);
+      setProfile(null);
+      return { user: null, profile: null };
+    };
 
     try {
       setLoading(true);
@@ -57,10 +121,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const { data: authUser, error: userError } = await userService.getCurrentUser();
 
       if (userError || !authUser) {
-        setUser(null);
-        setProfile(null);
-        return { user: null, profile: null };
+        if (offlineSession?.user) {
+          return resolveOfflineSession();
+        }
+
+        clearOfflineSession();
+        return resolveOfflineSession();
       }
+
+      clearOfflineSession();
 
       currentUser = authUser;
       setUser(authUser);
@@ -140,6 +209,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     } catch (error) {
       console.error('Error refreshing user:', error);
+      if (offlineSession?.user) {
+        return resolveOfflineSession();
+      }
+
+      clearOfflineSession();
       setUser(null);
       setProfile(null);
       return { user: null, profile: null };
@@ -162,7 +236,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       
       // Check for common error patterns and provide helpful messages
       if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-        errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
+        errorMessage = 'We couldn\'t reach WATHACI servers right now. Please try again shortly.';
       } else if (errorMessage.includes('Invalid login credentials')) {
         errorMessage = 'Invalid email or password. Please check your credentials and try again.';
       } else if (errorMessage.includes('Email not confirmed')) {
@@ -177,12 +251,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       description: "You have been signed in successfully.",
     });
 
+    const offlineProfile = user?.user_metadata?.[OFFLINE_PROFILE_METADATA_KEY] as Profile | undefined;
+    const isOfflineAccount = Boolean(user?.user_metadata?.[OFFLINE_ACCOUNT_METADATA_KEY]);
+
+    if (isOfflineAccount && user) {
+      const resolvedUser: User = {
+        ...user,
+        profile_completed: offlineProfile?.profile_completed ?? user.profile_completed,
+        account_type: offlineProfile?.account_type ?? user.account_type,
+      };
+
+      const offlineState: AuthState = {
+        user: resolvedUser,
+        profile: offlineProfile ?? null,
+      };
+
+      setUser(resolvedUser);
+
+      if (offlineProfile) {
+        setProfile(offlineProfile);
+      }
+
+      persistOfflineSession(offlineState);
+      setLoading(false);
+
+      return offlineState;
+    }
+
+    clearOfflineSession();
+
     // Refresh user data after successful sign in
     const refreshedState = await refreshUser();
 
     // Fallback to the user returned by the auth API if refresh didn't provide one
     if (!refreshedState.user && user) {
       setUser(user);
+      clearOfflineSession();
       return { user, profile: null };
     }
 
@@ -198,7 +302,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       
       // Check for common error patterns and provide helpful messages
       if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-        errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
+        errorMessage = 'We couldn\'t reach WATHACI servers right now. Please try again shortly.';
       } else if (errorMessage.includes('already exists') || errorMessage.includes('already registered')) {
         errorMessage = 'An account with this email already exists. Please sign in instead or use a different email.';
       } else if (errorMessage.includes('password')) {
@@ -290,10 +394,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const { error } = await userService.signOut();
       
       if (error) throw error;
-      
+
+      clearOfflineSession();
       setUser(null);
       setProfile(null);
-      
+
       toast({
         title: "Signed out successfully",
         description: "You have been logged out.",
@@ -317,6 +422,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           await refreshUser();
         } else if (event === 'SIGNED_OUT') {
+          clearOfflineSession();
           setUser(null);
           setProfile(null);
           setLoading(false);
@@ -324,7 +430,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (

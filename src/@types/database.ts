@@ -19,13 +19,14 @@ export interface User {
   user_metadata?: Record<string, any>;
 }
 
-export type AccountType = 
+export type AccountType =
   | 'sole_proprietor'
-  | 'professional' 
+  | 'professional'
   | 'sme'
   | 'investor'
   | 'donor'
-  | 'government';
+  | 'government'
+  | 'admin';
 
 // ================================
 // Profile Types

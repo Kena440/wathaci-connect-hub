@@ -376,13 +376,13 @@ export const withErrorHandling = async <T>(
       // Check for common network/connection errors
       const errorMessage = result.error.message || '';
       
-      if (errorMessage.includes('Failed to fetch') || 
+      if (errorMessage.includes('Failed to fetch') ||
           errorMessage.includes('fetch failed') ||
           errorMessage.includes('NetworkError') ||
           errorMessage.includes('ECONNREFUSED')) {
-        return { 
-          data: null, 
-          error: new Error('Unable to connect to the server. Please check your internet connection and try again.') 
+        return {
+          data: null,
+          error: new Error('Unable to connect to the server right now. Please try again shortly.')
         };
       }
       
@@ -419,11 +419,11 @@ export const withErrorHandling = async <T>(
     console.error(`Exception in ${context}:`, error);
     
     // Handle network errors at the exception level
-    if (error instanceof TypeError && 
+    if (error instanceof TypeError &&
         (error.message.includes('fetch') || error.message.includes('network'))) {
-      return { 
-        data: null, 
-        error: new Error('Network error. Please check your internet connection and try again.') 
+      return {
+        data: null,
+        error: new Error('Unable to reach the server right now. Please try again shortly.')
       };
     }
     

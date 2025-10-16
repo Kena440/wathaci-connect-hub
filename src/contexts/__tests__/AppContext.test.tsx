@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react';
+import { render, waitFor, act } from '@testing-library/react';
 import { AppProvider, useAppContext } from '../AppContext';
 import { supabase } from '@/lib/supabase-enhanced';
 import { toast } from '@/components/ui/use-toast';
@@ -66,14 +66,31 @@ const renderWithContext = async () => {
   );
   await waitFor(() => expect(ctx).toBeDefined());
   await waitFor(() => expect(ctx!.loading).toBe(false));
-  return ctx!;
+  const proxy = new Proxy({} as ReturnType<typeof useAppContext>, {
+    get: (_target, prop) => {
+      if (!ctx) {
+        throw new Error('App context is not ready');
+      }
+      return (ctx as any)[prop];
+    },
+  });
+
+  return proxy;
 };
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockSupabase.auth.signInWithPassword.mockReset();
+  mockSupabase.auth.signUp.mockReset();
+  mockSupabase.auth.signOut.mockReset();
+  mockSupabase.from.mockReset?.();
   mockSupabase.auth.onAuthStateChange.mockReturnValue({
     data: { subscription: { unsubscribe: jest.fn() } },
   } as any);
+  mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null } } as any);
+  if (typeof window !== 'undefined') {
+    window.localStorage.clear();
+  }
 });
 
 describe('AppContext auth actions', () => {
@@ -199,7 +216,9 @@ describe('AppContext auth actions', () => {
     mockSupabase.auth.signOut.mockResolvedValue({ error: null } as any);
 
     const ctx = await renderWithContext();
-    await ctx.signOut();
+    await act(async () => {
+      await ctx.signOut();
+    });
     await waitFor(() => expect(ctx.user).toBeNull());
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Signed out successfully' }));
   });
@@ -220,6 +239,43 @@ describe('AppContext auth actions', () => {
     }));
   });
 
+  test('offline admin credentials bypass network sign-in', async () => {
+    mockSupabase.auth.signInWithPassword.mockImplementation(() => {
+      throw new Error('Network call should be skipped for offline login');
+    });
+
+    const ctx = await renderWithContext();
+    let result!: ReturnType<typeof ctx.signIn> extends Promise<infer R> ? R : never;
+    await act(async () => {
+      result = await ctx.signIn('admin@wathaci.test', 'AdminPass123!');
+    });
+
+    expect(result.user).toEqual(expect.objectContaining({ email: 'admin@wathaci.test' }));
+    expect(result.profile).toEqual(expect.objectContaining({ account_type: 'admin' }));
+    expect(window.localStorage.getItem('wathaci_offline_session')).toBeTruthy();
+    await waitFor(() => expect(ctx.user).toEqual(expect.objectContaining({ email: 'admin@wathaci.test' })));
+
+    mockSupabase.auth.signInWithPassword.mockReset();
+  });
+
+  test('refreshUser falls back to offline session when auth fails', async () => {
+    const ctx = await renderWithContext();
+    await act(async () => {
+      await ctx.signIn('admin@wathaci.test', 'AdminPass123!');
+    });
+
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: new Error('network issue') } as any);
+
+    let refreshed!: Awaited<ReturnType<typeof ctx.refreshUser>>;
+    await act(async () => {
+      refreshed = await ctx.refreshUser();
+    });
+
+    expect(refreshed.user).toEqual(expect.objectContaining({ email: 'admin@wathaci.test' }));
+    expect(refreshed.profile).toEqual(expect.objectContaining({ account_type: 'admin' }));
+    await waitFor(() => expect(ctx.user).toEqual(expect.objectContaining({ email: 'admin@wathaci.test' })));
+  });
+
   test('refreshUser updates user state', async () => {
     mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null } } as any);
     mockSupabase.from.mockImplementation(() => mockProfileChain() as any);
@@ -229,7 +285,9 @@ describe('AppContext auth actions', () => {
     mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: '123', email: 'b@test.com', user_metadata: { account_type: 'admin' } } } } as any);
     mockSupabase.from.mockImplementation(() => mockProfileChain(profile) as any);
 
-    await ctx.refreshUser();
+    await act(async () => {
+      await ctx.refreshUser();
+    });
     await waitFor(() => expect(ctx.user).toEqual({ id: '123', email: 'b@test.com', ...profile, user_metadata: { account_type: 'admin' } }));
     expect(mockToast).not.toHaveBeenCalled();
   });
