@@ -59,10 +59,8 @@ const paymentResponse = await lencoPaymentService.processMobileMoneyPayment({
 
 ```bash
 # Supabase Configuration
-VITE_SUPABASE_URL="https://wfqsmvkzkxdasbhpugdc.supabase.co"
-SUPABASE_URL="https://wfqsmvkzkxdasbhpugdc.supabase.co"
-VITE_SUPABASE_KEY="sb_publishable_8rLYlRkT8hNwBs-T7jsOAQ_pJq9gtfB"
-SUPABASE_SERVICE_ROLE_KEY="service-role-key"
+VITE_SUPABASE_URL="https://your-project.supabase.co"
+VITE_SUPABASE_KEY="your-anon-key"
 
 # Lenco Payment Gateway Configuration
 VITE_LENCO_PUBLIC_KEY="pub-dea560c94d379a23e7b85a265d7bb9acbd585481e6e1393e"
@@ -73,18 +71,14 @@ VITE_LENCO_API_URL="https://api.lenco.co/access/v2"
 # Payment Configuration
 VITE_PAYMENT_CURRENCY="ZMK"
 VITE_PAYMENT_COUNTRY="ZM"
-VITE_PLATFORM_FEE_PERCENTAGE="5"
+VITE_PLATFORM_FEE_PERCENTAGE="2"
 VITE_MIN_PAYMENT_AMOUNT="5"
 VITE_MAX_PAYMENT_AMOUNT="1000000"
 
 # Environment
-VITE_APP_ENV="production"
+VITE_APP_ENV="development"
 VITE_APP_NAME="WATHACI CONNECT"
 ```
-
-> ⚠️ **Environment Safety Check:** Before launching to production, verify that each key uses the correct prefix (`pk_live_` /
-> `sk_live_` / production webhook secret) in the Lenco dashboard. Swap to the corresponding test credentials when running in
-> non-production environments to prevent accidental live charges.
 
 ### Development vs Production
 
@@ -121,10 +115,14 @@ VITE_APP_NAME="WATHACI CONNECT"
    ```bash
    supabase login
    ```
-3. **Deploy the payment webhook function**
+3. **Deploy the payment webhook functions**
    ```bash
+   supabase functions deploy payment-webhook
    supabase functions deploy lenco-webhook
    ```
+   > `payment-webhook` is kept for backwards compatibility. New installs should
+   > point the Lenco dashboard to `lenco-webhook` which performs stricter
+   > signature validation and real-time notifications.
 4. **Set function secrets**
    ```bash
    supabase secrets set \
@@ -140,6 +138,21 @@ VITE_APP_NAME="WATHACI CONNECT"
 2. In the Lenco dashboard, open **Developer > Webhooks**.
 3. Add the function URL as your webhook endpoint.
 4. Use the same `LENCO_WEBHOOK_SECRET` value to validate incoming requests.
+5. Trigger a manual test event from the Lenco dashboard and confirm you receive
+   a `200` response. Any signature mismatch will return a `401` to help you
+   catch configuration errors immediately.
+
+### Webhook validation checklist
+
+Run the following local checks whenever the webhook or secrets change:
+
+```bash
+npm run test:jest -- lenco-webhook-utils
+```
+
+This test suite verifies the shared signature utilities against both the hex and
+base64 formats produced by Lenco. The webhook handler will reject requests that
+do not pass the same validation logic.
 
 ### Environment Variables
 
@@ -231,6 +244,45 @@ switch (paymentStatus.status) {
     break;
 }
 ```
+
+## Manual QA plan
+
+1. **Environment validation** – run `./scripts/setup-payments.sh` or manually
+   confirm the environment variables listed earlier are populated. The script
+   also reinstalls dependencies and runs the production build so you catch any
+   regressions before QA starts.
+2. **Run automated smoke tests** – execute `npm run test:jest -- PaymentTest` to
+   exercise the PaymentTestSuite in isolation. (See manual verification script
+   in `src/components/__tests__/LencoPayment.manual-verification.ts` for
+   reference data.)
+3. **Launch the UI test harness** – mount the `PaymentTestComponent` inside a
+   feature flag or Storybook sandbox. Use the component controls to:
+   - Initialise valid mobile-money and card transactions.
+   - Confirm fee calculations and validation warnings.
+   - Validate the real-time status feed transitions from `pending → completed`
+     when a webhook is received.
+4. **Webhook round-trip** – complete a payment in the sandbox and confirm the
+   status tracker updates automatically via the deployed `lenco-webhook` edge
+   function. Verify the event is captured in the `webhook_logs` table.
+5. **Regression sweep** – repeat payments with invalid signatures (edit the
+   webhook secret temporarily) to ensure the handler responds with `401` and the
+   UI surfaces an actionable error message.
+
+Document the results in your QA notes so they can be replayed during release
+sign-off.
+
+## Troubleshooting
+
+- **Pending transactions** – check the Supabase `payments` table for an entry
+  with the matching reference. If the status remains `pending` after five
+  minutes, re-run `lenco-payment` verification via the edge function and contact
+  Lenco support with the transaction reference.
+- **Provider outages** – consult the Lenco status page and switch PaymentTest
+  scenarios to a different provider (e.g. MTN → Airtel). Update the user-facing
+  banner to communicate the outage using the `PaymentStatusTracker` component.
+- **Invalid webhook signature** – rotate `LENCO_WEBHOOK_SECRET` in both Supabase
+  (`supabase secrets set`) and the Lenco dashboard, then re-run the signature
+  unit test and fire a manual webhook to confirm alignment.
 
 ## API Reference
 
