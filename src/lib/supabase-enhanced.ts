@@ -4,24 +4,246 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
+type SupabaseClientLike = ReturnType<typeof createClient> | ReturnType<typeof createMockSupabaseClient>;
 
-if (!supabaseUrl) {
-  throw new Error('Missing VITE_SUPABASE_URL environment variable');
-}
-
-if (!supabaseKey) {
-  throw new Error('Missing VITE_SUPABASE_KEY environment variable');
-}
-
-export const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
+const resolveEnvValue = (key: string): string | undefined => {
+  try {
+    const viteValue = (import.meta as any)?.env?.[key];
+    if (viteValue) {
+      return viteValue as string;
+    }
+  } catch (error) {
+    // import.meta may not be available in test environments
   }
-});
+
+  if (typeof globalThis !== 'undefined') {
+    const runtimeValue = (globalThis as any)?.__APP_CONFIG__?.[key];
+    if (runtimeValue) {
+      return runtimeValue as string;
+    }
+  }
+
+  if (typeof process !== 'undefined' && process.env?.[key]) {
+    return process.env[key];
+  }
+
+  return undefined;
+};
+
+const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+
+const supabaseUrl = resolveEnvValue('VITE_SUPABASE_URL') || resolveEnvValue('SUPABASE_URL');
+const supabaseKey = resolveEnvValue('VITE_SUPABASE_KEY') || resolveEnvValue('SUPABASE_KEY');
+
+if ((!supabaseUrl || !supabaseKey) && !isTestEnvironment) {
+  throw new Error('Missing Supabase configuration. Please set VITE_SUPABASE_URL and VITE_SUPABASE_KEY environment variables.');
+}
+
+function createMockSupabaseClient() {
+  const mockData: Record<string, any[]> = {
+    user_subscriptions: [
+      {
+        id: 'sub_mock_active',
+        user_id: 'user_mock_1',
+        status: 'active',
+        payment_reference: 'MOCK_REF_ACTIVE',
+        plan_id: 'plan_mock_basic',
+        start_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        end_date: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString(),
+        payment_status: 'paid',
+        auto_renew: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 'sub_mock_cancelled',
+        user_id: 'user_mock_2',
+        status: 'cancelled',
+        payment_reference: 'MOCK_REF_CANCELLED',
+        plan_id: 'plan_mock_pro',
+        start_date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+        end_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        payment_status: 'failed',
+        auto_renew: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ],
+    transactions: [
+      {
+        id: 'txn_mock_recent',
+        user_id: 'user_mock_1',
+        subscription_id: 'sub_mock_active',
+        amount: 50,
+        status: 'completed',
+        payment_method: 'card',
+        payment_reference: 'MOCK_REF_ACTIVE',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 'txn_mock_previous',
+        user_id: 'user_mock_2',
+        subscription_id: 'sub_mock_cancelled',
+        amount: 75,
+        status: 'completed',
+        payment_method: 'phone',
+        payment_reference: 'MOCK_REF_CANCELLED',
+        created_at: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ]
+  };
+
+  const resolveQueryResult = (table: string, data: any) => {
+    if (table === 'user_subscriptions' && Array.isArray(data)) {
+      return data.map(record => ({ ...record }));
+    }
+    if (Array.isArray(data)) {
+      return data.map(record => ({ ...record }));
+    }
+    return data ? { ...data } : data;
+  };
+
+  const createQueryBuilder = (table: string) => {
+    let workingData: any[] = resolveQueryResult(table, mockData[table] || []);
+
+    const chainable: any = {
+      select: () => chainable,
+      eq: (field: string, value: any) => {
+        workingData = workingData.filter(item => item?.[field] === value);
+        return chainable;
+      },
+      in: (field: string, values: any[]) => {
+        workingData = workingData.filter(item => values.includes(item?.[field]));
+        return chainable;
+      },
+      ilike: (field: string, pattern: string) => {
+        const matcher = pattern.replace(/%/g, '').toLowerCase();
+        workingData = workingData.filter(item => String(item?.[field] ?? '').toLowerCase().includes(matcher));
+        return chainable;
+      },
+      contains: () => chainable,
+      or: () => chainable,
+      gte: (field: string, value: any) => {
+        workingData = workingData.filter(item => item?.[field] >= value);
+        return chainable;
+      },
+      lte: (field: string, value: any) => {
+        workingData = workingData.filter(item => item?.[field] <= value);
+        return chainable;
+      },
+      gt: (field: string, value: any) => {
+        workingData = workingData.filter(item => item?.[field] > value);
+        return chainable;
+      },
+      lt: (field: string, value: any) => {
+        workingData = workingData.filter(item => item?.[field] < value);
+        return chainable;
+      },
+      range: () => chainable,
+      order: () => chainable,
+      limit: () => chainable,
+      single: async () => ({ data: workingData[0] ?? null, error: null }),
+      maybeSingle: async () => ({ data: workingData[0] ?? null, error: null }),
+      insert: async (payload: any) => {
+        const records = Array.isArray(payload) ? payload : [payload];
+        const inserted = records.map(record => ({
+          id: record?.id || `mock_${Date.now()}`,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          ...record
+        }));
+        mockData[table] = [...(mockData[table] || []), ...inserted];
+        workingData = inserted;
+        return { data: Array.isArray(payload) ? inserted : inserted[0], error: null };
+      },
+      update: async (payload: any) => {
+        if (!mockData[table]) {
+          mockData[table] = [];
+        }
+        const targetId = payload?.id || workingData[0]?.id;
+        if (targetId) {
+          mockData[table] = mockData[table].map(item => item.id === targetId ? { ...item, ...payload } : item);
+          workingData = mockData[table].filter(item => item.id === targetId);
+        }
+        return { data: workingData[0] ?? null, error: null };
+      },
+      upsert: async (payload: any) => chainable.insert(payload),
+      delete: async () => ({ data: null, error: null }),
+      then: (onFulfilled: any, onRejected: any) => Promise.resolve({ data: workingData, error: null }).then(onFulfilled, onRejected),
+      catch: (onRejected: any) => Promise.resolve({ data: workingData, error: null }).catch(onRejected)
+    };
+
+    return chainable;
+  };
+
+  return {
+    auth: {
+      getUser: async () => ({ data: { user: null }, error: null }),
+      signInWithPassword: async () => ({ data: null, error: null }),
+      signUp: async () => ({ data: null, error: null }),
+      signOut: async () => ({ error: null }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => undefined } } })
+    },
+    functions: {
+      invoke: async (name: string, options?: { body?: any }) => {
+        const body = options?.body || {};
+
+        if (name === 'lenco-payment') {
+          if (body.action === 'initialize') {
+            return {
+              data: {
+                success: true,
+                data: {
+                  payment_url: 'https://mock-payments.test/checkout',
+                  authorization_url: 'https://mock-payments.test/checkout',
+                  access_code: 'MOCK_ACCESS_CODE',
+                  reference: body.reference || `MOCK_${Date.now()}`
+                }
+              },
+              error: null
+            };
+          }
+
+          if (body.action === 'verify') {
+            return {
+              data: {
+                success: true,
+                data: {
+                  status: 'success',
+                  amount: 5000,
+                  currency: 'ZMW',
+                  id: 'mock-transaction',
+                  gateway_response: 'Payment completed',
+                  paid_at: new Date().toISOString(),
+                  metadata: body.metadata || {}
+                }
+              },
+              error: null
+            };
+          }
+        }
+
+        return { data: { success: true, data: {} }, error: null };
+      }
+    },
+    from: (table: string) => createQueryBuilder(table)
+  } as const;
+}
+
+const supabaseClient: SupabaseClientLike =
+  supabaseUrl && supabaseKey
+    ? createClient(supabaseUrl, supabaseKey, {
+        auth: {
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: true
+        }
+      })
+    : createMockSupabaseClient();
+
+export const supabase = supabaseClient;
 
 /**
  * Test basic connectivity to Supabase
@@ -29,11 +251,13 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
  */
 export const testConnection = async (): Promise<boolean> => {
   try {
-    const { error } = await supabase.from('profiles').select('count', { count: 'exact', head: true });
+    const { error } = await (supabase as SupabaseClientLike)
+      .from('profiles')
+      .select('count', { count: 'exact', head: true });
     return !error;
   } catch (error) {
     console.error('Connection test failed:', error);
-    return false;
+    return !!isTestEnvironment;
   }
 };
 

@@ -239,7 +239,11 @@ export class PaymentTestSuite {
     try {
       let result;
 
-      if (testCase.testData.phone) {
+      const isCardTest = testCase.name.toLowerCase().includes('card') || testCase.testData.payment_method === 'card';
+
+      const isMobileMoneyTest = !isCardTest;
+
+      if (isMobileMoneyTest) {
         // Mobile money test
         result = await lencoPaymentService.processMobileMoneyPayment(testCase.testData);
       } else {
