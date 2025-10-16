@@ -445,7 +445,12 @@ export class ProfileService extends BaseService<Profile> {
     paymentData: {
       payment_method: 'phone' | 'card';
       payment_phone?: string;
-      card_details?: { number: string; expiry: string };
+      card_details?: {
+        last4: string;
+        expiry_month: number;
+        expiry_year: number;
+        cardholder_name?: string | null;
+      };
       use_same_phone?: boolean;
     }
   ): Promise<DatabaseResponse<Profile>> {

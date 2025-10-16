@@ -1,3 +1,5 @@
+require('./lib/loadEnv');
+
 const express = require('express');
 
 let helmet;

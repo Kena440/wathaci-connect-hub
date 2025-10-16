@@ -40,17 +40,42 @@ The service role key is required because the backend performs server-side
 inserts regardless of user authentication. When these variables are missing the
 API still works, but data is kept only in memory.
 
+The Express server automatically loads variables from the project `.env` (and
+`.env.local`) files when they are available, so you can define the credentials
+once at the repository root and reuse them for both the frontend and backend.
+
 ### Database schema
 
 Run the SQL files in [`backend/supabase`](./supabase) to provision the required
 tables and policies:
 
+- [`core_schema.sql`](supabase/core_schema.sql) creates the foundational
+  `profiles`, `subscription_plans`, `user_subscriptions`, `transactions`, and
+  `payments` tables, including row-level security (RLS) rules for customer
+  isolation and helper triggers that keep `updated_at` timestamps fresh.
 - [`registrations.sql`](supabase/registrations.sql) creates the
   `registrations` table that stores validated sign-up submissions.
 - [`frontend_logs.sql`](supabase/frontend_logs.sql) creates the
   `frontend_logs` table for centralized logging.
 - [`profiles_policies.sql`](supabase/profiles_policies.sql) contains the
   policies used by the existing Supabase profile features.
+- [`profiles_schema.sql`](supabase/profiles_schema.sql) normalizes the
+  `profiles` table so nested JSON payloads (`qualifications`, `coordinates`,
+  `card_details`) emitted by the frontend can be stored without casting errors.
+
+After the tables exist, run `profiles_policies.sql` to (re)enable the
+automation that seeds a profile row for every new Supabase auth user and
+confirms that authenticated clients can access only their own profile
+information. You can validate the behaviour by:
+
+1. Creating a test user through Supabase Auth and confirming that a matching
+   row appears instantly in `public.profiles`.
+2. Running a `select` against `public.profiles` with the test user's session to
+   verify that only a single row is returned.
+3. Repeating the query with a different user's session (or the anon key) to
+   ensure that cross-account data is not exposed.
+4. Using the service role key to confirm that administrators can still manage
+   every row despite RLS.
 
 ## Supabase Edge Functions
 
@@ -62,6 +87,28 @@ supabase functions deploy live-funding-matcher
 supabase functions deploy matched-professionals
 supabase functions deploy sme-assessment-recommendations
 supabase functions deploy industry-matcher
+supabase functions deploy lenco-payment
+supabase functions deploy payment-verify
+supabase functions deploy payment-webhook
+supabase functions deploy freelancer-matcher
 ```
 
-After deployment, ensure the project has access to any required secrets (such as `SUPABASE_URL` and `SUPABASE_ANON_KEY`) so that the functions can read supporting data when executed.
+Make sure the Supabase CLI is authenticated (`supabase login`) and linked to the
+correct project (`supabase link --project-ref <project-ref>`) before deploying.
+
+After deployment, provide each function with the secrets it requires so runtime
+requests can succeed:
+
+```
+supabase secrets set \
+  SUPABASE_URL="https://your-project.supabase.co" \
+  SUPABASE_ANON_KEY="anon-key" \
+  SUPABASE_SERVICE_ROLE_KEY="service-role-key" \
+  LENCO_SECRET_KEY="lenco-secret" \
+  LENCO_WEBHOOK_SECRET="webhook-secret" \
+  --project-ref <project-ref>
+```
+
+Adjust the list of secrets to match your deployment needs (for example, omit
+the Lenco values for non-payment functions). You can rerun the command whenever
+credentials rotate.
