@@ -7,7 +7,7 @@ import { Check, CreditCard, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { LencoPayment } from '@/components/LencoPayment';
+import { LencoPayment, type LencoPaymentResult } from '@/components/LencoPayment';
 
 interface SubscriptionPlan {
   id: string;
@@ -49,28 +49,101 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
     }
   };
 
-  const handlePaymentSuccess = async () => {
+  const getDurationInMonths = (period: string) => {
+    if (/year/i.test(period)) {
+      return 12;
+    }
+
+    const monthsMatch = period.match(/(\d+)/);
+    if (monthsMatch) {
+      return parseInt(monthsMatch[1], 10);
+    }
+
+    return 1;
+  };
+
+  const mapPaymentMethod = (method: LencoPaymentResult['paymentMethod']): 'phone' | 'card' => {
+    return method === 'mobile_money' ? 'phone' : 'card';
+  };
+
+  const createReferenceNumber = (result: LencoPaymentResult) => {
+    if (result.transactionId) {
+      return result.transactionId;
+    }
+
+    const cryptoObj = typeof window !== 'undefined' ? window.crypto : undefined;
+    if (cryptoObj?.randomUUID) {
+      return cryptoObj.randomUUID();
+    }
+
+    return `txn-${Date.now()}`;
+  };
+
+  const handlePaymentSuccess = async (paymentResult: LencoPaymentResult) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from('subscriptions').upsert({
-          user_id: user.id,
-          plan_id: plan.id,
-          plan_name: plan.name,
-          amount: plan.price,
-          status: 'active',
-          created_at: new Date().toISOString()
-        });
+        const now = new Date();
+        const endDate = new Date(now);
+        endDate.setMonth(endDate.getMonth() + getDurationInMonths(plan.period));
+
+        const { data: subscription, error: subscriptionError } = await supabase
+          .from('user_subscriptions')
+          .upsert({
+            user_id: user.id,
+            plan_id: plan.id,
+            status: 'active',
+            payment_status: 'paid',
+            start_date: now.toISOString(),
+            end_date: endDate.toISOString(),
+            created_at: now.toISOString(),
+            updated_at: now.toISOString(),
+          }, { onConflict: 'user_id' })
+          .select()
+          .single();
+
+        if (subscriptionError) {
+          throw subscriptionError;
+        }
+
+        const subscriptionId = subscription?.id;
+        const referenceNumber = createReferenceNumber(paymentResult);
+
+        if (subscriptionId) {
+          const amountInNgwee = Math.round(paymentResult.amount * 100);
+          const { error: transactionError } = await supabase
+            .from('transactions')
+            .insert({
+              user_id: user.id,
+              subscription_id: subscriptionId,
+              amount: amountInNgwee,
+              currency: 'ZMW',
+              status: 'completed',
+              payment_method: mapPaymentMethod(paymentResult.paymentMethod),
+              reference_number: referenceNumber,
+              created_at: now.toISOString(),
+              updated_at: now.toISOString(),
+            });
+
+          if (transactionError) {
+            throw transactionError;
+          }
+        }
 
         toast({
           title: "Subscription Activated!",
           description: `Welcome to the ${plan.name} plan!`,
         });
-        
+
         setShowPayment(false);
       }
     } catch (error) {
       console.error('Subscription update error:', error);
+      toast({
+        title: "Payment Recorded with Issues",
+        description: "We received your payment but could not update your subscription automatically. Please contact support.",
+        variant: "destructive",
+      });
     }
   };
 

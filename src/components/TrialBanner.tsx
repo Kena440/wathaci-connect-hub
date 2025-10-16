@@ -20,14 +20,15 @@ export const TrialBanner = () => {
       if (!user) return;
 
       // Check if user has active subscription
-      const { data: subscription } = await supabase
-        .from('subscriptions')
-        .select('*')
+      const { data: subscriptions, error: subscriptionError } = await supabase
+        .from('user_subscriptions')
+        .select('id')
         .eq('user_id', user.id)
         .eq('status', 'active')
-        .single();
+        .eq('payment_status', 'paid')
+        .limit(1);
 
-      if (subscription) return; // User has active subscription
+      if (!subscriptionError && subscriptions && subscriptions.length > 0) return; // User has active subscription
 
       // Check trial status
       const { data: profile } = await supabase
