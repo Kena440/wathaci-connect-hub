@@ -82,6 +82,7 @@ export class LencoPaymentService {
         email: paymentRequest.email,
         name: paymentRequest.name,
         phone: paymentRequest.phone,
+        phoneNumber: paymentRequest.phone,
         description: paymentRequest.description,
         paymentMethod: paymentRequest.payment_method,
         provider: paymentRequest.provider,
