@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { userService, profileService, supabase, isSupabaseConfigured } from '@/lib/services';
 import { toast } from '@/components/ui/use-toast';
 import type { User, Profile } from '@/@types/database';
@@ -44,7 +44,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSidebarOpen(prev => !prev);
   };
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -88,7 +88,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } finally {
       setLoading(false);
     }
-  };
+  }, [usingLocalAuth]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = usingLocalAuth
@@ -195,7 +195,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [refreshUser, usingLocalAuth]);
 
   return (
     <AppContext.Provider
