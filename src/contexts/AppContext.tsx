@@ -129,7 +129,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     toast({
       title: "Account created!",
-      description: "Please check your email to verify your account.",
+      description: usingLocalAuth
+        ? "Your account is ready to use locally."
+        : "Please check your email to verify your account.",
     });
 
     if (usingLocalAuth) {
