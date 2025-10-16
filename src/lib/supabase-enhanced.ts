@@ -39,7 +39,7 @@ export const testConnection = async (): Promise<boolean> => {
 
 // Enhanced error handling wrapper with network error detection
 export const withErrorHandling = async <T>(
-  operation: () => Promise<{ data: T | null; error: any }>,
+  operation: () => PromiseLike<{ data: T | null; error: any }>,
   context: string
 ): Promise<{ data: T | null; error: Error | null }> => {
   try {

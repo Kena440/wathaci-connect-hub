@@ -79,12 +79,42 @@ const buildFallbackSuggestions = (userProfile: any): CollaborationSuggestion[] =
   ];
 };
 
+const resolveRuntimeConfig = (key: string): string | undefined => {
+  const importMeta = (() => {
+    try {
+      // eslint-disable-next-line no-eval
+      return (0, eval)('import.meta');
+    } catch {
+      return undefined;
+    }
+  })();
+
+  const fromVite = importMeta?.env?.[key];
+  if (fromVite) {
+    return fromVite as string;
+  }
+
+  if (typeof globalThis !== 'undefined') {
+    const runtimeValue = (globalThis as any).__APP_CONFIG__?.[key];
+    if (runtimeValue) {
+      return runtimeValue as string;
+    }
+  }
+
+  if (typeof process !== 'undefined' && process.env) {
+    const processValue = process.env[key];
+    if (processValue) {
+      return processValue;
+    }
+  }
+
+  return undefined;
+};
+
 export async function getCollaborationSuggestions(
   userProfile: any
 ): Promise<CollaborationSuggestion[]> {
-  const apiUrl = (import.meta as any).env?.VITE_COLLABORATION_API_URL as
-    | string
-    | undefined;
+  const apiUrl = resolveRuntimeConfig('VITE_COLLABORATION_API_URL');
 
   if (!apiUrl) {
     console.warn('COLLABORATION_API_URL is not configured. Using fallback suggestions.');

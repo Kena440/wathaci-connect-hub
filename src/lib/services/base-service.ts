@@ -18,11 +18,12 @@ export abstract class BaseService<T = any> {
    */
   async findById(id: string, select: string = '*'): Promise<DatabaseResponse<T>> {
     return withErrorHandling(
-      () => supabase
-        .from(this.tableName)
-        .select(select)
-        .eq('id', id)
-        .single(),
+      async () =>
+        supabase
+          .from(this.tableName)
+          .select(select)
+          .eq('id', id)
+          .single(),
       `${this.tableName}.findById`
     );
   }
@@ -68,10 +69,11 @@ export abstract class BaseService<T = any> {
 
         const totalCount = result.count || 0;
         const totalPages = Math.ceil(totalCount / limit);
+        const records = (result.data || []) as T[];
 
         return {
           data: {
-            data: result.data || [],
+            data: records,
             count: totalCount,
             page,
             totalPages,
@@ -89,11 +91,12 @@ export abstract class BaseService<T = any> {
    */
   async create(data: Partial<T>): Promise<DatabaseResponse<T>> {
     return withErrorHandling(
-      () => supabase
-        .from(this.tableName)
-        .insert(data)
-        .select()
-        .single(),
+      async () =>
+        supabase
+          .from(this.tableName)
+          .insert(data)
+          .select()
+          .single(),
       `${this.tableName}.create`
     );
   }
@@ -103,12 +106,13 @@ export abstract class BaseService<T = any> {
    */
   async update(id: string, data: Partial<T>): Promise<DatabaseResponse<T>> {
     return withErrorHandling(
-      () => supabase
-        .from(this.tableName)
-        .update({ ...data, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single(),
+      async () =>
+        supabase
+          .from(this.tableName)
+          .update({ ...data, updated_at: new Date().toISOString() })
+          .eq('id', id)
+          .select()
+          .single(),
       `${this.tableName}.update`
     );
   }
@@ -118,11 +122,12 @@ export abstract class BaseService<T = any> {
    */
   async upsert(data: Partial<T>): Promise<DatabaseResponse<T>> {
     return withErrorHandling(
-      () => supabase
-        .from(this.tableName)
-        .upsert(data)
-        .select()
-        .single(),
+      async () =>
+        supabase
+          .from(this.tableName)
+          .upsert(data)
+          .select()
+          .single(),
       `${this.tableName}.upsert`
     );
   }
@@ -149,15 +154,16 @@ export abstract class BaseService<T = any> {
    */
   async softDelete(id: string): Promise<DatabaseResponse<T>> {
     return withErrorHandling(
-      () => supabase
-        .from(this.tableName)
-        .update({ 
-          deleted_at: new Date().toISOString(),
-          updated_at: new Date().toISOString() 
-        })
-        .eq('id', id)
-        .select()
-        .single(),
+      async () =>
+        supabase
+          .from(this.tableName)
+          .update({
+            deleted_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id)
+          .select()
+          .single(),
       `${this.tableName}.softDelete`
     );
   }

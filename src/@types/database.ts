@@ -113,6 +113,7 @@ export interface UserSubscription {
   start_date: string;
   end_date: string;
   payment_status: 'paid' | 'pending' | 'failed';
+  payment_reference?: string | null;
   created_at: string;
   updated_at: string;
 }

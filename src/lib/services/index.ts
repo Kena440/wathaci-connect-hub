@@ -8,26 +8,45 @@
 export { BaseService } from './base-service';
 
 // User and Profile services
-export { 
-  UserService, 
-  ProfileService, 
-  userService, 
-  profileService 
+import {
+  UserService,
+  ProfileService,
+  userService,
+  profileService,
 } from './user-service';
 
+export {
+  UserService,
+  ProfileService,
+  userService,
+  profileService,
+};
+
 // Subscription services
+import {
+  SubscriptionService,
+  TransactionService,
+  subscriptionService,
+  transactionService,
+} from './subscription-service';
+
 export {
   SubscriptionService,
   TransactionService,
   subscriptionService,
-  transactionService
-} from './subscription-service';
+  transactionService,
+};
 
 // Resource purchase services
+import {
+  ResourcePurchaseService,
+  resourcePurchaseService,
+} from './resource-purchase-service';
+
 export {
   ResourcePurchaseService,
-  resourcePurchaseService
-} from './resource-purchase-service';
+  resourcePurchaseService,
+};
 
 // Enhanced Supabase client and utilities
 export { 
