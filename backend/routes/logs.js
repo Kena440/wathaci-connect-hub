@@ -34,7 +34,7 @@ const sanitizeValue = (value) => {
 const logSchema = Joi.object({
   level: Joi.string().valid('error', 'warn', 'info', 'debug').default('info'),
   message: Joi.string().max(1000).required(),
-  timestamp: Joi.string().isoDate().optional(),
+  timestamp: Joi.date().iso().optional().raw(),
   stack: Joi.string().allow('', null),
   componentStack: Joi.string().allow('', null),
   context: Joi.object().unknown(true).default({}),
