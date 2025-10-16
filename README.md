@@ -57,14 +57,14 @@ npm run test:lighthouse
 
 ### Payment Tests
 
-Payment functionality is comprehensively tested with 54 passing tests covering:
+Payment functionality is comprehensively tested with multiple test suites covering:
 - Mobile money payments (MTN, Airtel, Zamtel)
 - Card payments
 - Fee calculations and validation
 - Amount validation and formatting
 - Payment security and error handling
 
-See [PAYMENT_TESTS_RESULTS.md](PAYMENT_TESTS_RESULTS.md) for detailed test results and coverage information.
+See [PAYMENT_TESTS_RESULTS.md](PAYMENT_TESTS_RESULTS.md) for detailed test results and coverage information (results are point-in-time and may change as tests evolve).
 
 Make sure project dependencies are installed before executing the test commands.
 
