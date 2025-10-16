@@ -44,33 +44,65 @@ serve(async (req) => {
     });
   }
 
+  const signatureHeader = req.headers.get('x-lenco-signature');
+  const webhookSecret = Deno.env.get('LENCO_WEBHOOK_SECRET');
+
+  if (!signatureHeader || !webhookSecret) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Missing webhook signature or secret',
+    }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const rawBody = await req.text();
+
+  const isSignatureValid = await verifySignature(signatureHeader, rawBody, webhookSecret);
+
+  if (!isSignatureValid) {
+    console.warn('Invalid webhook signature received for payment webhook');
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Invalid webhook signature',
+    }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    logger.error('Missing Supabase configuration for payment webhook');
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Server configuration error',
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+
   let payload: WebhookPayload | undefined;
   try {
-    // Initialize Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    // Verify webhook signature
-    const signature = req.headers.get('x-lenco-signature');
-    const webhookSecret = Deno.env.get('LENCO_WEBHOOK_SECRET');
-    
-    if (!signature || !webhookSecret) {
-      throw new Error('Missing webhook signature or secret');
-    }
-
-    const rawBody = await req.text();
-    
-    // Verify signature (simplified - in production, use proper HMAC verification)
-    const expectedSignature = await crypto.subtle.digest(
-      'SHA-256',
-      new TextEncoder().encode(webhookSecret + rawBody)
-    );
-    
-    // Parse webhook payload
     payload = JSON.parse(rawBody) as WebhookPayload;
-    
+  } catch (parseError) {
+    logger.error('Invalid webhook payload received', parseError);
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Invalid webhook payload',
+    }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  try {
     console.log('Received webhook:', payload.event, payload.data.reference);
 
     // Update payment record
@@ -144,11 +176,6 @@ serve(async (req) => {
 
     // Log failed webhook
     try {
-      const supabaseClient = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      );
-
       await supabaseClient.from('webhook_logs').insert({
         event_type: 'unknown',
         reference: payload?.data.reference || 'unknown',
@@ -334,4 +361,75 @@ function getNotificationMessage(event: string, paymentData: any): string {
   };
 
   return messages[event] || `Payment update for ${amount}`;
+}
+
+async function verifySignature(signatureHeader: string, rawBody: string, secret: string): Promise<boolean> {
+  const signatures = extractSignatureCandidates(signatureHeader);
+
+  if (signatures.length === 0) {
+    return false;
+  }
+
+  const hmacBuffer = await computeHmac(secret, rawBody);
+  const expectedHex = toHex(hmacBuffer);
+  const expectedBase64 = toBase64(hmacBuffer);
+
+  return signatures.some((candidate) =>
+    timingSafeEqual(candidate, expectedHex) || timingSafeEqual(candidate, expectedBase64)
+  );
+}
+
+async function computeHmac(secret: string, rawBody: string): Promise<Uint8Array> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    {
+      name: 'HMAC',
+      hash: 'SHA-256',
+    },
+    false,
+    ['sign']
+  );
+
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(rawBody));
+  return new Uint8Array(signature);
+}
+
+function extractSignatureCandidates(signatureHeader: string): string[] {
+  return signatureHeader
+    .split(',')
+    .map((part) => part.trim())
+    .map((part) => {
+      const [, value] = part.split('=');
+      return value ?? part;
+    })
+    .filter((value) => Boolean(value));
+}
+
+function toHex(buffer: Uint8Array): string {
+  return Array.from(buffer)
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function toBase64(buffer: Uint8Array): string {
+  let binary = '';
+  buffer.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary);
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+
+  return result === 0;
 }
