@@ -30,9 +30,10 @@ export {
 } from './resource-purchase-service';
 
 // Enhanced Supabase client and utilities
-export { 
-  supabase, 
-  withErrorHandling
+export {
+  supabase,
+  withErrorHandling,
+  isSupabaseConfigured
 } from '../supabase-enhanced';
 
 // Database types
