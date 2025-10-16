@@ -59,8 +59,10 @@ const paymentResponse = await lencoPaymentService.processMobileMoneyPayment({
 
 ```bash
 # Supabase Configuration
-VITE_SUPABASE_URL="https://your-project.supabase.co"
-VITE_SUPABASE_KEY="your-anon-key"
+VITE_SUPABASE_URL="https://wfqsmvkzkxdasbhpugdc.supabase.co"
+SUPABASE_URL="https://wfqsmvkzkxdasbhpugdc.supabase.co"
+VITE_SUPABASE_KEY="sb_publishable_8rLYlRkT8hNwBs-T7jsOAQ_pJq9gtfB"
+SUPABASE_SERVICE_ROLE_KEY="service-role-key"
 
 # Lenco Payment Gateway Configuration
 VITE_LENCO_PUBLIC_KEY="pub-dea560c94d379a23e7b85a265d7bb9acbd585481e6e1393e"
@@ -71,14 +73,18 @@ VITE_LENCO_API_URL="https://api.lenco.co/access/v2"
 # Payment Configuration
 VITE_PAYMENT_CURRENCY="ZMK"
 VITE_PAYMENT_COUNTRY="ZM"
-VITE_PLATFORM_FEE_PERCENTAGE="2"
+VITE_PLATFORM_FEE_PERCENTAGE="5"
 VITE_MIN_PAYMENT_AMOUNT="5"
 VITE_MAX_PAYMENT_AMOUNT="1000000"
 
 # Environment
-VITE_APP_ENV="development"
+VITE_APP_ENV="production"
 VITE_APP_NAME="WATHACI CONNECT"
 ```
+
+> ⚠️ **Environment Safety Check:** Before launching to production, verify that each key uses the correct prefix (`pk_live_` /
+> `sk_live_` / production webhook secret) in the Lenco dashboard. Swap to the corresponding test credentials when running in
+> non-production environments to prevent accidental live charges.
 
 ### Development vs Production
 
