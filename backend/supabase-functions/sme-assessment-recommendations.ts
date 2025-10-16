@@ -8,13 +8,25 @@ const corsHeaders = {
 };
 
 // Helper to work in both Deno (Supabase Edge Functions) and Node (tests)
+type CrossEnvGlobal = typeof globalThis & {
+  Deno?: {
+    env?: {
+      get?: (key: string) => string | undefined;
+    };
+  };
+  process?: {
+    env?: Record<string, string | undefined>;
+  };
+};
+
 function getEnv(key: string): string | undefined {
-  // @ts-ignore - Deno may not exist in Node environment
-  if (typeof Deno !== 'undefined' && Deno?.env) {
-    // @ts-ignore
-    return Deno.env.get(key);
+  const globalEnv = globalThis as CrossEnvGlobal;
+  const denoValue = globalEnv.Deno?.env?.get?.(key);
+  if (typeof denoValue === 'string') {
+    return denoValue;
   }
-  return process.env[key];
+
+  return globalEnv.process?.env?.[key];
 }
 
 const OPENAI_API_KEY = getEnv('OPENAI_API_KEY') ?? '';
