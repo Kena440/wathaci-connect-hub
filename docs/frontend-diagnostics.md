@@ -10,7 +10,7 @@ paths, expected payloads, and potential sources of client-side errors.
   `src/lib/services/user-service.ts`. The call is executed inside the
   `withErrorHandling` utility, returning a `DatabaseResponse<User>` that
   surfaces Supabase errors to the UI.
-- Upon successful sign-up, the service normalises the response into the local
+- Upon successful sign-up, the service normalizes the response into the local
   `User` shape (id, email, timestamps) before handing control back to the
   caller.
 
