@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GovernmentNeedsAssessment } from '@/components/GovernmentNeedsAssessment';
 import { AssessmentResults } from '@/components/AssessmentResults';
@@ -25,16 +25,7 @@ export const GovernmentAssessment = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/signin');
-      return;
-    }
-    
-    checkExistingAssessment();
-  }, [user, navigate]);
-
-  const checkExistingAssessment = async () => {
+  const checkExistingAssessment = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -77,7 +68,16 @@ export const GovernmentAssessment = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchParams, toast, user]);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/signin');
+      return;
+    }
+
+    void checkExistingAssessment();
+  }, [user, navigate, checkExistingAssessment]);
 
   const handleStartAssessment = () => {
     setCurrentView('assessment');

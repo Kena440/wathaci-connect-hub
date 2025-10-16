@@ -79,13 +79,6 @@ export class SubscriptionService extends BaseService<UserSubscription> {
 
       // Process payment
       const paymentAmount = plan.lencoAmount / 100; // Convert from ngwee to kwacha
-      const paymentMetadata = {
-        subscription_id: subscription.id,
-        user_id: userId,
-        plan_id: plan.id,
-        plan_name: plan.name,
-        plan_period: plan.period,
-      };
       const paymentResponse = paymentMethod === 'mobile_money'
         ? await lencoPaymentService.processMobileMoneyPayment({
             amount: paymentAmount,
@@ -93,18 +86,14 @@ export class SubscriptionService extends BaseService<UserSubscription> {
             provider: paymentDetails.provider!,
             email: paymentDetails.email,
             name: paymentDetails.name,
-            description: `${plan.name} Subscription - ${plan.description || plan.price}`,
-            transactionType: 'subscription',
-            metadata: paymentMetadata,
+            description: `${plan.name} Subscription - ${plan.description || plan.price}`
           })
         : await lencoPaymentService.processCardPayment({
             amount: paymentAmount,
             email: paymentDetails.email,
             name: paymentDetails.name,
             description: `${plan.name} Subscription - ${plan.description || plan.price}`,
-            phone: paymentDetails.phone,
-            transactionType: 'subscription',
-            metadata: paymentMetadata,
+            phone: paymentDetails.phone
           });
 
       if (!paymentResponse.success) {
@@ -116,7 +105,6 @@ export class SubscriptionService extends BaseService<UserSubscription> {
       // Update subscription with payment reference
       await this.update(subscription.id, {
         payment_reference: paymentResponse.data?.reference,
-        payment_status: 'pending',
         updated_at: new Date().toISOString()
       });
 
@@ -145,121 +133,6 @@ export class SubscriptionService extends BaseService<UserSubscription> {
       return {
         success: false,
         error: error.message || 'Subscription failed'
-      };
-    }
-  }
-
-  /**
-   * Ensure there is a pending subscription record available for checkout
-   */
-  async ensurePendingSubscription(userId: string, planId: string): Promise<DatabaseResponse<UserSubscription>> {
-    const pendingResult = await withErrorHandling(
-      () => supabase
-        .from('user_subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('plan_id', planId)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      'SubscriptionService.ensurePendingSubscription'
-    );
-
-    if (pendingResult.error) {
-      return { data: null, error: pendingResult.error };
-    }
-
-    if (pendingResult.data) {
-      return { data: pendingResult.data as UserSubscription, error: null };
-    }
-
-    return this.createSubscription(userId, planId);
-  }
-
-  /**
-   * Attach a payment reference to an existing subscription and ensure transaction tracking
-   */
-  async attachPaymentReference(
-    subscriptionId: string,
-    reference: string,
-    options: { userId: string; paymentMethod: 'mobile_money' | 'card' }
-  ): Promise<DatabaseResponse<UserSubscription>> {
-    try {
-      const { data: subscription, error: subscriptionError } = await supabase
-        .from('user_subscriptions')
-        .select(`
-          *,
-          subscription_plans (
-            id,
-            name,
-            period,
-            lenco_amount,
-            price,
-            features,
-            category
-          )
-        `)
-        .eq('id', subscriptionId)
-        .single();
-
-      if (subscriptionError || !subscription) {
-        throw new Error('Subscription not found');
-      }
-
-      const updateResult = await supabase
-        .from('user_subscriptions')
-        .update({
-          payment_reference: reference,
-          payment_status: 'pending',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', subscriptionId)
-        .select(`
-          *,
-          subscription_plans (
-            id,
-            name,
-            period,
-            price,
-            features,
-            category,
-            lenco_amount
-          )
-        `)
-        .single();
-
-      if (updateResult.error || !updateResult.data) {
-        throw updateResult.error || new Error('Failed to update subscription');
-      }
-
-      const plan = (subscription as any).subscription_plans;
-      const existingTransaction = await supabase
-        .from('transactions')
-        .select('id')
-        .eq('reference_number', reference)
-        .maybeSingle();
-
-      if (!existingTransaction.data) {
-        const amount = plan?.lenco_amount ? plan.lenco_amount / 100 : 0;
-        await transactionService.createTransaction(
-          options.userId,
-          subscriptionId,
-          amount,
-          options.paymentMethod === 'mobile_money' ? 'phone' : 'card',
-          reference
-        );
-      }
-
-      return { data: updateResult.data as UserSubscription, error: null };
-    } catch (error: any) {
-      logger.error('Error attaching payment reference', error, {
-        subscriptionId,
-        reference,
-      });
-      return {
-        data: null,
-        error: error instanceof Error ? error : new Error('Failed to attach payment reference'),
       };
     }
   }
@@ -370,14 +243,6 @@ export class SubscriptionService extends BaseService<UserSubscription> {
 
       // Process renewal payment
       const paymentAmount = plan.lencoAmount / 100;
-      const paymentMetadata = {
-        subscription_id: subscriptionId,
-        user_id: subscription.user_id,
-        plan_id: plan.id,
-        plan_name: plan.name,
-        plan_period: plan.period,
-        renewal: true,
-      };
       const paymentResponse = paymentMethod === 'mobile_money'
         ? await lencoPaymentService.processMobileMoneyPayment({
             amount: paymentAmount,
@@ -385,18 +250,14 @@ export class SubscriptionService extends BaseService<UserSubscription> {
             provider: paymentDetails.provider!,
             email: paymentDetails.email,
             name: paymentDetails.name,
-            description: `${plan.name} Subscription Renewal`,
-            transactionType: 'subscription',
-            metadata: paymentMetadata,
+            description: `${plan.name} Subscription Renewal`
           })
         : await lencoPaymentService.processCardPayment({
             amount: paymentAmount,
             email: paymentDetails.email,
             name: paymentDetails.name,
             description: `${plan.name} Subscription Renewal`,
-            phone: paymentDetails.phone,
-            transactionType: 'subscription',
-            metadata: paymentMetadata,
+            phone: paymentDetails.phone
           });
 
       if (!paymentResponse.success) {
@@ -410,7 +271,7 @@ export class SubscriptionService extends BaseService<UserSubscription> {
       await this.update(subscriptionId, {
         end_date: newEndDate.toISOString(),
         status: 'active',
-        payment_status: 'pending',
+        payment_status: 'paid',
         payment_reference: paymentResponse.data?.reference,
         updated_at: new Date().toISOString()
       });

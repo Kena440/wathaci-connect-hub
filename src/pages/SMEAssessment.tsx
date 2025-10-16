@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { SMENeedsAssessment } from '@/components/SMENeedsAssessment';
 import { AssessmentResults } from '@/components/AssessmentResults';
@@ -25,16 +25,40 @@ export const SMEAssessment = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/signin');
-      return;
-    }
-    
-    checkExistingAssessment();
-  }, [user, navigate]);
+  const loadAssessmentResults = useCallback(async (assessment: any) => {
+    try {
+      const { data: recommendations, error } = await supabase.functions.invoke(
+        'sme-assessment-recommendations',
+        {
+          body: {
+            assessmentId: assessment.id,
+            gaps: assessment.identified_gaps,
+            supportAreas: assessment.immediate_support_areas,
+            budget: assessment.budget_for_professional_services,
+          },
+        }
+      );
 
-  const checkExistingAssessment = async () => {
+      if (error) {
+        console.error('Failed to load recommendations:', error);
+      }
+
+      setAssessmentData({
+        assessment,
+        recommendations: recommendations?.recommendations || [],
+      });
+      setCurrentView('results');
+    } catch (error) {
+      console.error('Error loading assessment results:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load assessment results.",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
+
+  const checkExistingAssessment = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -66,41 +90,16 @@ export const SMEAssessment = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [loadAssessmentResults, searchParams, user]);
 
-  const loadAssessmentResults = async (assessment: any) => {
-    try {
-      // Fetch professional recommendations
-      const { data: recommendations, error } = await supabase.functions.invoke(
-        'sme-assessment-recommendations',
-        {
-          body: {
-            assessmentId: assessment.id,
-            gaps: assessment.identified_gaps,
-            supportAreas: assessment.immediate_support_areas,
-            budget: assessment.budget_for_professional_services
-          }
-        }
-      );
-
-      if (error) {
-        console.error('Failed to load recommendations:', error);
-      }
-
-      setAssessmentData({
-        assessment,
-        recommendations: recommendations?.recommendations || []
-      });
-      setCurrentView('results');
-    } catch (error) {
-      console.error('Error loading assessment results:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load assessment results.",
-        variant: "destructive",
-      });
+  useEffect(() => {
+    if (!user) {
+      navigate('/signin');
+      return;
     }
-  };
+
+    void checkExistingAssessment();
+  }, [user, navigate, checkExistingAssessment]);
 
   const handleAssessmentComplete = (results: AssessmentData) => {
     setAssessmentData(results);
@@ -131,7 +130,7 @@ export const SMEAssessment = () => {
 
   const handleViewExistingResults = () => {
     if (existingAssessment) {
-      loadAssessmentResults(existingAssessment);
+      void loadAssessmentResults(existingAssessment);
     }
   };
 

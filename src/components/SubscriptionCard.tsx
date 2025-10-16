@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,11 +6,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Check, CreditCard, Smartphone, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase-enhanced';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { subscriptionService } from '@/lib/services/subscription-service';
 import { LencoPayment } from '@/components/LencoPayment';
-import type { UserSubscription } from '@/@types/database';
 
 interface SubscriptionPlan {
   id: string;
@@ -30,45 +30,14 @@ interface SubscriptionCardProps {
   compact?: boolean;
 }
 
-const MAX_POLL_ATTEMPTS = 12;
-const POLL_INTERVAL = 10000; // 10 seconds
-
 export const SubscriptionCard = ({ plan, userType, compact = false }: SubscriptionCardProps) => {
   const [showPayment, setShowPayment] = useState(false);
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'mobile_money' | 'card'>('mobile_money');
-  const [subscriptionResult, setSubscriptionResult] = useState<{ reference: string } | null>(null);
-  const [pendingSubscription, setPendingSubscription] = useState<UserSubscription | null>(null);
+  const [subscriptionResult, setSubscriptionResult] = useState<any>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAppContext();
-
-  const pendingPaymentReference = useMemo(
-    () => pendingSubscription?.payment_reference ?? null,
-    [pendingSubscription?.payment_reference]
-  );
-
-  const paymentMetadata = useMemo(
-    () => ({
-      subscription_id: pendingSubscription?.id,
-      plan_id: plan.id,
-      plan_name: plan.name,
-      plan_period: plan.period,
-    }),
-    [pendingSubscription?.id, plan.id, plan.name, plan.period]
-  );
-
-  const paymentDescription = useMemo(
-    () => `${plan.name} Plan Subscription - ${plan.price}${plan.period}`,
-    [plan.name, plan.period, plan.price]
-  );
-
-  const handleDialogChange = (open: boolean) => {
-    setShowPayment(open);
-    if (!open) {
-      setSubscriptionResult(null);
-    }
-  };
 
   const handleSelectPlan = async (selectedPaymentMethod: 'mobile_money' | 'card') => {
     try {
@@ -77,6 +46,7 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
         return;
       }
 
+      // Check if user already has an active subscription
       const activeSubscription = await subscriptionService.getCurrentUserSubscription(user.id);
       if (activeSubscription.data) {
         toast({
@@ -87,26 +57,67 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
         return;
       }
 
-      setLoading(true);
-      const pendingResult = await subscriptionService.ensurePendingSubscription(user.id, plan.id);
-
-      if (pendingResult.error || !pendingResult.data) {
-        throw pendingResult.error || new Error('Unable to prepare subscription');
-      }
-
-      setPendingSubscription(pendingResult.data);
-      if (pendingResult.data.payment_reference) {
-        setSubscriptionResult({ reference: pendingResult.data.payment_reference });
-      } else {
-        setSubscriptionResult(null);
-      }
-
       setPaymentMethod(selectedPaymentMethod);
       setShowPayment(true);
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Unable to start subscription checkout",
+        description: "Please sign in to subscribe",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSubscription = async (paymentDetails: {
+    email: string;
+    name: string;
+    phone?: string;
+    provider?: 'mtn' | 'airtel' | 'zamtel';
+  }) => {
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      const result = await subscriptionService.subscribeToPlan(
+        user.id,
+        plan.id,
+        paymentMethod,
+        paymentDetails
+      );
+
+      if (result.success) {
+        setSubscriptionResult(result);
+        
+        if (paymentMethod === 'card' && result.payment_url) {
+          // For card payments, redirect to payment gateway
+          window.open(result.payment_url, '_blank');
+          toast({
+            title: "Redirecting to Payment",
+            description: "Please complete payment in the new window",
+          });
+        } else {
+          // For mobile money, show instructions
+          toast({
+            title: "Payment Initiated",
+            description: "Please check your mobile money for payment instructions",
+            duration: 10000,
+          });
+        }
+
+        // Start payment verification polling
+        if (result.subscription?.payment_reference) {
+          setTimeout(() => {
+            pollPaymentStatus(result.subscription!.payment_reference!);
+          }, 5000);
+        }
+      } else {
+        throw new Error(result.error || 'Subscription failed');
+      }
+    } catch (error: any) {
+      console.error('Subscription error:', error);
+      toast({
+        title: "Subscription Failed",
+        description: error.message || 'Failed to create subscription',
         variant: "destructive",
       });
     } finally {
@@ -114,19 +125,10 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
     }
   };
 
-  const pollPaymentStatus = async (paymentReference: string, attempt: number = 0): Promise<void> => {
-    if (attempt >= MAX_POLL_ATTEMPTS) {
-      toast({
-        title: "Verification Timeout",
-        description: "We could not confirm your payment yet. Please contact support if it was deducted.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const pollPaymentStatus = async (paymentReference: string) => {
     try {
       const verificationResult = await subscriptionService.verifySubscriptionPayment(paymentReference);
-
+      
       if (verificationResult.success) {
         toast({
           title: "Subscription Activated!",
@@ -134,10 +136,12 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
         });
         setShowPayment(false);
         setSubscriptionResult(null);
-        setPendingSubscription(null);
+        
+        // Refresh user data or redirect
         window.location.reload();
       } else {
-        setTimeout(() => pollPaymentStatus(paymentReference, attempt + 1), POLL_INTERVAL);
+        // Continue polling for 2 minutes
+        setTimeout(() => pollPaymentStatus(paymentReference), 10000);
       }
     } catch (error) {
       console.error('Payment verification error:', error);
@@ -149,51 +153,14 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
     }
   };
 
-  const handlePaymentInitialized = async (paymentData: { reference: string }) => {
-    if (!pendingSubscription || !user) return;
-
-    const attachResult = await subscriptionService.attachPaymentReference(
-      pendingSubscription.id,
-      paymentData.reference,
-      {
-        userId: user.id,
-        paymentMethod,
-      }
-    );
-
-    if (attachResult.error || !attachResult.data) {
-      toast({
-        title: "Subscription tracking error",
-        description: attachResult.error?.message || 'Failed to link payment to subscription record',
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setPendingSubscription(attachResult.data);
-    setSubscriptionResult({ reference: paymentData.reference });
-  };
-
   const handlePaymentSuccess = async (paymentData: any) => {
-    if (paymentData.reference) {
-      await pollPaymentStatus(paymentData.reference);
+    try {
+      if (paymentData.reference) {
+        await pollPaymentStatus(paymentData.reference);
+      }
+    } catch (error) {
+      console.error('Payment success handler error:', error);
     }
-  };
-
-  const handlePaymentCancel = () => {
-    setShowPayment(false);
-    setSubscriptionResult(null);
-  };
-
-  const sharedPaymentProps = {
-    amount: plan.lencoAmount / 100,
-    transactionType: 'subscription' as const,
-    onSuccess: handlePaymentSuccess,
-    onCancel: handlePaymentCancel,
-    onInitialized: handlePaymentInitialized,
-    metadata: paymentMetadata,
-    initialReference: pendingPaymentReference,
-    resumePendingPayment: true,
   };
 
   if (compact) {
@@ -213,9 +180,9 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <Button
-              size="sm"
-              className="w-full mb-2"
+            <Button 
+              size="sm" 
+              className="w-full mb-2" 
               variant={plan.popular ? 'default' : 'outline'}
               onClick={() => handleSelectPlan('mobile_money')}
               disabled={loading}
@@ -233,24 +200,30 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
           </CardContent>
         </Card>
 
-        <Dialog open={showPayment} onOpenChange={handleDialogChange}>
+        <Dialog open={showPayment} onOpenChange={setShowPayment}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>Subscribe to {plan.name}</DialogTitle>
             </DialogHeader>
-
+            
             {subscriptionResult && (
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Subscription payment started. Reference: <span className="font-mono">{subscriptionResult.reference}</span>
+                  Subscription created! Complete payment to activate your plan.
                 </AlertDescription>
               </Alert>
             )}
 
             <LencoPayment
-              {...sharedPaymentProps}
+              amount={plan.lencoAmount / 100}
               description={`${plan.name} Plan - ${plan.price}${plan.period}`}
+              transactionType="subscription"
+              onSuccess={handlePaymentSuccess}
+              onCancel={() => {
+                setShowPayment(false);
+                setSubscriptionResult(null);
+              }}
             />
           </DialogContent>
         </Dialog>
@@ -284,8 +257,8 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
             ))}
           </ul>
           <div className="space-y-2">
-            <Button
-              className="w-full"
+            <Button 
+              className="w-full" 
               variant={plan.popular ? 'default' : 'outline'}
               onClick={() => handleSelectPlan('card')}
               disabled={loading}
@@ -297,8 +270,8 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
               )}
               Subscribe with Card
             </Button>
-            <Button
-              className="w-full"
+            <Button 
+              className="w-full" 
               variant="outline"
               onClick={() => handleSelectPlan('mobile_money')}
               disabled={loading}
@@ -311,7 +284,7 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
               Pay with Mobile Money
             </Button>
           </div>
-
+          
           <div className="text-center pt-2">
             <p className="text-xs text-gray-500">
               💳 Secure payments by Lenco | 🔒 Bank-level encryption
@@ -320,24 +293,30 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
         </CardContent>
       </Card>
 
-      <Dialog open={showPayment} onOpenChange={handleDialogChange}>
+      <Dialog open={showPayment} onOpenChange={setShowPayment}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Complete Your Subscription</DialogTitle>
           </DialogHeader>
-
+          
           {subscriptionResult && (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Subscription payment started. Reference: <span className="font-mono">{subscriptionResult.reference}</span>
+                Subscription created! Complete payment to activate your {plan.name} plan.
               </AlertDescription>
             </Alert>
           )}
 
           <LencoPayment
-            {...sharedPaymentProps}
-            description={paymentDescription}
+            amount={plan.lencoAmount / 100}
+            description={`${plan.name} Plan Subscription - ${plan.price}${plan.period}`}
+            transactionType="subscription"
+            onSuccess={handlePaymentSuccess}
+            onCancel={() => {
+              setShowPayment(false);
+              setSubscriptionResult(null);
+            }}
           />
         </DialogContent>
       </Dialog>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase-enhanced';
 import { useAppContext } from '@/contexts/AppContext';
@@ -17,23 +17,9 @@ export const ProfileReview = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/signin');
-      return;
-    }
-    
-    if (!user.profile_completed) {
-      navigate('/profile-setup');
-      return;
-    }
-
-    fetchProfile();
-  }, [user, navigate]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     if (!user) return;
-    
+
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -52,7 +38,21 @@ export const ProfileReview = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast, user]);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/signin');
+      return;
+    }
+
+    if (!user.profile_completed) {
+      navigate('/profile-setup');
+      return;
+    }
+
+    void fetchProfile();
+  }, [user, navigate, fetchProfile]);
 
   const handleEditProfile = () => {
     navigate('/profile-setup');

@@ -48,16 +48,8 @@ const services = [
 
 const ServicesGrid = () => {
   return (
-    <section className="relative py-16 px-6 overflow-hidden">
-      <div
-        className="absolute inset-0 bg-center bg-cover opacity-40"
-        style={{
-          backgroundImage:
-            "url('/images/ChatGPT%20Image%20Sep%2023%2C%202025%2C%2001_52_19%20PM.png')",
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-orange-50/70 to-emerald-50/70" />
-      <div className="relative max-w-6xl mx-auto">
+    <section className="py-16 px-6 bg-gray-50">
+      <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <Badge className="mb-4 bg-blue-100 text-blue-800 border-blue-300">
             Our Core Services
