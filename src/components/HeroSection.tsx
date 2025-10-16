@@ -5,6 +5,31 @@ import { Link } from 'react-router-dom';
 const HeroSection = () => {
   return (
     <section className="relative overflow-hidden py-20">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+      >
+        <div className="absolute -left-24 -top-16 hidden md:block h-[28rem] w-[28rem] rounded-[3rem] shadow-[0_40px_120px_-30px_rgba(15,23,42,0.35)] ring-4 ring-white/80">
+          <img
+            src="/images/ChatGPT%20Image%20Sep%2023%2C%202025%2C%2001_53_02%20PM.png"
+            alt="Zambian entrepreneurs collaborating"
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover brightness-105 contrast-110"
+          />
+        </div>
+        <div className="absolute -bottom-24 -right-16 hidden lg:block h-[34rem] w-[30rem] rounded-[3rem] shadow-[0_40px_120px_-40px_rgba(15,23,42,0.45)] ring-4 ring-white/80">
+          <img
+            src="/images/ChatGPT%20Image%20Sep%2023%2C%202025%2C%2002_14_37%20PM.png"
+            alt="Business owner reviewing reports"
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover brightness-105 contrast-110"
+          />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-br from-white/90 via-white/85 to-white/75 backdrop-blur-[1px]" />
+      </div>
+
       <div className="relative z-10 max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">
           <div className="mb-8">
