@@ -6,8 +6,16 @@ import { Link } from 'react-router-dom';
 
 const MarketplacePreview = () => {
   return (
-    <section className="py-16 px-6 bg-white">
-      <div className="max-w-6xl mx-auto">
+    <section className="relative py-16 px-6 overflow-hidden">
+      <div
+        className="absolute inset-0 bg-center bg-cover opacity-30"
+        style={{
+          backgroundImage:
+            "url('/images/ChatGPT%20Image%20Jul%2028%2C%202025%2C%2012_32_46%20PM.png')",
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-white/85 via-emerald-50/70 to-amber-50/70" />
+      <div className="relative max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <Badge className="mb-4 bg-emerald-100 text-emerald-800 border-emerald-300">
             Professional Marketplace

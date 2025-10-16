@@ -176,8 +176,16 @@ const StatsSection = () => {
   ];
 
   return (
-    <section className="py-16 bg-gradient-to-r from-orange-50 to-green-50">
-      <div className="max-w-7xl mx-auto px-6">
+    <section className="relative py-16 overflow-hidden">
+      <div
+        className="absolute inset-0 bg-center bg-cover opacity-25"
+        style={{
+          backgroundImage:
+            "url('/images/ChatGPT%20Image%20Sep%2023%2C%202025%2C%2001_17_09%20PM.png')",
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-orange-50/85 via-white/80 to-green-50/85" />
+      <div className="relative max-w-7xl mx-auto px-6">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
             Our Impact & Growth
@@ -192,7 +200,10 @@ const StatsSection = () => {
           {impactStats.map((stat, index) => {
             const IconComponent = stat.icon;
             return (
-              <div key={index} className="text-center bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div
+                key={index}
+                className="text-center bg-white/90 backdrop-blur-sm p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              >
                 <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4`}>
                   <IconComponent className={`w-8 h-8 ${stat.color}`} />
                 </div>
@@ -210,7 +221,7 @@ const StatsSection = () => {
           })}
         </div>
 
-        <div className="mt-12 text-center bg-white p-8 rounded-xl shadow-lg">
+        <div className="mt-12 text-center bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow-lg">
           <h3 className="text-xl font-bold text-gray-900 mb-4">
             Why Invest in WATHACI Connect?
           </h3>
