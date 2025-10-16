@@ -16,8 +16,9 @@ cp .env.example .env
 
 Update the new `.env` file with production values:
 
-- `VITE_SUPABASE_URL` – Supabase project URL.
+- `VITE_SUPABASE_URL` / `SUPABASE_URL` – Supabase project URL (mirrored for the backend runtime).
 - `VITE_SUPABASE_KEY` – Supabase anon key for client access.
+- `SUPABASE_SERVICE_ROLE_KEY` – Required for any server-side inserts, including the Express API and Supabase Edge Functions.
 - `VITE_LENCO_PUBLIC_KEY` – Lenco public API key (`pk_live_*` in production).
 - `LENCO_SECRET_KEY` – Lenco secret API key (`sk_live_*` in production).
 - `LENCO_WEBHOOK_SECRET` – Secret used to validate Lenco webhooks.
@@ -31,7 +32,10 @@ Update the new `.env` file with production values:
 - `VITE_APP_NAME` – Application display name.
 
 When deploying to Vercel (or another hosting provider), add **both** `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` to the project
-environment variables along with any server-side keys (such as `SUPABASE_SERVICE_ROLE_KEY` if you run edge functions).
+environment variables along with any server-side keys (such as `SUPABASE_SERVICE_ROLE_KEY` if you run edge functions). Use the
+[deployment checklist](docs/VERCEL_SUPABASE_DEPLOYMENT.md) to mirror the values from `.env` into the `Production`, `Preview`, and
+`Development` environments and verify them before triggering a build. Running `npm run env:check` or `./scripts/setup-payments.sh`
+locally is a quick way to confirm the `.env` file is complete.
 Double check that the variables are present in every environment (Preview, Development, and Production) so the application can connect
 to Supabase without runtime errors.
 See the [Vercel Supabase deployment checklist](docs/VERCEL_SUPABASE_DEPLOYMENT.md) for a full walkthrough of verifying project access,
