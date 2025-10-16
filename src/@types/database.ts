@@ -68,11 +68,16 @@ export interface BusinessInfo {
 
 export interface PaymentInfo {
   payment_method: 'phone' | 'card';
-  payment_phone?: string;
+  payment_phone?: string | null;
   card_details?: {
-    number: string;
-    expiry: string;
-  };
+    provider: 'lenco';
+    status?: 'external_gateway' | 'tokenized' | 'pending_verification';
+    setup_required?: boolean;
+    last4?: string;
+    exp_month?: string;
+    exp_year?: string;
+    expiry?: string;
+  } | null;
   use_same_phone?: boolean;
 }
 
