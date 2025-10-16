@@ -53,39 +53,28 @@ export class UserService extends BaseService<User> {
   async signIn(email: string, password: string): Promise<DatabaseResponse<User>> {
     return withErrorHandling(
       async () => {
-        try {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-          if (error) {
-            return { data: null, error };
-          }
-
-          if (!data.user) {
-            return { data: null, error: new Error('Sign in failed. Please try again.') };
-          }
-
-          return {
-            data: {
-              id: data.user.id,
-              email: data.user.email || '',
-              created_at: data.user.created_at,
-              updated_at: data.user.updated_at
-            },
-            error: null
-          };
-        } catch (error: any) {
-          // Catch network errors specifically
-          if (error.message?.includes('fetch') || error.name === 'TypeError') {
-            return { 
-              data: null, 
-              error: new Error('Network error. Please check your internet connection.') 
-            };
-          }
-          throw error;
+        if (error) {
+          return { data: null, error };
         }
+
+        if (!data.user) {
+          return { data: null, error: new Error('Sign in failed. Please try again.') };
+        }
+
+        return {
+          data: {
+            id: data.user.id,
+            email: data.user.email || '',
+            created_at: data.user.created_at,
+            updated_at: data.user.updated_at
+          },
+          error: null
+        };
       },
       'UserService.signIn'
     );
@@ -97,39 +86,28 @@ export class UserService extends BaseService<User> {
   async signUp(email: string, password: string): Promise<DatabaseResponse<User>> {
     return withErrorHandling(
       async () => {
-        try {
-          const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-          });
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
 
-          if (error) {
-            return { data: null, error };
-          }
-
-          if (!data.user) {
-            return { data: null, error: new Error('User creation failed') };
-          }
-
-          return {
-            data: {
-              id: data.user.id,
-              email: data.user.email || '',
-              created_at: data.user.created_at,
-              updated_at: data.user.updated_at
-            },
-            error: null
-          };
-        } catch (error: any) {
-          // Catch network errors specifically
-          if (error.message?.includes('fetch') || error.name === 'TypeError') {
-            return { 
-              data: null, 
-              error: new Error('Network error. Please check your internet connection.') 
-            };
-          }
-          throw error;
+        if (error) {
+          return { data: null, error };
         }
+
+        if (!data.user) {
+          return { data: null, error: new Error('User creation failed') };
+        }
+
+        return {
+          data: {
+            id: data.user.id,
+            email: data.user.email || '',
+            created_at: data.user.created_at,
+            updated_at: data.user.updated_at
+          },
+          error: null
+        };
       },
       'UserService.signUp'
     );
