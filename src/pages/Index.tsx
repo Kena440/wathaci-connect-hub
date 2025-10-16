@@ -13,20 +13,34 @@ const Index: React.FC = () => {
 
   return (
     <AppLayout>
-      <HeroSection />
-      {user && (
-        <div className="container mx-auto px-4 py-6">
-          <SubscriptionBanner 
-            userType={user.account_type} 
-            compact={true}
-            dismissible={true}
+      <div className="relative min-h-screen overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage:
+                "url('/images/ChatGPT%20Image%20Sep%2014%2C%202025%2C%2011_09_30%20PM.png')",
+            }}
           />
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-50/70 via-white/60 to-green-50/70" />
         </div>
-      )}
-      <ServicesGrid />
-      <MarketplacePreview />
-      <StatsSection />
-      <TestimonialsSection />
+        <div className="relative z-10">
+          <HeroSection />
+          {user && (
+            <div className="container mx-auto px-4 py-6">
+              <SubscriptionBanner
+                userType={user.account_type}
+                compact={true}
+                dismissible={true}
+              />
+            </div>
+          )}
+          <ServicesGrid />
+          <MarketplacePreview />
+          <StatsSection />
+          <TestimonialsSection />
+        </div>
+      </div>
     </AppLayout>
   );
 };
