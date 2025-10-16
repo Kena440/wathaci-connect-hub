@@ -1,6 +1,7 @@
 const express = require('express');
 const Joi = require('joi');
 const sanitizeHtml = require('sanitize-html');
+const { persistLog, LogStoreError } = require('../services/log-store');
 
 const router = express.Router();
 
@@ -46,7 +47,7 @@ const logSchema = Joi.object({
     .optional(),
 }).unknown(true);
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { error, value } = logSchema.validate(req.body, { abortEarly: false, allowUnknown: true });
 
   if (error) {
@@ -70,6 +71,16 @@ router.post('/', (req, res) => {
 
   console.log('[frontend-log]', sanitizedLog);
 
+  try {
+    await persistLog(sanitizedLog);
+  } catch (logError) {
+    if (logError instanceof LogStoreError) {
+      console.error('[routes/logs] Failed to persist log entry to Supabase:', logError);
+    } else {
+      console.error('[routes/logs] Unexpected log persistence error:', logError);
+    }
+  }
+
   return res.status(201).json({ status: 'received' });
 });
 
@@ -79,4 +90,3 @@ router.get('/', (_req, res) => {
 });
 
 module.exports = router;
-

@@ -174,6 +174,31 @@ Manages payment transactions:
 - updated_at: TIMESTAMP
 ```
 
+#### `registrations` Table
+```sql
+- id: UUID (Primary Key)
+- first_name: TEXT
+- last_name: TEXT
+- email: TEXT (Unique, stored in lowercase)
+- account_type: TEXT
+- company: TEXT
+- mobile_number: TEXT
+- created_at: TIMESTAMP
+- updated_at: TIMESTAMP
+```
+
+#### `frontend_logs` Table
+```sql
+- id: UUID (Primary Key)
+- level: TEXT (info, warn, error, debug)
+- message: TEXT
+- context: JSONB
+- stack: TEXT
+- component_stack: TEXT
+- received_at: TIMESTAMP
+- created_at: TIMESTAMP
+```
+
 ## Usage Examples
 
 ### Basic User Operations
