@@ -25,13 +25,31 @@ Linking the CLI ensures you are operating on the correct Supabase project before
 In the Vercel dashboard:
 
 1. Navigate to your project → **Settings → Environment Variables**.
-2. Add the following variables for each environment (`Production`, `Preview`, and `Development`):
-   - `VITE_SUPABASE_URL` – Supabase project URL (for browser/runtime access).
-   - `VITE_SUPABASE_KEY` – Supabase anon/public key.
-   - `SUPABASE_SERVICE_ROLE_KEY` – Required only if Vercel Edge Functions or server actions need service role access.
+2. Mirror the contents of the local `.env` file for **every** environment (`Production`, `Preview`, and `Development`). At a
+   minimum the following variables must exist:
+
+   | Variable | Purpose |
+   | --- | --- |
+   | `VITE_SUPABASE_URL` | Supabase project URL for the browser/client runtime. |
+   | `SUPABASE_URL` | Supabase project URL for backend Node processes and edge functions. |
+   | `VITE_SUPABASE_KEY` | Supabase anon/public key. |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Required for Express routes and Supabase Edge Functions that write to the database. |
+   | `VITE_LENCO_PUBLIC_KEY` | Lenco publishable key (use the `pk_live_*` key in production). |
+   | `LENCO_SECRET_KEY` | Lenco secret key (`sk_live_*` in production). |
+   | `LENCO_WEBHOOK_SECRET` | Validates Lenco webhook payloads. |
+   | `VITE_LENCO_API_URL` | Lenco API base URL (`https://api.lenco.co/access/v2` for production). |
+   | `VITE_PAYMENT_CURRENCY` | Currency code used for transactions. |
+   | `VITE_PAYMENT_COUNTRY` | Country code used for regional validation. |
+   | `VITE_PLATFORM_FEE_PERCENTAGE` | Platform fee configuration. |
+   | `VITE_MIN_PAYMENT_AMOUNT` | Minimum payment amount allowed. |
+   | `VITE_MAX_PAYMENT_AMOUNT` | Maximum payment amount allowed. |
+   | `VITE_APP_ENV` | Application environment label (`production`, `preview`, etc.). |
+   | `VITE_APP_NAME` | Display name for UI components. |
+
 3. Save the variables and redeploy the project so the new values are injected.
 
-> **Tip:** Use the copy buttons in Supabase to avoid typos. Ensure each value matches the project you verified in step 1.
+> **Tip:** Use the copy buttons in Supabase and Lenco dashboards to avoid typos. Ensure each value matches the project you
+> verified in step 1 and that the key type (test vs. live) aligns with the deployment target.
 
 ## 4. Validate Variables from the Terminal
 
@@ -40,6 +58,7 @@ Before deploying, confirm the environment file is correctly populated:
 ```bash
 cp .env.example .env # if you have not created it yet
 npm run env:check    # custom script or use scripts/validate-database.ts
+./scripts/setup-payments.sh # validates Supabase + Lenco variables and build readiness
 ```
 
 For CI/CD, add a step that prints the variable names (not the values) to confirm they are present. Avoid logging secrets directly.
