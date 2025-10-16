@@ -4,13 +4,21 @@
 
 import { BaseService } from './base-service';
 import { supabase, withErrorHandling } from '@/lib/supabase-enhanced';
-import type { 
-  User, 
-  Profile, 
-  AccountType, 
+import type {
+  User,
+  Profile,
+  AccountType,
   ProfileFilters,
-  DatabaseResponse 
+  DatabaseResponse
 } from '@/@types/database';
+
+const mapAuthUserToUser = (authUser: any): User => ({
+  id: authUser.id,
+  email: authUser.email || '',
+  created_at: authUser.created_at,
+  updated_at: authUser.updated_at,
+  user_metadata: authUser.user_metadata || {},
+});
 
 export class UserService extends BaseService<User> {
   constructor() {
@@ -34,12 +42,7 @@ export class UserService extends BaseService<User> {
         }
 
         return {
-          data: {
-            id: user.id,
-            email: user.email || '',
-            created_at: user.created_at,
-            updated_at: user.updated_at
-          },
+          data: mapAuthUserToUser(user),
           error: null
         };
       },
@@ -63,17 +66,14 @@ export class UserService extends BaseService<User> {
             return { data: null, error };
           }
 
-          if (!data.user) {
+          const authUser = data?.user;
+
+          if (!authUser) {
             return { data: null, error: new Error('Sign in failed. Please try again.') };
           }
 
           return {
-            data: {
-              id: data.user.id,
-              email: data.user.email || '',
-              created_at: data.user.created_at,
-              updated_at: data.user.updated_at
-            },
+            data: mapAuthUserToUser(authUser),
             error: null
           };
         } catch (error: any) {
@@ -94,30 +94,34 @@ export class UserService extends BaseService<User> {
   /**
    * Sign up new user
    */
-  async signUp(email: string, password: string): Promise<DatabaseResponse<User>> {
+  async signUp(
+    email: string,
+    password: string,
+    metadata?: Record<string, any>
+  ): Promise<DatabaseResponse<User>> {
     return withErrorHandling(
       async () => {
         try {
-          const { data, error } = await supabase.auth.signUp({
+          const signUpPayload = {
             email,
             password,
-          });
+            ...(metadata ? { options: { data: metadata } } : {}),
+          };
+
+          const { data, error } = await supabase.auth.signUp(signUpPayload);
 
           if (error) {
             return { data: null, error };
           }
 
-          if (!data.user) {
+          const authUser = data?.user;
+
+          if (!authUser) {
             return { data: null, error: new Error('User creation failed') };
           }
 
           return {
-            data: {
-              id: data.user.id,
-              email: data.user.email || '',
-              created_at: data.user.created_at,
-              updated_at: data.user.updated_at
-            },
+            data: mapAuthUserToUser(authUser),
             error: null
           };
         } catch (error: any) {
