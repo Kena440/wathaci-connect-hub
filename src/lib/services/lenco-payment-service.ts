@@ -281,10 +281,27 @@ export class LencoPaymentService {
    */
   private async callPaymentService(action: string, data?: any): Promise<any> {
     try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        logger.error('Failed to retrieve Supabase session', sessionError);
+        throw new Error('Unable to authenticate request. Please try signing in again.');
+      }
+
+      const accessToken = sessionData.session?.access_token;
+
+      if (!accessToken) {
+        throw new Error('You must be signed in to process payments.');
+      }
+
       const { data: response, error } = await supabase.functions.invoke('lenco-payment', {
         body: {
           action,
           ...data
+        },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
         }
       });
 
