@@ -131,6 +131,12 @@ Manages payment transactions:
 - updated_at: TIMESTAMP
 ```
 
+> **Note:** Run [`backend/supabase/profiles_schema.sql`](backend/supabase/profiles_schema.sql)
+> after provisioning the base table to guarantee the `qualifications`,
+> `coordinates`, and `card_details` columns are JSONB. The script safely converts
+> existing data where possible so the nested payloads emitted by the frontend
+> profile forms can be stored without Supabase returning 400-level errors.
+
 #### `subscription_plans` Table
 ```sql
 - id: UUID (Primary Key)
