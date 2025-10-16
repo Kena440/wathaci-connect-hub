@@ -6,25 +6,48 @@ import { createClient } from '@supabase/supabase-js';
 
 type SupabaseClientLike = ReturnType<typeof createClient> | ReturnType<typeof createMockSupabaseClient>;
 
+const sanitizeEnvValue = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  // Trim whitespace and remove surrounding quotes that may appear when values
+  // are injected from JSON configuration files or shell exports.
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const unquoted = trimmed.replace(/^['"`]+|['"`]+$/g, '').trim();
+  if (!unquoted || unquoted.toLowerCase() === 'undefined' || unquoted.toLowerCase() === 'null') {
+    return undefined;
+  }
+
+  return unquoted;
+};
+
 const resolveEnvValue = (key: string): string | undefined => {
   try {
-    const viteValue = (import.meta as any)?.env?.[key];
+    const viteValue = sanitizeEnvValue((import.meta as any)?.env?.[key]);
     if (viteValue) {
-      return viteValue as string;
+      return viteValue;
     }
   } catch (error) {
     // import.meta may not be available in test environments
   }
 
   if (typeof globalThis !== 'undefined') {
-    const runtimeValue = (globalThis as any)?.__APP_CONFIG__?.[key];
+    const runtimeValue = sanitizeEnvValue((globalThis as any)?.__APP_CONFIG__?.[key]);
     if (runtimeValue) {
-      return runtimeValue as string;
+      return runtimeValue;
     }
   }
 
-  if (typeof process !== 'undefined' && process.env?.[key]) {
-    return process.env[key];
+  if (typeof process !== 'undefined') {
+    const processValue = sanitizeEnvValue(process.env?.[key]);
+    if (processValue) {
+      return processValue;
+    }
   }
 
   return undefined;
