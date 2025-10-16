@@ -59,7 +59,10 @@ describe('DonateButton Accessibility Tests', () => {
     fireEvent.click(donateButton);
     
     // Check for dialog role and title
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /support sme development/i })).toBeInTheDocument();
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeDefined();
+
+    const heading = screen.getByRole('heading', { name: /support sme development/i });
+    expect(heading).toBeDefined();
   });
 });
