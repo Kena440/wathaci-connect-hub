@@ -42,12 +42,29 @@ configuring variables, and troubleshooting integration issues.
 Lighthouse and automated accessibility checks are available via npm scripts.
 
 ```bash
+# Run all Jest tests
+npm run test:jest
+
+# Run payment tests specifically
+npm run test:payments
+
 # Run accessibility tests powered by jest-axe
 npm run test:accessibility
 
 # Generate a Lighthouse report (requires a running dev server)
 npm run test:lighthouse
 ```
+
+### Payment Tests
+
+Payment functionality is comprehensively tested with 54 passing tests covering:
+- Mobile money payments (MTN, Airtel, Zamtel)
+- Card payments
+- Fee calculations and validation
+- Amount validation and formatting
+- Payment security and error handling
+
+See [PAYMENT_TESTS_RESULTS.md](PAYMENT_TESTS_RESULTS.md) for detailed test results and coverage information.
 
 Make sure project dependencies are installed before executing the test commands.
 
