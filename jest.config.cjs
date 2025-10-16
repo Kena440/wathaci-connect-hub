@@ -21,6 +21,7 @@ module.exports = {
       tsconfig: {
         jsx: 'react-jsx',
         module: 'esnext',
+        moduleResolution: 'node',
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
         typeRoots: ['node_modules/@types', 'src/@types'],
