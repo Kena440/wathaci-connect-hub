@@ -62,6 +62,8 @@ supabase functions deploy live-funding-matcher
 supabase functions deploy matched-professionals
 supabase functions deploy sme-assessment-recommendations
 supabase functions deploy industry-matcher
+supabase functions deploy payment-webhook
+supabase functions deploy lenco-webhook
 ```
 
 After deployment, ensure the project has access to any required secrets (such as `SUPABASE_URL` and `SUPABASE_ANON_KEY`) so that the functions can read supporting data when executed.
