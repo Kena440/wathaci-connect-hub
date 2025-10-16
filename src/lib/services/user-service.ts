@@ -153,7 +153,7 @@ export class UserService extends BaseService<User> {
    */
   async searchUsers(query: string): Promise<DatabaseResponse<Array<{ id: string; full_name: string; email: string }>>> {
     return withErrorHandling(
-      () =>
+      async () =>
         supabase
           .from('profiles')
           .select('id, full_name, email')
@@ -174,11 +174,12 @@ export class ProfileService extends BaseService<Profile> {
    */
   async getByUserId(userId: string): Promise<DatabaseResponse<Profile>> {
     return withErrorHandling(
-      () => supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single(),
+      async () =>
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single(),
       'ProfileService.getByUserId'
     );
   }
@@ -326,9 +327,10 @@ export class ProfileService extends BaseService<Profile> {
    */
   async getProfileWithSubscription(userId: string) {
     return withErrorHandling(
-      () => supabase
-        .from('profiles')
-        .select(`
+      async () =>
+        supabase
+          .from('profiles')
+          .select(`
           *,
           subscriptions:user_subscriptions(
             id,
@@ -339,8 +341,8 @@ export class ProfileService extends BaseService<Profile> {
             subscription_plans(name, features, category)
           )
         `)
-        .eq('id', userId)
-        .single(),
+          .eq('id', userId)
+          .single(),
       'ProfileService.getProfileWithSubscription'
     );
   }
@@ -414,7 +416,9 @@ export class ProfileService extends BaseService<Profile> {
 
         const allRequiredFields = [
           ...requiredFields,
-          ...(profile.account_type ? accountTypeSpecificFields[profile.account_type] || [] : [])
+          ...(profile.account_type
+            ? accountTypeSpecificFields[profile.account_type as AccountType] || []
+            : []),
         ];
 
         const completedFields = allRequiredFields.filter(field => {
