@@ -5,6 +5,15 @@ import { Link } from 'react-router-dom';
 const HeroSection = () => {
   return (
     <section className="relative overflow-hidden py-20">
+      <div
+        className="absolute inset-0 -z-10 pointer-events-none"
+        aria-hidden="true"
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-200/80 via-white to-emerald-200/80" />
+        <div className="absolute inset-0 bg-white/30 md:bg-white/25 backdrop-blur-sm" />
+        <div className="absolute -top-32 -left-24 h-80 w-80 rounded-full bg-orange-400/35 blur-3xl" />
+        <div className="absolute -bottom-40 right-0 h-96 w-96 rounded-full bg-emerald-400/30 blur-3xl" />
+      </div>
       <div className="relative z-10 max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">
           <div className="mb-8">
