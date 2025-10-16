@@ -98,6 +98,7 @@ const storeInSupabase = async (record) => {
 const isFallbackAllowed = () =>
   process.env.ALLOW_IN_MEMORY_REGISTRATION === 'true' || process.env.NODE_ENV === 'test';
 
+
 const registerUser = async (payload) => {
   const record = normalizeRegistrationPayload(payload);
 

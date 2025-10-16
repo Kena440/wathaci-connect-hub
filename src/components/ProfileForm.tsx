@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { CountrySelect } from '@/components/CountrySelect';
@@ -24,44 +25,16 @@ interface ProfileFormProps {
 
 export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initialData }: ProfileFormProps) => {
   const [formData, setFormData] = useState<Record<string, any>>({
-    payment_method: initialData?.payment_method || 'phone',
-    use_same_phone: initialData?.use_same_phone ?? true,
+    payment_method: 'phone',
+    use_same_phone: true,
     qualifications: [],
     gaps_identified: [],
     phone: '',
     payment_phone: '',
-    card_number: '',
-    card_expiry: '',
     profile_image_url: null,
     linkedin_url: '',
     ...initialData
   });
-
-  const savedCardLast4 = initialData?.card_details?.last4;
-  const savedCardExpiry =
-    initialData?.card_details?.expiry_month && initialData?.card_details?.expiry_year
-      ? `${String(initialData.card_details.expiry_month).padStart(2, '0')}/${String(initialData.card_details.expiry_year).slice(-2)}`
-      : undefined;
-
-  useEffect(() => {
-    if (!initialData) {
-      return;
-    }
-
-    setFormData((prev) => {
-      const shouldUseCard = initialData.payment_method === 'card';
-
-      return {
-        ...prev,
-        ...initialData,
-        payment_method: initialData.payment_method || prev.payment_method,
-        use_same_phone: shouldUseCard ? false : initialData.use_same_phone ?? prev.use_same_phone,
-        payment_phone: initialData.payment_phone ?? prev.payment_phone,
-        card_number: shouldUseCard ? '' : prev.card_number,
-        card_expiry: shouldUseCard ? '' : prev.card_expiry,
-      };
-    });
-  }, [initialData]);
 
   // Auto-populate country code when country changes
   useEffect(() => {
@@ -110,33 +83,6 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
 
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev: any) => ({ ...prev, [field]: value }));
-  };
-
-  const handleUseSamePhoneChange = (checked: boolean | 'indeterminate') => {
-    const isChecked = checked === true;
-    setFormData((prev: any) => ({
-      ...prev,
-      use_same_phone: isChecked,
-      payment_method: isChecked ? 'phone' : prev.payment_method,
-      payment_phone: isChecked ? '' : prev.payment_phone,
-      card_number: isChecked ? '' : prev.card_number,
-      card_expiry: isChecked ? '' : prev.card_expiry,
-    }));
-  };
-
-  const handleCardNumberChange = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 16);
-    const formatted = digits.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
-    handleInputChange('card_number', formatted);
-  };
-
-  const handleCardExpiryChange = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 4);
-    let formatted = digits;
-    if (digits.length >= 3) {
-      formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
-    }
-    handleInputChange('card_expiry', formatted);
   };
 
   const handleAddressChange = (address: string, coordinates?: { lat: number; lng: number }) => {
@@ -348,10 +294,10 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
             <h3 className="text-lg font-semibold mb-4">Payment Information</h3>
             
             <div className="flex items-center space-x-2 mb-4">
-              <Checkbox
+              <Checkbox 
                 id="same-phone"
                 checked={formData.use_same_phone}
-                onCheckedChange={(checked) => handleUseSamePhoneChange(checked)}
+                onCheckedChange={(checked) => handleInputChange('use_same_phone', checked)}
               />
               <Label htmlFor="same-phone">Use the same phone number for subscription payments</Label>
             </div>
@@ -382,38 +328,14 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
                     />
                   </div>
                 )}
+
                 {formData.payment_method === 'card' && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label>Card Number</Label>
-                        <Input
-                          value={formData.card_number}
-                          onChange={(e) => handleCardNumberChange(e.target.value)}
-                          inputMode="numeric"
-                          autoComplete="cc-number"
-                          placeholder={savedCardLast4 ? `Card ending in ${savedCardLast4}` : '1234 5678 9012 3456'}
-                        />
-                      </div>
-                      <div>
-                        <Label>Expiry (MM/YY)</Label>
-                        <Input
-                          value={formData.card_expiry}
-                          onChange={(e) => handleCardExpiryChange(e.target.value)}
-                          inputMode="numeric"
-                          autoComplete="cc-exp"
-                          placeholder={savedCardExpiry ? `Expires ${savedCardExpiry}` : '08/27'}
-                          maxLength={5}
-                        />
-                      </div>
-                    </div>
-                    {savedCardLast4 && (
-                      <p className="text-sm text-muted-foreground">
-                        Leave these fields blank to keep the saved card ending in {savedCardLast4}
-                        {savedCardExpiry ? ` (expires ${savedCardExpiry})` : ''}.
-                      </p>
-                    )}
-                  </div>
+                  <Alert>
+                    <AlertDescription>
+                      Card payments are processed securely by Lenco. We will record that you prefer card billing, but card numbers
+                      are collected on the Lenco checkout and never stored in this form.
+                    </AlertDescription>
+                  </Alert>
                 )}
               </div>
             )}

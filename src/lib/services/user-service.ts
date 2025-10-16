@@ -441,11 +441,19 @@ export class ProfileService extends BaseService<Profile> {
    * Update payment information
    */
   async updatePaymentInfo(
-    userId: string, 
+    userId: string,
     paymentData: {
       payment_method: 'phone' | 'card';
-      payment_phone?: string;
-      card_details?: { number: string; expiry: string };
+      payment_phone?: string | null;
+      card_details?: {
+        provider: 'lenco';
+        status?: 'external_gateway' | 'tokenized' | 'pending_verification';
+        setup_required?: boolean;
+        last4?: string;
+        exp_month?: string;
+        exp_year?: string;
+        expiry?: string;
+      } | null;
       use_same_phone?: boolean;
     }
   ): Promise<DatabaseResponse<Profile>> {

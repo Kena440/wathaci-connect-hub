@@ -3,7 +3,7 @@
  * UI component for testing payment functionality
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,13 +22,113 @@ import {
 } from 'lucide-react';
 import { paymentTestSuite, PaymentTestResult } from '@/lib/testing/payment-test-suite';
 import { lencoPaymentService } from '@/lib/services/lenco-payment-service';
+import { evaluatePaymentReadiness, PaymentReadinessIssue } from '@/lib/payment-readiness';
 
 export const PaymentTestComponent = () => {
   const [testing, setTesting] = useState(false);
   const [testResults, setTestResults] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'validation' | 'integration' | 'edge-case'>('all');
+  const [clientReadiness] = useState(() => evaluatePaymentReadiness());
+  const [serverReadiness, setServerReadiness] = useState<{
+    status: 'ready' | 'warning' | 'error';
+    errors: PaymentReadinessIssue[];
+    warnings: PaymentReadinessIssue[];
+  } | null>(null);
+  const [serverReadinessError, setServerReadinessError] = useState<string | null>(null);
+  const [fetchingReadiness, setFetchingReadiness] = useState(false);
+
+  const baseConfigReady = lencoPaymentService.isConfigured();
+
+  const serverIssues: PaymentReadinessIssue[] = serverReadiness
+    ? [...serverReadiness.errors, ...serverReadiness.warnings]
+    : serverReadinessError
+      ? [{ severity: 'warning', message: serverReadinessError }]
+      : [];
+
+  const combinedIssues: PaymentReadinessIssue[] = [...clientReadiness.issues, ...serverIssues];
+
+  const combinedStatus: 'ready' | 'warning' | 'error' = (() => {
+    if (!baseConfigReady || clientReadiness.status === 'error') {
+      return 'error';
+    }
+    if (serverReadiness?.status === 'error') {
+      return 'error';
+    }
+    if (serverReadinessError) {
+      return 'warning';
+    }
+    if (clientReadiness.status === 'warning' || serverReadiness?.status === 'warning') {
+      return 'warning';
+    }
+    return 'ready';
+  })();
+
+  const configStatus = combinedStatus !== 'error';
+  const statusLabel = combinedStatus === 'warning' ? 'Requires Attention' : configStatus ? 'Configured' : 'Not Configured';
+  const statusClass = combinedStatus === 'warning'
+    ? 'text-amber-600'
+    : configStatus
+      ? 'text-green-600'
+      : 'text-red-600';
+  const canRunTests = configStatus;
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchReadiness = async () => {
+      try {
+        setFetchingReadiness(true);
+        const response = await fetch('/api/payment/readiness');
+        const data = await response.json();
+
+        if (!response.ok) {
+          const message = Array.isArray(data?.errors)
+            ? data.errors.map((issue: PaymentReadinessIssue) => issue.message).join('; ')
+            : data?.error || 'Unable to verify payment readiness.';
+          throw new Error(message);
+        }
+
+        if (!isMounted) {
+          return;
+        }
+
+        setServerReadiness({
+          status: data.status,
+          errors: Array.isArray(data.errors)
+            ? data.errors.map((issue: PaymentReadinessIssue) => ({
+                severity: issue.severity || 'error',
+                message: issue.message,
+              }))
+            : [],
+          warnings: Array.isArray(data.warnings)
+            ? data.warnings.map((issue: PaymentReadinessIssue) => ({
+                severity: issue.severity || 'warning',
+                message: issue.message,
+              }))
+            : [],
+        });
+        setServerReadinessError(null);
+      } catch (error: any) {
+        if (!isMounted) {
+          return;
+        }
+        setServerReadinessError(error.message || 'Unable to verify payment readiness.');
+      } finally {
+        if (isMounted) {
+          setFetchingReadiness(false);
+        }
+      }
+    };
+
+    fetchReadiness();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const runTests = async (category: 'all' | 'validation' | 'integration' | 'edge-case') => {
+    setSelectedCategory(category);
     setTesting(true);
     setTestResults(null);
 
@@ -60,12 +160,24 @@ export const PaymentTestComponent = () => {
     }
   };
 
-  const getStatusIcon = (passed: boolean) => {
-    return passed ? (
-      <CheckCircle className="h-4 w-4 text-green-500" />
-    ) : (
-      <XCircle className="h-4 w-4 text-red-500" />
-    );
+  const getStatusIcon = (status: boolean | 'ready' | 'warning' | 'error') => {
+    if (typeof status === 'boolean') {
+      return status ? (
+        <CheckCircle className="h-4 w-4 text-green-500" />
+      ) : (
+        <XCircle className="h-4 w-4 text-red-500" />
+      );
+    }
+
+    if (status === 'warning') {
+      return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+    }
+
+    if (status === 'error') {
+      return <XCircle className="h-4 w-4 text-red-500" />;
+    }
+
+    return <CheckCircle className="h-4 w-4 text-green-500" />;
   };
 
   const getStatusBadge = (passed: boolean) => {
@@ -101,18 +213,32 @@ export const PaymentTestComponent = () => {
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2">
-            {getStatusIcon(configStatus)}
-            <span className={configStatus ? 'text-green-600' : 'text-red-600'}>
-              Payment System {configStatus ? 'Configured' : 'Not Configured'}
+            {getStatusIcon(combinedStatus)}
+            <span className={`${statusClass} font-medium`}>
+              Payment System {statusLabel}
             </span>
           </div>
-          {!configStatus && (
-            <Alert className="mt-3" variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                Payment system is not properly configured. Please check environment variables.
-              </AlertDescription>
-            </Alert>
+
+          {fetchingReadiness && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-3">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Checking server-side payment configuration…</span>
+            </div>
+          )}
+
+          {combinedIssues.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {combinedIssues.map((issue, index) => (
+                <Alert key={`${issue.message}-${index}`} variant={issue.severity === 'error' ? 'destructive' : 'default'}>
+                  {issue.severity === 'error' ? (
+                    <XCircle className="h-4 w-4" />
+                  ) : (
+                    <AlertTriangle className="h-4 w-4" />
+                  )}
+                  <AlertDescription>{issue.message}</AlertDescription>
+                </Alert>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>
@@ -129,7 +255,7 @@ export const PaymentTestComponent = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Button
               onClick={() => runTests('all')}
-              disabled={testing || !configStatus}
+              disabled={testing || !canRunTests}
               className="flex items-center gap-2"
             >
               {testing && selectedCategory === 'all' ? (
@@ -142,7 +268,7 @@ export const PaymentTestComponent = () => {
             <Button
               variant="outline"
               onClick={() => runTests('validation')}
-              disabled={testing || !configStatus}
+              disabled={testing || !canRunTests}
               className="flex items-center gap-2"
             >
               {testing && selectedCategory === 'validation' ? (
@@ -155,7 +281,7 @@ export const PaymentTestComponent = () => {
             <Button
               variant="outline"
               onClick={() => runTests('integration')}
-              disabled={testing || !configStatus}
+              disabled={testing || !canRunTests}
               className="flex items-center gap-2"
             >
               {testing && selectedCategory === 'integration' ? (
@@ -168,7 +294,7 @@ export const PaymentTestComponent = () => {
             <Button
               variant="outline"
               onClick={() => runTests('edge-case')}
-              disabled={testing || !configStatus}
+              disabled={testing || !canRunTests}
               className="flex items-center gap-2"
             >
               {testing && selectedCategory === 'edge-case' ? (
