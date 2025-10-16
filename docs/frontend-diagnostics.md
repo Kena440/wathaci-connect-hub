@@ -43,13 +43,15 @@ paths, expected payloads, and potential sources of client-side errors.
    failures into user-friendly error messages, but network outages will still be
    surfaced as exceptions in the console.
 2. **Profile upsert validation** – The profile `upsert` sends nested JSON
-   structures (e.g. `qualifications`, `coordinates`, `card_details`). Supabase
-   columns must be declared with compatible JSONB types; otherwise, the insert
-   will fail with a 400 response logged in the console.
-3. **Missing card inputs** – When `payment_method` is `card`, the form does not
-   currently collect card number/expiry fields, so the `card_details` object is
-   sent with undefined values. Supabase schemas that expect concrete strings may
-   reject the payload, generating client-side errors.
+   structures (e.g. `qualifications`, `coordinates`, `card_details`). Run
+   [`backend/supabase/profiles_schema.sql`](../backend/supabase/profiles_schema.sql)
+   so the Supabase columns are JSONB; otherwise, the insert will fail with a 400
+   response logged in the console.
+3. **Complete card capture** – When `payment_method` is `card`, the form now
+   collects the cardholder name, card number, and expiry. The submission logic
+   stores only masked metadata (`last4`, `expiry_month`, `expiry_year`,
+   `cardholder_name`) to keep sensitive fields off Supabase while satisfying the
+   validation rules required for card-based sign-ups.
 4. **Existing row conflicts** – The initial account type `upsert` includes a
    `created_at` timestamp each time. If the column is configured as
    non-updatable or expects server defaults, Supabase will respond with an

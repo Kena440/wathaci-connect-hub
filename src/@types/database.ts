@@ -70,17 +70,21 @@ export interface PaymentInfo {
   payment_method: 'phone' | 'card';
   payment_phone?: string;
   card_details?: {
-    number: string;
-    expiry: string;
+    last4: string;
+    expiry_month: number;
+    expiry_year: number;
+    cardholder_name?: string | null;
   };
   use_same_phone?: boolean;
 }
 
 export interface ProfessionalInfo {
-  qualifications: Array<{
-    name: string;
-    institution: string;
-    year: number;
+  qualifications?: Array<{
+    institution?: string | null;
+    degree?: string | null;
+    name?: string | null;
+    field?: string | null;
+    year?: string | null;
   }>;
   experience_years?: number;
   specialization?: string;

@@ -51,6 +51,9 @@ tables and policies:
   `frontend_logs` table for centralized logging.
 - [`profiles_policies.sql`](supabase/profiles_policies.sql) contains the
   policies used by the existing Supabase profile features.
+- [`profiles_schema.sql`](supabase/profiles_schema.sql) normalizes the
+  `profiles` table so nested JSON payloads (`qualifications`, `coordinates`,
+  `card_details`) emitted by the frontend can be stored without casting errors.
 
 ## Supabase Edge Functions
 

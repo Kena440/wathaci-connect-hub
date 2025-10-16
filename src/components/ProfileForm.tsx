@@ -32,6 +32,7 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
     payment_phone: '',
     card_number: '',
     card_expiry: '',
+    cardholder_name: initialData?.card_details?.cardholder_name || '',
     profile_image_url: null,
     linkedin_url: '',
     ...initialData
@@ -42,6 +43,7 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
     initialData?.card_details?.expiry_month && initialData?.card_details?.expiry_year
       ? `${String(initialData.card_details.expiry_month).padStart(2, '0')}/${String(initialData.card_details.expiry_year).slice(-2)}`
       : undefined;
+  const savedCardholderName = initialData?.card_details?.cardholder_name;
 
   useEffect(() => {
     if (!initialData) {
@@ -57,6 +59,7 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
         payment_method: initialData.payment_method || prev.payment_method,
         use_same_phone: shouldUseCard ? false : initialData.use_same_phone ?? prev.use_same_phone,
         payment_phone: initialData.payment_phone ?? prev.payment_phone,
+        cardholder_name: initialData.card_details?.cardholder_name ?? prev.cardholder_name,
         card_number: shouldUseCard ? '' : prev.card_number,
         card_expiry: shouldUseCard ? '' : prev.card_expiry,
       };
@@ -121,6 +124,7 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
       payment_phone: isChecked ? '' : prev.payment_phone,
       card_number: isChecked ? '' : prev.card_number,
       card_expiry: isChecked ? '' : prev.card_expiry,
+      cardholder_name: isChecked ? '' : prev.cardholder_name,
     }));
   };
 
@@ -385,6 +389,15 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
                 {formData.payment_method === 'card' && (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="md:col-span-2">
+                        <Label>Cardholder Name</Label>
+                        <Input
+                          value={formData.cardholder_name}
+                          onChange={(e) => handleInputChange('cardholder_name', e.target.value)}
+                          autoComplete="cc-name"
+                          placeholder={savedCardholderName || 'Jane Doe'}
+                        />
+                      </div>
                       <div>
                         <Label>Card Number</Label>
                         <Input
