@@ -11,9 +11,10 @@ class DuplicateRegistrationError extends Error {
 }
 
 class RegistrationStoreError extends Error {
-  constructor(message, options) {
+  constructor(message, options = {}) {
     super(message, options);
     this.name = 'RegistrationStoreError';
+    this.status = options.status ?? 500;
   }
 }
 
@@ -87,9 +88,15 @@ const storeInSupabase = async (record) => {
       throw new DuplicateRegistrationError();
     }
 
-    throw new RegistrationStoreError('Failed to persist registration to Supabase', { cause: error });
+    throw new RegistrationStoreError('Failed to persist registration to Supabase', {
+      cause: error,
+      status: error?.status ?? 503,
+    });
   }
 };
+
+const isFallbackAllowed = () =>
+  process.env.ALLOW_IN_MEMORY_REGISTRATION === 'true' || process.env.NODE_ENV === 'test';
 
 const registerUser = async (payload) => {
   const record = normalizeRegistrationPayload(payload);
@@ -98,19 +105,32 @@ const registerUser = async (payload) => {
     throw new RegistrationStoreError('Registration email is required after sanitization');
   }
 
-  if (isSupabaseConfigured()) {
-    try {
-      return await storeInSupabase(record);
-    } catch (error) {
-      if (error instanceof DuplicateRegistrationError) {
-        throw error;
-      }
-
-      console.error('[registration-store] Supabase insert failed, falling back to in-memory storage', error);
+  if (!isSupabaseConfigured()) {
+    if (isFallbackAllowed()) {
+      console.warn('[registration-store] Supabase not configured. Using in-memory registration store for testing.');
+      return storeInMemory(record);
     }
+
+    throw new RegistrationStoreError(
+      'Supabase configuration is required to register users. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.',
+      { status: 503 },
+    );
   }
 
-  return storeInMemory(record);
+  try {
+    return await storeInSupabase(record);
+  } catch (error) {
+    if (error instanceof DuplicateRegistrationError) {
+      throw error;
+    }
+
+    if (isFallbackAllowed()) {
+      console.warn('[registration-store] Supabase insert failed, using in-memory store for testing fallback.', error);
+      return storeInMemory(record);
+    }
+
+    throw error;
+  }
 };
 
 const getFallbackRegistrations = () => {

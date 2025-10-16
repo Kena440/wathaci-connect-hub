@@ -1,5 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
+
+process.env.ALLOW_IN_MEMORY_REGISTRATION = 'true';
+
 import app from '../backend/index.js';
 
 // Ensure the server still responds after adding security middleware
