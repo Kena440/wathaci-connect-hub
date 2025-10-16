@@ -65,12 +65,63 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       currentUser = authUser;
       setUser(authUser);
 
+      const metadata = authUser.user_metadata || {};
+
       // Get the user's profile
       const { data: userProfile, error: profileError } = await profileService.getByUserId(authUser.id);
 
       if (profileError) {
-        console.error('Error fetching user profile:', profileError);
-        setProfile(null);
+        const profileErrorCode = (profileError as any)?.code;
+        const profileErrorMessage = profileError.message?.toLowerCase() || '';
+        const isNotFound = profileErrorCode === 'PGRST116' ||
+          profileErrorMessage.includes('no rows') ||
+          profileErrorMessage.includes('not found');
+
+        if (isNotFound && authUser.email) {
+          const derivedFullName = metadata.full_name ?? (
+            metadata.first_name && metadata.last_name
+              ? `${metadata.first_name} ${metadata.last_name}`.trim()
+              : undefined
+          );
+
+          const inferredProfilePayload = {
+            email: authUser.email,
+            account_type: metadata.account_type,
+            profile_completed: metadata.profile_completed ?? false,
+            full_name: derivedFullName,
+            first_name: metadata.first_name,
+            last_name: metadata.last_name,
+            company: metadata.company,
+          };
+
+          const filteredPayload = Object.fromEntries(
+            Object.entries(inferredProfilePayload).filter(([, value]) => value !== undefined && value !== null)
+          ) as Partial<Profile>;
+
+          const { data: createdProfile, error: creationError } = await profileService.createProfile(
+            authUser.id,
+            filteredPayload,
+          );
+
+          if (!creationError && createdProfile) {
+            setProfile(createdProfile);
+            currentProfile = createdProfile;
+            const enrichedUser: User = {
+              ...authUser,
+              profile_completed: createdProfile.profile_completed,
+              account_type: createdProfile.account_type,
+            };
+
+            currentUser = enrichedUser;
+            setUser(enrichedUser);
+          } else if (creationError) {
+            console.error('Error creating inferred profile:', creationError);
+            setProfile(null);
+          }
+        } else {
+          console.error('Error fetching user profile:', profileError);
+          setProfile(null);
+        }
       } else {
         setProfile(userProfile);
 
@@ -139,7 +190,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const signUp = async (email: string, password: string, userData?: any): Promise<AuthState> => {
-    const { data: user, error } = await userService.signUp(email, password);
+    const { data: user, error } = await userService.signUp(email, password, userData);
 
     if (error) {
       // Provide user-friendly error messages
@@ -171,16 +222,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       );
 
       if (profileError) {
-        let profileErrorMessage = 'Failed to create user profile';
+        const message = profileError.message?.toLowerCase() || '';
+        const profileErrorCode = (profileError as any)?.code;
+        const isAuthPending = profileErrorCode === 'PGRST301' ||
+          profileErrorCode === '401' ||
+          message.includes('jwt') ||
+          message.includes('unauthorized');
 
-        if (profileError.message?.includes('network') || profileError.message?.includes('fetch')) {
-          profileErrorMessage = 'Account created but profile setup failed due to network issues. Please try signing in.';
+        if (!isAuthPending) {
+          let profileErrorMessage = 'Failed to create user profile';
+
+          if (message.includes('network') || message.includes('fetch')) {
+            profileErrorMessage = 'Account created but profile setup failed due to network issues. Please try signing in.';
+          }
+
+          throw new Error(profileErrorMessage);
         }
-
-        throw new Error(profileErrorMessage);
+      } else {
+        createdProfile = newProfile || null;
       }
-
-      createdProfile = newProfile || null;
     }
 
     toast({

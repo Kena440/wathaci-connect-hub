@@ -87,6 +87,7 @@ describe('AppContext auth actions', () => {
           email: 'test@example.com',
           created_at: 'now',
           updated_at: 'now',
+          user_metadata: { account_type: 'sme', profile_completed: true },
         },
       },
       error: null,
@@ -98,6 +99,7 @@ describe('AppContext auth actions', () => {
           email: 'test@example.com',
           created_at: 'now',
           updated_at: 'now',
+          user_metadata: { account_type: 'sme', profile_completed: true },
         },
       },
     } as any);
@@ -128,16 +130,56 @@ describe('AppContext auth actions', () => {
 
   test('signUp success inserts profile and shows toast', async () => {
     mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null } } as any);
-    mockSupabase.auth.signUp.mockResolvedValue({ data: { user: { id: '1', email: 'test@example.com' } }, error: null } as any);
+    mockSupabase.auth.signUp.mockResolvedValue({
+      data: {
+        user: {
+          id: '1',
+          email: 'test@example.com',
+          user_metadata: { foo: 'bar' },
+        },
+      },
+      error: null,
+    } as any);
     const profileChain = mockProfileChain();
     mockSupabase.from.mockImplementation(() => profileChain as any);
 
     const ctx = await renderWithContext();
     const result = await ctx.signUp('test@example.com', 'pass', { foo: 'bar' });
 
+    expect(mockSupabase.auth.signUp).toHaveBeenCalledWith(expect.objectContaining({
+      email: 'test@example.com',
+      password: 'pass',
+      options: { data: { foo: 'bar' } },
+    }));
     expect(profileChain.insert).toHaveBeenCalledWith(expect.objectContaining({ id: '1', email: 'test@example.com', foo: 'bar' }));
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Account created!' }));
     expect(result.user).toEqual(expect.objectContaining({ id: '1', email: 'test@example.com' }));
+  });
+
+  test('signUp defers profile creation when auth pending', async () => {
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null } } as any);
+    mockSupabase.auth.signUp.mockResolvedValue({
+      data: {
+        user: {
+          id: '1',
+          email: 'test@example.com',
+          user_metadata: {},
+        },
+      },
+      error: null,
+    } as any);
+
+    const profileChain = mockProfileChain();
+    profileChain.insert = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        single: jest.fn().mockResolvedValue({ data: null, error: { message: 'JWT invalid', code: 'PGRST301' } }),
+      }),
+    });
+    mockSupabase.from.mockImplementation(() => profileChain as any);
+
+    const ctx = await renderWithContext();
+    await expect(ctx.signUp('test@example.com', 'pass')).resolves.toEqual({ user: expect.any(Object), profile: null });
+    expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Account created!' }));
   });
 
   test('signUp failure throws error and no toast', async () => {
@@ -152,7 +194,7 @@ describe('AppContext auth actions', () => {
   });
 
   test('signOut clears user and shows toast', async () => {
-    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: '1', email: 'a@test.com' } } } as any);
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: '1', email: 'a@test.com', user_metadata: {} } } } as any);
     mockSupabase.from.mockImplementation(() => mockProfileChain({ profile_completed: true, account_type: 'basic' }) as any);
     mockSupabase.auth.signOut.mockResolvedValue({ error: null } as any);
 
@@ -163,7 +205,7 @@ describe('AppContext auth actions', () => {
   });
 
   test('signOut failure keeps user and shows error toast', async () => {
-    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: '1', email: 'a@test.com' } } } as any);
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: '1', email: 'a@test.com', user_metadata: {} } } } as any);
     mockSupabase.from.mockImplementation(() => mockProfileChain({ profile_completed: true, account_type: 'basic' }) as any);
     mockSupabase.auth.signOut.mockRejectedValue(new Error('logout error'));
 
@@ -184,11 +226,11 @@ describe('AppContext auth actions', () => {
     const ctx = await renderWithContext();
 
     const profile = { profile_completed: true, account_type: 'admin' };
-    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: '123', email: 'b@test.com' } } } as any);
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: '123', email: 'b@test.com', user_metadata: { account_type: 'admin' } } } } as any);
     mockSupabase.from.mockImplementation(() => mockProfileChain(profile) as any);
 
     await ctx.refreshUser();
-    await waitFor(() => expect(ctx.user).toEqual({ id: '123', email: 'b@test.com', ...profile }));
+    await waitFor(() => expect(ctx.user).toEqual({ id: '123', email: 'b@test.com', ...profile, user_metadata: { account_type: 'admin' } }));
     expect(mockToast).not.toHaveBeenCalled();
   });
 
