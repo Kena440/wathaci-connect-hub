@@ -3,6 +3,8 @@
  * Handles payment security, fraud detection, and compliance
  */
 
+import { supabase } from '../supabase-enhanced';
+
 export interface SecurityCheck {
   type: 'fraud' | 'compliance' | 'validation';
   passed: boolean;
@@ -340,34 +342,151 @@ export class PaymentSecurityService {
     return phone.replace(/(\d{3})\d{4}(\d{3})/, '$1***$2');
   }
 
-  // Simulated database methods (would be implemented with actual database)
   private async getDailyTransactionTotal(userId: string, date: string): Promise<number> {
-    // Simulate database query
-    return Math.random() * 1000; // Random amount for testing
+    const { start, end } = this.getDayBounds(date);
+
+    const { data, error } = await supabase
+      .from('payments')
+      .select('amount, status')
+      .eq('user_id', userId)
+      .gte('created_at', start)
+      .lte('created_at', end);
+
+    if (error) {
+      throw new Error(error.message || 'Failed to fetch daily transaction totals');
+    }
+
+    return (data || []).reduce((sum, payment) => {
+      if (payment.status === 'failed' || payment.status === 'cancelled') {
+        return sum;
+      }
+
+      const amount = typeof payment.amount === 'number'
+        ? payment.amount
+        : Number(payment.amount) || 0;
+
+      return sum + amount;
+    }, 0);
   }
 
   private async getRecentTransactionCount(userId: string, timeWindow: number): Promise<number> {
-    // Simulate database query
-    return Math.floor(Math.random() * 3); // Random count for testing
+    const windowStart = new Date(Date.now() - timeWindow).toISOString();
+
+    const { data, error } = await supabase
+      .from('payments')
+      .select('id')
+      .eq('user_id', userId)
+      .gte('created_at', windowStart);
+
+    if (error) {
+      throw new Error(error.message || 'Failed to fetch recent transactions');
+    }
+
+    return data?.length ?? 0;
   }
 
   private async getUserTypicalLocations(userId: string): Promise<string[]> {
-    // Simulate database query
-    return ['Lusaka, Zambia', 'Kitwe, Zambia'];
+    const { data, error } = await supabase
+      .from('payments')
+      .select('metadata')
+      .eq('user_id', userId)
+      .not('metadata', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      throw new Error(error.message || 'Failed to determine user locations');
+    }
+
+    const locations = new Set<string>();
+
+    (data || []).forEach(record => {
+      const metadata = record.metadata as Record<string, any> | null;
+      if (!metadata) {
+        return;
+      }
+
+      const candidates = [
+        metadata.location,
+        metadata.city,
+        metadata.region,
+        metadata?.billing_address?.city,
+        metadata?.billing_address?.country
+      ];
+
+      candidates.forEach(candidate => {
+        if (typeof candidate === 'string' && candidate.trim().length > 0) {
+          locations.add(candidate.trim());
+        }
+      });
+    });
+
+    return Array.from(locations);
   }
 
   private calculateLocationDistance(loc1: string, loc2: string): number {
-    // Simplified distance calculation
-    return Math.random() * 50; // Random distance for testing
+    const normalize = (value: string) =>
+      value
+        .toLowerCase()
+        .replace(/[^a-z0-9,\s]/g, '')
+        .trim();
+
+    const normalizedLoc1 = normalize(loc1);
+    const normalizedLoc2 = normalize(loc2);
+
+    if (!normalizedLoc1 || !normalizedLoc2) {
+      return Number.POSITIVE_INFINITY;
+    }
+
+    if (normalizedLoc1 === normalizedLoc2) {
+      return 0;
+    }
+
+    const [city1] = normalizedLoc1.split(',');
+    const [city2] = normalizedLoc2.split(',');
+
+    if (city1 && city2 && city1 === city2) {
+      return 50;
+    }
+
+    return 200;
   }
 
   private async getUserPaymentHistory(userId: string): Promise<Array<{ amount: number; method: string }>> {
-    // Simulate database query
-    return [
-      { amount: 100, method: 'mobile_money' },
-      { amount: 250, method: 'mobile_money' },
-      { amount: 75, method: 'card' }
-    ];
+    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data, error } = await supabase
+      .from('payments')
+      .select('amount, payment_method, status')
+      .eq('user_id', userId)
+      .gte('created_at', ninetyDaysAgo);
+
+    if (error) {
+      throw new Error(error.message || 'Failed to fetch payment history');
+    }
+
+    return (data || [])
+      .filter(payment => payment.status === 'completed')
+      .map(payment => ({
+        amount: typeof payment.amount === 'number' ? payment.amount : Number(payment.amount) || 0,
+        method: payment.payment_method
+      }));
+  }
+
+  private getDayBounds(date: string): { start: string; end: string } {
+    const targetDate = new Date(date);
+
+    if (Number.isNaN(targetDate.getTime())) {
+      throw new Error('Invalid date provided');
+    }
+
+    targetDate.setUTCHours(0, 0, 0, 0);
+    const start = targetDate.toISOString();
+
+    const endOfDay = new Date(targetDate);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
+    return { start, end: endOfDay.toISOString() };
   }
 
   private getMostCommonPaymentMethods(history: Array<{ method: string }>): string[] {

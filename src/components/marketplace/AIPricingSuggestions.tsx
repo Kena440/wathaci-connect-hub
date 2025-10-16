@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { TrendingUp, DollarSign, BarChart3, Lightbulb } from 'lucide-react';
 import { supabase } from '@/lib/supabase-enhanced';
 
@@ -32,6 +33,7 @@ const AIPricingSuggestions = ({
   const [location, setLocation] = useState('Lusaka');
   const [suggestions, setSuggestions] = useState<PricingSuggestion | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [marketData, setMarketData] = useState({
     averagePrice: 0,
     priceRange: { min: 0, max: 0 },
@@ -57,25 +59,17 @@ const AIPricingSuggestions = ({
 
       if (data?.pricing) {
         setSuggestions(data.pricing);
-        setMarketData(data.marketData || marketData);
+        setMarketData(data.marketData ?? {
+          averagePrice: 0,
+          priceRange: { min: 0, max: 0 },
+          competitorCount: 0
+        });
+        setErrorMessage(null);
       }
     } catch (error) {
       console.error('Pricing analysis error:', error);
-      // Fallback mock data
-      setSuggestions({
-        suggestedPrice: 1200,
-        minPrice: 800,
-        maxPrice: 1800,
-        marketAverage: 1100,
-        confidence: 0.85,
-        factors: ['Market demand', 'Service complexity', 'Location premium', 'Experience level'],
-        reasoning: 'Based on similar services in Lusaka, your pricing should be competitive while reflecting quality.'
-      });
-      setMarketData({
-        averagePrice: 1100,
-        priceRange: { min: 600, max: 2000 },
-        competitorCount: 23
-      });
+      setSuggestions(null);
+      setErrorMessage('We could not generate pricing insights right now. Please try again later.');
     } finally {
       setIsLoading(false);
     }
@@ -132,6 +126,13 @@ const AIPricingSuggestions = ({
           </div>
         </CardContent>
       </Card>
+
+      {errorMessage && (
+        <Alert variant="destructive">
+          <AlertTitle>Unable to generate pricing suggestions</AlertTitle>
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
 
       {suggestions && (
         <div className="grid md:grid-cols-2 gap-6">

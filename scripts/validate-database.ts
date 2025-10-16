@@ -148,8 +148,8 @@ async function validateTypes() {
   }
 }
 
-async function validateMockOperations() {
-  log.info('Testing mock database operations...');
+async function validateServiceOperations() {
+  log.info('Testing database service operations...');
   
   try {
     // Test user operations (these won't actually hit the database without auth)
@@ -173,7 +173,7 @@ async function validateMockOperations() {
     
     return true;
   } catch (error) {
-    log.error(`Mock operations error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    log.error(`Service operations error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return false;
   }
 }
@@ -187,7 +187,7 @@ async function main() {
     { name: 'Health Check', fn: validateHealthCheck },
     { name: 'Service Layer', fn: validateServices },
     { name: 'TypeScript Types', fn: validateTypes },
-    { name: 'Mock Operations', fn: validateMockOperations },
+    { name: 'Service Operations', fn: validateServiceOperations },
   ];
   
   let passedCount = 0;
