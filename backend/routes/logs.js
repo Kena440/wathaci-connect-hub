@@ -11,12 +11,12 @@ const extractToken = (authorizationHeader = '') => {
   if (header.toLowerCase().startsWith('bearer ')) {
     return header.slice(7).trim();
   }
-  return header || null;
+  return null;
 };
 
 const requireLogHistoryAuth = (req, res, next) => {
   if (!LOGS_API_TOKEN) {
-    return res.status(403).json({ error: 'Log history access is not configured' });
+    return res.status(503).json({ error: 'Log history access is not configured' });
   }
 
   const providedToken = extractToken(req.get('authorization') || '');
