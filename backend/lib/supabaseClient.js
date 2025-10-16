@@ -17,6 +17,27 @@ const config = {
 
 const isSupabaseConfigured = () => Boolean(config.baseUrl && config.serviceKey);
 
+// Log warning if Supabase is not configured
+if (!isSupabaseConfigured()) {
+  console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.warn('⚠️  WARNING: Supabase is NOT configured!');
+  console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.warn('');
+  console.warn('The backend will use IN-MEMORY storage for user registrations.');
+  console.warn('This means:');
+  console.warn('  • All user data will be LOST when the server restarts');
+  console.warn('  • Data is NOT persisted to a database');
+  console.warn('  • This is NOT suitable for production use');
+  console.warn('');
+  console.warn('To fix this, set the following environment variables:');
+  console.warn('  SUPABASE_URL=https://your-project.supabase.co');
+  console.warn('  SUPABASE_SERVICE_ROLE_KEY=your-service-role-key');
+  console.warn('');
+  console.warn('For production setup, see: docs/PRODUCTION_PAYMENT_SETUP.md');
+  console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.warn('');
+}
+
 const parseJsonResponse = async (response) => {
   const text = await response.text();
   if (!text) {

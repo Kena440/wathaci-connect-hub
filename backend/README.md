@@ -37,8 +37,23 @@ SUPABASE_SERVICE_ROLE_KEY="service-role-key"
 ```
 
 The service role key is required because the backend performs server-side
-inserts regardless of user authentication. When these variables are missing the
-API still works, but data is kept only in memory.
+inserts regardless of user authentication. 
+
+⚠️ **IMPORTANT FOR PRODUCTION:** When these variables are missing, the API still works, 
+but data is kept **only in memory** and will be **lost when the server restarts**. 
+This is NOT suitable for production use.
+
+The backend will display a prominent warning on startup when Supabase is not configured.
+
+**To obtain these credentials:**
+1. Go to [Supabase Dashboard](https://app.supabase.com)
+2. Select your project
+3. Navigate to **Settings → API**
+4. Copy:
+   - Project URL → `SUPABASE_URL`
+   - service_role key (secret) → `SUPABASE_SERVICE_ROLE_KEY`
+
+⚠️ **SECURITY:** The `service_role` key is a SECRET - never expose it in frontend code or commit it to version control!
 
 ### Database schema
 

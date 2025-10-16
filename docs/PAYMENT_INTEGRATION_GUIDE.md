@@ -94,6 +94,8 @@ VITE_APP_NAME="WATHACI CONNECT"
 - Error logging only
 - Real payment processing
 
+**⚠️ IMPORTANT: For complete production setup instructions, see [PRODUCTION_PAYMENT_SETUP.md](./PRODUCTION_PAYMENT_SETUP.md)**
+
 ### Lenco API Key Setup
 
 1. Log into your Lenco dashboard

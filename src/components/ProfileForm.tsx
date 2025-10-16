@@ -30,6 +30,8 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
     gaps_identified: [],
     phone: '',
     payment_phone: '',
+    card_number: '',
+    card_expiry: '',
     profile_image_url: null,
     linkedin_url: '',
     ...initialData
@@ -325,6 +327,32 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
                       onChange={(e) => handleInputChange('payment_phone', e.target.value)}
                       placeholder="Country code will be auto-filled"
                     />
+                  </div>
+                )}
+
+                {formData.payment_method === 'card' && (
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Card Number</Label>
+                      <Input 
+                        value={formData.card_number || ''}
+                        onChange={(e) => handleInputChange('card_number', e.target.value)}
+                        placeholder="1234 5678 9012 3456"
+                        maxLength={19}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Your card details will be securely stored for subscription payments
+                      </p>
+                    </div>
+                    <div>
+                      <Label>Card Expiry (MM/YY)</Label>
+                      <Input 
+                        value={formData.card_expiry || ''}
+                        onChange={(e) => handleInputChange('card_expiry', e.target.value)}
+                        placeholder="MM/YY"
+                        maxLength={5}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
