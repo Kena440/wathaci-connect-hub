@@ -349,8 +349,11 @@ export class SubscriptionService extends BaseService<UserSubscription> {
         };
       }
 
-      const activeCount = subscriptions.filter(s => s.status === 'active').length;
-      const cancelledCount = subscriptions.filter(s => s.status === 'cancelled').length;
+      type SubscriptionRecord = { status?: string | null };
+      const subscriptionList = subscriptions as SubscriptionRecord[];
+
+      const activeCount = subscriptionList.filter(subscription => subscription.status === 'active').length;
+      const cancelledCount = subscriptionList.filter(subscription => subscription.status === 'cancelled').length;
       
       // Get transaction data for revenue calculation
       let transactionsQuery = supabase
@@ -364,16 +367,19 @@ export class SubscriptionService extends BaseService<UserSubscription> {
 
       const { data: transactions } = await transactionsQuery;
 
-      const totalRevenue = transactions?.reduce((sum, t) => sum + t.amount, 0) || 0;
+      type TransactionRecord = { amount: number; created_at: string };
+      const transactionList = (transactions ?? []) as TransactionRecord[];
+
+      const totalRevenue = transactionList.reduce((sum, transaction) => sum + transaction.amount, 0);
       
       const currentMonth = new Date();
-      const monthlyTransactions = transactions?.filter(t => {
-        const transactionDate = new Date(t.created_at);
+      const monthlyTransactions = transactionList.filter(transaction => {
+        const transactionDate = new Date(transaction.created_at);
         return transactionDate.getMonth() === currentMonth.getMonth() &&
                transactionDate.getFullYear() === currentMonth.getFullYear();
-      }) || [];
-      
-      const monthlyRevenue = monthlyTransactions.reduce((sum, t) => sum + t.amount, 0);
+      });
+
+      const monthlyRevenue = monthlyTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
       const churnRate = subscriptions.length > 0 ? (cancelledCount / subscriptions.length) * 100 : 0;
 
       return {

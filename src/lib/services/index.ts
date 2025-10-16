@@ -13,6 +13,8 @@ import {
   ProfileService,
   userService,
   profileService,
+  OFFLINE_ACCOUNT_METADATA_KEY,
+  OFFLINE_PROFILE_METADATA_KEY,
 } from './user-service';
 
 export {
@@ -20,6 +22,8 @@ export {
   ProfileService,
   userService,
   profileService,
+  OFFLINE_ACCOUNT_METADATA_KEY,
+  OFFLINE_PROFILE_METADATA_KEY,
 };
 
 // Subscription services

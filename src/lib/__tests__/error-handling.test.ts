@@ -9,7 +9,7 @@ describe('Error Message Transformations', () => {
   const transformAuthError = (errorMessage: string, context: 'signIn' | 'signUp'): string => {
     // Network error detection
     if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-      return 'Unable to connect to the server. Please check your internet connection and try again.';
+      return "We couldn't reach WATHACI servers right now. Please try again shortly.";
     }
     
     // Sign-in specific errors
@@ -38,17 +38,17 @@ describe('Error Message Transformations', () => {
   describe('Network Error Detection', () => {
     it('should transform "Failed to fetch" error', () => {
       const result = transformAuthError('Failed to fetch', 'signIn');
-      expect(result).toBe('Unable to connect to the server. Please check your internet connection and try again.');
+      expect(result).toBe("We couldn't reach WATHACI servers right now. Please try again shortly.");
     });
 
     it('should transform "fetch failed" error', () => {
       const result = transformAuthError('fetch failed', 'signUp');
-      expect(result).toBe('Unable to connect to the server. Please check your internet connection and try again.');
+      expect(result).toBe("We couldn't reach WATHACI servers right now. Please try again shortly.");
     });
 
     it('should transform "network error" message', () => {
       const result = transformAuthError('network error occurred', 'signIn');
-      expect(result).toBe('Unable to connect to the server. Please check your internet connection and try again.');
+      expect(result).toBe("We couldn't reach WATHACI servers right now. Please try again shortly.");
     });
   });
 
@@ -107,7 +107,7 @@ describe('Error Handling Coverage', () => {
       const context = scenario.includes('already') || scenario.includes('password') ? 'signUp' : 'signIn';
       const transformAuthError = (errorMessage: string, context: 'signIn' | 'signUp'): string => {
         if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-          return 'Unable to connect to the server. Please check your internet connection and try again.';
+          return "We couldn't reach WATHACI servers right now. Please try again shortly.";
         }
         if (context === 'signIn') {
           if (errorMessage.includes('Invalid login credentials')) {
