@@ -39,6 +39,25 @@ if ((!supabaseUrl || !supabaseKey) && !isTestEnvironment) {
   throw new Error('Missing Supabase configuration. Please set VITE_SUPABASE_URL and VITE_SUPABASE_KEY environment variables.');
 }
 
+type MockAuthUser = {
+  id: string;
+  email: string;
+  created_at: string;
+  updated_at: string;
+  user_metadata: Record<string, any>;
+};
+
+const createMockAuthUser = (overrides: Partial<MockAuthUser> = {}): MockAuthUser => {
+  const timestamp = new Date().toISOString();
+  return {
+    id: overrides.id ?? `mock-user-${Math.random().toString(36).slice(2, 10)}`,
+    email: overrides.email ?? 'user@example.com',
+    created_at: overrides.created_at ?? timestamp,
+    updated_at: overrides.updated_at ?? timestamp,
+    user_metadata: overrides.user_metadata ?? {},
+  };
+};
+
 function createMockSupabaseClient() {
   const mockData: Record<string, any[]> = {
     user_subscriptions: [
@@ -94,6 +113,32 @@ function createMockSupabaseClient() {
       }
     ]
   };
+
+  const mockAuthUsers = new Map<string, { password: string; user: MockAuthUser }>();
+  const authListeners = new Set<(event: string, session: { user: MockAuthUser | null } | null) => void>();
+  let currentUser: MockAuthUser | null = null;
+
+  const notifyAuthListeners = (event: string, user: MockAuthUser | null) => {
+    const session = user ? { user } : { user: null };
+    authListeners.forEach(listener => {
+      try {
+        listener(event, session);
+      } catch (error) {
+        console.error('Mock Supabase auth listener error:', error);
+      }
+    });
+  };
+
+  const defaultUser = createMockAuthUser({
+    id: 'mock-user-demo',
+    email: 'demo@wathaci.test',
+    user_metadata: {
+      full_name: 'Demo User',
+      account_type: 'sme',
+      profile_completed: false,
+    },
+  });
+  mockAuthUsers.set(defaultUser.email.toLowerCase(), { password: 'password123', user: defaultUser });
 
   const resolveQueryResult = (table: string, data: any) => {
     if (table === 'user_subscriptions' && Array.isArray(data)) {
@@ -180,11 +225,67 @@ function createMockSupabaseClient() {
 
   return {
     auth: {
-      getUser: async () => ({ data: { user: null }, error: null }),
-      signInWithPassword: async () => ({ data: null, error: null }),
-      signUp: async () => ({ data: null, error: null }),
-      signOut: async () => ({ error: null }),
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => undefined } } })
+      getUser: async () => ({ data: { user: currentUser }, error: null }),
+      signInWithPassword: async ({ email, password }: { email: string; password: string }) => {
+        const normalizedEmail = (email || '').toLowerCase();
+        const record = mockAuthUsers.get(normalizedEmail);
+
+        if (!record || record.password !== password) {
+          return {
+            data: null,
+            error: { message: 'Invalid login credentials', status: 400 },
+          };
+        }
+
+        currentUser = {
+          ...record.user,
+          updated_at: new Date().toISOString(),
+        };
+        mockAuthUsers.set(normalizedEmail, { password: record.password, user: currentUser });
+
+        notifyAuthListeners('SIGNED_IN', currentUser);
+
+        return { data: { user: currentUser }, error: null };
+      },
+      signUp: async ({ email, password, options }: { email: string; password: string; options?: { data?: Record<string, any> } }) => {
+        const normalizedEmail = (email || '').toLowerCase();
+
+        if (mockAuthUsers.has(normalizedEmail)) {
+          return {
+            data: null,
+            error: { message: 'User already registered', status: 409 },
+          };
+        }
+
+        const metadata = options?.data ?? {};
+        const newUser = createMockAuthUser({
+          email: normalizedEmail,
+          user_metadata: metadata,
+        });
+
+        mockAuthUsers.set(normalizedEmail, { password, user: newUser });
+        currentUser = newUser;
+
+        notifyAuthListeners('SIGNED_IN', currentUser);
+
+        return { data: { user: newUser }, error: null };
+      },
+      signOut: async () => {
+        currentUser = null;
+        notifyAuthListeners('SIGNED_OUT', null);
+        return { error: null };
+      },
+      onAuthStateChange: (callback: (event: string, session: { user: MockAuthUser | null } | null) => void) => {
+        authListeners.add(callback);
+        return {
+          data: {
+            subscription: {
+              unsubscribe: () => authListeners.delete(callback),
+            },
+          },
+          error: null,
+        };
+      },
     },
     functions: {
       invoke: async (name: string, options?: { body?: any }) => {
