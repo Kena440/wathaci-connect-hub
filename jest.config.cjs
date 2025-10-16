@@ -20,6 +20,7 @@ module.exports = {
     '^.+\\.tsx?$': ['ts-jest', {
       tsconfig: {
         jsx: 'react-jsx',
+        module: 'esnext',
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
         typeRoots: ['node_modules/@types', 'src/@types'],
