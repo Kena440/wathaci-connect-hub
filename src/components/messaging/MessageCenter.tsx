@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,11 +37,7 @@ export const MessageCenter = () => {
   const [recipientResults, setRecipientResults] = useState<Array<{ id: string; full_name: string }>>([]);
   const [selectedRecipient, setSelectedRecipient] = useState<{ id: string; full_name: string } | null>(null);
 
-  useEffect(() => {
-    loadMessages();
-  }, []);
-
-  const loadMessages = async () => {
+  const loadMessages = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -61,7 +57,11 @@ export const MessageCenter = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    void loadMessages();
+  }, [loadMessages]);
 
   const searchRecipients = async (query: string) => {
     setRecipientQuery(query);
@@ -138,7 +138,7 @@ export const MessageCenter = () => {
       setRecipientResults([]);
       setSelectedRecipient(null);
       setShowCompose(false);
-      loadMessages();
+      await loadMessages();
     } catch (error: any) {
       toast({
         title: "Error sending message",

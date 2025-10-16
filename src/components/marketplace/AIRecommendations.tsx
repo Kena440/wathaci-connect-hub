@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,11 +32,7 @@ const AIRecommendations = ({
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'personalized' | 'trending' | 'similar'>('personalized');
 
-  useEffect(() => {
-    fetchRecommendations();
-  }, [userProfile, searchHistory, activeTab]);
-
-  const fetchRecommendations = async () => {
+  const fetchRecommendations = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('ai-professional-matcher', {
@@ -83,7 +79,11 @@ const AIRecommendations = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [activeTab, searchHistory, userProfile]);
+
+  useEffect(() => {
+    void fetchRecommendations();
+  }, [fetchRecommendations]);
 
   const getTabIcon = (tab: string) => {
     switch (tab) {

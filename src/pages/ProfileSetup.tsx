@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase-enhanced';
 import { ProfileForm } from '@/components/ProfileForm';
@@ -25,18 +25,9 @@ export const ProfileSetup = () => {
 
   const activeTab = searchParams.get('tab') || 'profile';
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/signin');
-      return;
-    }
-    
-    checkExistingProfile();
-  }, [user, navigate]);
-
-  const checkExistingProfile = async () => {
+  const checkExistingProfile = useCallback(async () => {
     if (!user) return;
-    
+
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
@@ -65,7 +56,16 @@ export const ProfileSetup = () => {
         variant: "destructive",
       });
     }
-  };
+  }, [toast, user]);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/signin');
+      return;
+    }
+
+    void checkExistingProfile();
+  }, [user, navigate, checkExistingProfile]);
 
   const handleAccountTypeSelect = async () => {
     if (!selectedAccountType || !user) return;

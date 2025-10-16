@@ -9,9 +9,9 @@ const corsHeaders = {
 
 // Helper to work in both Deno (Supabase Edge Functions) and Node (tests)
 function getEnv(key: string): string | undefined {
-  // @ts-ignore - Deno may not exist in Node environment
+  // @ts-expect-error: Deno is only available in Supabase Edge Functions
   if (typeof Deno !== 'undefined' && Deno?.env) {
-    // @ts-ignore
+    // @ts-expect-error: Accessing Deno.env is valid in the Edge runtime
     return Deno.env.get(key);
   }
   return process.env[key];

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,11 +22,7 @@ export const CollaborationSuggestions = ({ userProfile }: { userProfile?: any })
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    generateSuggestions();
-  }, [userProfile]);
-
-  const generateSuggestions = async () => {
+  const generateSuggestions = useCallback(async () => {
     setLoading(true);
 
     try {
@@ -53,7 +49,11 @@ export const CollaborationSuggestions = ({ userProfile }: { userProfile?: any })
     } finally {
       setLoading(false);
     }
-  };
+  }, [userProfile, toast]);
+
+  useEffect(() => {
+    generateSuggestions();
+  }, [generateSuggestions]);
 
   const handleInterest = (suggestionId: string, action: 'interested' | 'not_interested') => {
     if (action === 'interested') {
