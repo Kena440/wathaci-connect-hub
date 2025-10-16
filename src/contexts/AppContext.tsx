@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { userService, profileService, supabase } from '@/lib/services';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { userService, profileService, supabase, isSupabaseConfigured } from '@/lib/services';
 import { toast } from '@/components/ui/use-toast';
 import type { User, Profile } from '@/@types/database';
+import { localAuthService, localProfileService } from '@/lib/services/local-auth-service';
 
 interface AppContextType {
   sidebarOpen: boolean;
@@ -37,16 +38,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const usingLocalAuth = !isSupabaseConfigured;
+
   const toggleSidebar = () => {
     setSidebarOpen(prev => !prev);
   };
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       setLoading(true);
       
       // Get the current authenticated user
-      const { data: authUser, error: userError } = await userService.getCurrentUser();
+      const { data: authUser, error: userError } = usingLocalAuth
+        ? await localAuthService.getCurrentUser()
+        : await userService.getCurrentUser();
       
       if (userError || !authUser) {
         setUser(null);
@@ -57,7 +62,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setUser(authUser);
 
       // Get the user's profile
-      const { data: userProfile, error: profileError } = await profileService.getByUserId(authUser.id);
+      const { data: userProfile, error: profileError } = usingLocalAuth
+        ? await localProfileService.getByUserId(authUser.id)
+        : await profileService.getByUserId(authUser.id);
       
       if (profileError) {
         console.error('Error fetching user profile:', profileError);
@@ -81,82 +88,61 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } finally {
       setLoading(false);
     }
-  };
+  }, [usingLocalAuth]);
 
   const signIn = async (email: string, password: string) => {
-    const { data: user, error } = await userService.signIn(email, password);
-    
-    if (error) {
-      // Provide user-friendly error messages
-      let errorMessage = error.message || 'Failed to sign in';
-      
-      // Check for common error patterns and provide helpful messages
-      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-        errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
-      } else if (errorMessage.includes('Invalid login credentials')) {
-        errorMessage = 'Invalid email or password. Please check your credentials and try again.';
-      } else if (errorMessage.includes('Email not confirmed')) {
-        errorMessage = 'Please verify your email address before signing in. Check your inbox for the verification link.';
-      }
-      
-      throw new Error(errorMessage);
-    }
-    
+    const { error } = usingLocalAuth
+      ? await localAuthService.signIn(email, password)
+      : await userService.signIn(email, password);
+
+    if (error) throw error;
+
     toast({
       title: "Welcome back!",
       description: "You have been signed in successfully.",
     });
-    
+
     // Refresh user data after successful sign in
     await refreshUser();
   };
 
   const signUp = async (email: string, password: string, userData?: any) => {
-    const { data: user, error } = await userService.signUp(email, password);
-    
-    if (error) {
-      // Provide user-friendly error messages
-      let errorMessage = error.message || 'Failed to create account';
-      
-      // Check for common error patterns and provide helpful messages
-      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-        errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
-      } else if (errorMessage.includes('already exists') || errorMessage.includes('already registered')) {
-        errorMessage = 'An account with this email already exists. Please sign in instead or use a different email.';
-      } else if (errorMessage.includes('password')) {
-        errorMessage = 'Password does not meet requirements. Please use a stronger password.';
-      }
-      
-      throw new Error(errorMessage);
+    const { data: createdUser, error } = usingLocalAuth
+      ? await localAuthService.signUp(email, password)
+      : await userService.signUp(email, password);
+
+    if (error) throw error;
+
+    if (createdUser && userData) {
+      const { error: profileError } = usingLocalAuth
+        ? await localProfileService.createProfile(createdUser.id, {
+          email: createdUser.email,
+          ...userData
+        })
+        : await profileService.createProfile(createdUser.id, {
+          email: createdUser.email,
+          ...userData
+        });
+
+      if (profileError) throw profileError;
     }
-    
-    if (user && userData) {
-      const { error: profileError } = await profileService.createProfile(user.id, {
-        email: user.email,
-        ...userData
-      });
-      
-      if (profileError) {
-        let profileErrorMessage = 'Failed to create user profile';
-        
-        if (profileError.message?.includes('network') || profileError.message?.includes('fetch')) {
-          profileErrorMessage = 'Account created but profile setup failed due to network issues. Please try signing in.';
-        }
-        
-        throw new Error(profileErrorMessage);
-      }
-    }
-    
+
     toast({
       title: "Account created!",
       description: "Please check your email to verify your account.",
     });
+
+    if (usingLocalAuth) {
+      await refreshUser();
+    }
   };
 
   const signOut = async () => {
     try {
-      const { error } = await userService.signOut();
-      
+      const { error } = usingLocalAuth
+        ? await localAuthService.signOut()
+        : await userService.signOut();
+
       if (error) throw error;
       
       setUser(null);
@@ -180,6 +166,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     refreshUser();
 
     // Listen for auth changes
+    if (usingLocalAuth) {
+      const { data: { subscription } } = localAuthService.onAuthStateChange(async (event) => {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          await refreshUser();
+        }
+
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setProfile(null);
+          setLoading(false);
+        }
+      });
+
+      return () => subscription.unsubscribe();
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
@@ -193,7 +195,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [refreshUser, usingLocalAuth]);
 
   return (
     <AppContext.Provider
