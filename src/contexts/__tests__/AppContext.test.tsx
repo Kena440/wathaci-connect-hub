@@ -12,22 +12,46 @@ jest.mock('@/lib/supabase-enhanced', () => {
     signOut: jest.fn(),
     onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } }))
   };
-  return { supabase: { auth, from: jest.fn() } };
+  return {
+    supabase: { auth, from: jest.fn() },
+    withErrorHandling: async (operation: any) => {
+      const result = await operation();
+      return { data: result.data ?? null, error: result.error ?? null };
+    },
+  };
 });
 
 jest.mock('@/components/ui/use-toast', () => ({
   toast: jest.fn(),
 }));
 
-const mockSupabase = supabase as jest.Mocked<typeof supabase>;
+const mockSupabase = supabase as unknown as {
+  auth: {
+    getUser: jest.Mock;
+    signInWithPassword: jest.Mock;
+    signUp: jest.Mock;
+    signOut: jest.Mock;
+    onAuthStateChange: jest.Mock;
+  };
+  from: jest.Mock;
+};
 const mockToast = toast as jest.MockedFunction<typeof toast>;
 
-const mockProfileChain = (profile = { profile_completed: false, account_type: null }) => ({
-  select: jest.fn().mockReturnThis(),
-  eq: jest.fn().mockReturnThis(),
-  single: jest.fn().mockResolvedValue({ data: profile }),
-  insert: jest.fn().mockResolvedValue({ error: null }),
-});
+const mockProfileChain = (profile: any = { profile_completed: false, account_type: null }) => {
+  const singleResult = { data: profile, error: null };
+  return {
+    select: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    single: jest.fn().mockResolvedValue(singleResult),
+    insert: jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        single: jest.fn().mockResolvedValue(singleResult),
+      }),
+    }),
+    update: jest.fn().mockReturnThis(),
+    upsert: jest.fn().mockReturnThis(),
+  };
+};
 
 const renderWithContext = async () => {
   let ctx: ReturnType<typeof useAppContext> | undefined;
@@ -54,19 +78,41 @@ beforeEach(() => {
 
 describe('AppContext auth actions', () => {
   test('signIn success triggers toast', async () => {
-    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null } } as any);
-    mockSupabase.auth.signInWithPassword.mockResolvedValue({ data: {}, error: null } as any);
-    mockSupabase.from.mockImplementation(() => mockProfileChain() as any);
+    const profile = { profile_completed: true, account_type: 'sme' } as any;
+    mockSupabase.auth.getUser.mockResolvedValueOnce({ data: { user: null } } as any);
+    mockSupabase.auth.signInWithPassword.mockResolvedValue({
+      data: {
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          created_at: 'now',
+          updated_at: 'now',
+        },
+      },
+      error: null,
+    } as any);
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: {
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          created_at: 'now',
+          updated_at: 'now',
+        },
+      },
+    } as any);
+    mockSupabase.from.mockImplementation(() => mockProfileChain(profile) as any);
 
     const ctx = await renderWithContext();
-    await ctx.signIn('test@example.com', 'password');
+    const result = await ctx.signIn('test@example.com', 'password');
 
     expect(mockSupabase.auth.signInWithPassword).toHaveBeenCalledWith({ email: 'test@example.com', password: 'password' });
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
       title: 'Welcome back!',
       description: 'You have been signed in successfully.',
     }));
-    expect(ctx.user).toBeNull();
+    expect(result.user).toEqual(expect.objectContaining({ id: 'user-123', email: 'test@example.com' }));
+    expect(result.profile).toEqual(profile);
   });
 
   test('signIn failure throws error and no toast', async () => {
@@ -87,10 +133,11 @@ describe('AppContext auth actions', () => {
     mockSupabase.from.mockImplementation(() => profileChain as any);
 
     const ctx = await renderWithContext();
-    await ctx.signUp('test@example.com', 'pass', { foo: 'bar' });
+    const result = await ctx.signUp('test@example.com', 'pass', { foo: 'bar' });
 
-    expect(profileChain.insert).toHaveBeenCalledWith({ id: '1', email: 'test@example.com', foo: 'bar' });
+    expect(profileChain.insert).toHaveBeenCalledWith(expect.objectContaining({ id: '1', email: 'test@example.com', foo: 'bar' }));
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Account created!' }));
+    expect(result.user).toEqual(expect.objectContaining({ id: '1', email: 'test@example.com' }));
   });
 
   test('signUp failure throws error and no toast', async () => {

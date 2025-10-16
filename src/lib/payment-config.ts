@@ -57,7 +57,16 @@ const DEFAULT_DEV_PUBLIC_KEY = 'pub-dea560c94d379a23e7b85a265d7bb9acbd585481e6e1
 
 const resolveRuntimeValue = (key: string): string | undefined => {
   try {
-    const viteValue = (import.meta as any)?.env?.[key];
+    const importMeta = (() => {
+      try {
+        // eslint-disable-next-line no-eval
+        return (0, eval)('import.meta');
+      } catch {
+        return undefined;
+      }
+    })();
+
+    const viteValue = importMeta?.env?.[key];
     if (viteValue) {
       return viteValue as string;
     }

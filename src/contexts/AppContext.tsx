@@ -3,16 +3,21 @@ import { userService, profileService, supabase } from '@/lib/services';
 import { toast } from '@/components/ui/use-toast';
 import type { User, Profile } from '@/@types/database';
 
+interface AuthState {
+  user: User | null;
+  profile: Profile | null;
+}
+
 interface AppContextType {
   sidebarOpen: boolean;
   toggleSidebar: () => void;
   user: User | null;
   profile: Profile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, userData?: any) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<AuthState>;
+  signUp: (email: string, password: string, userData?: any) => Promise<AuthState>;
   signOut: () => Promise<void>;
-  refreshUser: () => Promise<void>;
+  refreshUser: () => Promise<AuthState>;
 }
 
 const defaultAppContext: AppContextType = {
@@ -21,10 +26,10 @@ const defaultAppContext: AppContextType = {
   user: null,
   profile: null,
   loading: true,
-  signIn: async () => {},
-  signUp: async () => {},
+  signIn: async () => ({ user: null, profile: null }),
+  signUp: async () => ({ user: null, profile: null }),
   signOut: async () => {},
-  refreshUser: async () => {},
+  refreshUser: async () => ({ user: null, profile: null }),
 };
 
 const AppContext = createContext<AppContextType>(defaultAppContext);
@@ -41,51 +46,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSidebarOpen(prev => !prev);
   };
 
-  const refreshUser = async () => {
+  const refreshUser = async (): Promise<AuthState> => {
+    let currentUser: User | null = null;
+    let currentProfile: Profile | null = null;
+
     try {
       setLoading(true);
-      
+
       // Get the current authenticated user
       const { data: authUser, error: userError } = await userService.getCurrentUser();
-      
+
       if (userError || !authUser) {
         setUser(null);
         setProfile(null);
-        return;
+        return { user: null, profile: null };
       }
 
+      currentUser = authUser;
       setUser(authUser);
 
       // Get the user's profile
       const { data: userProfile, error: profileError } = await profileService.getByUserId(authUser.id);
-      
+
       if (profileError) {
         console.error('Error fetching user profile:', profileError);
         setProfile(null);
       } else {
         setProfile(userProfile);
-        
+
         // Update user with profile completion info
         if (userProfile) {
-          setUser(prev => prev ? {
-            ...prev,
+          currentProfile = userProfile;
+          const enrichedUser: User = {
+            ...authUser,
             profile_completed: userProfile.profile_completed,
-            account_type: userProfile.account_type
-          } : null);
+            account_type: userProfile.account_type,
+          };
+
+          currentUser = enrichedUser;
+          setUser(enrichedUser);
         }
       }
     } catch (error) {
       console.error('Error refreshing user:', error);
       setUser(null);
       setProfile(null);
+      return { user: null, profile: null };
     } finally {
       setLoading(false);
     }
+
+    return {
+      user: currentUser,
+      profile: currentProfile,
+    };
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<AuthState> => {
     const { data: user, error } = await userService.signIn(email, password);
-    
+
     if (error) {
       // Provide user-friendly error messages
       let errorMessage = error.message || 'Failed to sign in';
@@ -106,14 +125,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       title: "Welcome back!",
       description: "You have been signed in successfully.",
     });
-    
+
     // Refresh user data after successful sign in
-    await refreshUser();
+    const refreshedState = await refreshUser();
+
+    // Fallback to the user returned by the auth API if refresh didn't provide one
+    if (!refreshedState.user && user) {
+      setUser(user);
+      return { user, profile: null };
+    }
+
+    return refreshedState;
   };
 
-  const signUp = async (email: string, password: string, userData?: any) => {
+  const signUp = async (email: string, password: string, userData?: any): Promise<AuthState> => {
     const { data: user, error } = await userService.signUp(email, password);
-    
+
     if (error) {
       // Provide user-friendly error messages
       let errorMessage = error.message || 'Failed to create account';
@@ -130,27 +157,72 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       throw new Error(errorMessage);
     }
     
-    if (user && userData) {
-      const { error: profileError } = await profileService.createProfile(user.id, {
+    let createdProfile: Profile | null = null;
+
+    if (user) {
+      const profilePayload = {
         email: user.email,
-        ...userData
-      });
-      
+        ...(userData || {}),
+      };
+
+      const { data: newProfile, error: profileError } = await profileService.createProfile(
+        user.id,
+        profilePayload,
+      );
+
       if (profileError) {
         let profileErrorMessage = 'Failed to create user profile';
-        
+
         if (profileError.message?.includes('network') || profileError.message?.includes('fetch')) {
           profileErrorMessage = 'Account created but profile setup failed due to network issues. Please try signing in.';
         }
-        
+
         throw new Error(profileErrorMessage);
       }
+
+      createdProfile = newProfile || null;
     }
-    
+
     toast({
       title: "Account created!",
       description: "Please check your email to verify your account.",
     });
+
+    if (!user) {
+      return { user: null, profile: null };
+    }
+
+    const refreshedState = await refreshUser();
+
+    // If Supabase hasn't started a session yet (email confirmation flow),
+    // fall back to the newly created entities so the UI can continue gracefully.
+    if (!refreshedState.user) {
+      const fallbackUser: User = {
+        ...user,
+        profile_completed: createdProfile?.profile_completed ?? userData?.profile_completed ?? false,
+        account_type: createdProfile?.account_type ?? userData?.account_type,
+      };
+      setUser(fallbackUser);
+
+      if (createdProfile) {
+        setProfile(createdProfile);
+      }
+
+      return {
+        user: fallbackUser,
+        profile: createdProfile,
+      };
+    }
+
+    if (!refreshedState.profile && createdProfile) {
+      setProfile(createdProfile);
+      return {
+        user: refreshedState.user,
+        profile: createdProfile,
+      };
+    }
+
+    return refreshedState;
   };
 
   const signOut = async () => {
