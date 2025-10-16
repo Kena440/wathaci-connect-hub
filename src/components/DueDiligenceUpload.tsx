@@ -41,8 +41,17 @@ export const DueDiligenceUpload = ({ onComplianceChange }: { onComplianceChange?
   }, []);
 
   useEffect(() => {
-    checkCompliance();
-  }, [documents]);
+    const requiredDocs = REQUIRED_DOCUMENTS.filter(doc => doc.required);
+    const uploadedRequiredDocs = requiredDocs.filter(reqDoc =>
+      documents.some(doc =>
+        doc.document_type === reqDoc.type &&
+        doc.verification_status !== 'rejected'
+      )
+    );
+
+    const isCompliant = uploadedRequiredDocs.length === requiredDocs.length;
+    onComplianceChange?.(isCompliant);
+  }, [documents, onComplianceChange]);
 
   const loadDocuments = async () => {
     try {
@@ -60,19 +69,6 @@ export const DueDiligenceUpload = ({ onComplianceChange }: { onComplianceChange?
     } catch (error) {
       console.error('Error loading documents:', error);
     }
-  };
-
-  const checkCompliance = () => {
-    const requiredDocs = REQUIRED_DOCUMENTS.filter(doc => doc.required);
-    const uploadedRequiredDocs = requiredDocs.filter(reqDoc => 
-      documents.some(doc => 
-        doc.document_type === reqDoc.type && 
-        doc.verification_status !== 'rejected'
-      )
-    );
-    
-    const isCompliant = uploadedRequiredDocs.length === requiredDocs.length;
-    onComplianceChange?.(isCompliant);
   };
 
   const handleFileUpload = async () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,11 +49,7 @@ export const IntegratedMarketplace = () => {
     { value: 'resource', label: 'Resources', icon: BookOpen }
   ];
 
-  useEffect(() => {
-    loadServices();
-  }, [selectedCategory, selectedProviderType, selectedLocation, priceRange]);
-
-  const loadServices = async () => {
+  const loadServices = useCallback(async () => {
     setLoading(true);
     try {
       const filters = {
@@ -75,7 +71,11 @@ export const IntegratedMarketplace = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [priceRange, selectedCategory, selectedLocation, selectedProviderType]);
+
+  useEffect(() => {
+    void loadServices();
+  }, [loadServices]);
 
   const filteredServices = services.filter((service) =>
     service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

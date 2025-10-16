@@ -37,24 +37,47 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
 
   // Auto-populate country code when country changes
   useEffect(() => {
-    if (formData.country) {
-      const selectedCountry = countries.find(c => c.name === formData.country);
-      if (selectedCountry) {
-        const phoneCode = selectedCountry.phoneCode;
-        
-        if (formData.phone && !formData.phone.startsWith('+')) {
-          setFormData(prev => ({ ...prev, phone: `${phoneCode} ${formData.phone.replace(/^\+?\d{1,4}\s?/, '')}` }));
-        } else if (!formData.phone) {
-          setFormData(prev => ({ ...prev, phone: `${phoneCode} ` }));
+    if (!formData.country) {
+      return;
+    }
+    const selectedCountry = countries.find(c => c.name === formData.country);
+    if (!selectedCountry) {
+      return;
+    }
+
+    const phoneCode = selectedCountry.phoneCode;
+
+    setFormData(prev => {
+      let nextState = prev;
+
+      if (prev.phone && !prev.phone.startsWith('+')) {
+        const updatedPhone = `${phoneCode} ${prev.phone.replace(/^\+?\d{1,4}\s?/, '')}`;
+        if (updatedPhone !== prev.phone) {
+          nextState = { ...nextState, phone: updatedPhone };
         }
-        
-        if (!formData.use_same_phone && formData.payment_phone && !formData.payment_phone.startsWith('+')) {
-          setFormData(prev => ({ ...prev, payment_phone: `${phoneCode} ${formData.payment_phone.replace(/^\+?\d{1,4}\s?/, '')}` }));
-        } else if (!formData.use_same_phone && !formData.payment_phone) {
-          setFormData(prev => ({ ...prev, payment_phone: `${phoneCode} ` }));
+      } else if (!prev.phone) {
+        const defaultPhone = `${phoneCode} `;
+        if (prev.phone !== defaultPhone) {
+          nextState = { ...nextState, phone: defaultPhone };
         }
       }
-    }
+
+      if (!prev.use_same_phone) {
+        if (prev.payment_phone && !prev.payment_phone.startsWith('+')) {
+          const updatedPaymentPhone = `${phoneCode} ${prev.payment_phone.replace(/^\+?\d{1,4}\s?/, '')}`;
+          if (updatedPaymentPhone !== prev.payment_phone) {
+            nextState = { ...nextState, payment_phone: updatedPaymentPhone };
+          }
+        } else if (!prev.payment_phone) {
+          const defaultPaymentPhone = `${phoneCode} `;
+          if (prev.payment_phone !== defaultPaymentPhone) {
+            nextState = { ...nextState, payment_phone: defaultPaymentPhone };
+          }
+        }
+      }
+
+      return nextState;
+    });
   }, [formData.country]);
 
   const handleInputChange = (field: string, value: any) => {

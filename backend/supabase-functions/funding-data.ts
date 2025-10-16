@@ -23,25 +23,13 @@ export interface Professional {
 }
 
 // Helper to work in both Deno (Supabase Edge Functions) and Node (tests)
-type CrossEnvGlobal = typeof globalThis & {
-  Deno?: {
-    env?: {
-      get?: (key: string) => string | undefined;
-    };
-  };
-  process?: {
-    env?: Record<string, string | undefined>;
-  };
-};
-
 function getEnv(key: string): string | undefined {
-  const globalEnv = globalThis as CrossEnvGlobal;
-  const denoValue = globalEnv.Deno?.env?.get?.(key);
-  if (typeof denoValue === 'string') {
-    return denoValue;
+  // @ts-expect-error: Deno is only available in Supabase Edge Functions
+  if (typeof Deno !== 'undefined' && Deno?.env) {
+    // @ts-expect-error: Accessing Deno.env is valid in the Edge runtime
+    return Deno.env.get(key);
   }
-
-  return globalEnv.process?.env?.[key];
+  return process.env[key];
 }
 
 const SUPABASE_URL = getEnv('SUPABASE_URL') ?? '';

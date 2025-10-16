@@ -44,16 +44,8 @@ const TestimonialsSection = () => {
   };
 
   return (
-    <section className="relative py-16 px-6 overflow-hidden">
-      <div
-        className="absolute inset-0 bg-center bg-cover opacity-30"
-        style={{
-          backgroundImage:
-            "url('/images/ChatGPT%20Image%20Sep%2023%2C%202025%2C%2002_14_20%20PM.png')",
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 via-white/75 to-emerald-50/80" />
-      <div className="relative max-w-6xl mx-auto">
+    <section className="py-16 px-6 bg-gradient-to-br from-blue-50 to-emerald-50">
+      <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <Badge className="mb-4 bg-amber-100 text-amber-800 border-amber-300">
             Client Success Stories
