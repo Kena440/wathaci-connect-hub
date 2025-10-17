@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
+    "env:check": "node scripts/env-check.mjs",
     "test": "node --test",
     "test:jest": "jest",
     "test:jest:watch": "jest --watch",

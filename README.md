@@ -34,12 +34,14 @@ Update the new `.env` file with production values:
 When deploying to Vercel (or another hosting provider), add **both** `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` to the project
 environment variables along with any server-side keys (such as `SUPABASE_SERVICE_ROLE_KEY` if you run edge functions). Use the
 [deployment checklist](docs/VERCEL_SUPABASE_DEPLOYMENT.md) to mirror the values from `.env` into the `Production`, `Preview`, and
-`Development` environments and verify them before triggering a build. Running `npm run env:check` or `./scripts/setup-payments.sh`
-locally is a quick way to confirm the `.env` file is complete.
-Double check that the variables are present in every environment (Preview, Development, and Production) so the application can connect
-to Supabase without runtime errors.
-See the [Vercel Supabase deployment checklist](docs/VERCEL_SUPABASE_DEPLOYMENT.md) for a full walkthrough of verifying project access,
-configuring variables, and troubleshooting integration issues.
+`Development` environments and verify them before triggering a build.
+
+Run `npm run env:check` (backed by `scripts/env-check.mjs`) or `./scripts/setup-payments.sh` locally to confirm the `.env` files in
+both the frontend and backend contain production values. The checker fails fast when required keys are missing or when placeholder/test
+credentials are still present.
+
+For a complete pre-launch overview—including database provisioning, Supabase Edge Function deployment, webhook validation, and
+regression testing—consult the [Production Readiness Checklist](docs/PRODUCTION_READINESS_CHECKLIST.md).
 
 ## Testing
 
