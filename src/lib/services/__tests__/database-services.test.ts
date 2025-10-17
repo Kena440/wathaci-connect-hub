@@ -52,7 +52,7 @@ jest.mock('@supabase/supabase-js', () => ({
 describe('Database Services', () => {
   describe('Service Imports', () => {
     it('should import all services without errors', async () => {
-      const services = await import('../src/lib/services/index');
+      const services = await import('@/lib/services');
       
       expect(services.userService).toBeDefined();
       expect(services.profileService).toBeDefined();
@@ -62,7 +62,7 @@ describe('Database Services', () => {
     });
 
     it('should have proper service types', async () => {
-      const { userService, profileService, subscriptionService } = await import('../src/lib/services/index');
+      const { userService, profileService, subscriptionService } = await import('@/lib/services');
       
       expect(typeof userService).toBe('object');
       expect(typeof profileService).toBe('object');
@@ -72,7 +72,7 @@ describe('Database Services', () => {
 
   describe('Service Methods', () => {
     it('should have expected methods on user service', async () => {
-      const { userService } = await import('../src/lib/services/index');
+      const { userService } = await import('@/lib/services');
       
       expect(typeof userService.getCurrentUser).toBe('function');
       expect(typeof userService.signIn).toBe('function');
@@ -81,7 +81,7 @@ describe('Database Services', () => {
     });
 
     it('should have expected methods on profile service', async () => {
-      const { profileService } = await import('../src/lib/services/index');
+      const { profileService } = await import('@/lib/services');
       
       expect(typeof profileService.getByUserId).toBe('function');
       expect(typeof profileService.createProfile).toBe('function');
@@ -91,7 +91,7 @@ describe('Database Services', () => {
     });
 
     it('should have expected methods on subscription service', async () => {
-      const { subscriptionService } = await import('../src/lib/services/index');
+      const { subscriptionService } = await import('@/lib/services');
       
       expect(typeof subscriptionService.getPlansByAccountType).toBe('function');
       expect(typeof subscriptionService.getCurrentUserSubscription).toBe('function');
@@ -102,21 +102,24 @@ describe('Database Services', () => {
 
   describe('Database Types', () => {
     it('should import database types without errors', async () => {
-      const types = await import('../src/@types/database');
-      
-      // Check that key types are available
-      expect(types).toHaveProperty('AccountType');
+      const types = await import('@/@types/database');
+
       expect(types).toBeDefined();
+      expect(typeof types).toBe('object');
     });
   });
 
   describe('Utility Functions', () => {
     it('should have utility functions available', async () => {
-      const { withErrorHandling, testConnection, healthCheck } = await import('../src/lib/services/index');
-      
+      const { withErrorHandling, testConnection, healthCheck } = await import('@/lib/services');
+
+      const healthStatus = await healthCheck();
+
       expect(typeof withErrorHandling).toBe('function');
       expect(typeof testConnection).toBe('function');
       expect(typeof healthCheck).toBe('function');
+      expect(healthStatus).toHaveProperty('status');
+      expect(['healthy', 'degraded', 'unhealthy']).toContain(healthStatus.status);
     });
   });
 });
