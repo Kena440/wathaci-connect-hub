@@ -39,7 +39,7 @@ Before deploying, confirm the environment file is correctly populated:
 
 ```bash
 cp .env.example .env # if you have not created it yet
-npm run env:check    # custom script or use scripts/validate-database.ts
+npm run env:check    # validates required Supabase/Lenco variables across .env files
 ```
 
 For CI/CD, add a step that prints the variable names (not the values) to confirm they are present. Avoid logging secrets directly.
