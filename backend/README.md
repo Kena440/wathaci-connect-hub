@@ -47,7 +47,17 @@ once at the repository root and reuse them for both the frontend and backend.
 ### Database schema
 
 Run the SQL files in [`backend/supabase`](./supabase) to provision the required
-tables and policies:
+tables and policies. You can execute them manually (via the Supabase SQL editor
+or CLI) or run the helper script that executes them in the correct order:
+
+```bash
+# Requires either:
+#   • SUPABASE_DB_URL (or DATABASE_URL) + psql
+#   • or the Supabase CLI linked to your project (`supabase db query`)
+./backend/supabase/provision.sh
+```
+
+The script applies:
 
 - [`core_schema.sql`](supabase/core_schema.sql) creates the foundational
   `profiles`, `subscription_plans`, `user_subscriptions`, `transactions`, and
