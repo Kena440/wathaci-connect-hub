@@ -3,6 +3,7 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
@@ -18,15 +19,8 @@ module.exports = {
   ],
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
-      tsconfig: {
-        jsx: 'react-jsx',
-        module: 'esnext',
-        moduleResolution: 'node',
-        esModuleInterop: true,
-        allowSyntheticDefaultImports: true,
-        typeRoots: ['node_modules/@types', 'src/@types'],
-        types: ['jest', 'jest-axe', '@testing-library/jest-dom', 'node'],
-      }
+      tsconfig: './tsconfig.app.json',
+      useESM: true
     }]
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],

@@ -53,9 +53,16 @@ export {
 };
 
 // Enhanced Supabase client and utilities
-export { 
-  supabase, 
-  withErrorHandling
+export {
+  supabase,
+  withErrorHandling,
+  testConnection,
+  healthCheck
+} from '../supabase-enhanced';
+
+export type {
+  HealthCheckResult,
+  HealthCheckStatus
 } from '../supabase-enhanced';
 
 // Database types

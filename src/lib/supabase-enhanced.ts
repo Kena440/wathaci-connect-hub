@@ -385,6 +385,80 @@ export const testConnection = async (): Promise<boolean> => {
   }
 };
 
+export type HealthCheckStatus = 'healthy' | 'degraded' | 'unhealthy';
+
+export interface HealthCheckResult {
+  status: HealthCheckStatus;
+  timestamp: string;
+  details: {
+    connection: HealthCheckStatus;
+    auth: HealthCheckStatus;
+    error?: string;
+  };
+}
+
+export const healthCheck = async (): Promise<HealthCheckResult> => {
+  const timestamp = new Date().toISOString();
+  const issues: string[] = [];
+
+  let connectionStatus: HealthCheckStatus = 'unhealthy';
+  try {
+    const isConnected = await testConnection();
+    connectionStatus = isConnected ? 'healthy' : 'unhealthy';
+    if (!isConnected) {
+      issues.push('Database connection failed');
+    }
+  } catch (error) {
+    connectionStatus = isTestEnvironment ? 'degraded' : 'unhealthy';
+    const message = error instanceof Error ? error.message : 'Unknown connection error';
+    issues.push(`Connection exception: ${message}`);
+  }
+
+  let authStatus: HealthCheckStatus = 'unhealthy';
+  try {
+    const { data, error } = await (supabase as SupabaseClientLike).auth.getUser();
+
+    if (error) {
+      const message = error.message || 'Unknown authentication error';
+      if (message.toLowerCase().includes('session')) {
+        authStatus = 'degraded';
+      } else {
+        authStatus = 'unhealthy';
+        issues.push(`Auth error: ${message}`);
+      }
+    } else if (data?.user) {
+      authStatus = 'healthy';
+    } else {
+      authStatus = 'degraded';
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown authentication error';
+    authStatus = isTestEnvironment ? 'degraded' : 'unhealthy';
+    issues.push(`Auth exception: ${message}`);
+  }
+
+  let status: HealthCheckStatus = 'unhealthy';
+  if (connectionStatus === 'healthy' && authStatus === 'healthy') {
+    status = 'healthy';
+  } else if (connectionStatus === 'healthy' && authStatus !== 'unhealthy') {
+    status = 'degraded';
+  } else if (connectionStatus !== 'unhealthy' && authStatus !== 'unhealthy') {
+    status = 'degraded';
+  }
+
+  const errorMessage = issues.length > 0 ? issues.join('; ') : undefined;
+
+  return {
+    status,
+    timestamp,
+    details: {
+      connection: connectionStatus,
+      auth: authStatus,
+      ...(errorMessage ? { error: errorMessage } : {}),
+    },
+  };
+};
+
 // Enhanced error handling wrapper with network error detection
 export const withErrorHandling = async <T>(
   operation: () => PromiseLike<{ data: T | null; error: any }>,
