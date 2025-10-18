@@ -19,8 +19,8 @@ Update the new `.env` file with production values:
 - `VITE_SUPABASE_URL` / `SUPABASE_URL` – Supabase project URL (mirrored for the backend runtime).
 - `VITE_SUPABASE_KEY` – Supabase anon key for client access.
 - `SUPABASE_SERVICE_ROLE_KEY` – Required for any server-side inserts, including the Express API and Supabase Edge Functions.
-- `VITE_LENCO_PUBLIC_KEY` – Lenco public API key (`pk_live_*` in production).
-- `LENCO_SECRET_KEY` – Lenco secret API key (`sk_live_*` in production).
+- `VITE_LENCO_PUBLIC_KEY` – Lenco public API key (current dashboards issue `pub-…` keys; older projects may still use `pk_live_…`).
+- `LENCO_SECRET_KEY` – Lenco secret API key (accepts `sec-…`, `sk_live_…`, or legacy 64-character hex secrets).
 - `LENCO_WEBHOOK_SECRET` – Secret used to validate Lenco webhooks.
 - `VITE_LENCO_API_URL` – Lenco API base URL, `https://api.lenco.co/access/v2`.
 - `VITE_PAYMENT_CURRENCY` – ISO currency code for payments, e.g. `ZMK`.
