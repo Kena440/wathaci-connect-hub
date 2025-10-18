@@ -81,14 +81,14 @@ const performTlsCheck = (label, targetUrl) => new Promise((resolve) => {
   const request = https.request(parsedUrl, options, (response) => {
     const elapsedMs = Date.now() - start;
     const certificate = response.socket.getPeerCertificate();
-    const authorised = response.socket.authorized;
+    const authorized = response.socket.authorized;
     const authorizationError = response.socket.authorizationError || null;
     const protocol = response.socket.alpnProtocol || response.socket.getProtocol?.() || null;
 
     resolve({
       label,
       url: targetUrl,
-      authorised,
+      authorized,
       authorizationError,
       statusCode: response.statusCode,
       certificate,
