@@ -4,6 +4,10 @@
 
 This documentation provides comprehensive guidance for integrating and configuring Lenco payments in the WATHACI CONNECT platform.
 
+> **📖 Related Guides:**
+> - [Webhook Setup Guide](./WEBHOOK_SETUP_GUIDE.md) - Complete webhook configuration and testing
+> - [Live Keys Update Required](./LIVE_KEYS_UPDATE_REQUIRED.md) - Instructions for production key setup
+
 ## Table of Contents
 
 1. [Quick Start](#quick-start)
@@ -15,6 +19,7 @@ This documentation provides comprehensive guidance for integrating and configuri
 7. [Testing](#testing)
 8. [Troubleshooting](#troubleshooting)
 9. [Advanced Features](#advanced-features)
+10. [Webhook Integration](#webhook-integration)
 
 ## Quick Start
 
@@ -602,6 +607,50 @@ const subscription = await subscriptionService.subscribeToPlan(
 // Get subscription analytics
 const analytics = await subscriptionService.getSubscriptionAnalytics(userId);
 ```
+
+## Webhook Integration
+
+Webhooks enable real-time payment status updates from Lenco to your application. This is critical for production deployments.
+
+### Quick Setup
+
+1. **Deploy Database Schema**
+   ```bash
+   npm run supabase:provision
+   ```
+   This creates the `webhook_logs` table and updates the `payments` table with required fields.
+
+2. **Deploy Edge Function**
+   ```bash
+   supabase functions deploy lenco-webhook
+   ```
+
+3. **Configure Webhook URL in Lenco Dashboard**
+   - URL: `https://[your-project].supabase.co/functions/v1/lenco-webhook`
+   - Events: `payment.success`, `payment.failed`, `payment.pending`, `payment.cancelled`
+
+4. **Test Webhook**
+   - Use Lenco Dashboard's "Test Webhook" feature
+   - Verify events appear in `webhook_logs` table
+
+### Detailed Instructions
+
+For complete webhook setup, testing, and troubleshooting, see:
+- **[Webhook Setup Guide](./WEBHOOK_SETUP_GUIDE.md)** - Step-by-step webhook configuration
+
+### Webhook Security
+
+The webhook handler includes:
+- ✅ HMAC-SHA256 signature verification
+- ✅ Timing-safe comparison to prevent timing attacks
+- ✅ Request logging for audit trails
+- ✅ Error handling and retry mechanisms
+
+All webhook events are logged to `webhook_logs` table with:
+- Event type and reference
+- Processing status (processed/failed)
+- Full payload for debugging
+- Error messages (if failed)
 
 ## Support
 

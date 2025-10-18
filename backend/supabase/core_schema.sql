@@ -287,6 +287,7 @@ create table if not exists public.payments (
   user_id uuid not null references public.profiles(id) on delete cascade,
   subscription_id uuid references public.user_subscriptions(id) on delete set null,
   transaction_id uuid references public.transactions(id) on delete set null,
+  reference text,
   amount integer not null,
   currency text not null,
   status text not null default 'pending',
@@ -294,13 +295,24 @@ create table if not exists public.payments (
   provider text,
   provider_reference text,
   payment_url text,
+  email text,
+  name text,
+  phone text,
+  description text,
+  lenco_transaction_id text,
+  lenco_access_code text,
+  lenco_authorization_url text,
+  gateway_response text,
+  paid_at timestamptz,
   metadata jsonb,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
 
 create unique index if not exists payments_provider_reference_key on public.payments (provider_reference);
+create unique index if not exists payments_reference_key on public.payments (reference);
 create index if not exists payments_user_id_idx on public.payments (user_id);
+create index if not exists payments_lenco_transaction_id_idx on public.payments (lenco_transaction_id);
 
 alter table public.payments enable row level security;
 
@@ -359,5 +371,44 @@ drop trigger if exists set_timestamp on public.payments;
 create trigger set_timestamp
   before update on public.payments
   for each row execute function public.set_updated_at();
+
+-- ---------------------------------------------------------------------------
+-- Webhook logs for tracking Lenco payment webhook events
+-- ---------------------------------------------------------------------------
+create table if not exists public.webhook_logs (
+  id uuid primary key default gen_random_uuid(),
+  event_type text not null,
+  reference text not null,
+  status text not null,
+  error_message text,
+  payload jsonb,
+  processed_at timestamptz not null default timezone('utc', now()),
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+create index if not exists webhook_logs_reference_idx on public.webhook_logs (reference);
+create index if not exists webhook_logs_status_idx on public.webhook_logs (status);
+create index if not exists webhook_logs_processed_at_idx on public.webhook_logs (processed_at);
+
+alter table public.webhook_logs enable row level security;
+
+-- Allow service role to manage webhook logs
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'webhook_logs'
+      and polname = 'Webhook logs managed by service role'
+  ) then
+    create policy "Webhook logs managed by service role"
+      on public.webhook_logs
+      for all
+      to service_role
+      using (true)
+      with check (true);
+  end if;
+end
+$$;
 
 commit;
