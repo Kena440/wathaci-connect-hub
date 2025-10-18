@@ -206,6 +206,5 @@ sudo mv supabase /usr/local/bin/
 
 ---
 
-**Status**: ✅ Installation and configuration complete
-**Date**: October 18, 2025
+**Status**: ✅ Installation and configuration complete  
 **Version**: Supabase CLI 2.51.0
