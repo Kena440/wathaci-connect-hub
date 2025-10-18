@@ -141,8 +141,26 @@ const hasPlaceholder = (value = '') => {
   );
 };
 
-const looksLikeLiveLencoKey = (value = '') =>
-  /^pk_live_[a-z0-9]+$/i.test(value.trim()) || /^sk_live_[a-z0-9]+$/i.test(value.trim());
+const looksLikeLencoPublicKey = (value = '') => {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+
+  return (
+    /^(pk_live_[a-z0-9]{10,})$/i.test(trimmed) || // legacy format documented earlier
+    /^(pub-[a-z0-9]{32,})$/i.test(trimmed) // current dashboard format
+  );
+};
+
+const looksLikeLencoSecretKey = (value = '') => {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+
+  return (
+    /^(sk_live_[a-z0-9]{10,})$/i.test(trimmed) || // legacy format documented earlier
+    /^(sec-[a-z0-9]{32,})$/i.test(trimmed) || // dashboard-issued secrets
+    /^[a-f0-9]{64}$/i.test(trimmed) // hexadecimal secrets returned by older live accounts
+  );
+};
 
 const checks = [
   {
@@ -219,8 +237,13 @@ const formatEntry = ({ key, description }, required = true) => {
     status = `${yellow('▲')} ${key} ${formattedSource} ${yellow('[placeholder detected]')}`;
   }
 
-  if (key === 'VITE_LENCO_PUBLIC_KEY' || key === 'LENCO_SECRET_KEY') {
-    if (!looksLikeLiveLencoKey(result.value)) {
+  if (key === 'VITE_LENCO_PUBLIC_KEY') {
+    if (!looksLikeLencoPublicKey(result.value)) {
+      placeholderWarnings += 1;
+      status = `${yellow('▲')} ${key} ${formattedSource} ${yellow('[expected live Lenco key]')}`;
+    }
+  } else if (key === 'LENCO_SECRET_KEY') {
+    if (!looksLikeLencoSecretKey(result.value)) {
       placeholderWarnings += 1;
       status = `${yellow('▲')} ${key} ${formattedSource} ${yellow('[expected live Lenco key]')}`;
     }
