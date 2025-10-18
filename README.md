@@ -6,6 +6,19 @@ This template provides a minimal setup to get React working in Vite with HMR and
 
 Integration steps and deployment details for Lenco payments are covered in the [Payment Integration Guide](docs/PAYMENT_INTEGRATION_GUIDE.md).
 
+### Webhook Setup
+
+For production deployments, you must configure payment webhooks to receive real-time payment status updates:
+
+- **[Webhook Setup Guide](docs/WEBHOOK_SETUP_GUIDE.md)** - Complete webhook configuration, testing, and troubleshooting
+- **[Live Keys Update Required](docs/LIVE_KEYS_UPDATE_REQUIRED.md)** - Instructions for updating to production keys
+
+Key steps:
+1. Deploy the `webhook_logs` table schema (via `npm run supabase:provision`)
+2. Deploy the `lenco-webhook` edge function to Supabase
+3. Configure webhook URL in Lenco dashboard
+4. Test webhook integration using the provided test script
+
 ## Environment Configuration
 
 Project settings are managed through environment variables. Copy the provided template and update values for your setup:
