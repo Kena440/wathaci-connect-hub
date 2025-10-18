@@ -1,4 +1,5 @@
 import { render } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
 import StatsSection from '../StatsSection';
 
 jest.mock('@/lib/supabase-enhanced', () => {
@@ -33,7 +34,11 @@ jest.mock('@/lib/supabase-enhanced', () => {
 
 describe('StatsSection', () => {
   it('matches snapshot', () => {
-    const { container } = render(<StatsSection />);
+    const { container } = render(
+      <BrowserRouter>
+        <StatsSection />
+      </BrowserRouter>
+    );
     expect(container).toMatchSnapshot();
   });
 });

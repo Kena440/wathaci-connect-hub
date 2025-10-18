@@ -39,9 +39,21 @@ export async function getDailyInvestmentTips(
     // ignore storage errors
   }
 
-  const apiKey = (typeof process !== 'undefined' && process.env.VITE_OPENAI_API_KEY) 
-    ? process.env.VITE_OPENAI_API_KEY 
-    : (import.meta as any)?.env?.VITE_OPENAI_API_KEY as string | undefined;
+  const getApiKey = () => {
+    if (typeof process !== 'undefined' && process.env.VITE_OPENAI_API_KEY) {
+      return process.env.VITE_OPENAI_API_KEY;
+    }
+    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+      return undefined;
+    }
+    try {
+      return new Function('return typeof import.meta !== "undefined" ? import.meta.env.VITE_OPENAI_API_KEY : undefined')();
+    } catch {
+      return undefined;
+    }
+  };
+  
+  const apiKey = getApiKey() as string | undefined;
 
   let tips: InvestmentTips;
 

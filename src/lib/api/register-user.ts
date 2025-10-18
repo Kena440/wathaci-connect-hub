@@ -7,7 +7,15 @@ const getApiBaseUrl = () => {
   if (typeof process !== 'undefined' && process.env.VITE_API_BASE_URL) {
     return process.env.VITE_API_BASE_URL;
   }
-  return (import.meta as any)?.env?.VITE_API_BASE_URL;
+  // Use Function constructor to avoid Jest parsing import.meta
+  if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    return undefined;
+  }
+  try {
+    return new Function('return typeof import.meta !== "undefined" ? import.meta.env.VITE_API_BASE_URL : undefined')();
+  } catch {
+    return undefined;
+  }
 };
 
 const API_BASE_URL = normalizeBaseUrl(getApiBaseUrl());

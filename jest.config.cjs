@@ -15,6 +15,7 @@ module.exports = {
   testPathIgnorePatterns: [
     '/node_modules/',
     '<rootDir>/src/test/basic.test.js', // Node.js test runner test
+    '<rootDir>/src/components/__tests__/LencoPayment.manual-verification.ts', // Manual verification guide, not a test
   ],
   transformIgnorePatterns: [
     'node_modules/(?!(isows|@supabase|ws)/)',

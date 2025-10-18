@@ -8,7 +8,16 @@ expect.extend(matchers);
 expect.extend(toHaveNoViolations);
 
 // Polyfill for fetch in tests
-global.fetch = jest.fn();
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: async () => ({}),
+    text: async () => '',
+    blob: async () => new Blob(),
+    arrayBuffer: async () => new ArrayBuffer(0),
+    formData: async () => new FormData(),
+  } as Response)
+) as jest.Mock;
 
 // Mock Supabase to avoid ESM module issues
 jest.mock('@supabase/supabase-js', () => ({
