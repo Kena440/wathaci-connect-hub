@@ -35,7 +35,7 @@ This checklist consolidates the remaining action items required before WATHACI C
 
 ## 3. Payments & Webhook Validation
 
-1. Switch all payment credentials to production-mode keys (`pk_live_…`/`sk_live_…`).
+1. Switch all payment credentials to production-mode keys (accept the current `pub-…` / `sec-…` formats or the legacy `pk_live_…` / `sk_live_…` strings depending on what your Lenco dashboard provides).
 2. Confirm the configured transaction limits (`VITE_MIN_PAYMENT_AMOUNT`, `VITE_MAX_PAYMENT_AMOUNT`, `VITE_PLATFORM_FEE_PERCENTAGE`) match compliance requirements.
 3. Trigger a manual webhook event from the Lenco dashboard and ensure the Supabase Edge Function returns `200` while recording an entry in the `webhook_logs` table.
 
