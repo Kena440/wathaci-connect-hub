@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import ErrorBoundary from '../components/ErrorBoundary';
 
 const ProblemChild = () => {
@@ -10,7 +9,7 @@ describe('ErrorBoundary', () => {
   const originalError = console.error;
 
   beforeAll(() => {
-    console.error = vi.fn();
+    console.error = jest.fn();
   });
 
   afterAll(() => {

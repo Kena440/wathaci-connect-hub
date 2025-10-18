@@ -26,16 +26,30 @@ const sanitizeEnvValue = (value: unknown): string | undefined => {
   return unquoted;
 };
 
-const resolveEnvValue = (key: string): string | undefined => {
+const getImportMetaEnv = (): any => {
+  // This function isolates import.meta from Jest's parser
+  // Jest will skip parsing this when it's not called in test environments
+  if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    return undefined;
+  }
   try {
-    const viteValue = sanitizeEnvValue((import.meta as any)?.env?.[key]);
-    if (viteValue) {
-      return viteValue;
+    // Use Function constructor to completely hide import.meta from Jest parser
+    return new Function('return typeof import.meta !== "undefined" ? import.meta : undefined')();
+  } catch {
+    return undefined;
+  }
+};
+
+const resolveEnvValue = (key: string): string | undefined => {
+  // Check process.env first for test/Node.js environments
+  if (typeof process !== 'undefined') {
+    const processValue = sanitizeEnvValue(process.env?.[key]);
+    if (processValue) {
+      return processValue;
     }
-  } catch (error) {
-    // import.meta may not be available in test environments
   }
 
+  // Check globalThis for runtime config
   if (typeof globalThis !== 'undefined') {
     const runtimeValue = sanitizeEnvValue((globalThis as any)?.__APP_CONFIG__?.[key]);
     if (runtimeValue) {
@@ -43,11 +57,17 @@ const resolveEnvValue = (key: string): string | undefined => {
     }
   }
 
-  if (typeof process !== 'undefined') {
-    const processValue = sanitizeEnvValue(process.env?.[key]);
-    if (processValue) {
-      return processValue;
+  // Check import.meta for Vite environments (browser/dev)
+  try {
+    const importMeta = getImportMetaEnv();
+    if (importMeta?.env) {
+      const viteValue = sanitizeEnvValue(importMeta.env[key]);
+      if (viteValue) {
+        return viteValue;
+      }
     }
+  } catch (error) {
+    // import.meta may not be available in test environments
   }
 
   return undefined;
