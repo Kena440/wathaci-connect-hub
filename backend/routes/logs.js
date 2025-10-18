@@ -2,6 +2,7 @@ const express = require('express');
 const Joi = require('joi');
 const sanitizeHtml = require('sanitize-html');
 const { persistLog, LogStoreError } = require('../services/log-store');
+const { notifyPaymentAlert } = require('../services/payment-alerts');
 
 const router = express.Router();
 
@@ -47,6 +48,29 @@ const logSchema = Joi.object({
     .optional(),
 }).unknown(true);
 
+const shouldTriggerPaymentAlert = (logEntry) => {
+  if (!logEntry) {
+    return false;
+  }
+
+  if (Array.isArray(logEntry.tags) && logEntry.tags.some(tag => typeof tag === 'string' && tag.toLowerCase().includes('payment'))) {
+    return true;
+  }
+
+  if (typeof logEntry.paymentReference === 'string' && logEntry.paymentReference.trim() !== '') {
+    return true;
+  }
+
+  if (logEntry.context && typeof logEntry.context === 'object') {
+    const contextReference = logEntry.context.paymentReference || logEntry.context.payment_reference;
+    if (typeof contextReference === 'string' && contextReference.trim() !== '') {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 router.post('/', async (req, res) => {
   const { error, value } = logSchema.validate(req.body, { abortEarly: false, allowUnknown: true });
 
@@ -79,6 +103,12 @@ router.post('/', async (req, res) => {
     } else {
       console.error('[routes/logs] Unexpected log persistence error:', logError);
     }
+  }
+
+  if (shouldTriggerPaymentAlert(sanitizedLog)) {
+    notifyPaymentAlert(sanitizedLog).catch((error) => {
+      console.error('[routes/logs] Failed to dispatch payment alert', error);
+    });
   }
 
   return res.status(201).json({ status: 'received' });

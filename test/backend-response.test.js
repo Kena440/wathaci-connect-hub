@@ -3,13 +3,13 @@ import assert from 'node:assert';
 
 process.env.ALLOW_IN_MEMORY_REGISTRATION = 'true';
 
-import app from '../backend/index.js';
+import { createApp } from '../backend/index.js';
 
 // Ensure the server still responds after adding security middleware
 // Uses dynamic port to avoid conflicts
 
 test('POST /users registers sanitized user payloads', async () => {
-  const server = app.listen(0);
+  const server = createApp().listen(0);
   const { port } = server.address();
 
   const res = await fetch(`http://localhost:${port}/users`, {
@@ -56,7 +56,7 @@ test('POST /users registers sanitized user payloads', async () => {
 });
 
 test('POST /api/logs stores sanitized log entries', async () => {
-  const server = app.listen(0);
+  const server = createApp().listen(0);
   const { port } = server.address();
 
   const postRes = await fetch(`http://localhost:${port}/api/logs`, {

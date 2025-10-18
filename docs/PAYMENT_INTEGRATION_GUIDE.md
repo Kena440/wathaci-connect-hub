@@ -74,6 +74,8 @@ VITE_PAYMENT_COUNTRY="ZM"
 VITE_PLATFORM_FEE_PERCENTAGE="2"
 VITE_MIN_PAYMENT_AMOUNT="5"
 VITE_MAX_PAYMENT_AMOUNT="1000000"
+PAYMENT_ALERT_WEBHOOK_URL="https://hooks.your-monitoring-platform.example/v1/payments"
+MONITORING_LOG_ENDPOINT="https://observability.example.com/logs" # optional override
 
 # Environment
 VITE_APP_ENV="development"
@@ -93,6 +95,7 @@ VITE_APP_NAME="WATHACI CONNECT"
 - Production transaction limits
 - Error logging only
 - Real payment processing
+- `PAYMENT_ALERT_WEBHOOK_URL` must point at a hardened incident channel (Slack, PagerDuty, etc.) so failed webhooks or payment reconciliation issues generate alerts automatically.
 
 ### Lenco API Key Setup
 
@@ -153,6 +156,13 @@ npm run test:jest -- lenco-webhook-utils
 This test suite verifies the shared signature utilities against both the hex and
 base64 formats produced by Lenco. The webhook handler will reject requests that
 do not pass the same validation logic.
+
+### Alerting & Monitoring
+
+- Configure `PAYMENT_ALERT_WEBHOOK_URL` in every deployment so payment-related errors posted to `/api/logs` are forwarded to your incident tooling. The Express backend automatically inspects log payloads for `paymentReference` metadata and triggers the webhook when present.
+- Run `npm run env:check` to confirm each environment file includes `LENCO_WEBHOOK_SECRET` and the alert webhook before promoting builds.
+- Execute `npm run security:https-audit` (or pass explicit URLs as arguments) to capture TLS status, certificate expiries, and round-trip latency for Supabase, the Lenco API, and your alerting destinations.
+- During smoke tests, POST a synthetic payment failure to `/api/logs` with `{ level: 'error', paymentReference: 'TEST_REF', message: 'synthetic payment failure' }` and verify the alert channel records the event.
 
 ### Environment Variables
 

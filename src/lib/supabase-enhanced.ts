@@ -53,9 +53,38 @@ const resolveEnvValue = (key: string): string | undefined => {
   return undefined;
 };
 
+const validateHttpsUrl = (value: string, key: string, options: { hostSuffix?: string } = {}): string => {
+  if (!value) {
+    return value;
+  }
+
+  try {
+    const parsed = new URL(value);
+
+    if (parsed.protocol !== 'https:') {
+      throw new Error(`${key} must use the https:// scheme.`);
+    }
+
+    if (options.hostSuffix && !parsed.hostname.endsWith(options.hostSuffix)) {
+      throw new Error(`${key} must point to a host ending with ${options.hostSuffix}.`);
+    }
+
+    return value;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('must')) {
+      throw error;
+    }
+
+    throw new Error(`${key} must be a valid https URL.`);
+  }
+};
+
 const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
 
-const supabaseUrl = resolveEnvValue('VITE_SUPABASE_URL') || resolveEnvValue('SUPABASE_URL');
+const resolvedSupabaseUrl = resolveEnvValue('VITE_SUPABASE_URL') || resolveEnvValue('SUPABASE_URL');
+const supabaseUrl = resolvedSupabaseUrl
+  ? validateHttpsUrl(resolvedSupabaseUrl, 'Supabase URL', { hostSuffix: '.supabase.co' })
+  : resolvedSupabaseUrl;
 const supabaseKey = resolveEnvValue('VITE_SUPABASE_KEY') || resolveEnvValue('SUPABASE_KEY');
 
 if ((!supabaseUrl || !supabaseKey) && !isTestEnvironment) {

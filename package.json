@@ -16,7 +16,8 @@
     "test:jest:watch": "jest --watch",
     "test:accessibility": "jest --testPathPatterns=\"accessibility\"",
     "test:lighthouse": "lighthouse http://localhost:5173 --quiet --no-update-notifier --chrome-flags='--headless'",
-    "supabase:provision": "bash ./scripts/provision-supabase.sh"
+    "supabase:provision": "bash ./scripts/provision-supabase.sh",
+    "security:https-audit": "node scripts/https-audit.mjs"
   },
   "dependencies": {
     "@eslint/js": "^9.9.0",

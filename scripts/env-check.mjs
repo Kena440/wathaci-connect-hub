@@ -20,6 +20,8 @@ const backendEnvFilenames = [
   path.join('backend', '.env'),
 ];
 
+const envValuesPerFile = new Map();
+
 const envFiles = [...envFilenames, ...backendEnvFilenames]
   .map((relativePath) => ({
     relativePath,
@@ -89,8 +91,13 @@ const parseEnvLine = (line) => {
 const collectEnvFromFiles = () => {
   const results = new Map();
 
+  envValuesPerFile.clear();
+
   envFiles.forEach(({ absolutePath, relativePath }) => {
     const contents = fs.readFileSync(absolutePath, 'utf8');
+    const fileEntries = new Map();
+    envValuesPerFile.set(relativePath, fileEntries);
+
     contents.split(/\r?\n/).forEach((line) => {
       const parsed = parseEnvLine(line);
       if (!parsed) {
@@ -102,6 +109,10 @@ const collectEnvFromFiles = () => {
           value: parsed.value,
           source: relativePath,
         });
+      }
+
+      if (!fileEntries.has(parsed.key)) {
+        fileEntries.set(parsed.key, parsed.value);
       }
     });
   });
@@ -144,6 +155,35 @@ const hasPlaceholder = (value = '') => {
 const looksLikeLiveLencoKey = (value = '') =>
   /^pk_live_[a-z0-9]+$/i.test(value.trim()) || /^sk_live_[a-z0-9]+$/i.test(value.trim());
 
+const httpsRequirements = new Map([
+  ['VITE_SUPABASE_URL', { hostSuffix: '.supabase.co' }],
+  ['SUPABASE_URL', { hostSuffix: '.supabase.co' }],
+  ['VITE_LENCO_API_URL', {}],
+  ['PAYMENT_ALERT_WEBHOOK_URL', {}],
+]);
+
+const validateHttpsValue = (value = '', { hostSuffix } = {}) => {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(value);
+
+    if (parsed.protocol !== 'https:') {
+      return 'expected https:// scheme';
+    }
+
+    if (hostSuffix && !parsed.hostname.endsWith(hostSuffix)) {
+      return `host must end with ${hostSuffix}`;
+    }
+
+    return null;
+  } catch (error) {
+    return 'invalid URL';
+  }
+};
+
 const checks = [
   {
     heading: 'Supabase (Frontend)',
@@ -182,6 +222,15 @@ const checks = [
     ],
   },
   {
+    heading: 'Monitoring & Alerts',
+    required: [
+      { key: 'PAYMENT_ALERT_WEBHOOK_URL', description: 'HTTPS webhook for payment alert notifications' },
+    ],
+    optional: [
+      { key: 'MONITORING_LOG_ENDPOINT', description: 'Custom HTTPS endpoint for structured log ingestion' },
+    ],
+  },
+  {
     heading: 'Runtime Environment Metadata',
     required: [
       { key: 'VITE_APP_ENV', description: 'Runtime environment label (development/production)' },
@@ -194,7 +243,7 @@ const checks = [
 ];
 
 let missingRequired = 0;
-let placeholderWarnings = 0;
+let warningCount = 0;
 
 const formatEntry = ({ key, description }, required = true) => {
   const result = getEnvValue(key);
@@ -212,21 +261,32 @@ const formatEntry = ({ key, description }, required = true) => {
   const displaySource = result.source === 'process.env' ? 'process.env' : result.source;
   const formattedSource = cyan(`(${displaySource})`);
 
-  let status = `${green('✔')} ${key} ${formattedSource}`;
+  const annotations = [];
 
   if (hasPlaceholder(result.value)) {
-    placeholderWarnings += 1;
-    status = `${yellow('▲')} ${key} ${formattedSource} ${yellow('[placeholder detected]')}`;
+    warningCount += 1;
+    annotations.push('placeholder detected');
+  }
+
+  if (httpsRequirements.has(key)) {
+    const violation = validateHttpsValue(result.value, httpsRequirements.get(key));
+    if (violation) {
+      warningCount += 1;
+      annotations.push(violation);
+    }
   }
 
   if (key === 'VITE_LENCO_PUBLIC_KEY' || key === 'LENCO_SECRET_KEY') {
     if (!looksLikeLiveLencoKey(result.value)) {
-      placeholderWarnings += 1;
-      status = `${yellow('▲')} ${key} ${formattedSource} ${yellow('[expected live Lenco key]')}`;
+      warningCount += 1;
+      annotations.push('expected live Lenco key');
     }
   }
 
-  console.log(`  ${status}`);
+  const icon = annotations.length > 0 ? yellow('▲') : green('✔');
+  const annotationText = annotations.length > 0 ? ` ${yellow('[' + annotations.join('; ') + ']')}` : '';
+
+  console.log(`  ${icon} ${key} ${formattedSource}${annotationText}`);
 };
 
 console.log('\n🔍 WATHACI CONNECT environment audit');
@@ -252,18 +312,60 @@ checks.forEach((section) => {
   console.log('');
 });
 
-if (missingRequired === 0 && placeholderWarnings === 0) {
-  console.log(`${green('🎉  All required environment variables are populated with non-placeholder values.')}`);
+const reportWebhookSecretCoverage = () => {
+  const secretKey = 'LENCO_WEBHOOK_SECRET';
+
+  if (envFiles.length === 0) {
+    console.log('Webhook secret coverage');
+    console.log('──────────────────────');
+    console.log(`  ${yellow('!')} No environment files detected. Unable to verify ${secretKey} per environment.`);
+    console.log('');
+    return;
+  }
+
+  console.log('Webhook secret coverage');
+  console.log('──────────────────────');
+
+  envFiles.forEach(({ relativePath }) => {
+    const values = envValuesPerFile.get(relativePath);
+    const value = values?.get(secretKey);
+
+    if (!value) {
+      warningCount += 1;
+      console.log(`  ${red('✖')} ${relativePath} ${yellow(`[${secretKey} missing]`)}`);
+      return;
+    }
+
+    if (hasPlaceholder(value)) {
+      warningCount += 1;
+      console.log(`  ${yellow('▲')} ${relativePath} ${yellow('[placeholder secret detected]')}`);
+      return;
+    }
+
+    console.log(`  ${green('✔')} ${relativePath}`);
+  });
+
+  if (process.env[secretKey]) {
+    console.log(`  ${green('✔')} process.env (${secretKey} provided)`);
+  }
+
+  console.log('');
+};
+
+reportWebhookSecretCoverage();
+
+if (missingRequired === 0 && warningCount === 0) {
+  console.log(`${green('🎉  All required environment variables are populated with production-ready values.')}`);
 } else {
   if (missingRequired > 0) {
     console.log(`${red('⛔  Missing required variables:')} ${missingRequired}`);
   }
-  if (placeholderWarnings > 0) {
-    console.log(`${yellow('⚠️   Placeholder or non-production values detected:')} ${placeholderWarnings}`);
+  if (warningCount > 0) {
+    console.log(`${yellow('⚠️   Placeholder or invalid configuration values detected:')} ${warningCount}`);
   }
 }
 
-if (missingRequired > 0 || placeholderWarnings > 0) {
+if (missingRequired > 0 || warningCount > 0) {
   console.log('\nSee docs/PRODUCTION_READINESS_CHECKLIST.md for remediation steps.');
   process.exitCode = 1;
 }

@@ -49,4 +49,16 @@ describe('supabase-enhanced environment handling', () => {
     expect(createClient).not.toHaveBeenCalled();
     expect(typeof supabase).toBe('object');
   });
+
+  it('rejects supabase URLs that do not use https', async () => {
+    process.env.NODE_ENV = 'production';
+    process.env.VITE_SUPABASE_URL = 'http://example.supabase.co';
+    process.env.VITE_SUPABASE_KEY = 'anon-test-key';
+
+    jest.doMock('@supabase/supabase-js', () => ({
+      createClient: jest.fn(() => ({ auth: {} })),
+    }));
+
+    await expect(import('../supabase-enhanced')).rejects.toThrow('https://');
+  });
 });
