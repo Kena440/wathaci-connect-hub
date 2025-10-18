@@ -48,12 +48,17 @@ const logSchema = Joi.object({
     .optional(),
 }).unknown(true);
 
+// Helper function to check if a tag is a payment-related string
+const isPaymentTag = (tag) => {
+  return typeof tag === 'string' && tag.toLowerCase().includes('payment');
+};
+
 const shouldTriggerPaymentAlert = (logEntry) => {
   if (!logEntry) {
     return false;
   }
 
-  if (Array.isArray(logEntry.tags) && logEntry.tags.some(tag => typeof tag === 'string' && tag.toLowerCase().includes('payment'))) {
+  if (Array.isArray(logEntry.tags) && logEntry.tags.some(isPaymentTag)) {
     return true;
   }
 
