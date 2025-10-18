@@ -146,6 +146,25 @@ Expected results:
 
 Test that signature verification is working:
 
+#### Option A: Automated Test Script (Recommended)
+
+Use the included test script for comprehensive testing:
+
+```bash
+# Run the webhook integration test
+node scripts/test-webhook-integration.js \
+  https://[your-project-ref].supabase.co/functions/v1/lenco-webhook \
+  [your-webhook-secret]
+```
+
+The script tests:
+- ✅ Valid signature acceptance
+- ✅ Invalid signature rejection
+- ✅ Missing signature rejection
+- ✅ All event types (success, failed, pending, cancelled)
+
+#### Option B: Manual Testing
+
 1. **Valid signature test**: Use the test webhook feature (should succeed)
 2. **Invalid signature test**: Send a POST request with wrong signature
 
