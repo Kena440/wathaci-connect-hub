@@ -109,7 +109,6 @@ export const logger = {
           ? { message: error.message, stack: error.stack }
           : error,
       timestamp: new Date().toISOString(),
-      context,
     };
 
     sendToMonitoringService(logEntry);
