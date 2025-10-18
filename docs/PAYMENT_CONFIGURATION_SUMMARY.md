@@ -117,18 +117,24 @@ Already implemented with:
 
 ```bash
 # Frontend .env
+# IMPORTANT: Replace [YOUR-LIVE-KEY] with actual key from Lenco dashboard
 VITE_LENCO_PUBLIC_KEY="pub-[YOUR-LIVE-KEY]"
 
 # Backend .env
+# IMPORTANT: Replace [YOUR-LIVE-SECRET] with actual key from Lenco dashboard
 LENCO_SECRET_KEY="[YOUR-LIVE-SECRET]"
 LENCO_WEBHOOK_SECRET="[YOUR-WEBHOOK-SECRET]"
 
 # Supabase Edge Function Secrets
+# IMPORTANT: Replace placeholders before running these commands
 supabase secrets set LENCO_SECRET_KEY="[YOUR-LIVE-SECRET]"
 supabase secrets set LENCO_WEBHOOK_SECRET="[YOUR-WEBHOOK-SECRET]"
 ```
 
-⚠️ **IMPORTANT:** Never commit these keys to version control!
+⚠️ **IMPORTANT:** 
+- Replace ALL values in brackets [LIKE-THIS] with actual keys from Lenco dashboard
+- Never commit these keys to version control!
+- Verify keys are correctly set before deploying to production
 
 ### 2. Deploy Database Schema 🔴 REQUIRED
 
@@ -341,4 +347,4 @@ All technical implementation is complete. The system is ready for production onc
 
 **Document Version:** 1.0  
 **Last Updated:** 2025-10-18  
-**Author:** GitHub Copilot Agent
+**Prepared by:** Development Team
