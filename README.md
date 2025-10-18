@@ -2,6 +2,26 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## Supabase CLI Setup
+
+The Supabase CLI is installed and configured for this project. To get started:
+
+1. **Review the setup guide**: See [SUPABASE_CLI_SETUP.md](./SUPABASE_CLI_SETUP.md) for installation and authentication instructions
+2. **Login to Supabase**: Run `npm run supabase:login` to authenticate with your Supabase account
+3. **Common commands**: Available as npm scripts (see below)
+
+### Supabase CLI Scripts
+
+```bash
+npm run supabase:login      # Authenticate with Supabase (interactive helper)
+npm run supabase:link       # Link to remote Supabase project
+npm run supabase:status     # Check project status
+npm run supabase:pull       # Pull remote schema changes
+npm run supabase:deploy     # Deploy edge functions
+```
+
+For CI/CD integration, see [docs/SUPABASE_CLI_CICD.md](./docs/SUPABASE_CLI_CICD.md).
+
 ## Payments
 
 Integration steps and deployment details for Lenco payments are covered in the [Payment Integration Guide](docs/PAYMENT_INTEGRATION_GUIDE.md).
