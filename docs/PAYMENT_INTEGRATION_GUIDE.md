@@ -80,6 +80,8 @@ VITE_APP_ENV="development"
 VITE_APP_NAME="WATHACI CONNECT"
 ```
 
+> **Note:** The Lenco dashboard now issues public keys that start with `pub-` and secret keys that start with `sec-` or a 64-character hexadecimal string. Older accounts may still show the legacy `pk_live_` / `sk_live_` prefixes—both formats are supported by the runtime checks and deployment scripts.
+
 ### Development vs Production
 
 **Development Settings:**
@@ -89,7 +91,7 @@ VITE_APP_NAME="WATHACI CONNECT"
 - Mock payment responses for testing
 
 **Production Settings:**
-- Use live API keys (prefixed with `pk_live_` and `sk_live_`)
+- Use live API keys. New Lenco dashboards issue keys as `pub-…` / `sec-…`, while older tenants may still expose `pk_live_…` / `sk_live_…` formats.
 - Production transaction limits
 - Error logging only
 - Real payment processing
