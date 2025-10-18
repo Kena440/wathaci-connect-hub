@@ -1,8 +1,7 @@
 import { render } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
 import StatsSection from '../StatsSection';
 
-vi.mock('@/lib/supabase-enhanced', () => {
+jest.mock('@/lib/supabase-enhanced', () => {
   const from = (table: string) => {
     if (table === 'business_stats') {
       return {

@@ -39,7 +39,9 @@ export async function getDailyInvestmentTips(
     // ignore storage errors
   }
 
-  const apiKey = (import.meta as any).env?.VITE_OPENAI_API_KEY as string | undefined;
+  const apiKey = (typeof process !== 'undefined' && process.env.VITE_OPENAI_API_KEY) 
+    ? process.env.VITE_OPENAI_API_KEY 
+    : (import.meta as any)?.env?.VITE_OPENAI_API_KEY as string | undefined;
 
   let tips: InvestmentTips;
 

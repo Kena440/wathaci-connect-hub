@@ -3,7 +3,14 @@ const normalizeBaseUrl = (baseUrl: string | undefined) => {
   return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
 };
 
-const API_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
+const getApiBaseUrl = () => {
+  if (typeof process !== 'undefined' && process.env.VITE_API_BASE_URL) {
+    return process.env.VITE_API_BASE_URL;
+  }
+  return (import.meta as any)?.env?.VITE_API_BASE_URL;
+};
+
+const API_BASE_URL = normalizeBaseUrl(getApiBaseUrl());
 
 export type RegisterUserPayload = {
   firstName: string;

@@ -46,8 +46,8 @@ async function validateDatabaseSetup() {
     
     // Test 3: Test environment variables
     console.log('\n🌍 Testing environment variables...');
-    const url = import.meta.env.VITE_SUPABASE_URL;
-    const key = import.meta.env.VITE_SUPABASE_KEY;
+    const url = typeof process !== 'undefined' ? process.env.VITE_SUPABASE_URL : (import.meta as any)?.env?.VITE_SUPABASE_URL;
+    const key = typeof process !== 'undefined' ? process.env.VITE_SUPABASE_KEY : (import.meta as any)?.env?.VITE_SUPABASE_KEY;
     
     if (url && key) {
       console.log('✅ Environment variables are set');

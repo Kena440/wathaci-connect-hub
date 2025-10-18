@@ -27,7 +27,10 @@ export const AddressInput = ({ onAddressChange, value }: AddressInputProps) => {
     // Load Google Maps API
     if (!window.google) {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${(import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY || 'demo-key'}&libraries=geometry,places`;
+      const apiKey = typeof process !== 'undefined' && process.env.VITE_GOOGLE_MAPS_API_KEY 
+        ? process.env.VITE_GOOGLE_MAPS_API_KEY 
+        : (import.meta as any)?.env?.VITE_GOOGLE_MAPS_API_KEY || 'demo-key';
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places`;
       script.async = true;
       script.defer = true;
       script.onload = () => {
