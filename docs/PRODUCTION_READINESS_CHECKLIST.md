@@ -60,6 +60,16 @@ npm run test:lighthouse
 
 Document any gaps (for example, missing Chrome in CI) in the release notes.
 
+> **Current QA gaps (October 2024)**
+>
+> - `npm run test:jest` currently fails because several suites import ESM-only helpers (for example, `import.meta` usage in `src/lib/supabase-enhanced.ts`) that Jest does not transform under the CommonJS runtime, and a few suites import `vitest` directly which Jest cannot execute.【e8e6fc†L1-L34】【edf1f5†L117-L188】
+> - `npm run test:lighthouse` cannot execute in local CI containers without a bundled Chrome/Chromium binary; Lighthouse exits early with `ChromePathNotSetError` when `CHROME_PATH` is unset.【6976f1†L1-L11】
+
+### Follow-up actions to close QA gaps
+
+1. Extend the Jest configuration (or migrate suites) so that modules relying on `import.meta` and other ESM-only syntax are transpiled via SWC/Babel, and refactor any Vitest-specific helpers to Jest-compatible equivalents before re-running `npm run test:jest`.
+2. Provision a Chrome/Chromium binary (for example, install `chromium` in CI or set `CHROME_PATH` to an existing executable) so `npm run test:lighthouse` can launch successfully.
+
 ## 5. Operational & Security Readiness
 
 1. Follow the detailed security review in `docs/DEPLOYMENT_SECURITY_CHECKLIST.md` (TLS validation, rate limiting, fraud monitoring).
