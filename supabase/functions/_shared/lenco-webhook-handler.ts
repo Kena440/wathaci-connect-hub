@@ -3,8 +3,13 @@ import { logger } from '../../../src/lib/logger.ts';
 import {
   getNotificationMessage,
   getNotificationTitle,
+  isCollectionEventPayload,
+  isPaymentEventPayload,
+  isTransactionEventPayload,
+  isTransferEventPayload,
   mapLencoStatusToInternal,
   verifyLencoSignature,
+  LencoPaymentWebhookPayload,
   LencoWebhookPayload,
 } from '../../../src/lib/server/lenco-webhook-utils.ts';
 
@@ -23,7 +28,7 @@ type WaitUntil = (promise: Promise<unknown>) => void;
 interface WebhookContext {
   requestId: string;
   providerEventId: string;
-  paymentReference: string;
+  paymentReference?: string;
   userId?: string;
 }
 
@@ -161,9 +166,18 @@ export async function handleLencoWebhookRequest(
   }
 
   const providerEventId = payload.data.id;
-  const paymentReference = payload.data.reference;
-  const userId = payload.data.metadata?.user_id;
-  const context: WebhookContext = { requestId, providerEventId, paymentReference, userId };
+  const paymentReference = isPaymentEventPayload(payload)
+    ? payload.data.reference
+    : typeof (payload.data as { reference?: unknown }).reference === 'string'
+      ? ((payload.data as { reference: string }).reference)
+      : undefined;
+  const userId = isPaymentEventPayload(payload) ? payload.data.metadata?.user_id : undefined;
+  const context: WebhookContext = {
+    requestId,
+    providerEventId,
+    paymentReference: paymentReference ?? resolveEventReference(payload),
+    userId,
+  };
 
   const supabaseClient = createClient(supabaseUrl, supabaseServiceRoleKey);
 
@@ -171,13 +185,34 @@ export async function handleLencoWebhookRequest(
     requestId,
     providerEventId,
     event: payload.event,
-    paymentReference,
+    paymentReference: context.paymentReference,
   });
+
+  if (!isPaymentEventPayload(payload)) {
+    logger.info('Received non-payment Lenco event', {
+      requestId,
+      event: payload.event,
+      providerEventId,
+    });
+
+    enqueueSideEffect(
+      logWebhookEvent(supabaseClient, payload, 'processed', undefined, context).catch((error) => {
+        logger.error('Failed to log non-payment webhook event', error, context);
+      }),
+    );
+
+    return finalizeResponse(
+      new Response(JSON.stringify({ success: true, processed: true }), {
+        status: 200,
+        headers: jsonHeaders,
+      }),
+    );
+  }
 
   const receivedAt = new Date().toISOString();
   const { error: recordEventError } = await supabaseClient.from('payment_events').insert({
     provider_event_id: providerEventId,
-    payment_reference: paymentReference,
+    payment_reference: payload.data.reference,
     event_type: payload.event,
     provider_status: payload.data.status,
     payload,
@@ -190,7 +225,7 @@ export async function handleLencoWebhookRequest(
       (typeof recordEventError.message === 'string' &&
         recordEventError.message.toLowerCase().includes('duplicate key'))
     ) {
-      logger.info('Duplicate Lenco payment event received', { requestId, providerEventId, paymentReference });
+      logger.info('Duplicate Lenco payment event received', { requestId, providerEventId, paymentReference: payload.data.reference });
 
       enqueueSideEffect(
         logWebhookEvent(supabaseClient, payload, 'duplicate', undefined, context).catch((error) => {
@@ -264,6 +299,13 @@ function validatePayload(payload: LencoWebhookPayload): string[] {
     'payment.failed',
     'payment.pending',
     'payment.cancelled',
+    'transfer.successful',
+    'transfer.failed',
+    'collection.successful',
+    'collection.failed',
+    'collection.settled',
+    'transaction.credit',
+    'transaction.debit',
   ];
 
   if (!allowedEvents.includes(payload.event)) {
@@ -275,28 +317,93 @@ function validatePayload(payload: LencoWebhookPayload): string[] {
     return errors;
   }
 
-  if (!payload.data.id || typeof payload.data.id !== 'string') {
+  if (!payload.created_at || Number.isNaN(Date.parse(payload.created_at))) {
+    errors.push('created_at');
+  }
+
+  const data = payload.data as Record<string, unknown>;
+
+  if (typeof data.id !== 'string' || data.id.trim().length === 0) {
     errors.push('data.id');
   }
 
-  if (!payload.data.reference || typeof payload.data.reference !== 'string') {
-    errors.push('data.reference');
-  }
+  if (isPaymentEventPayload(payload)) {
+    if (typeof data.reference !== 'string' || data.reference.trim().length === 0) {
+      errors.push('data.reference');
+    }
 
-  if (typeof payload.data.amount !== 'number' || !Number.isFinite(payload.data.amount) || payload.data.amount < 0) {
-    errors.push('data.amount');
-  }
+    const amount = typeof data.amount === 'number' ? data.amount : Number.NaN;
+    if (!Number.isFinite(amount) || amount < 0) {
+      errors.push('data.amount');
+    }
 
-  if (!payload.data.currency || typeof payload.data.currency !== 'string') {
-    errors.push('data.currency');
-  }
+    if (typeof data.currency !== 'string' || data.currency.trim().length === 0) {
+      errors.push('data.currency');
+    }
 
-  if (!payload.data.status || typeof payload.data.status !== 'string') {
-    errors.push('data.status');
-  }
+    if (typeof data.status !== 'string' || data.status.trim().length === 0) {
+      errors.push('data.status');
+    }
+  } else if (isTransferEventPayload(payload)) {
+    if (typeof data.amount !== 'string' || (data.amount as string).trim().length === 0) {
+      errors.push('data.amount');
+    }
 
-  if (!payload.created_at || Number.isNaN(Date.parse(payload.created_at))) {
-    errors.push('created_at');
+    if (typeof data.currency !== 'string' || (data.currency as string).trim().length === 0) {
+      errors.push('data.currency');
+    }
+
+    if (typeof data.accountId !== 'string' || (data.accountId as string).trim().length === 0) {
+      errors.push('data.accountId');
+    }
+
+    const status = String(data.status ?? '').toLowerCase();
+    if (!['pending', 'successful', 'failed'].includes(status)) {
+      errors.push('data.status');
+    }
+
+    if (typeof data.lencoReference !== 'string' || (data.lencoReference as string).trim().length === 0) {
+      errors.push('data.lencoReference');
+    }
+  } else if (isCollectionEventPayload(payload)) {
+    if (typeof data.amount !== 'string' || (data.amount as string).trim().length === 0) {
+      errors.push('data.amount');
+    }
+
+    if (typeof data.currency !== 'string' || (data.currency as string).trim().length === 0) {
+      errors.push('data.currency');
+    }
+
+    if (typeof data.lencoReference !== 'string' || (data.lencoReference as string).trim().length === 0) {
+      errors.push('data.lencoReference');
+    }
+
+    const status = String(data.status ?? '').toLowerCase();
+    const allowedStatuses = ['pending', 'successful', 'failed', 'otp-required', 'pay-offline'];
+    if (!allowedStatuses.includes(status)) {
+      errors.push('data.status');
+    }
+  } else if (isTransactionEventPayload(payload)) {
+    if (typeof data.amount !== 'string' || (data.amount as string).trim().length === 0) {
+      errors.push('data.amount');
+    }
+
+    if (typeof data.currency !== 'string' || (data.currency as string).trim().length === 0) {
+      errors.push('data.currency');
+    }
+
+    if (typeof data.accountId !== 'string' || (data.accountId as string).trim().length === 0) {
+      errors.push('data.accountId');
+    }
+
+    const type = String(data.type ?? '').toLowerCase();
+    if (!['credit', 'debit'].includes(type)) {
+      errors.push('data.type');
+    }
+
+    if (typeof data.datetime !== 'string' || Number.isNaN(Date.parse(data.datetime as string))) {
+      errors.push('data.datetime');
+    }
   }
 
   return errors;
@@ -304,7 +411,7 @@ function validatePayload(payload: LencoWebhookPayload): string[] {
 
 async function updatePaymentRecord(
   supabaseClient: any,
-  payload: LencoWebhookPayload,
+  payload: LencoPaymentWebhookPayload,
   context: WebhookContext,
 ) {
   const { data } = payload;
@@ -328,7 +435,7 @@ async function updatePaymentRecord(
 
 async function handleSubscriptionPaymentUpdate(
   supabaseClient: any,
-  payload: LencoWebhookPayload,
+  payload: LencoPaymentWebhookPayload,
   context: WebhookContext,
 ) {
   const subscriptionId = payload.data.metadata?.subscription_id;
@@ -380,7 +487,7 @@ async function handleSubscriptionPaymentUpdate(
 
 async function handleServicePaymentUpdate(
   supabaseClient: any,
-  payload: LencoWebhookPayload,
+  payload: LencoPaymentWebhookPayload,
   context: WebhookContext,
 ) {
   const serviceId = payload.data.metadata?.service_id;
@@ -414,7 +521,7 @@ async function handleServicePaymentUpdate(
 
 async function sendRealTimeNotification(
   supabaseClient: any,
-  payload: LencoWebhookPayload,
+  payload: LencoPaymentWebhookPayload,
   context: WebhookContext,
 ) {
   const userId = payload.data.metadata?.user_id;
@@ -472,7 +579,7 @@ async function logWebhookEvent(
 ) {
   const logEntry = {
     event_type: payload?.event ?? 'unknown',
-    reference: payload?.data?.reference ?? context.paymentReference ?? 'unknown',
+    reference: resolveEventReference(payload) ?? context.paymentReference ?? 'unknown',
     status,
     error_message: errorMessage ?? null,
     payload,
@@ -480,4 +587,28 @@ async function logWebhookEvent(
   };
 
   await supabaseClient.from('webhook_logs').insert(logEntry);
+}
+
+function resolveEventReference(payload: LencoWebhookPayload | undefined): string | undefined {
+  const data = payload?.data as Record<string, unknown> | undefined;
+  if (!data || typeof data !== 'object') {
+    return undefined;
+  }
+
+  const reference = data.reference;
+  if (typeof reference === 'string' && reference.trim().length > 0) {
+    return reference;
+  }
+
+  const lencoReference = data.lencoReference;
+  if (typeof lencoReference === 'string' && lencoReference.trim().length > 0) {
+    return lencoReference;
+  }
+
+  const id = data.id;
+  if (typeof id === 'string' && id.trim().length > 0) {
+    return id;
+  }
+
+  return undefined;
 }

@@ -31,6 +31,7 @@ Integration steps and deployment details for Lenco payments are covered in the [
 For production deployments, you must configure payment webhooks to receive real-time payment status updates:
 
 - **[Webhook Setup Guide](docs/WEBHOOK_SETUP_GUIDE.md)** - Complete webhook configuration, testing, and troubleshooting
+- **[Webhook Events Reference](docs/LENCO_WEBHOOK_EVENTS_REFERENCE.md)** - Current Lenco webhook payloads for transfers, collections, and account transactions
 - **[Live Keys Update Required](docs/LIVE_KEYS_UPDATE_REQUIRED.md)** - Instructions for updating to production keys
 - **[Lenco Keys Rotation Guide](docs/LENCO_KEYS_ROTATION_GUIDE.md)** - Comprehensive guide for rotating API keys
 
