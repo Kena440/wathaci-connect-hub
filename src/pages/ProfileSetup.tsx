@@ -100,188 +100,110 @@ export const ProfileSetup = () => {
     setSelectedAccountType('');
   };
 
+  const sanitizeProfileFields = (data: any) => {
+    const sanitized = { ...data };
+    delete sanitized.card_number;
+    delete sanitized.card_expiry;
+    delete sanitized.card_token;
+    delete sanitized.card_details;
+    return sanitized;
+  };
+
+  const buildCardDetails = (data: any) => {
+    const rawNumber = typeof data.card_number === 'string' ? data.card_number.replace(/\D/g, '') : '';
+    const last4 = rawNumber.length >= 4 ? rawNumber.slice(-4) : undefined;
+    const rawExpiry = typeof data.card_expiry === 'string' ? data.card_expiry.trim() : '';
+
+    const cardDetails: Record<string, any> = {
+      provider: 'lenco',
+      status: 'external_gateway',
+      setup_required: true,
+    };
+
+    if (last4) {
+      cardDetails.last4 = last4;
+    }
+
+    if (rawExpiry) {
+      const [month, year] = rawExpiry.split('/').map(part => part.trim());
+      if (month && year) {
+        cardDetails.exp_month = month;
+        cardDetails.exp_year = year.length === 2 ? `20${year}` : year;
+      } else {
+        cardDetails.expiry = rawExpiry;
+      }
+    }
+
+    return cardDetails;
+  };
+
+  const buildPaymentMetadata = (data: any) => {
+    if (data.use_same_phone) {
+      return {
+        payment_method: 'phone' as const,
+        payment_phone: data.phone || null,
+        card_details: null,
+      };
+    }
+
+    if (data.payment_method === 'card') {
+      return {
+        payment_method: 'card' as const,
+        payment_phone: null,
+        card_details: buildCardDetails(data),
+      };
+    }
+
+    return {
+      payment_method: 'phone' as const,
+      payment_phone: data.payment_phone || null,
+      card_details: null,
+    };
+  };
+
+  const cleanPayload = (payload: Record<string, any>): Record<string, any> => {
+    return Object.entries(payload).reduce((acc, [key, value]) => {
+      if (value === undefined) {
+        return acc;
+      }
+
+      if (Array.isArray(value)) {
+        acc[key] = value.map(item => (typeof item === 'object' && item !== null ? cleanPayload(item) : item));
+        return acc;
+      }
+
+      if (value && typeof value === 'object' && !(value instanceof Date)) {
+        const cleanedObject = cleanPayload(value);
+        if (Object.keys(cleanedObject).length > 0) {
+          acc[key] = cleanedObject;
+        }
+        return acc;
+      }
+
+      acc[key] = value;
+      return acc;
+    }, {} as Record<string, any>);
+  };
+
   const handleProfileSubmit = async (profileData: any) => {
     if (!user) return;
-    
+
     setLoading(true);
-    
+
     try {
-      const sanitizeValue = (value?: string | null) => {
-        if (!value) return null;
-        return value.trim() || null;
-      };
+      const sanitizedProfile = sanitizeProfileFields(profileData);
+      const paymentData = buildPaymentMetadata(profileData);
 
-      const extractCardDetails = (cardNumber: string, expiry: string, cardholderName: string | null) => {
-        if (!cardholderName) {
-          throw new Error('Please enter the name on the card.');
-        }
+      const payload = cleanPayload({
+        id: user.id,
+        email: user.email,
+        ...sanitizedProfile,
+        ...paymentData,
+        profile_completed: true,
+        updated_at: new Date().toISOString(),
+      });
 
-        const normalizedNumber = cardNumber.replace(/\D/g, '');
-        if (normalizedNumber.length < 12) {
-          throw new Error('Please enter a valid card number.');
-        }
-
-        const expiryMatch = expiry.replace(/\s/g, '').match(/^(\d{2})\/(\d{2}|\d{4})$/);
-        if (!expiryMatch) {
-          throw new Error('Please enter the card expiry in MM/YY format.');
-        }
-
-        const month = Number(expiryMatch[1]);
-        if (month < 1 || month > 12) {
-          throw new Error('Please enter a valid expiry month.');
-        }
-
-        let year = expiryMatch[2];
-        if (year.length === 2) {
-          year = `20${year}`;
-        }
-
-        return {
-          last4: normalizedNumber.slice(-4),
-          expiry_month: month,
-          expiry_year: Number(year),
-          cardholder_name: cardholderName,
-        };
-      };
-
-      const {
-        card_number,
-        card_expiry,
-        cardholder_name,
-        card_details: _ignoredCardDetails,
-        use_same_phone,
-        payment_method,
-        coordinates,
-        qualifications,
-        payment_phone,
-        ...profilePayload
-      } = profileData;
-
-      let paymentData: Record<string, unknown> = {};
-      if (use_same_phone) {
-        const phone = sanitizeValue(profilePayload.phone);
-        if (!phone) {
-          throw new Error('Please provide a phone number for subscription payments.');
-        }
-
-        paymentData = {
-          payment_phone: phone,
-          payment_method: 'phone',
-        };
-      } else if (payment_method === 'card') {
-        let cardDetails = null;
-
-        const normalizedCardholderName = sanitizeValue(cardholder_name);
-
-        if (card_number && card_expiry) {
-          cardDetails = extractCardDetails(card_number, card_expiry, normalizedCardholderName);
-        } else if (existingProfile?.card_details) {
-          const existingName = sanitizeValue(existingProfile.card_details.cardholder_name);
-          const finalName = normalizedCardholderName ?? existingName;
-          if (!finalName) {
-            throw new Error('Please enter the name on the card.');
-          }
-
-          cardDetails = {
-            ...existingProfile.card_details,
-            cardholder_name: finalName,
-          };
-        }
-
-        if (!cardDetails) {
-          throw new Error('Card details are required to process subscription payments.');
-        }
-
-        paymentData = {
-          payment_method: 'card',
-          card_details: cardDetails,
-        };
-      } else {
-        const paymentPhone = sanitizeValue(payment_phone);
-        if (!paymentPhone) {
-          throw new Error('Please provide the mobile money number to charge.');
-        }
-
-        paymentData = {
-          payment_method: 'phone',
-          payment_phone: paymentPhone,
-        };
-      }
-
-      const normalizedCoordinates = (() => {
-        if (!coordinates || typeof coordinates !== 'object') {
-          return null;
-        }
-
-        const lat = typeof coordinates.lat === 'number' ? coordinates.lat : Number(coordinates.lat);
-        const lng = typeof coordinates.lng === 'number' ? coordinates.lng : Number(coordinates.lng);
-
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-          return null;
-        }
-
-        return { lat, lng };
-      })();
-
-      const normalizedQualifications = Array.isArray(qualifications)
-        ? qualifications
-            .map((qualification: Record<string, any>) => {
-              if (!qualification || typeof qualification !== 'object') {
-                return null;
-              }
-
-              const institution = sanitizeValue(qualification.institution);
-              const degree = sanitizeValue(qualification.degree ?? qualification.name);
-              const field = sanitizeValue(qualification.field);
-              const year = sanitizeValue(qualification.year);
-
-              const normalized: Record<string, string> = {};
-
-              if (institution) normalized.institution = institution;
-              if (degree) {
-                normalized.degree = degree;
-                normalized.name = degree;
-              }
-              if (field) normalized.field = field;
-              if (year) normalized.year = year;
-
-              return Object.keys(normalized).length > 0 ? normalized : null;
-            })
-            .filter((qualification): qualification is Record<string, string> => Boolean(qualification))
-        : [];
-
-      const sanitizedProfile: Record<string, unknown> = {};
-
-      for (const [key, value] of Object.entries(profilePayload)) {
-        if (Array.isArray(value)) {
-          if (key === 'gaps_identified') {
-            const sanitizedGaps = value
-              .map((item) => (typeof item === 'string' ? sanitizeValue(item) : null))
-              .filter((item): item is string => Boolean(item));
-
-            sanitizedProfile[key] = sanitizedGaps;
-          } else {
-            sanitizedProfile[key] = value;
-          }
-        } else if (typeof value === 'string') {
-          sanitizedProfile[key] = sanitizeValue(value);
-        } else {
-          sanitizedProfile[key] = value ?? null;
-        }
-      }
-
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          email: user.email,
-          ...sanitizedProfile,
-          coordinates: normalizedCoordinates,
-          qualifications: normalizedQualifications,
-          ...paymentData,
-          profile_completed: true,
-          updated_at: new Date().toISOString()
-        });
+      const { error } = await supabase.from('profiles').upsert(payload);
 
       if (error) throw error;
 

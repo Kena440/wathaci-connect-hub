@@ -68,23 +68,24 @@ export interface BusinessInfo {
 
 export interface PaymentInfo {
   payment_method: 'phone' | 'card';
-  payment_phone?: string;
+  payment_phone?: string | null;
   card_details?: {
-    last4: string;
-    expiry_month: number;
-    expiry_year: number;
-    cardholder_name?: string | null;
-  };
+    provider: 'lenco';
+    status?: 'external_gateway' | 'tokenized' | 'pending_verification';
+    setup_required?: boolean;
+    last4?: string;
+    exp_month?: string;
+    exp_year?: string;
+    expiry?: string;
+  } | null;
   use_same_phone?: boolean;
 }
 
 export interface ProfessionalInfo {
-  qualifications?: Array<{
-    institution?: string | null;
-    degree?: string | null;
-    name?: string | null;
-    field?: string | null;
-    year?: string | null;
+  qualifications: Array<{
+    name: string;
+    institution: string;
+    year: number;
   }>;
   experience_years?: number;
   specialization?: string;

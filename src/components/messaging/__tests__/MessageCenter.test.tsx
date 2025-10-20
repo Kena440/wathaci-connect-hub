@@ -1,24 +1,25 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
 import { MessageCenter } from '../MessageCenter';
 
-jest.mock('@/lib/supabase-enhanced', () => {
+vi.mock('@/lib/supabase-enhanced', () => {
   return {
     supabase: {
       auth: {
-        getUser: jest.fn(),
+        getUser: vi.fn(),
       },
       functions: {
-        invoke: jest.fn(),
+        invoke: vi.fn(),
       },
     },
   };
 });
 
 import { supabase } from '@/lib/supabase-enhanced';
-jest.mock('@/lib/services', () => ({
+vi.mock('@/lib/services', () => ({
   userService: {
-    searchUsers: jest.fn(),
+    searchUsers: vi.fn(),
   },
 }));
 import { userService } from '@/lib/services';
@@ -37,7 +38,7 @@ describe('MessageCenter', () => {
   ];
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     (supabase.auth.getUser as any).mockResolvedValue({ data: { user: { id: 'u1' } } });
     (supabase.functions.invoke as any).mockImplementation((functionName, { body }) => {
       if (body.action === 'get_messages') {

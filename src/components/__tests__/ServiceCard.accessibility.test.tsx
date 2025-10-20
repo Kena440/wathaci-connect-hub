@@ -44,33 +44,28 @@ describe('ServiceCard Accessibility Tests', () => {
     render(<ServiceCard {...defaultProps} />);
     
     const image = screen.getByRole('img');
-    expect(image).toBeDefined();
-    expect(image.getAttribute('alt')).toBe(defaultProps.title);
+    expect(image).toHaveAttribute('alt', defaultProps.title);
   });
 
   test('toggle button should have proper aria attributes', () => {
     render(<ServiceCard {...defaultProps} />);
     
     const learnMoreButton = screen.getByRole('button', { name: /learn more/i });
-    expect(learnMoreButton).toBeDefined();
+    expect(learnMoreButton).toBeInTheDocument();
     
     // Click to expand
     fireEvent.click(learnMoreButton);
     
     const showLessButton = screen.getByRole('button', { name: /show less/i });
-    expect(showLessButton).toBeDefined();
+    expect(showLessButton).toBeInTheDocument();
   });
 
   test('price information should be accessible', () => {
     render(<ServiceCard {...defaultProps} />);
     
     // Check that price is displayed with proper structure
-    const priceElement = screen.getByText((content) =>
-      content.replace(/\s+/g, ' ').trim() === `ZMW ${defaultProps.price}`
-    );
-    expect(priceElement).toBeDefined();
-    const startingFromText = screen.getByText(/starting from/i);
-    expect(startingFromText).toBeDefined();
+    expect(screen.getByText(`K${defaultProps.price}`)).toBeInTheDocument();
+    expect(screen.getByText('starting from')).toBeInTheDocument();
   });
 
   test('card should have proper heading structure', () => {
@@ -78,7 +73,7 @@ describe('ServiceCard Accessibility Tests', () => {
     
     // Service title should be a heading
     const heading = screen.getByRole('heading', { name: defaultProps.title });
-    expect(heading).toBeDefined();
+    expect(heading).toBeInTheDocument();
   });
 
   test('should handle missing image gracefully', async () => {

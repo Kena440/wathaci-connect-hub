@@ -1,20 +1,21 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { CollaborationSuggestions } from '../CollaborationSuggestions';
 
-const mockGetSuggestions = jest.fn();
-jest.mock('@/lib/services/collaboration-service', () => ({
+const mockGetSuggestions = vi.fn();
+vi.mock('@/lib/services/collaboration-service', () => ({
   getCollaborationSuggestions: (profile: any) => mockGetSuggestions(profile),
 }));
 
-const mockToast = jest.fn();
-jest.mock('@/hooks/use-toast', () => ({
+const mockToast = vi.fn();
+vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
 describe('CollaborationSuggestions', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders suggestions on success', async () => {

@@ -4,10 +4,6 @@
 
 This documentation provides comprehensive guidance for integrating and configuring Lenco payments in the WATHACI CONNECT platform.
 
-> **📖 Related Guides:**
-> - [Webhook Setup Guide](./WEBHOOK_SETUP_GUIDE.md) - Complete webhook configuration and testing
-> - [Live Keys Update Required](./LIVE_KEYS_UPDATE_REQUIRED.md) - Instructions for production key setup
-
 ## Table of Contents
 
 1. [Quick Start](#quick-start)
@@ -19,7 +15,6 @@ This documentation provides comprehensive guidance for integrating and configuri
 7. [Testing](#testing)
 8. [Troubleshooting](#troubleshooting)
 9. [Advanced Features](#advanced-features)
-10. [Webhook Integration](#webhook-integration)
 
 ## Quick Start
 
@@ -71,6 +66,7 @@ VITE_SUPABASE_KEY="your-anon-key"
 VITE_LENCO_PUBLIC_KEY="pub-dea560c94d379a23e7b85a265d7bb9acbd585481e6e1393e"
 LENCO_SECRET_KEY="843a2b242591e9a58370da44e11bb2575b20780f27c8efe39a6ed24ecba0b668"
 LENCO_WEBHOOK_SECRET="bc09f682f3bbbf3d851b125b9914984c272471e16cd2a4f14f9406706f7c98cd293bf0d"
+LENCO_WEBHOOK_URL="https://your-project.functions.supabase.co/payment-webhook"
 VITE_LENCO_API_URL="https://api.lenco.co/access/v2"
 
 # Payment Configuration
@@ -85,8 +81,6 @@ VITE_APP_ENV="development"
 VITE_APP_NAME="WATHACI CONNECT"
 ```
 
-> **Note:** The Lenco dashboard now issues public keys that start with `pub-` and secret keys that start with `sec-` or a 64-character hexadecimal string. Older accounts may still show the legacy `pk_live_` / `sk_live_` prefixes—both formats are supported by the runtime checks and deployment scripts.
-
 ### Development vs Production
 
 **Development Settings:**
@@ -96,7 +90,7 @@ VITE_APP_NAME="WATHACI CONNECT"
 - Mock payment responses for testing
 
 **Production Settings:**
-- Use live API keys. New Lenco dashboards issue keys as `pub-…` / `sec-…`, while older tenants may still expose `pk_live_…` / `sk_live_…` formats.
+- Use live API keys (prefixed with `pk_live_` and `sk_live_`)
 - Production transaction limits
 - Error logging only
 - Real payment processing
@@ -122,19 +116,16 @@ VITE_APP_NAME="WATHACI CONNECT"
    ```bash
    supabase login
    ```
-3. **Deploy the payment webhook functions**
+3. **Deploy the payment webhook function**
    ```bash
-   supabase functions deploy payment-webhook
    supabase functions deploy lenco-webhook
    ```
-   > `payment-webhook` is kept for backwards compatibility. New installs should
-   > point the Lenco dashboard to `lenco-webhook` which performs stricter
-   > signature validation and real-time notifications.
 4. **Set function secrets**
    ```bash
    supabase secrets set \
      LENCO_SECRET_KEY="843a2b242591e9a58370da44e11bb2575b20780f27c8efe39a6ed24ecba0b668" \
-     LENCO_WEBHOOK_SECRET="bc09f682f3bbbf3d851b125b9914984c272471e16cd2a4f14f9406706f7c98cd293bf0d"
+     LENCO_WEBHOOK_SECRET="bc09f682f3bbbf3d851b125b9914984c272471e16cd2a4f14f9406706f7c98cd293bf0d" \
+     LENCO_WEBHOOK_URL="https://<project-ref>.functions.supabase.co/payment-webhook"
    ```
 5. **Verify deployment** – note the generated URL:
    `https://<project-ref>.functions.supabase.co/lenco-webhook`
@@ -145,21 +136,7 @@ VITE_APP_NAME="WATHACI CONNECT"
 2. In the Lenco dashboard, open **Developer > Webhooks**.
 3. Add the function URL as your webhook endpoint.
 4. Use the same `LENCO_WEBHOOK_SECRET` value to validate incoming requests.
-5. Trigger a manual test event from the Lenco dashboard and confirm you receive
-   a `200` response. Any signature mismatch will return a `401` to help you
-   catch configuration errors immediately.
-
-### Webhook validation checklist
-
-Run the following local checks whenever the webhook or secrets change:
-
-```bash
-npm run test:jest -- lenco-webhook-utils
-```
-
-This test suite verifies the shared signature utilities against both the hex and
-base64 formats produced by Lenco. The webhook handler will reject requests that
-do not pass the same validation logic.
+5. Set `LENCO_WEBHOOK_URL` in your environment (backend and frontend) so readiness checks can validate the deployed endpoint.
 
 ### Environment Variables
 
@@ -251,45 +228,6 @@ switch (paymentStatus.status) {
     break;
 }
 ```
-
-## Manual QA plan
-
-1. **Environment validation** – run `./scripts/setup-payments.sh` or manually
-   confirm the environment variables listed earlier are populated. The script
-   also reinstalls dependencies and runs the production build so you catch any
-   regressions before QA starts.
-2. **Run automated smoke tests** – execute `npm run test:jest -- PaymentTest` to
-   exercise the PaymentTestSuite in isolation. (See manual verification script
-   in `src/components/__tests__/LencoPayment.manual-verification.ts` for
-   reference data.)
-3. **Launch the UI test harness** – mount the `PaymentTestComponent` inside a
-   feature flag or Storybook sandbox. Use the component controls to:
-   - Initialise valid mobile-money and card transactions.
-   - Confirm fee calculations and validation warnings.
-   - Validate the real-time status feed transitions from `pending → completed`
-     when a webhook is received.
-4. **Webhook round-trip** – complete a payment in the sandbox and confirm the
-   status tracker updates automatically via the deployed `lenco-webhook` edge
-   function. Verify the event is captured in the `webhook_logs` table.
-5. **Regression sweep** – repeat payments with invalid signatures (edit the
-   webhook secret temporarily) to ensure the handler responds with `401` and the
-   UI surfaces an actionable error message.
-
-Document the results in your QA notes so they can be replayed during release
-sign-off.
-
-## Troubleshooting
-
-- **Pending transactions** – check the Supabase `payments` table for an entry
-  with the matching reference. If the status remains `pending` after five
-  minutes, re-run `lenco-payment` verification via the edge function and contact
-  Lenco support with the transaction reference.
-- **Provider outages** – consult the Lenco status page and switch PaymentTest
-  scenarios to a different provider (e.g. MTN → Airtel). Update the user-facing
-  banner to communicate the outage using the `PaymentStatusTracker` component.
-- **Invalid webhook signature** – rotate `LENCO_WEBHOOK_SECRET` in both Supabase
-  (`supabase secrets set`) and the Lenco dashboard, then re-run the signature
-  unit test and fire a manual webhook to confirm alignment.
 
 ## API Reference
 
@@ -409,6 +347,16 @@ const sanitizedData = paymentSecurityService.sanitizePaymentData(paymentData);
 - Set daily/monthly transaction limits
 
 ## Testing
+
+### 0. Configuration Readiness
+
+Before initiating payments, verify the environment with the readiness endpoint:
+
+```bash
+curl -s https://your-backend.example.com/api/payment/readiness | jq
+```
+
+The response should report a `ready` status with no errors. Address any warnings before processing live transactions.
 
 ### 1. Payment Test Suite
 
@@ -607,50 +555,6 @@ const subscription = await subscriptionService.subscribeToPlan(
 // Get subscription analytics
 const analytics = await subscriptionService.getSubscriptionAnalytics(userId);
 ```
-
-## Webhook Integration
-
-Webhooks enable real-time payment status updates from Lenco to your application. This is critical for production deployments.
-
-### Quick Setup
-
-1. **Deploy Database Schema**
-   ```bash
-   npm run supabase:provision
-   ```
-   This creates the `webhook_logs` table and updates the `payments` table with required fields.
-
-2. **Deploy Edge Function**
-   ```bash
-   supabase functions deploy lenco-webhook
-   ```
-
-3. **Configure Webhook URL in Lenco Dashboard**
-   - URL: `https://[your-project].supabase.co/functions/v1/lenco-webhook`
-   - Events: `payment.success`, `payment.failed`, `payment.pending`, `payment.cancelled`
-
-4. **Test Webhook**
-   - Use Lenco Dashboard's "Test Webhook" feature
-   - Verify events appear in `webhook_logs` table
-
-### Detailed Instructions
-
-For complete webhook setup, testing, and troubleshooting, see:
-- **[Webhook Setup Guide](./WEBHOOK_SETUP_GUIDE.md)** - Step-by-step webhook configuration
-
-### Webhook Security
-
-The webhook handler includes:
-- ✅ HMAC-SHA256 signature verification
-- ✅ Timing-safe comparison to prevent timing attacks
-- ✅ Request logging for audit trails
-- ✅ Error handling and retry mechanisms
-
-All webhook events are logged to `webhook_logs` table with:
-- Event type and reference
-- Processing status (processed/failed)
-- Full payload for debugging
-- Error messages (if failed)
 
 ## Support
 

@@ -5,14 +5,14 @@
  * Run this to verify the setup after implementing the database layer.
  */
 
-import {
-  supabase,
-  testConnection,
+import { 
+  supabase, 
+  testConnection, 
   healthCheck,
   userService,
   profileService,
   subscriptionService
-} from '../src/lib/services';
+} from '../src/lib/services/index';
 
 // Colors for console output
 const colors = {

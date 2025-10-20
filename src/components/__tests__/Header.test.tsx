@@ -1,26 +1,27 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { Header } from '../Header';
 import { useAppContext } from '@/contexts/AppContext';
 
-jest.mock('@/contexts/AppContext', () => ({
-  useAppContext: jest.fn(),
+vi.mock('@/contexts/AppContext', () => ({
+  useAppContext: vi.fn(),
 }));
 
-jest.mock('react-i18next', () => ({
+vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
-    i18n: { language: 'en', changeLanguage: jest.fn() }
+    i18n: { language: 'en', changeLanguage: vi.fn() }
   }),
 }));
 
-jest.mock('../NotificationCenter', () => ({
+vi.mock('../NotificationCenter', () => ({
   NotificationCenter: () => <div data-testid="notification-center" />,
 }));
 
-jest.mock('../DonateButton', () => ({
+vi.mock('../DonateButton', () => ({
   DonateButton: () => <div>Donate</div>,
 }));
 
@@ -33,17 +34,17 @@ const renderHeader = () => {
 };
 
 describe('Header', () => {
-  const mockUseAppContext = useAppContext as unknown as jest.Mock;
+  const mockUseAppContext = useAppContext as unknown as vi.Mock;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders navigation links and sign in button when unauthenticated', () => {
     mockUseAppContext.mockReturnValue({
       user: null,
       profile: null,
-      signOut: jest.fn(),
+      signOut: vi.fn(),
       loading: false,
     });
 
@@ -61,7 +62,7 @@ describe('Header', () => {
     mockUseAppContext.mockReturnValue({
       user: { email: 'user@example.com', profile_completed: true },
       profile: null, // Profile not loaded yet
-      signOut: jest.fn(),
+      signOut: vi.fn(),
       loading: false,
     });
 
@@ -77,7 +78,7 @@ describe('Header', () => {
     mockUseAppContext.mockReturnValue({
       user: null,
       profile: null,
-      signOut: jest.fn(),
+      signOut: vi.fn(),
       loading: false,
     });
 
@@ -95,7 +96,7 @@ describe('Header', () => {
     mockUseAppContext.mockReturnValue({
       user: { email: 'john.doe@example.com', profile_completed: true },
       profile: { first_name: 'John', last_name: 'Doe' },
-      signOut: jest.fn(),
+      signOut: vi.fn(),
       loading: false,
     });
 
@@ -108,7 +109,7 @@ describe('Header', () => {
     mockUseAppContext.mockReturnValue({
       user: { email: 'john.doe@example.com', profile_completed: true },
       profile: { last_name: 'Doe' }, // no first_name
-      signOut: jest.fn(),
+      signOut: vi.fn(),
       loading: false,
     });
 

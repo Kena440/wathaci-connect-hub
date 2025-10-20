@@ -6,11 +6,10 @@ import { Card, CardContent } from './ui/card';
 import { X, Plus } from 'lucide-react';
 
 interface Qualification {
-  institution?: string;
-  degree?: string;
-  name?: string;
-  year?: string;
-  field?: string;
+  institution: string;
+  degree: string;
+  year: string;
+  field: string;
 }
 
 interface QualificationsInputProps {
@@ -18,27 +17,21 @@ interface QualificationsInputProps {
   onChange: (qualifications: Qualification[]) => void;
 }
 
-export const QualificationsInput: React.FC<QualificationsInputProps> = ({ qualifications, onChange }) => {
-  const [newQualification, setNewQualification] = useState<Required<Qualification>>({
+export const QualificationsInput: React.FC<QualificationsInputProps> = ({
+  qualifications,
+  onChange
+}) => {
+  const [newQualification, setNewQualification] = useState<Qualification>({
     institution: '',
     degree: '',
-    name: '',
     year: '',
     field: ''
   });
 
   const addQualification = () => {
     if (qualifications.length < 5 && newQualification.institution && newQualification.degree) {
-      const normalizedQualification: Qualification = {
-        institution: newQualification.institution,
-        degree: newQualification.degree,
-        name: newQualification.degree,
-        year: newQualification.year,
-        field: newQualification.field,
-      };
-
-      onChange([...qualifications, normalizedQualification]);
-      setNewQualification({ institution: '', degree: '', name: '', year: '', field: '' });
+      onChange([...qualifications, newQualification]);
+      setNewQualification({ institution: '', degree: '', year: '', field: '' });
     }
   };
 
@@ -50,43 +43,39 @@ export const QualificationsInput: React.FC<QualificationsInputProps> = ({ qualif
     <div className="space-y-4">
       <Label>Professional Qualifications (up to 5)</Label>
       
-      {qualifications.map((qual, index) => {
-        const degree = qual.degree || qual.name || '';
-
-        return (
-          <Card key={index} className="relative">
-            <CardContent className="p-4">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute top-2 right-2"
-                onClick={() => removeQualification(index)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm">Institution</Label>
-                  <p className="text-sm text-gray-700">{qual.institution}</p>
-                </div>
-                <div>
-                  <Label className="text-sm">Degree/Certificate</Label>
-                  <p className="text-sm text-gray-700">{degree}</p>
-                </div>
-                <div>
-                  <Label className="text-sm">Year</Label>
-                  <p className="text-sm text-gray-700">{qual.year}</p>
-                </div>
-                <div>
-                  <Label className="text-sm">Field of Study</Label>
-                  <p className="text-sm text-gray-700">{qual.field}</p>
-                </div>
+      {qualifications.map((qual, index) => (
+        <Card key={index} className="relative">
+          <CardContent className="p-4">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute top-2 right-2"
+              onClick={() => removeQualification(index)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm">Institution</Label>
+                <p className="text-sm text-gray-700">{qual.institution}</p>
               </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+              <div>
+                <Label className="text-sm">Degree/Certificate</Label>
+                <p className="text-sm text-gray-700">{qual.degree}</p>
+              </div>
+              <div>
+                <Label className="text-sm">Year</Label>
+                <p className="text-sm text-gray-700">{qual.year}</p>
+              </div>
+              <div>
+                <Label className="text-sm">Field of Study</Label>
+                <p className="text-sm text-gray-700">{qual.field}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
 
       {qualifications.length < 5 && (
         <Card>
@@ -111,8 +100,7 @@ export const QualificationsInput: React.FC<QualificationsInputProps> = ({ qualif
                   value={newQualification.degree}
                   onChange={(e) => setNewQualification({
                     ...newQualification,
-                    degree: e.target.value,
-                    name: e.target.value
+                    degree: e.target.value
                   })}
                   placeholder="Bachelor's, Master's, etc."
                 />

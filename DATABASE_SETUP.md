@@ -131,12 +131,6 @@ Manages payment transactions:
 - updated_at: TIMESTAMP
 ```
 
-> **Note:** Run [`backend/supabase/profiles_schema.sql`](backend/supabase/profiles_schema.sql)
-> after provisioning the base table to guarantee the `qualifications`,
-> `coordinates`, and `card_details` columns are JSONB. The script safely converts
-> existing data where possible so the nested payloads emitted by the frontend
-> profile forms can be stored without Supabase returning 400-level errors.
-
 #### `subscription_plans` Table
 ```sql
 - id: UUID (Primary Key)
@@ -369,20 +363,6 @@ To guarantee that every authenticated user can manage only their own profile, ru
 
 > ℹ️ The function performs an `ON CONFLICT` upsert to avoid duplicate-key errors if retries occur. You can safely re-run the
 > script whenever policies or trigger logic need to be refreshed.
-
-### Automated schema provisioning
-
-To apply the latest schema and RLS automation in one pass, export your Supabase connection string and run the provisioning script:
-
-```bash
-export SUPABASE_DB_URL="postgres://postgres:[service-role-password]@[host]:6543/postgres"
-npm run supabase:provision
-```
-
-The script sequentially executes all SQL files in [`backend/supabase/`](backend/supabase) (core schema, profile enhancements,
-registrations, frontend logs, and profile policies). It uses the `psql` CLI, so make sure PostgreSQL client tools are installed
-locally or available in your CI environment. Re-running the script is safe; every SQL file is idempotent and designed for repeat
-execution without raising errors.
 
 After executing the script, confirm that:
 

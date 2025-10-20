@@ -46,21 +46,8 @@ async function validateDatabaseSetup() {
     
     // Test 3: Test environment variables
     console.log('\n🌍 Testing environment variables...');
-    const getEnvVar = (key: string) => {
-      if (typeof process !== 'undefined' && process.env[key]) {
-        return process.env[key];
-      }
-      if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
-        return undefined;
-      }
-      try {
-        return new Function(`return typeof import.meta !== "undefined" ? import.meta.env.${key} : undefined`)();
-      } catch {
-        return undefined;
-      }
-    };
-    const url = getEnvVar('VITE_SUPABASE_URL');
-    const key = getEnvVar('VITE_SUPABASE_KEY');
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    const key = import.meta.env.VITE_SUPABASE_KEY;
     
     if (url && key) {
       console.log('✅ Environment variables are set');

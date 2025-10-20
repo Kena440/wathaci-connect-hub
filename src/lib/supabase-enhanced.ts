@@ -26,30 +26,16 @@ const sanitizeEnvValue = (value: unknown): string | undefined => {
   return unquoted;
 };
 
-const getImportMetaEnv = (): any => {
-  // This function isolates import.meta from Jest's parser
-  // Jest will skip parsing this when it's not called in test environments
-  if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
-    return undefined;
-  }
-  try {
-    // Use Function constructor to completely hide import.meta from Jest parser
-    return new Function('return typeof import.meta !== "undefined" ? import.meta : undefined')();
-  } catch {
-    return undefined;
-  }
-};
-
 const resolveEnvValue = (key: string): string | undefined => {
-  // Check process.env first for test/Node.js environments
-  if (typeof process !== 'undefined') {
-    const processValue = sanitizeEnvValue(process.env?.[key]);
-    if (processValue) {
-      return processValue;
+  try {
+    const viteValue = sanitizeEnvValue((import.meta as any)?.env?.[key]);
+    if (viteValue) {
+      return viteValue;
     }
+  } catch (error) {
+    // import.meta may not be available in test environments
   }
 
-  // Check globalThis for runtime config
   if (typeof globalThis !== 'undefined') {
     const runtimeValue = sanitizeEnvValue((globalThis as any)?.__APP_CONFIG__?.[key]);
     if (runtimeValue) {
@@ -57,17 +43,11 @@ const resolveEnvValue = (key: string): string | undefined => {
     }
   }
 
-  // Check import.meta for Vite environments (browser/dev)
-  try {
-    const importMeta = getImportMetaEnv();
-    if (importMeta?.env) {
-      const viteValue = sanitizeEnvValue(importMeta.env[key]);
-      if (viteValue) {
-        return viteValue;
-      }
+  if (typeof process !== 'undefined') {
+    const processValue = sanitizeEnvValue(process.env?.[key]);
+    if (processValue) {
+      return processValue;
     }
-  } catch (error) {
-    // import.meta may not be available in test environments
   }
 
   return undefined;
@@ -403,80 +383,6 @@ export const testConnection = async (): Promise<boolean> => {
     console.error('Connection test failed:', error);
     return !!isTestEnvironment;
   }
-};
-
-export type HealthCheckStatus = 'healthy' | 'degraded' | 'unhealthy';
-
-export interface HealthCheckResult {
-  status: HealthCheckStatus;
-  timestamp: string;
-  details: {
-    connection: HealthCheckStatus;
-    auth: HealthCheckStatus;
-    error?: string;
-  };
-}
-
-export const healthCheck = async (): Promise<HealthCheckResult> => {
-  const timestamp = new Date().toISOString();
-  const issues: string[] = [];
-
-  let connectionStatus: HealthCheckStatus = 'unhealthy';
-  try {
-    const isConnected = await testConnection();
-    connectionStatus = isConnected ? 'healthy' : 'unhealthy';
-    if (!isConnected) {
-      issues.push('Database connection failed');
-    }
-  } catch (error) {
-    connectionStatus = isTestEnvironment ? 'degraded' : 'unhealthy';
-    const message = error instanceof Error ? error.message : 'Unknown connection error';
-    issues.push(`Connection exception: ${message}`);
-  }
-
-  let authStatus: HealthCheckStatus = 'unhealthy';
-  try {
-    const { data, error } = await (supabase as SupabaseClientLike).auth.getUser();
-
-    if (error) {
-      const message = error.message || 'Unknown authentication error';
-      if (message.toLowerCase().includes('session')) {
-        authStatus = 'degraded';
-      } else {
-        authStatus = 'unhealthy';
-        issues.push(`Auth error: ${message}`);
-      }
-    } else if (data?.user) {
-      authStatus = 'healthy';
-    } else {
-      authStatus = 'degraded';
-    }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown authentication error';
-    authStatus = isTestEnvironment ? 'degraded' : 'unhealthy';
-    issues.push(`Auth exception: ${message}`);
-  }
-
-  let status: HealthCheckStatus = 'unhealthy';
-  if (connectionStatus === 'healthy' && authStatus === 'healthy') {
-    status = 'healthy';
-  } else if (connectionStatus === 'healthy' && authStatus !== 'unhealthy') {
-    status = 'degraded';
-  } else if (connectionStatus !== 'unhealthy' && authStatus !== 'unhealthy') {
-    status = 'degraded';
-  }
-
-  const errorMessage = issues.length > 0 ? issues.join('; ') : undefined;
-
-  return {
-    status,
-    timestamp,
-    details: {
-      connection: connectionStatus,
-      auth: authStatus,
-      ...(errorMessage ? { error: errorMessage } : {}),
-    },
-  };
 };
 
 // Enhanced error handling wrapper with network error detection

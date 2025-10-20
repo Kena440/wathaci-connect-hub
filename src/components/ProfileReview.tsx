@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Edit, MapPin, Phone, Mail, Building, Calendar, Users, DollarSign, CreditCard } from 'lucide-react';
+import { Edit, MapPin, Phone, Mail, Building, Calendar, Users, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export const ProfileReview = () => {
@@ -87,48 +87,6 @@ export const ProfileReview = () => {
       'government': 'Government Institution'
     };
     return labels[type as keyof typeof labels] || type;
-  };
-
-  const formatQualification = (qualification: unknown) => {
-    if (!qualification) {
-      return null;
-    }
-
-    if (typeof qualification === 'string') {
-      return qualification;
-    }
-
-    if (typeof qualification === 'object') {
-      const qual = qualification as {
-        degree?: string | null;
-        name?: string | null;
-        institution?: string | null;
-        year?: string | null;
-        field?: string | null;
-      };
-
-      const title = qual.degree || qual.name || qual.field;
-      const institution = qual.institution ? ` – ${qual.institution}` : '';
-      const year = qual.year ? ` (${qual.year})` : '';
-
-      if (!title && !institution && !year) {
-        return null;
-      }
-
-      return `${title ?? 'Qualification'}${institution}${year}`;
-    }
-
-    return null;
-  };
-
-  const formatCardExpiry = (card: any) => {
-    if (!card?.expiry_month || !card?.expiry_year) {
-      return null;
-    }
-
-    const month = String(card.expiry_month).padStart(2, '0');
-    const year = card.expiry_year.toString().slice(-2);
-    return `${month}/${year}`;
   };
 
   return (
@@ -252,16 +210,9 @@ export const ProfileReview = () => {
                   <div>
                     <h4 className="font-medium mb-2">Qualifications</h4>
                     <div className="flex flex-wrap gap-2">
-                      {profile.qualifications.map((qualification: unknown, index: number) => {
-                        const formatted = formatQualification(qualification);
-                        if (!formatted) {
-                          return null;
-                        }
-
-                        return (
-                          <Badge key={index} variant="outline">{formatted}</Badge>
-                        );
-                      })}
+                      {profile.qualifications.map((qual: string, index: number) => (
+                        <Badge key={index} variant="outline">{qual}</Badge>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -309,16 +260,6 @@ export const ProfileReview = () => {
               <div className="flex items-center gap-3 mt-2">
                 <span className="text-muted-foreground">Payment Phone:</span>
                 <span>{profile.payment_phone}</span>
-              </div>
-            )}
-            {profile.payment_method === 'card' && profile.card_details?.last4 && (
-              <div className="flex items-center gap-3 mt-2">
-                <CreditCard className="h-5 w-5 text-muted-foreground" />
-                <span>
-                  Card ending in {profile.card_details.last4}
-                  {formatCardExpiry(profile.card_details) ? ` (expires ${formatCardExpiry(profile.card_details)})` : ''}
-                  {profile.card_details.cardholder_name ? ` • ${profile.card_details.cardholder_name}` : ''}
-                </span>
               </div>
             )}
           </CardContent>

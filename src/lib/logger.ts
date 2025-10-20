@@ -18,37 +18,20 @@ function sendToMonitoringService(log: any) {
   }
 }
 
-const buildLogEntry = (level: 'error' | 'warn' | 'info', message: string, context: LogContext = {}, error?: unknown) => ({
-  level,
-  message,
-  ...context,
-  ...(error
-    ? {
-        error:
-          error instanceof Error
-            ? { message: error.message, stack: error.stack }
-            : error,
-      }
-    : {}),
-  timestamp: new Date().toISOString(),
-});
-
 export const logger = {
-  error(message: string, error?: unknown, context: LogContext = {}) {
-    const logEntry = buildLogEntry('error', message, context, error);
+  error(message: string, error: unknown, context: LogContext = {}) {
+    const logEntry = {
+      level: 'error',
+      message,
+      ...context,
+      error:
+        error instanceof Error
+          ? { message: error.message, stack: error.stack }
+          : error,
+      timestamp: new Date().toISOString(),
+    };
+
     sendToMonitoringService(logEntry);
     console.error(message, logEntry);
-  },
-
-  warn(message: string, context: LogContext = {}) {
-    const logEntry = buildLogEntry('warn', message, context);
-    sendToMonitoringService(logEntry);
-    console.warn(message, logEntry);
-  },
-
-  info(message: string, context: LogContext = {}) {
-    const logEntry = buildLogEntry('info', message, context);
-    sendToMonitoringService(logEntry);
-    console.info(message, logEntry);
   },
 };

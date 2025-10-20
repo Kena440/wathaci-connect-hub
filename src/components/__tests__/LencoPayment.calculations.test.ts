@@ -63,8 +63,8 @@ describe('Lenco Payment Amount Calculations', () => {
 
     it('should have consistent currency handling', () => {
       subscriptionPlans.forEach((plan: any) => {
-        // All plans should use ZMW currency (indicated by K prefix or ZMW prefix)
-        expect(plan.price).toMatch(/^(K|ZMW)\s?\d+/);
+        // All plans should use ZMW currency (indicated by K prefix)
+        expect(plan.price).toMatch(/^K\d+/);
         
         // Lenco amounts should be in the smallest unit (ngwee for ZMW)
         expect(plan.lencoAmount % 1).toBe(0); // Should be whole number
