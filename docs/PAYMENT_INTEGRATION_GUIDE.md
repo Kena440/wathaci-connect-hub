@@ -367,6 +367,32 @@ Verify and activate subscription payment.
 
 **Returns:** `Promise<VerificationResult>`
 
+### Lenco API Endpoints
+
+#### `GET /banks`
+
+- **Endpoint:** `https://api.lenco.co/access/v2/banks`
+- **Description:** Retrieves the list of supported banks and financial institutions from the Lenco API.
+- **Query Parameters:**
+  - `country` (string, optional): ISO 3166-1 alpha-2 country code (for example, `ng`, `zm`). When omitted, returns banks across all supported countries.
+- **Response:**
+
+```json
+{
+  "status": true,
+  "message": "Banks fetched successfully",
+  "data": [
+    {
+      "id": "string",
+      "name": "string",
+      "country": "string"
+    }
+  ]
+}
+```
+
+The response returns an array of bank metadata objects that can be used to drive bank pickers or validation workflows in the payment experience.
+
 ## Security Guidelines
 
 ### 1. API Key Security
