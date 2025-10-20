@@ -7,7 +7,6 @@ process.env.VITE_PLATFORM_FEE_PERCENTAGE = '2';
 process.env.VITE_MIN_PAYMENT_AMOUNT = '5';
 process.env.VITE_MAX_PAYMENT_AMOUNT = '100000';
 
-import { describe, expect, it } from 'vitest';
 import { paymentTestSuite } from '../payment-test-suite';
 
 const getResultMap = (results: Awaited<ReturnType<typeof paymentTestSuite.runTestCategory>>) => {

@@ -334,7 +334,7 @@ export const GetStarted = () => {
           </Button>
           
           {/* Development bypass for testing - only show in dev mode */}
-          {import.meta.env.DEV && (
+          {process.env.NODE_ENV === 'development' && (
             <Button
               type="button"
               variant="outline"

@@ -1,8 +1,8 @@
 import { render } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { BrowserRouter } from 'react-router-dom';
 import StatsSection from '../StatsSection';
 
-vi.mock('@/lib/supabase-enhanced', () => {
+jest.mock('@/lib/supabase-enhanced', () => {
   const from = (table: string) => {
     if (table === 'business_stats') {
       return {
@@ -34,7 +34,11 @@ vi.mock('@/lib/supabase-enhanced', () => {
 
 describe('StatsSection', () => {
   it('matches snapshot', () => {
-    const { container } = render(<StatsSection />);
+    const { container } = render(
+      <BrowserRouter>
+        <StatsSection />
+      </BrowserRouter>
+    );
     expect(container).toMatchSnapshot();
   });
 });

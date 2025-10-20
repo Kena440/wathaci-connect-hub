@@ -12,6 +12,14 @@ module.exports = {
     '<rootDir>/src/**/__tests__/**/*.(ts|tsx|js)',
     '<rootDir>/src/**/*.(test|spec).(ts|tsx|js)',
   ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '<rootDir>/src/test/basic.test.js', // Node.js test runner test
+    '<rootDir>/src/components/__tests__/LencoPayment.manual-verification.ts', // Manual verification guide, not a test
+  ],
+  transformIgnorePatterns: [
+    'node_modules/(?!(isows|@supabase|ws)/)',
+  ],
   collectCoverageFrom: [
     'src/**/*.(ts|tsx)',
     '!src/**/*.d.ts',
@@ -21,7 +29,8 @@ module.exports = {
     '^.+\\.tsx?$': ['ts-jest', {
       tsconfig: './tsconfig.app.json',
       useESM: true
-    }]
+    }],
+    '^.+\\.jsx?$': ['babel-jest', { configFile: './babel.config.cjs' }],
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
 };
