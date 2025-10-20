@@ -333,6 +333,15 @@ Verify payment status.
 
 **Returns:** `Promise<PaymentStatus>`
 
+##### `createMerchantTransferRecipient(tillNumber)`
+
+Create a transfer recipient for a Lenco merchant till.
+
+**Parameters:**
+- `tillNumber` (string): Merchant till number provided by Lenco
+
+**Returns:** `Promise<LencoTransferRecipientResponse>` containing the recipient `id`, `currency`, `country`, and merchant details
+
 ##### `calculatePaymentTotal(amount)`
 
 Calculate payment breakdown including fees.
@@ -341,6 +350,41 @@ Calculate payment breakdown including fees.
 - `amount` (number): Base amount
 
 **Returns:** Payment breakdown object
+
+### REST API Endpoints
+
+#### `GET /accounts/:id/balance`
+
+Retrieve the current balance of a specific Lenco bank account.
+
+- **Base URL:** `https://api.lenco.co/access/v2/accounts/{id}/balance`
+- **Path Parameters:**
+  - `id` (`string`, required): 36-character account UUID provided in the Lenco dashboard.
+
+**Successful Response (200):**
+
+```json
+{
+  "status": true,
+  "message": "Account balance retrieved successfully",
+  "data": {
+    "availableBalance": "15234.50",
+    "ledgerBalance": "16000.00",
+    "currency": "NGN"
+  }
+}
+```
+
+**Error Response (400):**
+
+```json
+{
+  "status": false,
+  "message": "Invalid account identifier"
+}
+```
+
+> ℹ️ Ensure the request is authenticated with your Lenco secret key and that the account ID matches the UUID shown in the dashboard. The API returns monetary values as strings to preserve precision.
 
 ### SubscriptionService
 
@@ -358,6 +402,14 @@ Subscribe user to a plan with payment processing.
 
 **Returns:** `Promise<SubscriptionResult>`
 
+### Transfer Recipient API
+
+Use the dedicated Lenco endpoint to register payout recipients before sending funds.
+
+- **Endpoint:** `POST /transfer-recipients/bank-account`
+- **Documentation:** [Lenco Transfer Recipient: Bank Account Endpoint](./LENCO_TRANSFER_RECIPIENTS_REFERENCE.md)
+- **Workflow Tip:** Store the returned recipient `id` and reuse it for subsequent transfers instead of resubmitting raw account numbers.
+
 ##### `verifySubscriptionPayment(paymentReference)`
 
 Verify and activate subscription payment.
@@ -366,6 +418,74 @@ Verify and activate subscription payment.
 - `paymentReference` (string): Payment reference
 
 **Returns:** `Promise<VerificationResult>`
+
+### Transfer Recipients API
+
+#### `POST /transfer-recipients/mobile-money`
+
+Create a mobile money transfer recipient that can receive payouts through the
+Lenco Access API.
+
+**Endpoint**: `POST https://api.lenco.co/access/v2/transfer-recipients/mobile-money`
+
+**Headers**
+
+- `Authorization: Bearer <LENCO_SECRET_KEY>`
+- `Content-Type: application/json`
+
+**Request body**
+
+```json
+{
+  "phone": "0978000000",
+  "operator": "mtn",
+  "country": "zm"
+}
+```
+
+- `phone` (string, required): Recipient mobile number in MSISDN format.
+- `operator` (string, required): Mobile money operator. Allowed values:
+  `airtel`, `mtn`, or `zamtel`.
+- `country` (string, optional): ISO country code. Lenco currently supports only
+  `zm` for Zambia.
+
+**Sample request**
+
+```bash
+curl -X POST "https://api.lenco.co/access/v2/transfer-recipients/mobile-money" \
+  -H "Authorization: Bearer $LENCO_SECRET_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "phone": "0978123456",
+        "operator": "airtel",
+        "country": "zm"
+      }'
+```
+
+**Successful response**
+
+```json
+{
+  "status": true,
+  "message": "Transfer recipient created successfully",
+  "data": {
+    "id": "recp_1234567890",
+    "currency": "ZMW",
+    "type": "transfer-recipient",
+    "country": "zm",
+    "details": {
+      "type": "mobile-money",
+      "accountName": "Chanda Mwila",
+      "phone": "0978123456",
+      "operator": "airtel"
+    }
+  }
+}
+```
+
+- **200 OK** – Recipient created successfully (sample response above).
+- **400 Bad Request** – Validation error. Ensure the phone and operator values
+  are valid and retry.
 
 ## Security Guidelines
 

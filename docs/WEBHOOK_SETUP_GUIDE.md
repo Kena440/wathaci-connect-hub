@@ -315,6 +315,78 @@ Before going live, verify:
 
 ## Reference
 
+### Sample Webhook Receivers (Server-Side)
+
+When you expose your own webhook endpoint (for local testing or for a custom backend), ensure you:
+
+1. Parse the raw request body without modification
+2. Validate the `x-lenco-signature` header using your `LENCO_WEBHOOK_SECRET`
+3. Only acknowledge the webhook (`200 OK`) after successful validation
+
+#### Node.js (Express)
+
+```javascript
+import crypto from "crypto";
+import express from "express";
+
+const app = express();
+
+// Important: configure Express to give access to the raw body for signature verification
+app.use(
+  "/my/webhook/url",
+  express.json({
+    verify: (req, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
+
+app.post("/my/webhook/url", (req, res) => {
+  const signature = req.header("x-lenco-signature");
+  const secret = process.env.LENCO_WEBHOOK_SECRET ?? "";
+
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(req.rawBody)
+    .digest("hex");
+
+  if (!signature || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+    return res.status(401).send("Invalid signature");
+  }
+
+  const event = req.body; // Parsed JSON payload
+
+  // TODO: handle the event (e.g., update payment status)
+
+  return res.status(200).send("received");
+});
+```
+
+#### PHP
+
+```php
+<?php
+$secret = getenv('LENCO_WEBHOOK_SECRET') ?: '';
+$rawBody = file_get_contents('php://input');
+$signature = $_SERVER['HTTP_X_LENCO_SIGNATURE'] ?? '';
+
+$expected = hash_hmac('sha256', $rawBody, $secret);
+
+if (!$signature || !hash_equals($expected, $signature)) {
+    http_response_code(401);
+    echo 'Invalid signature';
+    exit;
+}
+
+$event = json_decode($rawBody);
+
+// TODO: handle the event payload
+
+http_response_code(200);
+echo 'received';
+?>
+```
+
 ### Webhook Payload Structure
 
 ```json
