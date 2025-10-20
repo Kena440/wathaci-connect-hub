@@ -163,10 +163,15 @@ describe('AppContext auth actions', () => {
     const ctx = await renderWithContext();
     const result = await ctx.signUp('test@example.com', 'pass', { foo: 'bar' });
 
+    const expectedRedirect = new URL('/signin', window.location.origin).toString();
+
     expect(mockSupabase.auth.signUp).toHaveBeenCalledWith(expect.objectContaining({
       email: 'test@example.com',
       password: 'pass',
-      options: { data: { foo: 'bar' } },
+      options: expect.objectContaining({
+        data: { foo: 'bar' },
+        emailRedirectTo: expectedRedirect,
+      }),
     }));
     expect(profileChain.insert).toHaveBeenCalledWith(expect.objectContaining({ id: '1', email: 'test@example.com', foo: 'bar' }));
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Account created!' }));

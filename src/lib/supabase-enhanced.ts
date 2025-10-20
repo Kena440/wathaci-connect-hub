@@ -40,7 +40,7 @@ const getImportMetaEnv = (): any => {
   }
 };
 
-const resolveEnvValue = (key: string): string | undefined => {
+export const resolveEnvValue = (key: string): string | undefined => {
   // Check process.env first for test/Node.js environments
   if (typeof process !== 'undefined') {
     const processValue = sanitizeEnvValue(process.env?.[key]);
