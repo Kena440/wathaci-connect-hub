@@ -4,10 +4,17 @@ This checklist consolidates the remaining action items required before WATHACI C
 
 ## 1. Environment & Configuration
 
-1. Copy `.env.example` to `.env` (and `.env.production` if you maintain a dedicated file for live builds).
-2. Populate every Supabase and Lenco credential with production values – replace all `your-…`, `test_`, or sandbox placeholders.
-3. Mirror the same values inside Vercel → **Settings → Environment Variables** for `Production`, `Preview`, and `Development` environments.
-4. Run the automated audit to confirm nothing is missing or placeholder values remain:
+1. Copy `.env.example` to `.env` (and `.env.production` for production builds):
+   ```bash
+   cp .env.example .env
+   cp .env.example .env.production
+   cp backend/.env.example backend/.env
+   cp backend/.env.example backend/.env.production
+   ```
+2. Populate every Supabase and Lenco credential with production values in `.env.production` – replace all `your-…`, `test_`, or sandbox placeholders.
+3. Ensure `VITE_APP_ENV="production"` is set in `.env.production`.
+4. Mirror the same values inside Vercel → **Settings → Environment Variables** for `Production`, `Preview`, and `Development` environments.
+5. Run the automated audit to confirm nothing is missing or placeholder values remain:
    ```bash
    npm run env:check
    ```

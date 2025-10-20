@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
+    "env:setup": "bash ./scripts/setup-env.sh",
     "env:check": "node scripts/env-check.mjs",
     "test": "cross-env NODE_ENV=test ALLOW_IN_MEMORY_REGISTRATION=true node --test",
     "test:jest": "jest",

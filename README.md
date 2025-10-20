@@ -41,13 +41,28 @@ Key steps:
 
 ## Environment Configuration
 
-Project settings are managed through environment variables. Copy the provided template and update values for your setup:
+Project settings are managed through environment variables. Use the automated setup script to create all required environment files:
+
+```bash
+npm run env:setup
+```
+
+This will create:
+- `.env` - Development environment configuration
+- `.env.production` - Production environment configuration
+- `backend/.env` - Backend development configuration
+- `backend/.env.production` - Backend production configuration
+
+Alternatively, you can manually copy the templates:
 
 ```bash
 cp .env.example .env
+cp .env.example .env.production
+cp backend/.env.example backend/.env
+cp backend/.env.example backend/.env.production
 ```
 
-Update the new `.env` file with production values:
+After creating the files, update them with your actual credentials:
 
 - `VITE_SUPABASE_URL` / `SUPABASE_URL` – Supabase project URL (mirrored for the backend runtime).
 - `VITE_SUPABASE_KEY` – Supabase anon key for client access.
@@ -63,6 +78,14 @@ Update the new `.env` file with production values:
 - `VITE_MAX_PAYMENT_AMOUNT` – Maximum allowed payment amount.
 - `VITE_APP_ENV` – Set to `production` for live deployments.
 - `VITE_APP_NAME` – Application display name.
+
+**Validate your configuration:**
+
+```bash
+npm run env:check
+```
+
+This will scan all environment files and flag any missing or placeholder values.
 
 When deploying to Vercel (or another hosting provider), add **both** `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` to the project
 environment variables along with any server-side keys (such as `SUPABASE_SERVICE_ROLE_KEY` if you run edge functions). Use the

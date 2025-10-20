@@ -6,13 +6,20 @@ This guide explains how to properly configure environment variables for the WATH
 
 1. **Copy the example files**:
    ```bash
+   # Create development environment files
    cp .env.example .env
    cp backend/.env.example backend/.env
+   
+   # Create production environment files (optional but recommended)
+   cp .env.example .env.production
+   cp backend/.env.example backend/.env.production
    ```
 
 2. **Update the `.env` file** with your actual values (see sections below)
 
-3. **Validate your configuration**:
+3. **For production deployments**, update `.env.production` files with live credentials
+
+4. **Validate your configuration**:
    ```bash
    npm run env:check
    ```
@@ -26,10 +33,22 @@ Located at the project root, this file contains:
 - Payment gateway configuration
 - Application metadata
 
+**Multiple environment files:**
+- `.env` - Default environment file for local development
+- `.env.production` - Production-specific overrides (optional)
+- `.env.local` - Local overrides (git-ignored, highest priority)
+
+The `env:check` script checks all these files in order and uses the first value it finds for each variable.
+
 ### Backend `.env` File
 Located at `backend/.env`, this file contains:
 - Supabase backend credentials
 - Service role keys
+
+**Backend environment files:**
+- `backend/.env` - Default backend environment
+- `backend/.env.production` - Production backend overrides (optional)
+- `backend/.env.local` - Local backend overrides (git-ignored)
 
 ## Required Environment Variables
 
@@ -121,19 +140,24 @@ Expected output for a valid configuration:
 
 ### Development Environment
 
-Set `VITE_APP_ENV="development"` and use:
+Set `VITE_APP_ENV="development"` in your `.env` file and use:
 - Test Supabase project
 - Test Lenco keys (prefixed with `pk_test_` / `sk_test_`)
 - Lower transaction limits for testing
 
 ### Production Environment
 
-Set `VITE_APP_ENV="production"` and use:
+Set `VITE_APP_ENV="production"` in your `.env.production` file and use:
 - Production Supabase project
 - Live Lenco keys (prefixed with `pk_live_` / `sk_live_` or proper format)
 - Real transaction limits
 - Valid SSL/TLS certificates
 - Monitoring and alerting enabled
+
+**Important:** When deploying to production:
+1. Ensure `.env.production` is created with production credentials
+2. The build process should use production environment variables
+3. Never mix test and production credentials
 
 ## Deployment Configuration
 
