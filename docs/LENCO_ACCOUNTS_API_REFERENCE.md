@@ -15,6 +15,7 @@ payments.
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET`  | `/accounts` | Returns every account that is attached to the authenticated Lenco tenant. |
+| `GET`  | `/transactions` | Lists the transactions recorded against the tenant's Lenco accounts. |
 
 ### Authentication
 
@@ -32,7 +33,7 @@ Accept: application/json
 > function, or Supabase function to proxy the request if the data needs to be
 > surfaced in the UI.
 
-## Query Parameters
+## `/accounts` Query Parameters
 
 | Name | Type | Default | Description |
 |------|------|---------|-------------|
@@ -41,7 +42,7 @@ Accept: application/json
 Pagination metadata is returned in the `meta` object of the response so you can
 build paging controls when more than one page of accounts exists.
 
-## Successful Response
+## `/accounts` Successful Response
 
 **Status:** `200 OK`
 
@@ -74,7 +75,7 @@ build paging controls when more than one page of accounts exists.
 }
 ```
 
-### Field Reference
+### `/accounts` Field Reference
 
 #### `data[]`
 
@@ -97,6 +98,83 @@ build paging controls when more than one page of accounts exists.
 |-------|------|-------------|
 | `total` | number | Total number of accounts. |
 | `pageCount` | number | Total number of pages based on the `perPage` value. |
+| `perPage` | number | Maximum items returned per page. |
+| `currentPage` | number | Page number that generated the response. |
+
+## `/transactions` Endpoint
+
+Use this endpoint to retrieve the ledger of money moving in or out of any
+account that belongs to your tenant. The response includes pagination metadata
+so you can implement infinite scrolling or traditional paging in dashboards.
+
+```http
+GET /access/v2/transactions?page=1&type=credit HTTP/1.1
+Host: api.lenco.co
+Authorization: Bearer sec_xxxxxxxxxxxxxxxxx
+Accept: application/json
+```
+
+### Query Parameters
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `page` | integer | `1` | Optional page number for paginated results. |
+| `type` | string | — | Filter by transaction direction. Use `credit` for incoming funds or `debit` for outgoing funds. |
+| `from` | date (`YYYY-MM-DD`) | — | Inclusive start date for the range filter. |
+| `to` | date (`YYYY-MM-DD`) | — | Inclusive end date for the range filter. |
+| `search` | string | — | Free-text search applied to narrations and identifiers. |
+| `accountId` | string | — | 36-character account UUID. Limits the response to a single account. |
+
+### Successful Response
+
+**Status:** `200 OK`
+
+```json
+{
+  "status": true,
+  "message": "Transactions fetched successfully",
+  "data": [
+    {
+      "id": "txn_01hv56rx78c1qk5t6p9n3d4f5g",
+      "amount": "1500.00",
+      "currency": "ZMW",
+      "narration": "Invoice payment INV-2025-0042",
+      "type": "credit",
+      "datetime": "2025-02-20T08:42:17.000Z",
+      "accountId": "acct_01hv50srq9a9t6p0n8c8exm1c7",
+      "balance": "21500.25"
+    }
+  ],
+  "meta": {
+    "total": 42,
+    "pageCount": 3,
+    "perPage": 20,
+    "currentPage": 1
+  }
+}
+```
+
+### Field Reference
+
+#### `data[]`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique identifier for the transaction record. |
+| `amount` | string | Monetary amount represented as a string to preserve precision. |
+| `currency` | string | ISO 4217 currency code of the transaction. |
+| `narration` | string | Human-readable description supplied by Lenco. |
+| `type` | `credit`\|`debit` | Indicates whether funds entered (`credit`) or left (`debit`) the account. |
+| `datetime` | ISO 8601 datetime | Timestamp when the transaction was created. |
+| `accountId` | string | Identifier of the account the transaction belongs to. |
+| `balance` | string\|null | Account balance immediately after the transaction. May be `null` if unavailable. |
+
+#### `meta`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `total` | number | Total number of transactions that match the filters. |
+| `pageCount` | number | Total number of pages for the current `perPage` setting. |
 | `perPage` | number | Maximum items returned per page. |
 | `currentPage` | number | Page number that generated the response. |
 
