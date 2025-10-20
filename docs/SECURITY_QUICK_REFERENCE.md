@@ -360,13 +360,21 @@ supabase secrets unset KEY
 
 ## Emergency Contacts
 
+**⚠️ IMPORTANT: Replace these placeholders with actual contact information before production deployment.**
+
 | Role | Contact | When to Call |
 |------|---------|--------------|
-| On-call Engineer | [CONTACT] | All critical alerts |
-| Security Team | [CONTACT] | Security incidents |
-| DevOps Manager | [CONTACT] | Infrastructure issues |
-| Payment Operations | [CONTACT] | Payment/gateway issues |
-| Executive Team | [CONTACT] | Major outages (>1hr) |
+| On-call Engineer | [CONTACT - Add phone/email/Slack] | All critical alerts |
+| Security Team | [CONTACT - Add security@company.com] | Security incidents |
+| DevOps Manager | [CONTACT - Add phone/email] | Infrastructure issues |
+| Payment Operations | [CONTACT - Add payments@company.com] | Payment/gateway issues |
+| Executive Team | [CONTACT - Add emergency escalation] | Major outages (>1hr) |
+
+**Setup Instructions:**
+1. Fill in actual contact information for your team
+2. Verify all contacts are current and monitored 24/7
+3. Test contact methods during incident drills
+4. Update this table whenever team members change
 
 ## Reference Documentation
 
@@ -378,11 +386,20 @@ supabase secrets unset KEY
 
 ## Quick Links
 
-- Supabase Dashboard: https://app.supabase.com
-- Lenco Dashboard: https://dashboard.lenco.co
-- Monitoring Dashboard: [YOUR_MONITORING_URL]
-- Status Page: [YOUR_STATUS_PAGE]
-- Incident Management: [YOUR_INCIDENT_TOOL]
+**⚠️ IMPORTANT: Replace these placeholders with actual URLs before production deployment.**
+
+- **Supabase Dashboard**: https://app.supabase.com/project/[YOUR_PROJECT_REF]
+- **Lenco Dashboard**: https://dashboard.lenco.co
+- **Monitoring Dashboard**: [YOUR_MONITORING_URL - e.g., Datadog, Grafana]
+- **Status Page**: [YOUR_STATUS_PAGE - e.g., status.yourcompany.com]
+- **Incident Management**: [YOUR_INCIDENT_TOOL - e.g., PagerDuty, OpsGenie]
+- **Documentation**: https://github.com/Kena440/WATHACI-CONNECT.-V1/tree/main/docs
+
+**Setup Instructions:**
+1. Create accounts and configure each service
+2. Update these URLs with your actual service endpoints
+3. Verify all team members have access
+4. Bookmark these links for quick access during incidents
 
 ---
 

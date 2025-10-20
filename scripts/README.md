@@ -105,6 +105,8 @@ export WEBHOOK_SECRET="your-webhook-secret"
 
 ```bash
 # Test with 110 requests over 60 seconds
+# Note: 110 requests tests 10% above the configured limit of 100 requests per 15-minute window
+# This ensures the rate limiter triggers as expected
 ./scripts/verify-rate-limiting.sh https://your-backend.com/api/health 110 60
 ```
 
