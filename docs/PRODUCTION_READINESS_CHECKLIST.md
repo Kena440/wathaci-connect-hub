@@ -42,9 +42,27 @@ This checklist consolidates the remaining action items required before WATHACI C
 
 ## 3. Payments & Webhook Validation
 
-1. Switch all payment credentials to production-mode keys (accept the current `pub-…` / `sec-…` formats or the legacy `pk_live_…` / `sk_live_…` strings depending on what your Lenco dashboard provides).
-2. Confirm the configured transaction limits (`VITE_MIN_PAYMENT_AMOUNT`, `VITE_MAX_PAYMENT_AMOUNT`, `VITE_PLATFORM_FEE_PERCENTAGE`) match compliance requirements.
-3. Trigger a manual webhook event from the Lenco dashboard and ensure the Supabase Edge Function returns `200` while recording an entry in the `webhook_logs` table.
+- [ ] **Switch all payment credentials to production-mode keys** (accept the current `pub-…` / `sec-…` formats or the legacy `pk_live_…` / `sk_live_…` strings depending on what your Lenco dashboard provides).
+  - **Action Required**: Follow the [Lenco Keys Rotation Guide](./LENCO_KEYS_ROTATION_GUIDE.md)
+  - **Quick Start**: Run `./scripts/rotate-lenco-keys.sh` for automated rotation
+  - **Manual Process**: See [Manual Rotation Steps](./LENCO_KEYS_ROTATION_GUIDE.md#option-2-manual-rotation)
+  - **Verification**: Run `npm run env:check` to confirm no test keys remain
+
+- [ ] Confirm the configured transaction limits (`VITE_MIN_PAYMENT_AMOUNT`, `VITE_MAX_PAYMENT_AMOUNT`, `VITE_PLATFORM_FEE_PERCENTAGE`) match compliance requirements.
+
+- [ ] **Trigger a manual webhook event from the Lenco dashboard** and ensure the Supabase Edge Function returns `200` while recording an entry in the `webhook_logs` table.
+  - **Webhook URL**: `https://YOUR_PROJECT_REF.supabase.co/functions/v1/lenco-webhook`
+  - **Testing Guide**: See [Webhook Testing Guide](./WEBHOOK_TESTING_GUIDE.md) for comprehensive testing procedures
+  - **Quick Test**: Run `node scripts/test-webhook-integration.js <webhook-url> <webhook-secret>`
+  - **Verification Query**:
+    ```sql
+    SELECT id, event_type, reference, status, error_message, processed_at
+    FROM webhook_logs
+    WHERE status = 'processed'
+    ORDER BY processed_at DESC
+    LIMIT 5;
+    ```
+  - **Expected Result**: At least one entry with `status = 'processed'` and `error_message IS NULL`
 
 ## 4. Quality Gates & Regression Testing
 
