@@ -4,6 +4,25 @@ This directory contains utility scripts for development, testing, and operations
 
 ## Smoke Test Scripts
 
+### setup-smoke-test-monitoring.sh
+
+Interactive script to configure GitHub repository secrets for smoke test monitoring.
+
+**Usage:**
+```bash
+bash scripts/setup-smoke-test-monitoring.sh
+```
+
+**Prerequisites:**
+- GitHub CLI (gh) installed and authenticated
+- Repository owner/admin permissions
+
+**Configures:**
+- `WEBHOOK_URL` - Production webhook endpoint
+- `WEBHOOK_SECRET` - Webhook signing secret
+- `SLACK_WEBHOOK_URL` (optional) - Slack notifications
+- `PAGERDUTY_INTEGRATION_KEY` (optional) - PagerDuty alerts
+
 ### smoke-test-https.sh
 
 Tests HTTPS availability and health endpoint.
