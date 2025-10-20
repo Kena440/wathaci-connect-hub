@@ -293,6 +293,8 @@ sign-off.
 
 ## API Reference
 
+For a quick summary of how the Lenco API authenticates requests, formats responses, and reports errors, see the [Lenco API Authentication & Response Reference](./LENCO_API_AUTHENTICATION_REFERENCE.md). Keep the conventions in that document in mind when consuming any of the service methods below.
+
 ### LencoPaymentService
 
 #### Methods
