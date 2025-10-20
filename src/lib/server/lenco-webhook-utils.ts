@@ -76,24 +76,32 @@ export async function verifyLencoSignature(signature: string, rawBody: string, s
 
   const encoder = new TextEncoder();
   const bodyBytes = encoder.encode(rawBody);
-  const secretBytes = encoder.encode(secret);
 
   try {
+    const hashKey = await deriveWebhookHashKey(secret);
+    if (!hashKey) {
+      return false;
+    }
+
+    const secretBytes = encoder.encode(hashKey);
+    const expectedHmac = await computeHmacSha512(secretBytes, bodyBytes);
+    if (!expectedHmac) {
+      return false;
+    }
+
     const providedBytes = decodeSignature(signature);
-    const expectedHmac = await computeHmac(secretBytes, bodyBytes);
-
-    if (providedBytes && expectedHmac && timingSafeEqualBytes(expectedHmac, providedBytes)) {
+    if (providedBytes && timingSafeEqualBytes(expectedHmac, providedBytes)) {
       return true;
     }
 
-    const digest = await computeSha256(concatUint8Arrays(secretBytes, bodyBytes));
-    const digestHex = digest ? toHex(digest) : '';
-    if (timingSafeEqual(digestHex, signature)) {
+    const expectedHex = toHex(expectedHmac);
+    const normalisedSignature = /^[0-9a-fA-F]+$/.test(signature) ? signature.toLowerCase() : signature;
+    if (timingSafeEqual(expectedHex, normalisedSignature)) {
       return true;
     }
 
-    const digestBase64 = digest ? toBase64(digest) : '';
-    if (timingSafeEqual(digestBase64, signature)) {
+    const expectedBase64 = toBase64(expectedHmac);
+    if (timingSafeEqual(expectedBase64, signature)) {
       return true;
     }
   } catch (error) {
@@ -110,9 +118,13 @@ export async function verifyLencoSignature(signature: string, rawBody: string, s
 export async function createLencoSignature(rawBody: string, secret: string): Promise<{ hex: string; base64: string }> {
   const encoder = new TextEncoder();
   const bodyBytes = encoder.encode(rawBody);
-  const secretBytes = encoder.encode(secret);
+  const hashKey = await deriveWebhookHashKey(secret);
+  if (!hashKey) {
+    throw new Error('Unable to derive Lenco webhook hash key');
+  }
 
-  const signature = await computeHmac(secretBytes, bodyBytes);
+  const secretBytes = encoder.encode(hashKey);
+  const signature = await computeHmacSha512(secretBytes, bodyBytes);
   if (!signature) {
     throw new Error('Unable to compute signature in current runtime');
   }
@@ -123,12 +135,12 @@ export async function createLencoSignature(rawBody: string, secret: string): Pro
   };
 }
 
-async function computeHmac(secret: Uint8Array, payload: Uint8Array): Promise<Uint8Array | null> {
+async function computeHmacSha512(secret: Uint8Array, payload: Uint8Array): Promise<Uint8Array | null> {
   if (typeof crypto !== 'undefined' && crypto.subtle) {
     const key = await crypto.subtle.importKey(
       'raw',
       secret,
-      { name: 'HMAC', hash: 'SHA-256' },
+      { name: 'HMAC', hash: 'SHA-512' },
       false,
       ['sign']
     );
@@ -138,7 +150,7 @@ async function computeHmac(secret: Uint8Array, payload: Uint8Array): Promise<Uin
 
   const nodeCrypto = await loadNodeCrypto();
   if (nodeCrypto && typeof Buffer !== 'undefined') {
-    const hmac = nodeCrypto.createHmac('sha256', Buffer.from(secret));
+    const hmac = nodeCrypto.createHmac('sha512', Buffer.from(secret));
     hmac.update(Buffer.from(payload));
     return new Uint8Array(hmac.digest());
   }
@@ -248,11 +260,11 @@ function timingSafeEqualBytes(a: Uint8Array, b: Uint8Array): boolean {
   return result === 0;
 }
 
-function concatUint8Arrays(a: Uint8Array, b: Uint8Array): Uint8Array {
-  const combined = new Uint8Array(a.length + b.length);
-  combined.set(a, 0);
-  combined.set(b, a.length);
-  return combined;
+async function deriveWebhookHashKey(secret: string): Promise<string | null> {
+  const encoder = new TextEncoder();
+  const secretBytes = encoder.encode(secret);
+  const digest = await computeSha256(secretBytes);
+  return digest ? toHex(digest) : null;
 }
 
 let cachedNodeCrypto: (typeof import('crypto')) | null = null;

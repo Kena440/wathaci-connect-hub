@@ -52,6 +52,17 @@ export {
   resourcePurchaseService,
 };
 
+// Transfer recipient services
+import {
+  lencoTransferRecipientService,
+  LencoTransferRecipientServiceType,
+} from './lenco-transfer-recipient-service';
+
+export {
+  lencoTransferRecipientService,
+  LencoTransferRecipientServiceType,
+};
+
 // Enhanced Supabase client and utilities
 export {
   supabase,
