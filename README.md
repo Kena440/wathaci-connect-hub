@@ -26,6 +26,8 @@ For CI/CD integration, see [docs/SUPABASE_CLI_CICD.md](./docs/SUPABASE_CLI_CICD.
 
 Integration steps and deployment details for Lenco payments are covered in the [Payment Integration Guide](docs/PAYMENT_INTEGRATION_GUIDE.md).
 
+- **[Lenco Accounts API Reference](docs/LENCO_ACCOUNTS_API_REFERENCE.md)** – Details for fetching tenant accounts and balances via the `/accounts` endpoint.
+
 ### Webhook Setup
 
 For production deployments, you must configure payment webhooks to receive real-time payment status updates:
