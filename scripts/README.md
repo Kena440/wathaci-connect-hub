@@ -81,6 +81,67 @@ node scripts/test-webhook-integration.js \
   whsec_your_secret_key
 ```
 
+### Smoke Test Scripts
+
+#### `smoke-test-https.sh`
+**Purpose**: Tests HTTPS availability and health endpoint  
+**Usage**: 
+```bash
+npm run smoke:https <domain>
+# or directly
+./scripts/smoke-test-https.sh <domain>
+```
+**Description**: Validates:
+- SSL/TLS certificate validity and expiration
+- HTTPS endpoint availability (200/301/302 responses)
+- Response time performance (< 500ms threshold)
+- Health endpoint response format
+
+**Exit Codes**:
+- `0` - All checks passed
+- `1` - Health check failed
+- `2` - Certificate invalid or expired
+- `3` - Response time too slow
+
+#### `smoke-test-webhook.js`
+**Purpose**: Tests webhook endpoint with properly signed payload  
+**Usage**: 
+```bash
+WEBHOOK_URL=https://... WEBHOOK_SECRET=... npm run smoke:webhook
+# or directly
+node scripts/smoke-test-webhook.js
+```
+**Description**: Validates:
+- Properly signed HMAC-SHA256 webhook payload
+- HTTP 200/202 response from webhook endpoint
+- Webhook processing verification
+
+**Environment Variables**:
+- `WEBHOOK_URL` - Production webhook endpoint URL
+- `WEBHOOK_SECRET` - Webhook signing secret from Lenco
+
+**Exit Codes**:
+- `0` - Test passed
+- `1` - Test failed
+
+#### `setup-smoke-test-monitoring.sh`
+**Purpose**: Interactive script to configure GitHub repository secrets for smoke test monitoring  
+**Usage**: 
+```bash
+./scripts/setup-smoke-test-monitoring.sh
+```
+**Description**: Configures GitHub secrets for automated smoke tests:
+- `WEBHOOK_URL` - Production webhook endpoint
+- `WEBHOOK_SECRET` - Webhook signing secret
+- `SLACK_WEBHOOK_URL` (optional) - Slack notifications
+- `PAGERDUTY_INTEGRATION_KEY` (optional) - PagerDuty alerts
+
+**Prerequisites**:
+- GitHub CLI (gh) installed and authenticated
+- Repository owner/admin permissions
+
+**Documentation**: See [SMOKE_TEST_MONITORING.md](../docs/SMOKE_TEST_MONITORING.md)
+
 ## Common Workflows
 
 ### Initial Setup
