@@ -57,6 +57,16 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    service: 'wathaci-connect-backend'
+  });
+});
+
 const userRoutes = require('./routes/users');
 const logRoutes = require('./routes/logs');
 const paymentRoutes = require('./routes/payment');

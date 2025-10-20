@@ -39,6 +39,46 @@ Key steps:
 3. Configure webhook URL in Lenco dashboard
 4. Test webhook integration using the provided test script
 
+## Production Monitoring
+
+Automated smoke tests continuously monitor production health:
+
+### Smoke Tests
+
+The platform includes automated smoke tests that verify:
+- **HTTPS Health Check** - SSL certificate validity, endpoint availability, and response time
+- **Webhook Integration** - Signed webhook payload delivery and processing
+
+Tests run automatically via GitHub Actions:
+- Every 15 minutes during business hours (8am-8pm UTC)
+- Every hour for continuous coverage
+- On-demand via manual trigger
+
+**Quick Commands:**
+```bash
+# Run HTTPS health check
+npm run smoke:https app.wathaci.com
+
+# Run webhook smoke test
+WEBHOOK_URL=https://... WEBHOOK_SECRET=... npm run smoke:webhook
+
+# Run all smoke tests
+npm run smoke:all
+```
+
+**Documentation:**
+- **[Smoke Test Monitoring Guide](docs/SMOKE_TEST_MONITORING.md)** - Complete monitoring setup, alert integration, and troubleshooting
+- **[Post-Launch Schedule](docs/POST_LAUNCH_SMOKE_TEST_SCHEDULE.md)** - Deployment smoke test procedures
+
+### Alert Integration
+
+Configure monitoring alerts for immediate notification of failures:
+- **Slack** - `#oncall-apps` channel notifications
+- **PagerDuty** - Critical failure escalation
+- **Email** - On-call engineer alerts
+
+See the [Smoke Test Monitoring Guide](docs/SMOKE_TEST_MONITORING.md) for setup instructions.
+
 ## Environment Configuration
 
 Project settings are managed through environment variables. Copy the provided template and update values for your setup:
