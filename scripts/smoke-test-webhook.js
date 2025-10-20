@@ -13,10 +13,15 @@
  * Usage:
  *   node scripts/smoke-test-webhook.js <webhook-url> <webhook-secret>
  * 
+ *   Or using environment variables:
+ *   WEBHOOK_URL=<url> WEBHOOK_SECRET=<secret> node scripts/smoke-test-webhook.js
+ * 
  * Example:
  *   node scripts/smoke-test-webhook.js \
  *     https://nrjcbdrzaxqvomeogptf.supabase.co/functions/v1/payment-webhook \
  *     your-webhook-secret
+ *
+ *   WEBHOOK_URL=https://... WEBHOOK_SECRET=... node scripts/smoke-test-webhook.js
  * 
  * Exit codes:
  *   0 - Test passed
