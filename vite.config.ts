@@ -17,6 +17,9 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"),
+      "lodash.castarray": resolve(__dirname, "./vendor/lodash.castarray"),
+      "lodash.isplainobject": resolve(__dirname, "./vendor/lodash.isplainobject"),
+      "isows": resolve(__dirname, "./vendor/isows"),
     },
   },
   test: {
