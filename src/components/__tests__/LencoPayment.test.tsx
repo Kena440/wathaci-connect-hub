@@ -186,13 +186,14 @@ describe('LencoPayment Component', () => {
       
       await waitFor(() => {
         expect(mockInvoke).toHaveBeenCalledWith('lenco-payment', {
-          body: {
+          body: expect.objectContaining({
             amount: 100,
             paymentMethod: 'mobile_money',
             phoneNumber: '0971234567',
             provider: 'mtn',
-            description: 'Test payment'
-          }
+            description: 'Test payment',
+            channels: ['mobile-money']
+          })
         });
       });
     });

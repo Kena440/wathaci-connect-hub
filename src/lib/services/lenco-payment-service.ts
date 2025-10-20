@@ -93,18 +93,24 @@ export class LencoPaymentService {
 
       // Generate reference
       reference = generatePaymentReference();
-      
+
+      const amount = Number(Number(request.amount).toFixed(2));
+      if (!Number.isFinite(amount)) {
+        throw new Error('Invalid payment amount');
+      }
+
       const paymentRequest: LencoPaymentRequest = {
         ...request,
         reference,
         currency: this.config.currency,
         callback_url: `${getRuntimeOrigin()}/payment/callback`,
+        amount,
       };
 
       // Call payment service via Supabase edge function
       const response = await this.callPaymentService('initialize', {
         reference,
-        amount: Math.round(paymentRequest.amount * 100), // Convert to kobo/ngwee
+        amount: paymentRequest.amount,
         currency: paymentRequest.currency,
         email: paymentRequest.email,
         name: paymentRequest.name,
@@ -113,19 +119,28 @@ export class LencoPaymentService {
         description: paymentRequest.description,
         paymentMethod: paymentRequest.payment_method,
         provider: paymentRequest.provider,
-        metadata: paymentRequest.metadata
+        metadata: paymentRequest.metadata,
+        channels: paymentRequest.payment_method === 'card' ? ['card'] : ['mobile-money'],
       });
-      
+
       if (response.success) {
         // Store payment reference for tracking
         persistPaymentReference(reference);
 
+        const paymentData = response.data || {};
+        const paymentUrl =
+          paymentData.payment_url ||
+          (paymentData as any).authorization_url ||
+          (paymentData as any).checkout_url ||
+          null;
+        const accessCode = paymentData.access_code || (paymentData as any).accessCode;
+
         return {
           success: true,
           data: {
-            payment_url: response.data?.payment_url || response.data?.authorization_url,
+            payment_url: paymentUrl || undefined,
             reference: reference,
-            access_code: response.data?.access_code
+            access_code: accessCode,
           }
         };
       } else {
@@ -154,15 +169,37 @@ export class LencoPaymentService {
         reference
       });
       
+      const paymentData = response.data || {};
+      const rawAmount = (paymentData as any).amount;
+      let amount = 0;
+      if (typeof rawAmount === 'number') {
+        amount = Number(rawAmount.toFixed(2));
+      } else if (typeof rawAmount === 'string') {
+        const parsed = Number.parseFloat(rawAmount.replace(/[^\d.-]/g, ''));
+        amount = Number.isFinite(parsed) ? Number(parsed.toFixed(2)) : 0;
+      }
+
+      const paidAt =
+        (paymentData as any).paid_at ||
+        (paymentData as any).completedAt ||
+        (paymentData as any).completed_at ||
+        undefined;
+
       return {
         reference,
-        status: this.mapLencoStatus(response.data.status),
-        amount: response.data.amount / 100, // Convert from kobo to naira/kwacha
-        currency: response.data.currency,
-        transaction_id: response.data.id,
-        gateway_response: response.data.gateway_response,
-        paid_at: response.data.paid_at,
-        metadata: response.data.metadata
+        status: this.mapLencoStatus((paymentData as any).status),
+        amount,
+        currency: (paymentData as any).currency || this.config.currency,
+        transaction_id:
+          (paymentData as any).id ||
+          (paymentData as any).lencoReference ||
+          (paymentData as any).transaction_id,
+        gateway_response:
+          (paymentData as any).gateway_response ||
+          (paymentData as any).reasonForFailure ||
+          (paymentData as any).message,
+        paid_at: paidAt,
+        metadata: (paymentData as any).metadata || paymentData
       };
 
     } catch (error: any) {
@@ -385,15 +422,29 @@ export class LencoPaymentService {
    * Map Lenco status to our status
    */
   private mapLencoStatus(lencoStatus: string): PaymentStatus['status'] {
-    const statusMap: Record<string, PaymentStatus['status']> = {
-      'success': 'completed',
-      'failed': 'failed',
-      'pending': 'pending',
-      'cancelled': 'cancelled',
-      'abandoned': 'cancelled'
-    };
+    if (!lencoStatus) {
+      return 'failed';
+    }
 
-    return statusMap[lencoStatus.toLowerCase()] || 'failed';
+    const normalized = lencoStatus.toLowerCase();
+
+    if (normalized.includes('success')) {
+      return 'completed';
+    }
+
+    if (['pending', 'processing', 'initiated', 'in_progress', 'confirmation_pending'].includes(normalized)) {
+      return 'pending';
+    }
+
+    if (['failed', 'declined', 'rejected', 'error'].includes(normalized)) {
+      return 'failed';
+    }
+
+    if (['cancelled', 'canceled', 'abandoned', 'expired'].includes(normalized)) {
+      return 'cancelled';
+    }
+
+    return 'failed';
   }
 
   /**

@@ -1,10 +1,5 @@
-/**
- * Supabase Edge Function for Lenco Payment Processing (local development mirror)
- * This file proxies to the shared handler used in supabase/functions/lenco-payment.
- */
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { handleLencoPaymentRequest } from '../../supabase/functions/_shared/lenco-payment-handler.ts';
+import { handleLencoPaymentRequest } from '../_shared/lenco-payment-handler.ts';
 
 type WaitUntil = (promise: Promise<unknown>) => void;
 
@@ -31,3 +26,7 @@ function resolveWaitUntil(pending: Promise<unknown>[]): WaitUntil {
     pending.push(promise);
   };
 }
+
+export const config = {
+  verifyJWT: false,
+};
