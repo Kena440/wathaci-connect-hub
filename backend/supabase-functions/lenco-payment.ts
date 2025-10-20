@@ -138,6 +138,48 @@ serve(async (req) => {
       });
     }
 
+    if (action === 'create_recipient') {
+      const { tillNumber } = requestBody as { tillNumber?: unknown };
+
+      if (typeof tillNumber !== 'string' || !tillNumber.trim()) {
+        throw new Error('Valid till number is required');
+      }
+
+      const lencoApiKey = Deno.env.get('LENCO_SECRET_KEY');
+      if (!lencoApiKey) {
+        throw new Error('Payment gateway not configured');
+      }
+
+      const createResponse = await fetch('https://api.lenco.co/access/v2/transfer-recipients/lenco-merchant', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lencoApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ tillNumber: tillNumber.trim() })
+      });
+
+      const createData = await createResponse.json();
+
+      if (!createResponse.ok || createData?.status === false) {
+        logger.error('Transfer recipient creation failed', createData, {
+          userId,
+        });
+        throw new Error(createData?.message || 'Failed to create transfer recipient');
+      }
+
+      const response: LencoApiResponse = {
+        success: true,
+        message: createData?.message || 'Transfer recipient created successfully',
+        data: createData?.data,
+      };
+
+      return new Response(JSON.stringify(response), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
+
     // Default to payment initialization
     const {
       amount,
