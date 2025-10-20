@@ -3,7 +3,7 @@
  */
 
 import { BaseService } from './base-service';
-import { supabase, withErrorHandling } from '@/lib/supabase-enhanced';
+import { supabase, withErrorHandling, resolveEnvValue } from '@/lib/supabase-enhanced';
 import type {
   User,
   Profile,
@@ -119,6 +119,119 @@ const offlineAccounts: OfflineAccount[] = [
     } satisfies OfflineAccount;
   })(),
 ];
+
+const FALLBACK_EMAIL_REDIRECT_PATH = '/signin';
+
+const APP_BASE_URL_KEYS = [
+  'VITE_APP_BASE_URL',
+  'APP_BASE_URL',
+  'VITE_SITE_URL',
+  'SITE_URL',
+  'VITE_PUBLIC_SITE_URL',
+  'PUBLIC_SITE_URL',
+];
+
+const EMAIL_REDIRECT_URL_KEYS = [
+  'VITE_EMAIL_CONFIRMATION_REDIRECT_URL',
+  'EMAIL_CONFIRMATION_REDIRECT_URL',
+  'VITE_SUPABASE_EMAIL_REDIRECT_URL',
+  'SUPABASE_EMAIL_REDIRECT_URL',
+];
+
+const EMAIL_REDIRECT_PATH_KEYS = [
+  'VITE_EMAIL_CONFIRMATION_REDIRECT_PATH',
+  'EMAIL_CONFIRMATION_REDIRECT_PATH',
+];
+
+const normalizeBaseUrl = (value: string): string | undefined => {
+  try {
+    const url = new URL(value);
+    url.hash = '';
+    url.search = '';
+    return url.toString().replace(/\/$/, '');
+  } catch {
+    return undefined;
+  }
+};
+
+const getRuntimeBaseUrl = (): string | undefined => {
+  for (const key of APP_BASE_URL_KEYS) {
+    const value = resolveEnvValue(key);
+    if (value) {
+      const normalized = normalizeBaseUrl(value);
+      if (normalized) {
+        return normalized;
+      }
+    }
+  }
+
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+
+  if (typeof globalThis !== 'undefined' && (globalThis as any).__APP_URL__) {
+    const runtimeValue = String((globalThis as any).__APP_URL__);
+    const normalized = normalizeBaseUrl(runtimeValue);
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  return undefined;
+};
+
+const buildAbsoluteUrl = (value: string, baseUrl?: string): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  try {
+    return new URL(value).toString();
+  } catch {
+    if (!baseUrl) {
+      return undefined;
+    }
+
+    try {
+      const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+      return new URL(value, normalizedBase).toString();
+    } catch {
+      return undefined;
+    }
+  }
+};
+
+const getEmailRedirectTo = (): string | undefined => {
+  const baseUrl = getRuntimeBaseUrl();
+
+  for (const key of EMAIL_REDIRECT_URL_KEYS) {
+    const value = resolveEnvValue(key);
+    if (value) {
+      const resolved = buildAbsoluteUrl(value, baseUrl);
+      if (resolved) {
+        return resolved;
+      }
+    }
+  }
+
+  const pathCandidate =
+    EMAIL_REDIRECT_PATH_KEYS.map(resolveEnvValue).find((value): value is string => Boolean(value)) ||
+    FALLBACK_EMAIL_REDIRECT_PATH;
+
+  if (pathCandidate) {
+    const resolved = buildAbsoluteUrl(pathCandidate, baseUrl);
+    if (resolved) {
+      return resolved;
+    }
+
+    const fallbackResolved = buildAbsoluteUrl(`/${pathCandidate.replace(/^\/+/g, '')}`, baseUrl);
+    if (fallbackResolved) {
+      return fallbackResolved;
+    }
+  }
+
+  return undefined;
+};
 
 const normaliseEmail = (value: string) => (value || '').trim().toLowerCase();
 
@@ -262,10 +375,22 @@ export class UserService extends BaseService<User> {
     return withErrorHandling(
       async () => {
         try {
+          const emailRedirectTo = getEmailRedirectTo();
+
+          const signUpOptions: { data?: Record<string, any>; emailRedirectTo?: string } = {};
+
+          if (metadata) {
+            signUpOptions.data = metadata;
+          }
+
+          if (emailRedirectTo) {
+            signUpOptions.emailRedirectTo = emailRedirectTo;
+          }
+
           const signUpPayload = {
             email,
             password,
-            ...(metadata ? { options: { data: metadata } } : {}),
+            ...(Object.keys(signUpOptions).length ? { options: signUpOptions } : {}),
           };
 
           const { data, error } = await supabase.auth.signUp(signUpPayload);
