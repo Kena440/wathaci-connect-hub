@@ -1,6 +1,15 @@
 # Lenco API Authentication & Response Reference
 
-This guide summarizes the authentication requirements, request/response format, and error payloads for the Lenco REST API. Use it as a quick reference when integrating payment calls from either the frontend helpers or the backend Express server.
+This guide summarizes how to obtain and secure your API token alongside the authentication requirements, request/response format, and error payloads for the Lenco REST API. Use it as a quick reference when integrating payment calls from either the frontend helpers or the backend Express server.
+
+## Getting Started
+
+- **Request a token** – Reach out to `support@lenco.co` to have an API token provisioned for your workspace. Tokens may also be referred to as an API key or secret key in the Lenco ecosystem.
+- **Transport security** – All API calls must be made over HTTPS; plain HTTP requests are rejected.
+
+## Securing Your API Token
+
+Treat the API token exactly like a password. Never hard-code it or store it in version control. If a token is ever exposed (for example, pushed to a public repository), immediately contact `support@lenco.co` so the key can be revoked and rotated.
 
 ## Authentication Requirements
 
@@ -10,6 +19,8 @@ All requests to the Lenco API must include a valid API token in the `Authorizati
 Authorization: Bearer <API_TOKEN>
 ```
 
+When the header is omitted or the token is invalid, Lenco responds with `401 Unauthorized`.
+
 ### Example: Authenticated cURL Request
 
 ```bash
@@ -18,7 +29,7 @@ curl \
   -H "Authorization: Bearer xo+CAiijrIy9XvZCYyhjrv0fpSAL6CfU8CgA+up1NXqK"
 ```
 
-If the header is missing or the token is invalid, Lenco returns `401 Unauthorized`. Always provision separate tokens for staging and production and rotate them regularly (see [Lenco Keys Rotation Guide](./LENCO_KEYS_ROTATION_GUIDE.md)).
+Always provision separate tokens for staging and production and rotate them regularly (see [Lenco Keys Rotation Guide](./LENCO_KEYS_ROTATION_GUIDE.md)).
 
 ## Request and Response Format
 
