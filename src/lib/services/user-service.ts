@@ -333,6 +333,12 @@ export class ProfileService extends BaseService<Profile> {
     super('profiles');
   }
 
+  private sanitizeProfileData(profileData: Partial<Profile> = {}): Partial<Profile> {
+    return Object.fromEntries(
+      Object.entries(profileData).filter(([, value]) => value !== undefined)
+    ) as Partial<Profile>;
+  }
+
   /**
    * Get profile by user ID with full details
    */
@@ -352,25 +358,56 @@ export class ProfileService extends BaseService<Profile> {
    * Create a new profile
    */
   async createProfile(userId: string, profileData: Partial<Profile>): Promise<DatabaseResponse<Profile>> {
+    const sanitizedProfileData = this.sanitizeProfileData(profileData);
+    const { id: _ignoredId, created_at: _ignoredCreatedAt, updated_at: _ignoredUpdatedAt, ...profileFields } =
+      sanitizedProfileData;
+
+    const timestamp = new Date().toISOString();
     const profile = {
       id: userId,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      profile_completed: false,
-      ...profileData,
+      created_at: timestamp,
+      updated_at: timestamp,
+      profile_completed: profileFields.profile_completed ?? false,
+      ...profileFields,
     };
 
-    return this.create(profile);
+    const creationResult = await withErrorHandling(
+      async () =>
+        supabase
+          .from('profiles')
+          .insert(profile)
+          .select()
+          .single(),
+      'ProfileService.createProfile'
+    );
+
+    if (!creationResult.error) {
+      return creationResult;
+    }
+
+    const errorCode = (creationResult.error as any)?.code;
+    const errorMessage = creationResult.error.message?.toLowerCase?.() ?? '';
+    const isDuplicateError =
+      errorCode === '23505' ||
+      errorMessage.includes('duplicate key') ||
+      errorMessage.includes('already exists');
+
+    if (!isDuplicateError) {
+      return creationResult;
+    }
+
+    return this.updateProfile(userId, profileFields);
   }
 
   /**
    * Update profile data
    */
   async updateProfile(userId: string, profileData: Partial<Profile>): Promise<DatabaseResponse<Profile>> {
-    return this.update(userId, {
-      ...profileData,
-      updated_at: new Date().toISOString(),
-    });
+    const sanitizedProfileData = this.sanitizeProfileData(profileData);
+    const { id: _ignoredId, created_at: _ignoredCreatedAt, updated_at: _ignoredUpdatedAt, ...profileFields } =
+      sanitizedProfileData;
+
+    return this.update(userId, profileFields);
   }
 
   /**
