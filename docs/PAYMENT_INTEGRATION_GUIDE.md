@@ -358,6 +358,14 @@ Subscribe user to a plan with payment processing.
 
 **Returns:** `Promise<SubscriptionResult>`
 
+### Transfer Recipient API
+
+Use the dedicated Lenco endpoint to register payout recipients before sending funds.
+
+- **Endpoint:** `POST /transfer-recipients/bank-account`
+- **Documentation:** [Lenco Transfer Recipient: Bank Account Endpoint](./LENCO_TRANSFER_RECIPIENTS_REFERENCE.md)
+- **Workflow Tip:** Store the returned recipient `id` and reuse it for subsequent transfers instead of resubmitting raw account numbers.
+
 ##### `verifySubscriptionPayment(paymentReference)`
 
 Verify and activate subscription payment.
