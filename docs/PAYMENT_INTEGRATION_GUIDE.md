@@ -268,6 +268,9 @@ switch (paymentStatus.status) {
    - Confirm fee calculations and validation warnings.
    - Validate the real-time status feed transitions from `pending → completed`
      when a webhook is received.
+   - Reference the sandbox account matrix in
+     [`docs/PAYMENT_SANDBOX_TEST_DATA.md`](./PAYMENT_SANDBOX_TEST_DATA.md) to
+     cover both success and failure scenarios.
 4. **Webhook round-trip** – complete a payment in the sandbox and confirm the
    status tracker updates automatically via the deployed `lenco-webhook` edge
    function. Verify the event is captured in the `webhook_logs` table.
