@@ -88,3 +88,132 @@ test('POST /api/logs stores sanitized log entries', async () => {
   await new Promise((resolve) => server.close(resolve));
 });
 
+test('POST /resolve/lenco-merchant proxies lookup to Lenco API', async () => {
+  const server = app.listen(0);
+  const { port } = server.address();
+
+  const originalFetch = global.fetch.bind(global);
+  const previousSecret = process.env.LENCO_SECRET_KEY;
+  const previousApiUrl = process.env.LENCO_API_URL;
+
+  process.env.LENCO_SECRET_KEY = 'sk_live_example1234567890';
+  process.env.LENCO_API_URL = 'https://mock-lenco.test';
+
+  global.fetch = async (url, options) => {
+    if (typeof url === 'string' && url.startsWith('https://mock-lenco.test/resolve/lenco-merchant')) {
+      assert.strictEqual(options?.method, 'POST');
+      assert.strictEqual(options?.headers?.Authorization, 'Bearer sk_live_example1234567890');
+      const payload = JSON.parse(options?.body);
+      assert.deepStrictEqual(payload, { tillNumber: '123456' });
+
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          status: true,
+          message: 'Merchant found',
+          data: {
+            type: 'lenco-merchant',
+            accountName: 'Test Shop',
+            tillNumber: '123456',
+          },
+        }),
+      };
+    }
+
+    return originalFetch(url, options);
+  };
+
+  try {
+    const res = await fetch(`http://localhost:${port}/resolve/lenco-merchant`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tillNumber: ' 123456 ' }),
+    });
+
+    assert.strictEqual(res.status, 200);
+    const body = await res.json();
+    assert.deepStrictEqual(body, {
+      status: true,
+      message: 'Merchant found',
+      data: {
+        type: 'lenco-merchant',
+        accountName: 'Test Shop',
+        tillNumber: '123456',
+      },
+    });
+  } finally {
+    global.fetch = originalFetch;
+    if (previousSecret === undefined) {
+      delete process.env.LENCO_SECRET_KEY;
+    } else {
+      process.env.LENCO_SECRET_KEY = previousSecret;
+    }
+    if (previousApiUrl === undefined) {
+      delete process.env.LENCO_API_URL;
+    } else {
+      process.env.LENCO_API_URL = previousApiUrl;
+    }
+
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('POST /resolve/lenco-merchant surfaces Lenco validation errors', async () => {
+  const server = app.listen(0);
+  const { port } = server.address();
+
+  const originalFetch = global.fetch.bind(global);
+  const previousSecret = process.env.LENCO_SECRET_KEY;
+  const previousApiUrl = process.env.LENCO_API_URL;
+
+  process.env.LENCO_SECRET_KEY = 'sk_live_example1234567890';
+  process.env.LENCO_API_URL = 'https://mock-lenco.test';
+
+  global.fetch = async (url, options) => {
+    if (typeof url === 'string' && url.startsWith('https://mock-lenco.test/resolve/lenco-merchant')) {
+      return {
+        ok: false,
+        status: 400,
+        json: async () => ({
+          status: false,
+          message: 'Till number is invalid',
+          data: null,
+        }),
+      };
+    }
+
+    return originalFetch(url, options);
+  };
+
+  try {
+    const res = await fetch(`http://localhost:${port}/resolve/lenco-merchant`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tillNumber: 'invalid' }),
+    });
+
+    assert.strictEqual(res.status, 400);
+    const body = await res.json();
+    assert.deepStrictEqual(body, {
+      status: false,
+      message: 'Till number is invalid',
+      data: null,
+    });
+  } finally {
+    global.fetch = originalFetch;
+    if (previousSecret === undefined) {
+      delete process.env.LENCO_SECRET_KEY;
+    } else {
+      process.env.LENCO_SECRET_KEY = previousSecret;
+    }
+    if (previousApiUrl === undefined) {
+      delete process.env.LENCO_API_URL;
+    } else {
+      process.env.LENCO_API_URL = previousApiUrl;
+    }
+
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
