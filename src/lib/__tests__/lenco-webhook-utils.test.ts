@@ -27,4 +27,9 @@ describe('lenco webhook signature utilities', () => {
   it('rejects an invalid signature', async () => {
     await expect(verifyLencoSignature('invalid', payload, secret)).resolves.toBe(false);
   });
+
+  it('rejects a signature signed with a different secret', async () => {
+    const { hex } = await createLencoSignature(payload, secret);
+    await expect(verifyLencoSignature(hex, payload, `${secret}-other`)).resolves.toBe(false);
+  });
 });

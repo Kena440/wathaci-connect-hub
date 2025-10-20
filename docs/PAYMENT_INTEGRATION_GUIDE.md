@@ -333,6 +333,15 @@ Verify payment status.
 
 **Returns:** `Promise<PaymentStatus>`
 
+##### `createMerchantTransferRecipient(tillNumber)`
+
+Create a transfer recipient for a Lenco merchant till.
+
+**Parameters:**
+- `tillNumber` (string): Merchant till number provided by Lenco
+
+**Returns:** `Promise<LencoTransferRecipientResponse>` containing the recipient `id`, `currency`, `country`, and merchant details
+
 ##### `calculatePaymentTotal(amount)`
 
 Calculate payment breakdown including fees.

@@ -45,6 +45,27 @@ const persistPaymentReference = (reference: string) => {
   }
 };
 
+export interface LencoTransferRecipientDetails {
+  type: 'lenco-merchant';
+  accountName: string;
+  tillNumber: string;
+}
+
+export interface LencoTransferRecipient {
+  id: string;
+  currency: string;
+  type: string;
+  country: string;
+  details: LencoTransferRecipientDetails;
+}
+
+export interface LencoTransferRecipientResponse {
+  success: boolean;
+  message?: string;
+  data?: LencoTransferRecipient;
+  error?: string;
+}
+
 export class LencoPaymentService {
   private config: PaymentConfig;
   private isConfigValid: boolean;
@@ -153,7 +174,7 @@ export class LencoPaymentService {
       const response = await this.callPaymentService('verify', {
         reference
       });
-      
+
       return {
         reference,
         status: this.mapLencoStatus(response.data.status),
@@ -174,6 +195,39 @@ export class LencoPaymentService {
         status: 'failed',
         amount: 0,
         currency: this.config.currency
+      };
+    }
+  }
+
+  /**
+   * Create a Lenco merchant transfer recipient
+   */
+  async createMerchantTransferRecipient(tillNumber: string): Promise<LencoTransferRecipientResponse> {
+    try {
+      this.ensureConfig();
+
+      if (typeof tillNumber !== 'string' || !tillNumber.trim()) {
+        throw new Error('A valid till number is required to create a transfer recipient.');
+      }
+
+      const sanitizedTillNumber = tillNumber.trim();
+
+      const response = await this.callPaymentService('create_recipient', {
+        tillNumber: sanitizedTillNumber
+      });
+
+      return {
+        success: true,
+        message: response.message || 'Transfer recipient created successfully',
+        data: response.data as LencoTransferRecipient
+      };
+    } catch (error: any) {
+      logger.error('Transfer recipient creation error', error, {
+        tillNumber
+      });
+      return {
+        success: false,
+        error: error?.message || 'Failed to create transfer recipient'
       };
     }
   }
@@ -374,6 +428,24 @@ export class LencoPaymentService {
           gateway_response: 'Payment completed',
           paid_at: new Date().toISOString(),
           metadata: data?.metadata || {}
+        }
+      };
+    }
+
+    if (action === 'create_recipient') {
+      return {
+        success: true,
+        message: 'Transfer recipient created successfully',
+        data: {
+          id: 'mock-recipient',
+          currency: this.config.currency,
+          type: 'lenco-merchant',
+          country: this.config.country,
+          details: {
+            type: 'lenco-merchant',
+            accountName: 'Mock Merchant',
+            tillNumber: data?.tillNumber || '1234567890'
+          }
         }
       };
     }
