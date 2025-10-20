@@ -369,6 +369,29 @@ function createMockSupabaseClient() {
           }
         }
 
+        if (name === 'lenco-transfer-recipient') {
+          const walletNumber = typeof body.walletNumber === 'string' ? body.walletNumber : '0000';
+
+          return {
+            data: {
+              status: true,
+              message: 'Transfer recipient created successfully',
+              data: {
+                id: 'mock-transfer-recipient',
+                currency: 'ZMW',
+                type: 'wallet',
+                country: 'ZM',
+                details: {
+                  type: 'lenco-money',
+                  accountName: 'Mock Wallet Account',
+                  walletNumber,
+                },
+              },
+            },
+            error: null,
+          };
+        }
+
         return { data: { success: true, data: {} }, error: null };
       }
     },

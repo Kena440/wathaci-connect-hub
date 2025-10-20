@@ -21,8 +21,13 @@ module.exports = {
       tsconfig: {
         jsx: 'react-jsx',
         module: 'esnext',
+        moduleResolution: 'node',
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
+        baseUrl: '.',
+        paths: {
+          '@/*': ['src/*'],
+        },
         typeRoots: ['node_modules/@types', 'src/@types'],
         types: ['jest', 'jest-axe', '@testing-library/jest-dom', 'node'],
       }
