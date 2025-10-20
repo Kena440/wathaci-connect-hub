@@ -76,6 +76,29 @@ credentials are still present.
 For a complete pre-launch overview—including database provisioning, Supabase Edge Function deployment, webhook validation, and
 regression testing—consult the [Production Readiness Checklist](docs/PRODUCTION_READINESS_CHECKLIST.md).
 
+### Security Verification
+
+Before deploying to production, complete the comprehensive security verification:
+
+```bash
+# Run automated security checks
+./scripts/run-security-verification.sh
+
+# Or run individual checks
+./scripts/check-tls-certificate.sh your-domain.vercel.app
+./scripts/verify-security-config.sh https://your-domain.vercel.app
+./scripts/verify-rate-limiting.sh https://your-backend.com/api/health
+./scripts/verify-webhook-security.sh https://xxx.supabase.co/functions/v1/lenco-webhook "your-secret"
+```
+
+See the [Deployment Security Checklist](docs/DEPLOYMENT_SECURITY_CHECKLIST.md) for complete verification steps including:
+- TLS certificate validation and monitoring
+- Rate limiting verification and abuse detection
+- Webhook signature validation and secret rotation
+- Payment anomaly monitoring and fraud detection
+
+Configure monitoring and alerting using the [Monitoring and Alerting Guide](docs/MONITORING_AND_ALERTING.md).
+
 ## Testing
 
 Lighthouse and automated accessibility checks are available via npm scripts.
