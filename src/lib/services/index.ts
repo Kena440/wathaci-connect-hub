@@ -7,6 +7,17 @@
 // Base service class
 export { BaseService } from './base-service';
 
+// Lenco payment service
+export {
+  LencoPaymentService,
+  lencoPaymentService
+} from './lenco-payment-service';
+
+export type {
+  MobileMoneyResolutionData,
+  MobileMoneyResolutionResponse
+} from './lenco-payment-service';
+
 // User and Profile services
 import {
   UserService,

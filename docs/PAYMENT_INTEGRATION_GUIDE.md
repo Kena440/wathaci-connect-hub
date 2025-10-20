@@ -311,6 +311,17 @@ Process a mobile money payment.
 
 **Returns:** `Promise<LencoPaymentResponse>`
 
+##### `resolveMobileMoneyAccount(request)`
+
+Resolve mobile money account information before triggering a charge.
+
+**Parameters:**
+- `phone` (string): Mobile number to resolve. Supports `0` prefixed or `+260` formats
+- `operator` (string): `mtn`, `airtel`, or `zamtel`
+- `country` (string, optional): Defaults to configured payment country (`zm`)
+
+**Returns:** `Promise<MobileMoneyResolutionResponse>` containing `accountName`, `phone`, `operator`, and `country` when successful.
+
 ##### `processCardPayment(request)`
 
 Process a card payment.

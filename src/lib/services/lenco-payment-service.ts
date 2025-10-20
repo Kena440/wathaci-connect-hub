@@ -21,6 +21,21 @@ import { supabase } from '../supabase-enhanced';
 
 const FALLBACK_APP_ORIGIN = 'https://localhost.test';
 
+export interface MobileMoneyResolutionData {
+  type: 'mobile-money';
+  accountName: string;
+  phone: string;
+  operator: string;
+  country: string;
+}
+
+export interface MobileMoneyResolutionResponse {
+  success: boolean;
+  data?: MobileMoneyResolutionData;
+  message?: string;
+  error?: string;
+}
+
 const getRuntimeOrigin = (): string => {
   if (typeof window !== 'undefined' && window.location?.origin) {
     return window.location.origin;
@@ -219,6 +234,57 @@ export class LencoPaymentService {
   }
 
   /**
+   * Resolve mobile money account details before initiating a payment
+   */
+  async resolveMobileMoneyAccount(request: {
+    phone: string;
+    operator: 'mtn' | 'airtel' | 'zamtel';
+    country?: string;
+  }): Promise<MobileMoneyResolutionResponse> {
+    if (!request.operator) {
+      return {
+        success: false,
+        error: 'Mobile money operator is required'
+      };
+    }
+
+    this.ensureConfig();
+
+    const targetCountry = (request.country || this.config.country || 'ZM').toUpperCase();
+
+    if (!request.phone || !validatePhoneNumber(request.phone, targetCountry)) {
+      return {
+        success: false,
+        error: 'Valid mobile money phone number is required'
+      };
+    }
+
+    try {
+      const response = await this.callPaymentService('resolve-mobile-money', {
+        phone: request.phone.replace(/\s+/g, ''),
+        operator: request.operator.toLowerCase(),
+        country: targetCountry.toLowerCase()
+      });
+
+      return {
+        success: true,
+        data: response.data,
+        message: response.message
+      };
+    } catch (error: any) {
+      logger.error('Mobile money resolution error', error, {
+        phone: request.phone,
+        operator: request.operator
+      });
+
+      return {
+        success: false,
+        error: error?.message || 'Unable to resolve mobile money account'
+      };
+    }
+  }
+
+  /**
    * Process card payment
    */
   async processCardPayment(request: {
@@ -374,6 +440,19 @@ export class LencoPaymentService {
           gateway_response: 'Payment completed',
           paid_at: new Date().toISOString(),
           metadata: data?.metadata || {}
+        }
+      };
+    }
+
+    if (action === 'resolve-mobile-money') {
+      return {
+        success: true,
+        data: {
+          type: 'mobile-money',
+          accountName: 'Test Mobile Money User',
+          phone: data?.phone || '0970000000',
+          operator: data?.operator || 'mtn',
+          country: data?.country || 'zm'
         }
       };
     }

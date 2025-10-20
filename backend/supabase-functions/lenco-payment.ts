@@ -69,6 +69,70 @@ serve(async (req) => {
       ? requestBody.action.toLowerCase()
       : 'initialize';
 
+    if (action === 'resolve_mobile_money' || action === 'resolve-mobile-money') {
+      const { phone, operator, country } = requestBody as {
+        phone?: string;
+        operator?: string;
+        country?: string;
+      };
+
+      if (!phone) {
+        throw new Error('Mobile money phone number is required');
+      }
+
+      if (!operator) {
+        throw new Error('Mobile money operator is required');
+      }
+
+      const supportedOperators = ['mtn', 'airtel', 'zamtel'];
+      const normalizedOperator = operator.toLowerCase();
+      if (!supportedOperators.includes(normalizedOperator)) {
+        throw new Error('Unsupported mobile money operator');
+      }
+
+      const lencoApiKey = Deno.env.get('LENCO_SECRET_KEY');
+      if (!lencoApiKey) {
+        throw new Error('Payment gateway not configured');
+      }
+
+      const payload = {
+        phone: typeof phone === 'string' ? phone.replace(/\s+/g, '') : phone,
+        operator: normalizedOperator,
+        country: (country || 'zm').toLowerCase(),
+      };
+
+      const resolveResponse = await fetch('https://api.lenco.co/access/v2/resolve/mobile-money', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lencoApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const resolveData = await resolveResponse.json();
+
+      if (!resolveResponse.ok || resolveData?.status === false) {
+        logger.error('Mobile money resolution failed', resolveData, {
+          userId,
+          phone: payload.phone,
+          operator: payload.operator,
+        });
+        throw new Error(resolveData?.message || 'Mobile money resolution failed');
+      }
+
+      const response: LencoApiResponse = {
+        success: true,
+        data: resolveData.data,
+        message: resolveData.message,
+      };
+
+      return new Response(JSON.stringify(response), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
+
     if (action === 'verify') {
       const { reference: verifyReference } = requestBody;
 
