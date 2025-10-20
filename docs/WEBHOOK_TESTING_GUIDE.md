@@ -34,11 +34,18 @@ Expected output should show `lenco-webhook` with status `ACTIVE`.
 ### 3. Test Webhook with Script
 
 ```bash
-# Replace with your actual values
+# Replace with your actual values:
+# - PROJECT_REF: Found in your Supabase dashboard URL (e.g., nrjcbdrzaxqvomeogptf)
+# - WEBHOOK_SECRET: The secret you set during key rotation
 node scripts/test-webhook-integration.js \
   https://YOUR_PROJECT_REF.supabase.co/functions/v1/lenco-webhook \
   YOUR_WEBHOOK_SECRET
 ```
+
+**Where to find these values**:
+- **PROJECT_REF**: Your Supabase project reference ID from the dashboard URL
+- **WEBHOOK_SECRET**: The webhook secret you entered during `npm run keys:rotate`
+- Or retrieve from Supabase: `supabase secrets list` (will show as `LENCO_WEBHOOK_SECRET`)
 
 Expected result: All tests pass with ✓ marks.
 
@@ -250,12 +257,22 @@ Send the same webhook payload twice:
 Send webhook with old timestamp (> 5 minutes old):
 
 ```bash
-# Create payload with old timestamp
-OLD_TIMESTAMP=$(date -u -d '10 minutes ago' +%Y-%m-%dT%H:%M:%S.000Z)
+# Note: This example uses GNU date. On macOS, install coreutils:
+# brew install coreutils
+# Then use: gdate instead of date
+
+# Create payload with old timestamp (GNU/Linux)
+OLD_TIMESTAMP=$(date -u -d '10 minutes ago' +%Y-%m-%dT%H:%M:%S.000Z 2>/dev/null || \
+                gdate -u -d '10 minutes ago' +%Y-%m-%dT%H:%M:%S.000Z 2>/dev/null || \
+                echo "2020-01-01T00:00:00.000Z")
 # ... generate payload with old created_at
 ```
 
 Expected: Returns 400 with "Stale webhook event" error.
+
+**Note**: The `date -d` command is GNU-specific. On macOS, either:
+- Install GNU coreutils: `brew install coreutils` and use `gdate`
+- Or manually specify an old timestamp like `2020-01-01T00:00:00.000Z`
 
 ### Test Large Payloads
 
