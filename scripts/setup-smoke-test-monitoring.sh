@@ -75,7 +75,7 @@ set_secret() {
     
     echo ""
     read -s -p "Enter value (hidden): " secret_value
-    echo ""
+    echo ""  # Add newline after hidden input
     
     if [ -z "$secret_value" ]; then
         if [ "$is_optional" = "true" ]; then
@@ -87,10 +87,8 @@ set_secret() {
         fi
     fi
     
-    # Set the secret
-    echo "$secret_value" | gh secret set "$secret_name" --repo "$REPO" 2>/dev/null
-    
-    if [ $? -eq 0 ]; then
+    # Set the secret using --body flag to avoid exposing value in process list
+    if gh secret set "$secret_name" --repo "$REPO" --body "$secret_value" 2>/dev/null; then
         echo "✅ Set $secret_name"
     else
         echo "❌ Failed to set $secret_name"
