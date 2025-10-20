@@ -56,7 +56,7 @@ Key steps:
 2. **Rotate to live Lenco keys** (via `npm run keys:rotate`)
 3. Deploy the `lenco-webhook` edge function to Supabase
 4. Configure webhook URL in Lenco dashboard
-5. Test webhook integration using the provided test script
+5. Test webhook integration using the provided test script (see [Webhook Testing Guide](docs/WEBHOOK_TESTING_GUIDE.md))
 
 ## Environment Configuration
 

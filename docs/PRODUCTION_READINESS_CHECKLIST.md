@@ -45,7 +45,8 @@ This checklist consolidates the remaining action items required before WATHACI C
 
 - [ ] **Trigger a manual webhook event from the Lenco dashboard** and ensure the Supabase Edge Function returns `200` while recording an entry in the `webhook_logs` table.
   - **Webhook URL**: `https://YOUR_PROJECT_REF.supabase.co/functions/v1/lenco-webhook`
-  - **Testing Guide**: See [Webhook Testing](./LENCO_KEYS_ROTATION_GUIDE.md#step-7-test-webhook-integration)
+  - **Testing Guide**: See [Webhook Testing Guide](./WEBHOOK_TESTING_GUIDE.md) for comprehensive testing procedures
+  - **Quick Test**: Run `node scripts/test-webhook-integration.js <webhook-url> <webhook-secret>`
   - **Verification Query**:
     ```sql
     SELECT id, event_type, reference, status, error_message, processed_at
