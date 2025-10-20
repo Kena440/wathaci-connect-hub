@@ -342,6 +342,41 @@ Calculate payment breakdown including fees.
 
 **Returns:** Payment breakdown object
 
+### REST API Endpoints
+
+#### `GET /accounts/:id/balance`
+
+Retrieve the current balance of a specific Lenco bank account.
+
+- **Base URL:** `https://api.lenco.co/access/v2/accounts/{id}/balance`
+- **Path Parameters:**
+  - `id` (`string`, required): 36-character account UUID provided in the Lenco dashboard.
+
+**Successful Response (200):**
+
+```json
+{
+  "status": true,
+  "message": "Account balance retrieved successfully",
+  "data": {
+    "availableBalance": "15234.50",
+    "ledgerBalance": "16000.00",
+    "currency": "NGN"
+  }
+}
+```
+
+**Error Response (400):**
+
+```json
+{
+  "status": false,
+  "message": "Invalid account identifier"
+}
+```
+
+> ℹ️ Ensure the request is authenticated with your Lenco secret key and that the account ID matches the UUID shown in the dashboard. The API returns monetary values as strings to preserve precision.
+
 ### SubscriptionService
 
 #### Methods
