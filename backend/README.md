@@ -25,6 +25,9 @@ npm --prefix backend test
   to the server console for monitoring, and forwards them to the `frontend_logs`
   Supabase table when configured.
 - `GET /api/logs` – Returns the most recent 50 log entries for operational diagnostics.
+- `POST /resolve/lenco-money` – Validates a wallet number and proxies the request to Lenco's
+  `/resolve/lenco-money` endpoint using the configured `LENCO_SECRET_KEY`, returning the gateway
+  response for clients that need to confirm wallet ownership.
 
 ## Supabase integration
 
