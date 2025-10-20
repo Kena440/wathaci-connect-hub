@@ -367,6 +367,74 @@ Verify and activate subscription payment.
 
 **Returns:** `Promise<VerificationResult>`
 
+### Transfer Recipients API
+
+#### `POST /transfer-recipients/mobile-money`
+
+Create a mobile money transfer recipient that can receive payouts through the
+Lenco Access API.
+
+**Endpoint**: `POST https://api.lenco.co/access/v2/transfer-recipients/mobile-money`
+
+**Headers**
+
+- `Authorization: Bearer <LENCO_SECRET_KEY>`
+- `Content-Type: application/json`
+
+**Request body**
+
+```json
+{
+  "phone": "0978000000",
+  "operator": "mtn",
+  "country": "zm"
+}
+```
+
+- `phone` (string, required): Recipient mobile number in MSISDN format.
+- `operator` (string, required): Mobile money operator. Allowed values:
+  `airtel`, `mtn`, or `zamtel`.
+- `country` (string, optional): ISO country code. Lenco currently supports only
+  `zm` for Zambia.
+
+**Sample request**
+
+```bash
+curl -X POST "https://api.lenco.co/access/v2/transfer-recipients/mobile-money" \
+  -H "Authorization: Bearer $LENCO_SECRET_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "phone": "0978123456",
+        "operator": "airtel",
+        "country": "zm"
+      }'
+```
+
+**Successful response**
+
+```json
+{
+  "status": true,
+  "message": "Transfer recipient created successfully",
+  "data": {
+    "id": "recp_1234567890",
+    "currency": "ZMW",
+    "type": "transfer-recipient",
+    "country": "zm",
+    "details": {
+      "type": "mobile-money",
+      "accountName": "Chanda Mwila",
+      "phone": "0978123456",
+      "operator": "airtel"
+    }
+  }
+}
+```
+
+- **200 OK** – Recipient created successfully (sample response above).
+- **400 Bad Request** – Validation error. Ensure the phone and operator values
+  are valid and retry.
+
 ## Security Guidelines
 
 ### 1. API Key Security
