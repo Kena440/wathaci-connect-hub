@@ -1,7 +1,5 @@
-const LIVE_PUBLIC_KEY_PREFIX = 'pk_live_';
-const TEST_PUBLIC_KEY_PREFIX = 'pk_test_';
-const LIVE_SECRET_KEY_PREFIX = 'sk_live_';
-const TEST_SECRET_KEY_PREFIX = 'sk_test_';
+const LIVE_PUBLIC_KEY_PATTERNS = [/^pk_live_[a-z0-9]{10,}$/i, /^pub-[a-z0-9]{32,}$/i];
+const LIVE_SECRET_KEY_PATTERNS = [/^sk_live_[a-z0-9]{10,}$/i, /^sec-[a-z0-9]{32,}$/i, /^[a-f0-9]{64}$/i];
 
 const ENV_KEYS = {
   publicKey: ['VITE_LENCO_PUBLIC_KEY', 'LENCO_PUBLIC_KEY'],
@@ -40,6 +38,36 @@ const buildIssue = (severity, message) => ({ severity, message });
 
 const cached = { logged: false };
 
+const matchesAnyPattern = (value, patterns) => patterns.some((pattern) => pattern.test(value));
+
+const looksLikeLivePublicKey = (value) => matchesAnyPattern(value, LIVE_PUBLIC_KEY_PATTERNS);
+
+const looksLikeTestPublicKey = (value) => {
+  const lowered = value.toLowerCase();
+  return lowered.startsWith('pk_test_') || lowered.includes('test_') || lowered.includes('test-');
+};
+
+const looksLikeLiveSecretKey = (value) => matchesAnyPattern(value, LIVE_SECRET_KEY_PATTERNS);
+
+const looksLikeTestSecretKey = (value) => {
+  const lowered = value.toLowerCase();
+  return lowered.startsWith('sk_test_') || lowered.includes('test_') || lowered.includes('test-');
+};
+
+const looksLikeWebhookSecret = (value) => {
+  return /^[a-f0-9]{32,}$/i.test(value) || /^whsec_[a-z0-9]{16,}$/i.test(value);
+};
+
+const hasPlaceholderValue = (value = '') => {
+  const lowered = value.toLowerCase();
+  return (
+    lowered.includes('your-lenco') ||
+    lowered.includes('placeholder') ||
+    lowered.includes('dummy') ||
+    lowered.includes('changeme')
+  );
+};
+
 const getPaymentReadiness = () => {
   const errors = [];
   const warnings = [];
@@ -72,35 +100,67 @@ const getPaymentReadiness = () => {
 
   if (!publicKeyEntry.value) {
     errors.push(buildIssue('error', 'Lenco public key is not configured. Set VITE_LENCO_PUBLIC_KEY with your live key.'));
-  } else if (isProduction && publicKeyEntry.value.startsWith(TEST_PUBLIC_KEY_PREFIX)) {
+  } else if (hasPlaceholderValue(publicKeyEntry.value)) {
     errors.push(
       buildIssue(
         'error',
-        'Lenco public key is using a test key (pk_test_). Replace it with the live pk_live_ key before going live.'
+        'Lenco public key contains placeholder text. Replace it with the publishable key from the Lenco dashboard.'
       )
     );
-  } else if (!publicKeyEntry.value.startsWith(LIVE_PUBLIC_KEY_PREFIX)) {
+  } else if (isProduction && looksLikeTestPublicKey(publicKeyEntry.value)) {
+    errors.push(
+      buildIssue(
+        'error',
+        'Lenco public key is using a test key (pk_test_/pub-test). Replace it with the live publishable key from the Lenco dashboard.'
+      )
+    );
+  } else if (!looksLikeLivePublicKey(publicKeyEntry.value)) {
     warnings.push(
       buildIssue(
         'warning',
-        'Lenco public key does not use the expected live prefix (pk_live_). Double-check that production keys are configured.'
+        'Lenco public key does not match the expected live format (pub-/pk_live_). Double-check that production keys are configured.'
       )
     );
   }
 
   if (!secretKeyEntry.value) {
     errors.push(buildIssue('error', 'LENCO_SECRET_KEY is missing. Configure the live sk_live_ secret key for server-side calls.'));
-  } else if (isProduction && secretKeyEntry.value.startsWith(TEST_SECRET_KEY_PREFIX)) {
+  } else if (hasPlaceholderValue(secretKeyEntry.value)) {
     errors.push(
       buildIssue(
         'error',
-        'LENCO_SECRET_KEY is using a test key (sk_test_). Replace it with the live sk_live_ key for production payments.'
+        'LENCO_SECRET_KEY contains placeholder text. Replace it with the live secret key from the Lenco dashboard.'
+      )
+    );
+  } else if (isProduction && looksLikeTestSecretKey(secretKeyEntry.value)) {
+    errors.push(
+      buildIssue(
+        'error',
+        'LENCO_SECRET_KEY is using a test key (sk_test_/sec-test). Replace it with the live secret key from the Lenco dashboard.'
+      )
+    );
+  } else if (!looksLikeLiveSecretKey(secretKeyEntry.value)) {
+    warnings.push(
+      buildIssue(
+        'warning',
+        'LENCO_SECRET_KEY does not appear to be a live key (sec-/sk_live_/64-char hex). Verify the configured value.'
       )
     );
   }
 
   if (!webhookSecretEntry.value) {
     errors.push(buildIssue('error', 'LENCO_WEBHOOK_SECRET is not set. Configure the webhook secret from the Lenco dashboard.'));
+  } else if (hasPlaceholderValue(webhookSecretEntry.value)) {
+    errors.push(
+      buildIssue(
+        'error',
+        'LENCO_WEBHOOK_SECRET contains placeholder text. Replace it with the webhook signing secret from the Lenco dashboard.'
+      )
+    );
+  } else if (!looksLikeWebhookSecret(webhookSecretEntry.value)) {
+    warnings.push(
+      buildIssue('warning', 'LENCO_WEBHOOK_SECRET format is unexpected. Confirm the live webhook signing secret is configured.')
+    );
   }
 
   if (!webhookUrlEntry.value) {

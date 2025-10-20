@@ -134,6 +134,10 @@ const hasPlaceholder = (value = '') => {
     lowered.includes('your-project') ||
     lowered.includes('your-service-role') ||
     lowered.includes('your-anon-key') ||
+    lowered.includes('your-lenco') ||
+    lowered.includes('lenco-public-key') ||
+    lowered.includes('lenco-secret-key') ||
+    lowered.includes('lenco-webhook-secret') ||
     lowered.includes('example.com') ||
     lowered.includes('dummy') ||
     lowered.includes('test_') ||
