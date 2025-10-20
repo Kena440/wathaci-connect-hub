@@ -32,12 +32,31 @@ For production deployments, you must configure payment webhooks to receive real-
 
 - **[Webhook Setup Guide](docs/WEBHOOK_SETUP_GUIDE.md)** - Complete webhook configuration, testing, and troubleshooting
 - **[Live Keys Update Required](docs/LIVE_KEYS_UPDATE_REQUIRED.md)** - Instructions for updating to production keys
+- **[Lenco Keys Rotation Guide](docs/LENCO_KEYS_ROTATION_GUIDE.md)** - Comprehensive guide for rotating API keys
+
+#### Quick Key Rotation
+
+Use the automated helper script to rotate from test to production keys:
+
+```bash
+npm run keys:rotate
+```
+
+This interactive script will:
+- Guide you through retrieving live keys from Lenco dashboard
+- Update both frontend and backend `.env` files
+- Push secrets to Supabase Edge Functions
+- Validate the configuration
+- Provide testing instructions
+
+For manual rotation or troubleshooting, see the [Lenco Keys Rotation Guide](docs/LENCO_KEYS_ROTATION_GUIDE.md).
 
 Key steps:
 1. Deploy the `webhook_logs` table schema (via `npm run supabase:provision`)
-2. Deploy the `lenco-webhook` edge function to Supabase
-3. Configure webhook URL in Lenco dashboard
-4. Test webhook integration using the provided test script
+2. **Rotate to live Lenco keys** (via `npm run keys:rotate`)
+3. Deploy the `lenco-webhook` edge function to Supabase
+4. Configure webhook URL in Lenco dashboard
+5. Test webhook integration using the provided test script
 
 ## Environment Configuration
 
