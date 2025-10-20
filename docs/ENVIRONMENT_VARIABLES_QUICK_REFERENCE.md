@@ -26,8 +26,7 @@ npm run env:check
 |----------|-------------|---------|-------------|
 | `VITE_SUPABASE_URL` | Supabase project URL | `https://xxx.supabase.co` | All |
 | `VITE_SUPABASE_KEY` | Supabase anon/public key | `eyJhbGci...` | All |
-| `VITE_LENCO_PUBLIC_KEY` | Lenco publishable key | `pub-...` or `pk_live_...` | Production |
-| `VITE_LENCO_PUBLIC_KEY` | Lenco test key | `pk_test_...` | Development |
+| `VITE_LENCO_PUBLIC_KEY` | Lenco publishable key (Production: `pub-...` or `pk_live_...`, Development: `pk_test_...`) | `pub-abc123...` or `pk_live_xyz789` | All |
 | `VITE_LENCO_API_URL` | Lenco API base URL | `https://api.lenco.co/access/v2` | All |
 | `VITE_PAYMENT_CURRENCY` | ISO currency code | `ZMW` | All |
 | `VITE_PAYMENT_COUNTRY` | ISO country code | `ZM` | All |
@@ -43,8 +42,7 @@ npm run env:check
 |----------|-------------|---------|-------------|
 | `SUPABASE_URL` | Supabase project URL | `https://xxx.supabase.co` | All |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | `eyJhbGci...` | All |
-| `LENCO_SECRET_KEY` | Lenco secret key | `sec-...` or `sk_live_...` | Production |
-| `LENCO_SECRET_KEY` | Lenco test secret | `sk_test_...` | Development |
+| `LENCO_SECRET_KEY` | Lenco secret key (Production: `sec-...` or `sk_live_...`, Development: `sk_test_...`) | `sec-abc123...` or `sk_live_xyz789` | All |
 | `LENCO_WEBHOOK_SECRET` | Webhook signing secret | `whsec_...` | All |
 | `LENCO_WEBHOOK_URL` | Webhook endpoint URL | `https://xxx.supabase.co/functions/v1/lenco-webhook` | All |
 
