@@ -25,8 +25,9 @@
 
 import { createHmac } from 'crypto';
 
-// Parse command line arguments
-const [webhookUrl, webhookSecret] = process.argv.slice(2);
+// Parse command line arguments or use environment variables
+const webhookUrl = process.argv[2] || process.env.WEBHOOK_URL;
+const webhookSecret = process.argv[3] || process.env.WEBHOOK_SECRET;
 
 if (!webhookUrl || !webhookSecret) {
   console.error('❌ Error: Missing required arguments');
@@ -45,7 +46,7 @@ function createSignature(payload, secret) {
   return hmac.digest('hex');
 }
 
-// Test payload - order.created event as per docs
+// Test payload - payment.success event for smoke testing
 const testPayload = {
   event: 'payment.success',
   data: {

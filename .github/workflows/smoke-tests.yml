@@ -90,6 +90,7 @@ jobs:
           if [ -z "$WEBHOOK_URL" ]; then
             echo "⚠️  WEBHOOK_URL not configured, skipping webhook test"
             echo "Configure WEBHOOK_URL secret in repository settings"
+            echo "test_skipped=true" >> $GITHUB_OUTPUT
             exit 0
           fi
           
@@ -99,16 +100,17 @@ jobs:
             exit 1
           fi
           
+          echo "test_skipped=false" >> $GITHUB_OUTPUT
           node scripts/smoke-test-webhook.js "$WEBHOOK_URL" "$WEBHOOK_SECRET"
         continue-on-error: true
       
       - name: Report test results
         if: always()
         run: |
-          if [ "${{ steps.webhook-test.outcome }}" == "success" ]; then
-            echo "✅ Webhook smoke test passed"
-          elif [ "${{ steps.webhook-test.outcome }}" == "skipped" ]; then
+          if [ "${{ steps.webhook-test.outputs.test_skipped }}" == "true" ]; then
             echo "⚠️  Webhook smoke test skipped (not configured)"
+          elif [ "${{ steps.webhook-test.outcome }}" == "success" ]; then
+            echo "✅ Webhook smoke test passed"
           else
             echo "❌ Webhook smoke test failed"
             exit 1
