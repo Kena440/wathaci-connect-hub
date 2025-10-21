@@ -13,7 +13,7 @@
     "env:setup": "bash ./scripts/setup-env.sh",
     "env:check": "node scripts/env-check.mjs",
     "keys:rotate": "bash ./scripts/rotate-lenco-keys.sh",
-    "test": "cross-env NODE_ENV=test ALLOW_IN_MEMORY_REGISTRATION=true node --test",
+    "test": "node scripts/run-tests.mjs",
     "test:jest": "jest",
     "test:jest:watch": "jest --watch",
     "test:accessibility": "jest --testPathPatterns=\"accessibility\"",
