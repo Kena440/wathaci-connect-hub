@@ -13,8 +13,9 @@ This checklist consolidates the remaining action items required before WATHACI C
    ```
 2. Populate every Supabase and Lenco credential with production values in `.env.production` – replace all `your-…`, `test_`, or sandbox placeholders.
 3. Ensure `VITE_APP_ENV="production"` is set in `.env.production`.
-4. Mirror the same values inside Vercel → **Settings → Environment Variables** for `Production`, `Preview`, and `Development` environments.
-5. Run the automated audit to confirm nothing is missing or placeholder values remain:
+4. Point `VITE_API_BASE_URL` at the deployed Express onboarding backend (for example, `https://api.wathaci.com`).
+5. Mirror the same values inside Vercel → **Settings → Environment Variables** for `Production`, `Preview`, and `Development` environments.
+6. Run the automated audit to confirm nothing is missing or placeholder values remain:
    ```bash
    npm run env:check
    ```

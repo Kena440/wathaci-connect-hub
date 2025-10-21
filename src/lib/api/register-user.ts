@@ -3,6 +3,8 @@ const normalizeBaseUrl = (baseUrl: string | undefined) => {
   return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
 };
 
+const API_TIMEOUT_MS = 15000;
+
 const API_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
 
 export type RegisterUserPayload = {
@@ -31,6 +33,13 @@ const buildEndpoint = () => {
   if (API_BASE_URL) {
     return `${API_BASE_URL}/users`;
   }
+
+  if (import.meta.env.PROD) {
+    throw new Error(
+      'Registration service URL is not configured. Set VITE_API_BASE_URL to your backend API base.',
+    );
+  }
+
   return '/users';
 };
 
@@ -50,6 +59,10 @@ export const registerUser = async (
   const endpoint = buildEndpoint();
 
   let response: Response;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, API_TIMEOUT_MS);
 
   try {
     response = await fetch(endpoint, {
@@ -58,9 +71,16 @@ export const registerUser = async (
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
+      signal: controller.signal,
     });
   } catch (error) {
+    if ((error as DOMException)?.name === 'AbortError') {
+      throw new Error('Registration service timed out. Please try again later.');
+    }
+
     throw new Error('Unable to reach registration service. Please try again later.');
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   let data: unknown;
