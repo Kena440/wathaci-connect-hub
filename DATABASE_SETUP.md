@@ -300,7 +300,7 @@ Required environment variables:
 
 ```env
 VITE_SUPABASE_URL="https://your-project.supabase.co"
-VITE_SUPABASE_KEY="your-anon-key"
+VITE_SUPABASE_ANON_KEY="your-anon-key"
 ```
 
 The enhanced client validates these on startup and provides clear error messages if missing or invalid.

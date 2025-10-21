@@ -25,7 +25,7 @@ npm run env:check
 | Variable | Description | Example | Environment |
 |----------|-------------|---------|-------------|
 | `VITE_SUPABASE_URL` | Supabase project URL | `https://xxx.supabase.co` | All |
-| `VITE_SUPABASE_KEY` | Supabase anon/public key | `eyJhbGci...` | All |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon/public key | `eyJhbGci...` | All |
 | `VITE_LENCO_PUBLIC_KEY` | Lenco publishable key (Production: `pub-...` or `pk_live_...`, Development: `pk_test_...`) | `pub-abc123...` or `pk_live_xyz789` | All |
 | `VITE_LENCO_API_URL` | Lenco API base URL | `https://api.lenco.co/access/v2` | All |
 | `VITE_PAYMENT_CURRENCY` | ISO currency code | `ZMW` | All |

@@ -14,14 +14,17 @@ const testSuite = ENABLE_REAL_TESTS ? describe : describe.skip;
 testSuite('Lenco Payment Real Integration Tests', () => {
   // These would be used in a real test environment with proper secrets management
   const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://wfqsmvkzkxdasbhpugdc.supabase.co';
-  const SUPABASE_KEY = process.env.VITE_SUPABASE_KEY || 'sb_publishable_8rLYlRkT8hNwBs-T7jsOAQ_pJq9gtfB';
+  const SUPABASE_ANON_KEY =
+    process.env.VITE_SUPABASE_ANON_KEY ||
+    process.env.VITE_SUPABASE_KEY ||
+    'sb_publishable_8rLYlRkT8hNwBs-T7jsOAQ_pJq9gtfB';
 
   describe('Supabase Configuration', () => {
     it('should have valid Supabase configuration', () => {
       expect(SUPABASE_URL).toBeDefined();
-      expect(SUPABASE_KEY).toBeDefined();
+      expect(SUPABASE_ANON_KEY).toBeDefined();
       expect(SUPABASE_URL).toMatch(/^https:\/\/.*\.supabase\.co$/);
-      expect(SUPABASE_KEY).toMatch(/^eyJ|^sb_/); // JWT tokens start with eyJ or sb_ keys
+      expect(SUPABASE_ANON_KEY).toMatch(/^eyJ|^sb_/); // JWT tokens start with eyJ or sb_ keys
     });
 
     it('should construct proper API endpoints', () => {
@@ -33,19 +36,20 @@ testSuite('Lenco Payment Real Integration Tests', () => {
     it('should have proper environment variable access', () => {
       // In Jest environment, env variables might not be loaded from .env file
       // This is expected behavior - we test with fallback values
-      const hasEnvVars = process.env.VITE_SUPABASE_URL && process.env.VITE_SUPABASE_KEY;
-      
+      const envAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_KEY;
+      const hasEnvVars = process.env.VITE_SUPABASE_URL && envAnonKey;
+
       if (hasEnvVars) {
         expect(process.env.VITE_SUPABASE_URL).toBeDefined();
-        expect(process.env.VITE_SUPABASE_KEY).toBeDefined();
-        
+        expect(envAnonKey).toBeDefined();
+
         // Ensure they match our constants
         expect(SUPABASE_URL).toBe(process.env.VITE_SUPABASE_URL);
-        expect(SUPABASE_KEY).toBe(process.env.VITE_SUPABASE_KEY);
+        expect(SUPABASE_ANON_KEY).toBe(envAnonKey);
       } else {
         // Using fallback values - this is acceptable for testing
         expect(SUPABASE_URL).toBe('https://wfqsmvkzkxdasbhpugdc.supabase.co');
-        expect(SUPABASE_KEY).toBe('sb_publishable_8rLYlRkT8hNwBs-T7jsOAQ_pJq9gtfB');
+        expect(SUPABASE_ANON_KEY).toBe('sb_publishable_8rLYlRkT8hNwBs-T7jsOAQ_pJq9gtfB');
       }
     });
   });
@@ -64,14 +68,14 @@ testSuite('Lenco Payment Real Integration Tests', () => {
       const requestOptions = {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(paymentData)
       };
 
       expect(requestOptions.method).toBe('POST');
-      expect(requestOptions.headers['Authorization']).toBe(`Bearer ${SUPABASE_KEY}`);
+      expect(requestOptions.headers['Authorization']).toBe(`Bearer ${SUPABASE_ANON_KEY}`);
       expect(requestOptions.headers['Content-Type']).toBe('application/json');
       expect(JSON.parse(requestOptions.body)).toEqual(paymentData);
     });
@@ -228,15 +232,15 @@ testSuite('Lenco Payment Real Integration Tests', () => {
   describe('Security Considerations', () => {
     it('should not expose sensitive information in logs', () => {
       // Mask the API key for logging
-      const maskedKey = SUPABASE_KEY.substring(0, 10) + '***';
-      
+      const maskedKey = SUPABASE_ANON_KEY.substring(0, 10) + '***';
+
       expect(maskedKey).toMatch(/^.{10}\*\*\*$/);
-      expect(maskedKey).not.toContain(SUPABASE_KEY.substring(10));
+      expect(maskedKey).not.toContain(SUPABASE_ANON_KEY.substring(10));
     });
 
     it('should validate request headers', () => {
       const headers = {
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       };
@@ -307,6 +311,6 @@ testSuite('Lenco Payment Real Integration Tests', () => {
 export const testConfig = {
   ENABLE_REAL_TESTS,
   SUPABASE_URL: process.env.VITE_SUPABASE_URL,
-  SUPABASE_KEY: process.env.VITE_SUPABASE_KEY ? 
-    process.env.VITE_SUPABASE_KEY.substring(0, 10) + '***' : undefined // Masked for security
+  SUPABASE_ANON_KEY: (process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_KEY) ?
+    (process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_KEY)!.substring(0, 10) + '***' : undefined // Masked for security
 };

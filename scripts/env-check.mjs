@@ -171,7 +171,11 @@ const checks = [
     heading: 'Supabase (Frontend)',
     required: [
       { key: 'VITE_SUPABASE_URL', description: 'Supabase project URL (https://<ref>.supabase.co)' },
-      { key: 'VITE_SUPABASE_KEY', description: 'Supabase anon/public key' },
+      {
+        key: 'VITE_SUPABASE_ANON_KEY',
+        description: 'Supabase anon/public key',
+        legacyKeys: ['VITE_SUPABASE_KEY'],
+      },
     ],
   },
   {
@@ -218,8 +222,22 @@ const checks = [
 let missingRequired = 0;
 let placeholderWarnings = 0;
 
-const formatEntry = ({ key, description }, required = true) => {
-  const result = getEnvValue(key);
+const formatEntry = ({ key, description, legacyKeys = [] }, required = true) => {
+  let result = getEnvValue(key);
+  let resolvedKey = key;
+  let usingLegacy = false;
+
+  if ((!result || !result.value) && legacyKeys.length > 0) {
+    for (const legacyKey of legacyKeys) {
+      const legacyResult = getEnvValue(legacyKey);
+      if (legacyResult && legacyResult.value) {
+        result = legacyResult;
+        resolvedKey = legacyKey;
+        usingLegacy = true;
+        break;
+      }
+    }
+  }
 
   if (!result || !result.value) {
     if (required) {
@@ -232,13 +250,19 @@ const formatEntry = ({ key, description }, required = true) => {
   }
 
   const displaySource = result.source === 'process.env' ? 'process.env' : result.source;
-  const formattedSource = cyan(`(${displaySource})`);
+  const sourceDetails = usingLegacy ? `${displaySource} – from ${resolvedKey}` : displaySource;
+  const formattedSource = cyan(`(${sourceDetails})`);
 
   let status = `${green('✔')} ${key} ${formattedSource}`;
 
   if (hasPlaceholder(result.value)) {
     placeholderWarnings += 1;
     status = `${yellow('▲')} ${key} ${formattedSource} ${yellow('[placeholder detected]')}`;
+  }
+
+  if (usingLegacy) {
+    placeholderWarnings += 1;
+    status = `${yellow('▲')} ${key} ${formattedSource} ${yellow('[legacy variable name detected]')}`;
   }
 
   if (key === 'VITE_LENCO_PUBLIC_KEY') {

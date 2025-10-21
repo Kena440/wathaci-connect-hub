@@ -60,13 +60,16 @@ async function validateDatabaseSetup() {
       }
     };
     const url = getEnvVar('VITE_SUPABASE_URL');
-    const key = getEnvVar('VITE_SUPABASE_KEY');
+    const key = getEnvVar('VITE_SUPABASE_ANON_KEY') || getEnvVar('VITE_SUPABASE_KEY');
     
     if (url && key) {
       console.log('✅ Environment variables are set');
       console.log(`📍 Supabase URL: ${url.substring(0, 30)}...`);
     } else {
       console.warn('⚠️ Environment variables not fully set');
+      if (!getEnvVar('VITE_SUPABASE_ANON_KEY') && getEnvVar('VITE_SUPABASE_KEY')) {
+        console.warn('⚠️ Detected legacy VITE_SUPABASE_KEY. Rename it to VITE_SUPABASE_ANON_KEY.');
+      }
     }
     
     // Test 4: Test types

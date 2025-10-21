@@ -76,10 +76,16 @@ export const resolveEnvValue = (key: string): string | undefined => {
 const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
 
 const supabaseUrl = resolveEnvValue('VITE_SUPABASE_URL') || resolveEnvValue('SUPABASE_URL');
-const supabaseKey = resolveEnvValue('VITE_SUPABASE_KEY') || resolveEnvValue('SUPABASE_KEY');
+const supabaseKey =
+  resolveEnvValue('VITE_SUPABASE_ANON_KEY') ||
+  resolveEnvValue('VITE_SUPABASE_KEY') ||
+  resolveEnvValue('SUPABASE_ANON_KEY') ||
+  resolveEnvValue('SUPABASE_KEY');
 
 if ((!supabaseUrl || !supabaseKey) && !isTestEnvironment) {
-  throw new Error('Missing Supabase configuration. Please set VITE_SUPABASE_URL and VITE_SUPABASE_KEY environment variables.');
+  throw new Error(
+    'Missing Supabase configuration. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.'
+  );
 }
 
 type MockAuthUser = {

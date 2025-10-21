@@ -86,7 +86,7 @@ cp backend/.env.example backend/.env.production
 After creating the files, update them with your actual credentials:
 
 - `VITE_SUPABASE_URL` / `SUPABASE_URL` – Supabase project URL (mirrored for the backend runtime).
-- `VITE_SUPABASE_KEY` – Supabase anon key for client access.
+- `VITE_SUPABASE_ANON_KEY` – Supabase anon key for client access.
 - `SUPABASE_SERVICE_ROLE_KEY` – Required for any server-side inserts, including the Express API and Supabase Edge Functions.
 - `VITE_LENCO_PUBLIC_KEY` – Lenco public API key (current dashboards issue `pub-…` keys; older projects may still use `pk_live_…`).
 - `LENCO_SECRET_KEY` – Lenco secret API key (accepts `sec-…`, `sk_live_…`, or legacy 64-character hex secrets).
@@ -108,8 +108,9 @@ npm run env:check
 
 This will scan all environment files and flag any missing or placeholder values.
 
-When deploying to Vercel (or another hosting provider), add **both** `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` to the project
-environment variables along with any server-side keys (such as `SUPABASE_SERVICE_ROLE_KEY` if you run edge functions). Use the
+When deploying to Vercel (or another hosting provider), add **both** `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to the
+project environment variables along with any server-side keys (such as `SUPABASE_SERVICE_ROLE_KEY` if you run edge functions).
+Rename any legacy `VITE_SUPABASE_KEY` entries to `VITE_SUPABASE_ANON_KEY` to keep configuration consistent. Use the
 [deployment checklist](docs/VERCEL_SUPABASE_DEPLOYMENT.md) to mirror the values from `.env` into the `Production`, `Preview`, and
 `Development` environments and verify them before triggering a build.
 

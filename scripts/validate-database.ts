@@ -34,7 +34,9 @@ async function validateEnvironment() {
   log.info('Validating environment variables...');
   
   const url = import.meta.env.VITE_SUPABASE_URL;
-  const key = import.meta.env.VITE_SUPABASE_KEY;
+  const key =
+    import.meta.env.VITE_SUPABASE_ANON_KEY ??
+    import.meta.env.VITE_SUPABASE_KEY;
   
   if (!url) {
     log.error('VITE_SUPABASE_URL is not set');
@@ -42,7 +44,10 @@ async function validateEnvironment() {
   }
   
   if (!key) {
-    log.error('VITE_SUPABASE_KEY is not set');
+    log.error('VITE_SUPABASE_ANON_KEY is not set');
+    if (import.meta.env.VITE_SUPABASE_KEY) {
+      log.warning('Detected legacy VITE_SUPABASE_KEY. Rename it to VITE_SUPABASE_ANON_KEY.');
+    }
     return false;
   }
   

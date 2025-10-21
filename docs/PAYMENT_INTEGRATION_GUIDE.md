@@ -65,7 +65,7 @@ const paymentResponse = await lencoPaymentService.processMobileMoneyPayment({
 ```bash
 # Supabase Configuration
 VITE_SUPABASE_URL="https://your-project.supabase.co"
-VITE_SUPABASE_KEY="your-anon-key"
+VITE_SUPABASE_ANON_KEY="your-anon-key"
 
 # Lenco Payment Gateway Configuration
 VITE_LENCO_PUBLIC_KEY="pub-dea560c94d379a23e7b85a265d7bb9acbd585481e6e1393e"

@@ -7,7 +7,7 @@ import { describe, it, expect, jest } from '@jest/globals';
 // Mock the environment variables before importing services
 const mockEnv = {
   VITE_SUPABASE_URL: 'https://test.supabase.co',
-  VITE_SUPABASE_KEY: 'test-key'
+  VITE_SUPABASE_ANON_KEY: 'test-key'
 };
 
 // Mock import.meta.env
