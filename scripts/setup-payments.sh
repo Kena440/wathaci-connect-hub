@@ -33,7 +33,7 @@ check_env_var() {
     local var_name=$1
     local description=$2
     local required=${3:-true}
-    
+
     if grep -q "^${var_name}=" .env && [ "$(grep "^${var_name}=" .env | cut -d'=' -f2)" != "\"\"" ] && [ "$(grep "^${var_name}=" .env | cut -d'=' -f2)" != "" ]; then
         echo -e "${GREEN}✅ ${var_name} - ${description}${NC}"
         return 0
@@ -48,6 +48,38 @@ check_env_var() {
     fi
 }
 
+check_env_var_any() {
+    local description=$1
+    shift
+    local required=true
+    if [ "$1" = "--optional" ]; then
+        required=false
+        shift
+    fi
+
+    local found_var=""
+
+    for var_name in "$@"; do
+        if grep -q "^${var_name}=" .env && [ "$(grep "^${var_name}=" .env | cut -d'=' -f2)" != "\"\"" ] && [ "$(grep "^${var_name}=" .env | cut -d'=' -f2)" != "" ]; then
+            found_var=$var_name
+            break
+        fi
+    done
+
+    if [ -n "$found_var" ]; then
+        echo -e "${GREEN}✅ ${found_var} - ${description}${NC}"
+        return 0
+    fi
+
+    if [ "$required" = true ]; then
+        echo -e "${RED}❌ ${description} (set one of: $*)${NC}"
+        return 1
+    else
+        echo -e "${YELLOW}⚠️  ${description} (Optional, set one of: $*)${NC}"
+        return 0
+    fi
+}
+
 # Track configuration status
 config_errors=0
 
@@ -55,7 +87,7 @@ config_errors=0
 echo ""
 echo -e "${BLUE}🗄️  Supabase Configuration${NC}"
 check_env_var "VITE_SUPABASE_URL" "Supabase project URL" || ((config_errors++))
-check_env_var "VITE_SUPABASE_KEY" "Supabase anon key" || ((config_errors++))
+check_env_var_any "Supabase anon key" "VITE_SUPABASE_KEY" "VITE_SUPABASE_ANON_KEY" || ((config_errors++))
 
 # Check Lenco configuration
 echo ""

@@ -170,8 +170,22 @@ const checks = [
   {
     heading: 'Supabase (Frontend)',
     required: [
-      { key: 'VITE_SUPABASE_URL', description: 'Supabase project URL (https://<ref>.supabase.co)' },
-      { key: 'VITE_SUPABASE_KEY', description: 'Supabase anon/public key' },
+      {
+        key: 'VITE_SUPABASE_URL',
+        description: 'Supabase project URL (https://<ref>.supabase.co)',
+        aliases: ['VITE_SUPABASE_PROJECT_URL', 'NEXT_PUBLIC_SUPABASE_URL', 'PUBLIC_SUPABASE_URL', 'SUPABASE_URL'],
+      },
+      {
+        key: 'VITE_SUPABASE_KEY',
+        description: 'Supabase anon/public key',
+        aliases: [
+          'VITE_SUPABASE_ANON_KEY',
+          'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+          'PUBLIC_SUPABASE_ANON_KEY',
+          'SUPABASE_KEY',
+          'SUPABASE_ANON_KEY',
+        ],
+      },
     ],
   },
   {
@@ -218,8 +232,19 @@ const checks = [
 let missingRequired = 0;
 let placeholderWarnings = 0;
 
-const formatEntry = ({ key, description }, required = true) => {
-  const result = getEnvValue(key);
+const getEnvValueFromKeys = (keys = []) => {
+  for (const key of keys) {
+    const result = getEnvValue(key);
+    if (result && result.value) {
+      return { ...result, key };
+    }
+  }
+  return null;
+};
+
+const formatEntry = ({ key, description, aliases = [] }, required = true) => {
+  const lookupKeys = [key, ...aliases];
+  const result = getEnvValueFromKeys(lookupKeys);
 
   if (!result || !result.value) {
     if (required) {
@@ -234,7 +259,9 @@ const formatEntry = ({ key, description }, required = true) => {
   const displaySource = result.source === 'process.env' ? 'process.env' : result.source;
   const formattedSource = cyan(`(${displaySource})`);
 
-  let status = `${green('✔')} ${key} ${formattedSource}`;
+  const resolvedKeyLabel = result.key === key ? key : `${key} ← ${result.key}`;
+
+  let status = `${green('✔')} ${resolvedKeyLabel} ${formattedSource}`;
 
   if (hasPlaceholder(result.value)) {
     placeholderWarnings += 1;

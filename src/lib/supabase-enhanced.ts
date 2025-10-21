@@ -26,6 +26,23 @@ const sanitizeEnvValue = (value: unknown): string | undefined => {
   return unquoted;
 };
 
+const SUPABASE_URL_ENV_KEYS = [
+  'VITE_SUPABASE_URL',
+  'VITE_SUPABASE_PROJECT_URL',
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'PUBLIC_SUPABASE_URL',
+  'SUPABASE_URL',
+];
+
+const SUPABASE_KEY_ENV_KEYS = [
+  'VITE_SUPABASE_KEY',
+  'VITE_SUPABASE_ANON_KEY',
+  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+  'PUBLIC_SUPABASE_ANON_KEY',
+  'SUPABASE_KEY',
+  'SUPABASE_ANON_KEY',
+];
+
 const getImportMetaEnv = (): any => {
   // This function isolates import.meta from Jest's parser
   // Jest will skip parsing this when it's not called in test environments
@@ -73,13 +90,25 @@ export const resolveEnvValue = (key: string): string | undefined => {
   return undefined;
 };
 
+const resolveFirstEnvValue = (keys: string[]): string | undefined => {
+  for (const key of keys) {
+    const value = resolveEnvValue(key);
+    if (value) {
+      return value;
+    }
+  }
+  return undefined;
+};
+
 const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
 
-const supabaseUrl = resolveEnvValue('VITE_SUPABASE_URL') || resolveEnvValue('SUPABASE_URL');
-const supabaseKey = resolveEnvValue('VITE_SUPABASE_KEY') || resolveEnvValue('SUPABASE_KEY');
+const supabaseUrl = resolveFirstEnvValue(SUPABASE_URL_ENV_KEYS);
+const supabaseKey = resolveFirstEnvValue(SUPABASE_KEY_ENV_KEYS);
 
 if ((!supabaseUrl || !supabaseKey) && !isTestEnvironment) {
-  throw new Error('Missing Supabase configuration. Please set VITE_SUPABASE_URL and VITE_SUPABASE_KEY environment variables.');
+  throw new Error(
+    'Missing Supabase configuration. Please set VITE_SUPABASE_URL and either VITE_SUPABASE_KEY or VITE_SUPABASE_ANON_KEY environment variables.'
+  );
 }
 
 type MockAuthUser = {
