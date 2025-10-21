@@ -86,7 +86,7 @@ config_errors=0
 # Check Supabase configuration
 echo ""
 echo -e "${BLUE}🗄️  Supabase Configuration${NC}"
-check_env_var "VITE_SUPABASE_URL" "Supabase project URL" || ((config_errors++))
+check_env_var_any "Supabase project URL" "VITE_SUPABASE_URL" "VITE_SUPABASE_PROJECT_URL" || ((config_errors++))
 check_env_var_any "Supabase anon key" "VITE_SUPABASE_KEY" "VITE_SUPABASE_ANON_KEY" || ((config_errors++))
 
 # Check Lenco configuration

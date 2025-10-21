@@ -26,7 +26,7 @@ infer_project_ref() {
             return
         fi
 
-        candidate=$(grep -E '^(SUPABASE_URL|VITE_SUPABASE_URL)=' "$PROJECT_DIR/.env" | tail -n1 | cut -d'=' -f2-)
+        candidate=$(grep -E '^(SUPABASE_URL|VITE_SUPABASE_URL|VITE_SUPABASE_PROJECT_URL)=' "$PROJECT_DIR/.env" | tail -n1 | cut -d'=' -f2-)
         candidate=${candidate//$double_quote/}
         candidate=${candidate//$single_quote/}
         if [[ -n "$candidate" ]]; then

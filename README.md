@@ -85,7 +85,7 @@ cp backend/.env.example backend/.env.production
 
 After creating the files, update them with your actual credentials:
 
-- `VITE_SUPABASE_URL` / `SUPABASE_URL` – Supabase project URL (mirrored for the backend runtime).
+- `VITE_SUPABASE_URL` / `VITE_SUPABASE_PROJECT_URL` / `SUPABASE_URL` – Supabase project URL (mirrored for the backend runtime).
 - `VITE_SUPABASE_KEY` / `VITE_SUPABASE_ANON_KEY` – Supabase anon key for client access.
 - `SUPABASE_SERVICE_ROLE_KEY` – Required for any server-side inserts, including the Express API and Supabase Edge Functions.
 - `VITE_LENCO_PUBLIC_KEY` – Lenco public API key (current dashboards issue `pub-…` keys; older projects may still use `pk_live_…`).

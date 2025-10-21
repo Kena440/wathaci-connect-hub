@@ -24,7 +24,7 @@ npm run env:check
 
 | Variable | Description | Example | Environment |
 |----------|-------------|---------|-------------|
-| `VITE_SUPABASE_URL` | Supabase project URL | `https://xxx.supabase.co` | All |
+| `VITE_SUPABASE_URL` / `VITE_SUPABASE_PROJECT_URL` | Supabase project URL | `https://xxx.supabase.co` | All |
 | `VITE_SUPABASE_KEY` / `VITE_SUPABASE_ANON_KEY` | Supabase anon/public key | `eyJhbGci...` | All |
 | `VITE_API_BASE_URL` | Express backend base URL for onboarding API | `http://localhost:3000` or `https://api.example.com` | All |
 | `VITE_LENCO_PUBLIC_KEY` | Lenco publishable key (Production: `pub-...` or `pk_live_...`, Development: `pk_test_...`) | `pub-abc123...` or `pk_live_xyz789` | All |

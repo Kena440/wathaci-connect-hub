@@ -172,7 +172,7 @@ const checks = [
     required: [
       {
         key: 'VITE_SUPABASE_URL',
-        description: 'Supabase project URL (https://<ref>.supabase.co)',
+        description: 'Supabase project URL (https://<ref>.supabase.co) — alias VITE_SUPABASE_PROJECT_URL supported',
         aliases: ['VITE_SUPABASE_PROJECT_URL', 'NEXT_PUBLIC_SUPABASE_URL', 'PUBLIC_SUPABASE_URL', 'SUPABASE_URL'],
       },
       {
