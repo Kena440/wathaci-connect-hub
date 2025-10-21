@@ -30,19 +30,47 @@ const log = {
   info: (msg: string) => console.log(`${colors.blue}ℹ${colors.reset} ${msg}`),
 };
 
+const RUNTIME_ENV = {
+  ...(typeof process !== 'undefined' ? process.env : {}),
+  ...((import.meta as any)?.env ?? {}),
+} as Record<string, unknown>;
+
+const resolveRuntimeEnv = (...keys: string[]): string | undefined => {
+  for (const key of keys) {
+    const value = RUNTIME_ENV[key];
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value.trim();
+    }
+  }
+  return undefined;
+};
+
 async function validateEnvironment() {
   log.info('Validating environment variables...');
-  
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  const key = import.meta.env.VITE_SUPABASE_KEY;
-  
+
+  const url = resolveRuntimeEnv(
+    'VITE_SUPABASE_URL',
+    'VITE_SUPABASE_PROJECT_URL',
+    'NEXT_PUBLIC_SUPABASE_URL',
+    'PUBLIC_SUPABASE_URL',
+    'SUPABASE_URL'
+  );
+  const key = resolveRuntimeEnv(
+    'VITE_SUPABASE_KEY',
+    'VITE_SUPABASE_ANON_KEY',
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    'PUBLIC_SUPABASE_ANON_KEY',
+    'SUPABASE_KEY',
+    'SUPABASE_ANON_KEY'
+  );
+
   if (!url) {
     log.error('VITE_SUPABASE_URL is not set');
     return false;
   }
   
   if (!key) {
-    log.error('VITE_SUPABASE_KEY is not set');
+    log.error('Supabase anon key is not set (expected VITE_SUPABASE_KEY or VITE_SUPABASE_ANON_KEY)');
     return false;
   }
   

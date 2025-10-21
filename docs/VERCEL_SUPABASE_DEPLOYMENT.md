@@ -29,7 +29,7 @@ In the Vercel dashboard:
 
 ### Supabase Variables (Required)
    - `VITE_SUPABASE_URL` – Supabase project URL (e.g., `https://abc123xyz789.supabase.co`)
-   - `VITE_SUPABASE_KEY` – Supabase anon/public key (JWT token)
+   - `VITE_SUPABASE_KEY` / `VITE_SUPABASE_ANON_KEY` – Supabase anon/public key (JWT token)
    - `SUPABASE_URL` – Same as VITE_SUPABASE_URL (for backend/server usage)
    - `SUPABASE_SERVICE_ROLE_KEY` – Supabase service role key (required for server-side operations)
 

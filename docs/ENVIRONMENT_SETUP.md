@@ -56,7 +56,7 @@ Located at `backend/.env`, this file contains:
 
 **Frontend Variables:**
 - `VITE_SUPABASE_URL` - Your Supabase project URL (e.g., `https://your-project.supabase.co`)
-- `VITE_SUPABASE_KEY` - Your Supabase anon/public key (JWT token)
+- `VITE_SUPABASE_KEY` / `VITE_SUPABASE_ANON_KEY` - Your Supabase anon/public key (JWT token)
 
 **Backend Variables:**
 - `SUPABASE_URL` - Your Supabase project URL (same as frontend)

@@ -11,10 +11,37 @@ const ENABLE_REAL_TESTS = process.env.ENABLE_REAL_LENCO_TESTS === 'true';
 
 const testSuite = ENABLE_REAL_TESTS ? describe : describe.skip;
 
+const resolveEnvValue = (...keys: string[]): string | undefined => {
+  for (const key of keys) {
+    const value = process.env[key];
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value;
+    }
+  }
+  return undefined;
+};
+
+const SUPABASE_URL_KEYS = [
+  'VITE_SUPABASE_URL',
+  'VITE_SUPABASE_PROJECT_URL',
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'PUBLIC_SUPABASE_URL',
+  'SUPABASE_URL',
+];
+
+const SUPABASE_KEY_KEYS = [
+  'VITE_SUPABASE_KEY',
+  'VITE_SUPABASE_ANON_KEY',
+  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+  'PUBLIC_SUPABASE_ANON_KEY',
+  'SUPABASE_KEY',
+  'SUPABASE_ANON_KEY',
+];
+
 testSuite('Lenco Payment Real Integration Tests', () => {
   // These would be used in a real test environment with proper secrets management
-  const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://wfqsmvkzkxdasbhpugdc.supabase.co';
-  const SUPABASE_KEY = process.env.VITE_SUPABASE_KEY || 'sb_publishable_8rLYlRkT8hNwBs-T7jsOAQ_pJq9gtfB';
+  const SUPABASE_URL = resolveEnvValue(...SUPABASE_URL_KEYS) || 'https://wfqsmvkzkxdasbhpugdc.supabase.co';
+  const SUPABASE_KEY = resolveEnvValue(...SUPABASE_KEY_KEYS) || 'sb_publishable_8rLYlRkT8hNwBs-T7jsOAQ_pJq9gtfB';
 
   describe('Supabase Configuration', () => {
     it('should have valid Supabase configuration', () => {
@@ -33,15 +60,16 @@ testSuite('Lenco Payment Real Integration Tests', () => {
     it('should have proper environment variable access', () => {
       // In Jest environment, env variables might not be loaded from .env file
       // This is expected behavior - we test with fallback values
-      const hasEnvVars = process.env.VITE_SUPABASE_URL && process.env.VITE_SUPABASE_KEY;
-      
-      if (hasEnvVars) {
-        expect(process.env.VITE_SUPABASE_URL).toBeDefined();
-        expect(process.env.VITE_SUPABASE_KEY).toBeDefined();
-        
+      const resolvedEnvUrl = resolveEnvValue(...SUPABASE_URL_KEYS);
+      const resolvedEnvKey = resolveEnvValue(...SUPABASE_KEY_KEYS);
+
+      if (resolvedEnvUrl && resolvedEnvKey) {
+        expect(resolvedEnvUrl).toBeDefined();
+        expect(resolvedEnvKey).toBeDefined();
+
         // Ensure they match our constants
-        expect(SUPABASE_URL).toBe(process.env.VITE_SUPABASE_URL);
-        expect(SUPABASE_KEY).toBe(process.env.VITE_SUPABASE_KEY);
+        expect(SUPABASE_URL).toBe(resolvedEnvUrl);
+        expect(SUPABASE_KEY).toBe(resolvedEnvKey);
       } else {
         // Using fallback values - this is acceptable for testing
         expect(SUPABASE_URL).toBe('https://wfqsmvkzkxdasbhpugdc.supabase.co');
@@ -304,9 +332,16 @@ testSuite('Lenco Payment Real Integration Tests', () => {
 });
 
 // Export test configuration for conditional running
+const maskedSupabaseKey = (() => {
+  const value = resolveEnvValue(...SUPABASE_KEY_KEYS);
+  if (!value || value.length < 10) {
+    return value;
+  }
+  return `${value.substring(0, 10)}***`;
+})();
+
 export const testConfig = {
   ENABLE_REAL_TESTS,
-  SUPABASE_URL: process.env.VITE_SUPABASE_URL,
-  SUPABASE_KEY: process.env.VITE_SUPABASE_KEY ? 
-    process.env.VITE_SUPABASE_KEY.substring(0, 10) + '***' : undefined // Masked for security
+  SUPABASE_URL: resolveEnvValue(...SUPABASE_URL_KEYS),
+  SUPABASE_KEY: maskedSupabaseKey,
 };

@@ -59,9 +59,35 @@ async function validateDatabaseSetup() {
         return undefined;
       }
     };
-    const url = getEnvVar('VITE_SUPABASE_URL');
-    const key = getEnvVar('VITE_SUPABASE_KEY');
-    
+
+    const SUPABASE_URL_KEYS = [
+      'VITE_SUPABASE_URL',
+      'VITE_SUPABASE_PROJECT_URL',
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'PUBLIC_SUPABASE_URL',
+      'SUPABASE_URL',
+    ];
+    const SUPABASE_KEY_KEYS = [
+      'VITE_SUPABASE_KEY',
+      'VITE_SUPABASE_ANON_KEY',
+      'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+      'PUBLIC_SUPABASE_ANON_KEY',
+      'SUPABASE_KEY',
+      'SUPABASE_ANON_KEY',
+    ];
+    const getFirstValue = (keys: string[]) => {
+      for (const key of keys) {
+        const value = getEnvVar(key);
+        if (value) {
+          return value as string;
+        }
+      }
+      return undefined;
+    };
+
+    const url = getFirstValue(SUPABASE_URL_KEYS);
+    const key = getFirstValue(SUPABASE_KEY_KEYS);
+
     if (url && key) {
       console.log('✅ Environment variables are set');
       console.log(`📍 Supabase URL: ${url.substring(0, 30)}...`);
