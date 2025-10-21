@@ -88,22 +88,30 @@ export const GetStarted = () => {
     setServerError('');
 
     try {
-      await signUp(data.email, data.password, {
-        first_name: data.firstName,
-        last_name: data.lastName,
-        company: data.company,
-        account_type: data.accountType,
-        mobile_number: data.mobileNumber || null,
-        full_name: `${data.firstName} ${data.lastName}`,
-        profile_completed: false,
-      });
-
+      const trimmedFirstName = data.firstName.trim();
+      const trimmedLastName = data.lastName.trim();
       const trimmedCompany = data.company?.trim();
       const trimmedMobile = data.mobileNumber?.trim();
 
+      await signUp(data.email, data.password, {
+        first_name: trimmedFirstName,
+        last_name: trimmedLastName,
+        company: trimmedCompany ?? null,
+        account_type: data.accountType,
+        ...(trimmedMobile
+          ? {
+              phone: trimmedMobile,
+              payment_phone: trimmedMobile,
+              payment_method: 'phone' as const,
+            }
+          : {}),
+        full_name: `${trimmedFirstName} ${trimmedLastName}`.trim(),
+        profile_completed: false,
+      });
+
       await registerUser({
-        firstName: data.firstName.trim(),
-        lastName: data.lastName.trim(),
+        firstName: trimmedFirstName,
+        lastName: trimmedLastName,
         email: data.email.trim(),
         accountType: data.accountType,
         company: trimmedCompany ? trimmedCompany : null,
@@ -348,6 +356,9 @@ export const GetStarted = () => {
                     last_name: 'Test',
                     account_type: 'sole_proprietor',
                     full_name: 'Dev Test',
+                    phone: '+260961234567',
+                    payment_phone: '+260961234567',
+                    payment_method: 'phone',
                     profile_completed: false,
                   });
 

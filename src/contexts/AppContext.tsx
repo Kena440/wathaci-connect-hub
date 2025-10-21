@@ -9,6 +9,104 @@ import {
 import { toast } from '@/components/ui/use-toast';
 import type { User, Profile } from '@/@types/database';
 
+const normalizeString = (value: unknown): string | null | undefined => {
+  if (value === null || value === undefined) {
+    return value as null | undefined;
+  }
+
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed;
+};
+
+const prepareProfilePayload = (
+  email: string | null | undefined,
+  userData?: Record<string, any>,
+): Partial<Profile> => {
+  const payload: Record<string, unknown> = {};
+
+  if (email) {
+    payload.email = email;
+  }
+
+  if (!userData) {
+    return payload as Partial<Profile>;
+  }
+
+  const mutableData: Record<string, unknown> = { ...userData };
+
+  if ('first_name' in mutableData) {
+    const normalized = normalizeString(mutableData.first_name);
+    mutableData.first_name = normalized ?? undefined;
+  }
+
+  if ('last_name' in mutableData) {
+    const normalized = normalizeString(mutableData.last_name);
+    mutableData.last_name = normalized ?? undefined;
+  }
+
+  if ('full_name' in mutableData) {
+    const normalized = normalizeString(mutableData.full_name);
+    mutableData.full_name = normalized ?? undefined;
+  }
+
+  if ('company' in mutableData) {
+    const normalized = normalizeString(mutableData.company);
+    mutableData.company = normalized ?? null;
+  }
+
+  if ('account_type' in mutableData && typeof mutableData.account_type === 'string') {
+    mutableData.account_type = mutableData.account_type.trim();
+  }
+
+  if ('mobile_number' in mutableData) {
+    const normalizedMobile = normalizeString(mutableData.mobile_number);
+
+    if (normalizedMobile) {
+      mutableData.phone = normalizedMobile;
+      if (!('payment_phone' in mutableData)) {
+        mutableData.payment_phone = normalizedMobile;
+      }
+    } else if (normalizedMobile === null) {
+      mutableData.phone = null;
+      if (!('payment_phone' in mutableData)) {
+        mutableData.payment_phone = null;
+      }
+    }
+
+    delete mutableData.mobile_number;
+  }
+
+  if ('phone' in mutableData) {
+    const normalized = normalizeString(mutableData.phone);
+    mutableData.phone = normalized ?? undefined;
+  }
+
+  if ('payment_phone' in mutableData) {
+    const normalized = normalizeString(mutableData.payment_phone);
+    mutableData.payment_phone = normalized ?? null;
+  }
+
+  if (!('payment_method' in mutableData) && typeof mutableData.phone === 'string' && mutableData.phone.length > 0) {
+    mutableData.payment_method = 'phone';
+  }
+
+  const sanitizedEntries = Object.entries(mutableData).filter(([, value]) => value !== undefined);
+
+  for (const [key, value] of sanitizedEntries) {
+    payload[key] = value;
+  }
+
+  return payload as Partial<Profile>;
+};
+
 interface AuthState {
   user: User | null;
   profile: Profile | null;
@@ -315,10 +413,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let createdProfile: Profile | null = null;
 
     if (user) {
-      const profilePayload = {
-        email: user.email,
-        ...(userData || {}),
-      };
+      const profilePayload = prepareProfilePayload(user.email, userData);
 
       const { data: newProfile, error: profileError } = await profileService.createProfile(
         user.id,
