@@ -68,8 +68,10 @@ Once authenticated, link the CLI to your Supabase project:
 
 ```bash
 # Using project reference and database password
-supabase link --project-ref nrjcbdrzaxqvomeogptf --password "ak47_m4cK"
+supabase link --project-ref YOUR_PROJECT_REF --password "your-db-password"
 ```
+
+> Replace `YOUR_PROJECT_REF` and `your-db-password` with the values from your Supabase dashboard. The project reference is the subdomain portion of `https://YOUR_PROJECT_REF.supabase.co`.
 
 Or use the interactive mode:
 ```bash
@@ -88,8 +90,8 @@ The project has been initialized with a `supabase/config.toml` file. This config
 ### Key Configuration Values
 
 - **Project ID**: `WATHACI-CONNECT.-V1`
-- **Project Reference**: `nrjcbdrzaxqvomeogptf`
-- **Supabase URL**: `https://nrjcbdrzaxqvomeogptf.supabase.co`
+- **Project Reference**: `YOUR_PROJECT_REF`
+- **Supabase URL**: `https://YOUR_PROJECT_REF.supabase.co`
 
 ## Common Commands
 
@@ -172,7 +174,7 @@ The following environment variables are used by the Supabase CLI:
 
 - `SUPABASE_ACCESS_TOKEN`: Your Supabase access token
 - `SUPABASE_DB_PASSWORD`: Database password (stored in .env)
-- `SUPABASE_PROJECT_REF`: Project reference (nrjcbdrzaxqvomeogptf)
+- `SUPABASE_PROJECT_REF`: Project reference (YOUR_PROJECT_REF)
 
 ## NPM Scripts
 
@@ -222,7 +224,7 @@ export SUPABASE_ACCESS_TOKEN="your_token_here"
 
 Run the link command:
 ```bash
-supabase link --project-ref nrjcbdrzaxqvomeogptf --password "ak47_m4cK"
+supabase link --project-ref YOUR_PROJECT_REF --password "your-db-password"
 ```
 
 ### "Cannot connect to Docker"

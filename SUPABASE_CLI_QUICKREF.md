@@ -70,10 +70,12 @@ supabase status
 
 ## Project Information
 
-- **Project Reference**: `nrjcbdrzaxqvomeogptf`
-- **Supabase URL**: `https://nrjcbdrzaxqvomeogptf.supabase.co`
+- **Project Reference**: `YOUR_PROJECT_REF`
+- **Supabase URL**: `https://YOUR_PROJECT_REF.supabase.co`
 - **Config File**: `supabase/config.toml`
 - **Edge Functions**: `supabase/functions/`
+
+> Substitute `YOUR_PROJECT_REF` with the identifier from your Supabase dashboard before running these commands.
 
 ## Quick Troubleshooting
 
@@ -91,7 +93,7 @@ supabase status
 export SUPABASE_ACCESS_TOKEN="your_access_token"
 
 # Required for project linking
-export SUPABASE_PROJECT_REF="nrjcbdrzaxqvomeogptf"
+export SUPABASE_PROJECT_REF="YOUR_PROJECT_REF"
 export SUPABASE_DB_PASSWORD="your_db_password"
 ```
 

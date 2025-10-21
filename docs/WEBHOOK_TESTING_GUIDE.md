@@ -35,7 +35,7 @@ Expected output should show `lenco-webhook` with status `ACTIVE`.
 
 ```bash
 # Replace with your actual values:
-# - PROJECT_REF: Found in your Supabase dashboard URL (e.g., nrjcbdrzaxqvomeogptf)
+# - PROJECT_REF: Found in your Supabase dashboard URL (e.g., YOUR_PROJECT_REF)
 # - WEBHOOK_SECRET: The secret you set during key rotation
 node scripts/test-webhook-integration.js \
   https://YOUR_PROJECT_REF.supabase.co/functions/v1/lenco-webhook \

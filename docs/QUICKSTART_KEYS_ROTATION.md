@@ -68,7 +68,7 @@ The script will:
 **🔍 Finding your PROJECT_REF**:
 - It's in your Supabase dashboard URL
 - Format: `https://PROJECT_REF.supabase.co`
-- Example: `nrjcbdrzaxqvomeogptf`
+- Example: `YOUR_PROJECT_REF` (replace with your actual project reference)
 
 ### 5. Test It (3 minutes)
 

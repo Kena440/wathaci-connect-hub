@@ -22,15 +22,13 @@ This checklist consolidates the remaining action items required before WATHACI C
 
 ## 2. Backend, Database & Supabase Functions
 
-- [x] Exported production credentials for the Express backend so registrations persist to Supabase. The live values are now defined in the hosting environment as:
-  - `SUPABASE_URL="https://nrjcbdrzaxqvomeogptf.supabase.co"`
-  - `SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yamNiZHJ6YXhxdm9tZW9ncHRmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NjcyMjIyNywiZXhwIjoyMDcyMjk4MjI3fQ.d9-w8I3MaJb1gqBWUTBTGnN9BLOvR0zR5QEvD-Rcm0s"`
-- [x] Provisioned the production Supabase database schema for project `nrjcbdrzaxqvomeogptf` using:
+- [x] Exported production credentials for the Express backend so registrations persist to Supabase. The live values are now defined in the hosting environment with your actual Supabase project URL (for example, `https://YOUR_PROJECT_REF.supabase.co`) and service role key retrieved from the Supabase dashboard.
+- [x] Provisioned the production Supabase database schema for your Supabase project reference using:
   ```bash
-  SUPABASE_DB_URL="postgres://postgres:[service-role-password]@db.nrjcbdrzaxqvomeogptf.supabase.co:5432/postgres" npm run supabase:provision
+  SUPABASE_DB_URL="postgres://postgres:[service-role-password]@db.YOUR_PROJECT_REF.supabase.co:5432/postgres" npm run supabase:provision
   ```
   The helper executed every SQL file in `backend/supabase/` to recreate the schema, tables, and RLS policies on the live database.
-- [x] Deployed the required Supabase Edge Functions after `supabase link --project-ref nrjcbdrzaxqvomeogptf`:
+- [x] Deployed the required Supabase Edge Functions after `supabase link --project-ref YOUR_PROJECT_REF`:
   ```bash
   supabase functions deploy funding-matcher
   supabase functions deploy lenco-payment
@@ -39,6 +37,8 @@ This checklist consolidates the remaining action items required before WATHACI C
   ```
 - [x] Populated each function's secrets via `supabase secrets set` with the live credentials (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`, `LENCO_SECRET_KEY`, `LENCO_WEBHOOK_SECRET`) and verified the configuration with `supabase secrets list`.
 - [x] Confirmed the Lenco webhook handshake by pointing the dashboard to the deployed `payment-webhook` endpoint and replaying the test event until the integration returned `200 OK` and logged the handshake in Supabase.
+
+> Replace `YOUR_PROJECT_REF` with your actual Supabase project reference when running the commands above.
 
 ## 3. Payments & Webhook Validation
 
