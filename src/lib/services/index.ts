@@ -53,13 +53,14 @@ export {
 };
 
 // Transfer recipient services
-import {
-  lencoTransferRecipientService,
-  LencoTransferRecipientServiceType,
-} from './lenco-transfer-recipient-service';
+import { lencoTransferRecipientService } from './lenco-transfer-recipient-service';
+import type { LencoTransferRecipientServiceType } from './lenco-transfer-recipient-service';
 
 export {
   lencoTransferRecipientService,
+};
+
+export type {
   LencoTransferRecipientServiceType,
 };
 

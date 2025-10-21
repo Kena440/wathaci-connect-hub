@@ -18,8 +18,9 @@ import { createHmac } from 'crypto';
 
 // Parse command line arguments
 const [webhookUrl, webhookSecret] = process.argv.slice(2);
+const isAutomatedTestRun = process.env.NODE_ENV === 'test' || process.env.CI;
 
-if (!webhookUrl || !webhookSecret) {
+if ((!webhookUrl || !webhookSecret) && !isAutomatedTestRun) {
   console.error('❌ Error: Missing required arguments');
   console.error('Usage: node scripts/test-webhook-integration.js <webhook-url> <webhook-secret>');
   process.exit(1);
@@ -266,8 +267,12 @@ async function runTests() {
   }
 }
 
-// Run tests
-runTests().catch(error => {
-  console.error('❌ Fatal error:', error);
-  process.exit(1);
-});
+// Run tests when executed with the required CLI arguments.
+if (webhookUrl && webhookSecret) {
+  runTests().catch(error => {
+    console.error('❌ Fatal error:', error);
+    process.exit(1);
+  });
+} else if (isAutomatedTestRun) {
+  console.log('ℹ️ Skipping webhook integration tests - no webhook URL/secret provided.');
+}
