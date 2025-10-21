@@ -77,7 +77,7 @@ node scripts/test-webhook-integration.js <webhook-url> <webhook-secret>
 **Example**:
 ```bash
 node scripts/test-webhook-integration.js \
-  https://nrjcbdrzaxqvomeogptf.supabase.co/functions/v1/lenco-webhook \
+  https://YOUR_PROJECT_REF.supabase.co/functions/v1/lenco-webhook \
   whsec_your_secret_key
 ```
 

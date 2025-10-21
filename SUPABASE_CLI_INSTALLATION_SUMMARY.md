@@ -28,8 +28,10 @@ The Supabase CLI has been successfully installed and configured for the WATHACI-
 
 **Project Details:**
 - **Project ID**: `WATHACI-CONNECT.-V1`
-- **Project Ref**: `nrjcbdrzaxqvomeogptf`
-- **Supabase URL**: `https://nrjcbdrzaxqvomeogptf.supabase.co`
+- **Project Ref**: `YOUR_PROJECT_REF`
+- **Supabase URL**: `https://YOUR_PROJECT_REF.supabase.co`
+
+> Update the placeholders above with your actual Supabase project reference before running CLI commands.
 
 ### Documentation Added
 
@@ -86,7 +88,7 @@ npm run supabase:status
 export SUPABASE_ACCESS_TOKEN="your_access_token"
 
 # Link the project
-supabase link --project-ref nrjcbdrzaxqvomeogptf --password "$DB_PASSWORD"
+supabase link --project-ref YOUR_PROJECT_REF --password "$DB_PASSWORD"
 
 # Deploy functions
 supabase functions deploy

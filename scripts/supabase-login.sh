@@ -6,7 +6,47 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="${SCRIPT_DIR}/.."
-PROJECT_REF="nrjcbdrzaxqvomeogptf"
+
+infer_project_ref() {
+    local candidate
+    local double_quote="\""
+    local single_quote="'"
+
+    if [[ -n "${SUPABASE_PROJECT_REF:-}" ]]; then
+        echo "$SUPABASE_PROJECT_REF"
+        return
+    fi
+
+    if [[ -f "$PROJECT_DIR/.env" ]]; then
+        candidate=$(grep -E '^SUPABASE_PROJECT_REF=' "$PROJECT_DIR/.env" | tail -n1 | cut -d'=' -f2-)
+        candidate=${candidate//$double_quote/}
+        candidate=${candidate//$single_quote/}
+        if [[ -n "$candidate" ]]; then
+            echo "$candidate"
+            return
+        fi
+
+        candidate=$(grep -E '^(SUPABASE_URL|VITE_SUPABASE_URL)=' "$PROJECT_DIR/.env" | tail -n1 | cut -d'=' -f2-)
+        candidate=${candidate//$double_quote/}
+        candidate=${candidate//$single_quote/}
+        if [[ -n "$candidate" ]]; then
+            candidate=${candidate#https://}
+            candidate=${candidate%%.supabase.co*}
+            if [[ -n "$candidate" ]]; then
+                echo "$candidate"
+                return
+            fi
+        fi
+    fi
+
+    echo "YOUR_PROJECT_REF"
+}
+
+PROJECT_REF="$(infer_project_ref)"
+
+if [[ "$PROJECT_REF" == "YOUR_PROJECT_REF" ]]; then
+    echo "⚠️  Project reference not set. Update SUPABASE_PROJECT_REF or your .env file before linking."
+fi
 
 echo "🔐 Supabase CLI Login Helper"
 echo "================================"
@@ -97,12 +137,37 @@ if supabase status >/dev/null 2>&1; then
 else
     echo "Attempting to link project..."
     
-    # Source the database password from .env if available
-    if [[ -f "$PROJECT_DIR/.env" ]]; then
-        DB_PASSWORD=$(grep "^SUPABASE_PASSWORD=" "$PROJECT_DIR/.env" | cut -d'=' -f2 | tr -d '"' | tr -d "'")
+    # Source the database password from environment or .env if available
+    DB_PASSWORD="${SUPABASE_DB_PASSWORD:-}"
+    double_quote="\""
+    single_quote="'"
+
+    if [[ -z "$DB_PASSWORD" && -f "$PROJECT_DIR/.env" ]]; then
+        DB_PASSWORD=$(grep -E '^SUPABASE_DB_PASSWORD=' "$PROJECT_DIR/.env" | tail -n1 | cut -d'=' -f2-)
+        DB_PASSWORD=${DB_PASSWORD//$double_quote/}
+        DB_PASSWORD=${DB_PASSWORD//$single_quote/}
     fi
-    
-    if [[ -z "${DB_PASSWORD:-}" ]]; then
+
+    if [[ -z "$DB_PASSWORD" && -f "$PROJECT_DIR/.env" ]]; then
+        DB_PASSWORD=$(grep -E '^SUPABASE_PASSWORD=' "$PROJECT_DIR/.env" | tail -n1 | cut -d'=' -f2-)
+        DB_PASSWORD=${DB_PASSWORD//$double_quote/}
+        DB_PASSWORD=${DB_PASSWORD//$single_quote/}
+    fi
+
+    if [[ -z "$DB_PASSWORD" && -n "${SUPABASE_PASSWORD:-}" ]]; then
+        DB_PASSWORD="$SUPABASE_PASSWORD"
+    fi
+
+    if [[ -z "$DB_PASSWORD" && -f "$PROJECT_DIR/.env" ]]; then
+        db_url=$(grep -E '^SUPABASE_DB_URL=' "$PROJECT_DIR/.env" | tail -n1 | cut -d'=' -f2-)
+        db_url=${db_url//$double_quote/}
+        db_url=${db_url//$single_quote/}
+        if [[ -n "$db_url" ]]; then
+            DB_PASSWORD=$(printf '%s' "$db_url" | sed -E 's#^postgres://[^:]+:([^@]+)@.*$#\1#')
+        fi
+    fi
+
+    if [[ -z "$DB_PASSWORD" ]]; then
         read -p "Enter your Supabase database password: " -s DB_PASSWORD
         echo ""
     fi

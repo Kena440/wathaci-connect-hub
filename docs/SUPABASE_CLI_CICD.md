@@ -12,7 +12,9 @@ This guide explains how to use the Supabase CLI in automated CI/CD environments 
 2. **Add Secrets to Your CI/CD Platform**
    - Add `SUPABASE_ACCESS_TOKEN` as a secret/environment variable
    - Add `SUPABASE_DB_PASSWORD` (from your .env file)
-   - Add `SUPABASE_PROJECT_REF` (value: `nrjcbdrzaxqvomeogptf`)
+   - Add `SUPABASE_PROJECT_REF` (value: `YOUR_PROJECT_REF`)
+
+> Replace `YOUR_PROJECT_REF` with the actual Supabase project reference shown in your dashboard URL.
 
 ## GitHub Actions Example
 
@@ -53,7 +55,7 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
-          supabase link --project-ref nrjcbdrzaxqvomeogptf --password "$SUPABASE_DB_PASSWORD"
+          supabase link --project-ref YOUR_PROJECT_REF --password "$SUPABASE_DB_PASSWORD"
       
       - name: Deploy Edge Functions
         env:
@@ -95,7 +97,7 @@ deploy:supabase:
     - supabase --version
   script:
     - cd $CI_PROJECT_DIR
-    - supabase link --project-ref nrjcbdrzaxqvomeogptf --password "$SUPABASE_DB_PASSWORD"
+    - supabase link --project-ref YOUR_PROJECT_REF --password "$SUPABASE_DB_PASSWORD"
     - supabase functions deploy lenco-webhook
   variables:
     SUPABASE_ACCESS_TOKEN: $SUPABASE_ACCESS_TOKEN
@@ -128,7 +130,7 @@ jobs:
       - run:
           name: Link and Deploy
           command: |
-            supabase link --project-ref nrjcbdrzaxqvomeogptf --password "$SUPABASE_DB_PASSWORD"
+            supabase link --project-ref YOUR_PROJECT_REF --password "$SUPABASE_DB_PASSWORD"
             supabase functions deploy lenco-webhook
 
 workflows:
@@ -171,7 +173,7 @@ ENV SUPABASE_ACCESS_TOKEN=""
 ENV SUPABASE_DB_PASSWORD=""
 
 # Link and deploy
-CMD ["sh", "-c", "supabase link --project-ref nrjcbdrzaxqvomeogptf --password $SUPABASE_DB_PASSWORD && supabase functions deploy"]
+CMD ["sh", "-c", "supabase link --project-ref YOUR_PROJECT_REF --password $SUPABASE_DB_PASSWORD && supabase functions deploy"]
 ```
 
 ## Environment Variables
@@ -182,7 +184,7 @@ The following environment variables are required for CI/CD:
 |----------|-------------|----------|
 | `SUPABASE_ACCESS_TOKEN` | Access token from Supabase dashboard | Yes |
 | `SUPABASE_DB_PASSWORD` | Database password | Yes (for link) |
-| `SUPABASE_PROJECT_REF` | Project reference (nrjcbdrzaxqvomeogptf) | Yes |
+| `SUPABASE_PROJECT_REF` | Project reference (YOUR_PROJECT_REF) | Yes |
 
 ## Common CI/CD Tasks
 
