@@ -65,7 +65,9 @@ async function validateEnvironment() {
   );
 
   if (!url) {
-    log.error('VITE_SUPABASE_URL is not set');
+    log.error(
+      'Supabase URL is not set (expected VITE_SUPABASE_URL, VITE_SUPABASE_PROJECT_URL, NEXT_PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_URL, or SUPABASE_URL)',
+    );
     return false;
   }
   
@@ -79,7 +81,7 @@ async function validateEnvironment() {
     log.success('Environment variables are valid');
     return true;
   } catch {
-    log.error('VITE_SUPABASE_URL is not a valid URL');
+    log.error('Supabase URL is not a valid URL (checked VITE_SUPABASE_URL and its aliases)');
     return false;
   }
 }

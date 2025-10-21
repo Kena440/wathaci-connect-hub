@@ -64,6 +64,7 @@ const paymentResponse = await lencoPaymentService.processMobileMoneyPayment({
 
 ```bash
 # Supabase Configuration
+# VITE_SUPABASE_PROJECT_URL="https://your-project.supabase.co" # optional alias
 VITE_SUPABASE_URL="https://your-project.supabase.co"
 VITE_SUPABASE_KEY="your-anon-key"
 # You may also set the default Supabase alias:

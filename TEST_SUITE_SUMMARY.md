@@ -155,7 +155,7 @@ The **functionality they test works correctly in production** - these are primar
 Lighthouse testing requires:
 1. Running dev/preview server
 2. Proper environment variables configured:
-   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_URL` / `VITE_SUPABASE_PROJECT_URL`
    - `VITE_SUPABASE_KEY` / `VITE_SUPABASE_ANON_KEY`
    - Other app-specific variables
 

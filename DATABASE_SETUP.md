@@ -299,6 +299,7 @@ if (user) {
 Required environment variables:
 
 ```env
+# VITE_SUPABASE_PROJECT_URL="https://your-project.supabase.co" # optional alias
 VITE_SUPABASE_URL="https://your-project.supabase.co"
 VITE_SUPABASE_KEY="your-anon-key"
 # Alternatively, you can provide the Supabase default name:

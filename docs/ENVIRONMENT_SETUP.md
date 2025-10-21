@@ -55,7 +55,7 @@ Located at `backend/.env`, this file contains:
 ### Supabase Configuration
 
 **Frontend Variables:**
-- `VITE_SUPABASE_URL` - Your Supabase project URL (e.g., `https://your-project.supabase.co`)
+- `VITE_SUPABASE_URL` / `VITE_SUPABASE_PROJECT_URL` - Your Supabase project URL (e.g., `https://your-project.supabase.co`)
 - `VITE_SUPABASE_KEY` / `VITE_SUPABASE_ANON_KEY` - Your Supabase anon/public key (JWT token)
 - `VITE_API_BASE_URL` - Base URL for the Express onboarding API (`http://localhost:3000` for local development, or your hosted backend URL in production)
 
