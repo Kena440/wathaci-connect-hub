@@ -136,41 +136,21 @@ export async function createLencoSignature(rawBody: string, secret: string): Pro
 }
 
 async function computeHmacSha512(secret: Uint8Array, payload: Uint8Array): Promise<Uint8Array | null> {
-  if (typeof crypto !== 'undefined' && crypto.subtle) {
-    const key = await crypto.subtle.importKey(
-      'raw',
-      secret,
-      { name: 'HMAC', hash: 'SHA-512' },
-      false,
-      ['sign']
-    );
-
-    return new Uint8Array(await crypto.subtle.sign('HMAC', key, payload));
+  if (typeof crypto === 'undefined' || !crypto.subtle) {
+    return null;
   }
 
-  const nodeCrypto = await loadNodeCrypto();
-  if (nodeCrypto && typeof Buffer !== 'undefined') {
-    const hmac = nodeCrypto.createHmac('sha512', Buffer.from(secret));
-    hmac.update(Buffer.from(payload));
-    return new Uint8Array(hmac.digest());
-  }
+  const key = await crypto.subtle.importKey('raw', secret, { name: 'HMAC', hash: 'SHA-512' }, false, ['sign']);
 
-  return null;
+  return new Uint8Array(await crypto.subtle.sign('HMAC', key, payload));
 }
 
 async function computeSha256(payload: Uint8Array): Promise<Uint8Array | null> {
-  if (typeof crypto !== 'undefined' && crypto.subtle) {
-    return new Uint8Array(await crypto.subtle.digest('SHA-256', payload));
+  if (typeof crypto === 'undefined' || !crypto.subtle) {
+    return null;
   }
 
-  const nodeCrypto = await loadNodeCrypto();
-  if (nodeCrypto && typeof Buffer !== 'undefined') {
-    const hash = nodeCrypto.createHash('sha256');
-    hash.update(Buffer.from(payload));
-    return new Uint8Array(hash.digest());
-  }
-
-  return null;
+  return new Uint8Array(await crypto.subtle.digest('SHA-256', payload));
 }
 
 function decodeSignature(signature: string): Uint8Array | null {
@@ -188,8 +168,9 @@ function decodeBase64(signature: string): Uint8Array | null {
       return bytes;
     }
 
-    if (typeof Buffer !== 'undefined') {
-      const buffer = Buffer.from(signature, 'base64');
+    const bufferCtor = getBufferConstructor();
+    if (bufferCtor) {
+      const buffer = bufferCtor.from(signature, 'base64');
       return buffer.length ? new Uint8Array(buffer) : null;
     }
   } catch (_error) {
@@ -227,8 +208,9 @@ function toBase64(buffer: Uint8Array): string {
     return btoa(binary);
   }
 
-  if (typeof Buffer !== 'undefined') {
-    return Buffer.from(buffer).toString('base64');
+  const bufferCtor = getBufferConstructor();
+  if (bufferCtor) {
+    return bufferCtor.from(buffer).toString('base64');
   }
 
   return '';
@@ -267,26 +249,12 @@ async function deriveWebhookHashKey(secret: string): Promise<string | null> {
   return digest ? toHex(digest) : null;
 }
 
-let cachedNodeCrypto: (typeof import('crypto')) | null = null;
+type BufferLike = ArrayLike<number> & { length: number; toString: (encoding: string) => string };
 
-async function loadNodeCrypto(): Promise<(typeof import('crypto')) | null> {
-  if (cachedNodeCrypto) {
-    return cachedNodeCrypto;
-  }
+type BufferConstructor = {
+  from(input: string | Uint8Array, encoding?: string): BufferLike;
+};
 
-  if (typeof process === 'undefined' || !process.versions?.node) {
-    return null;
-  }
-
-  try {
-    cachedNodeCrypto = await import('node:crypto');
-    return cachedNodeCrypto;
-  } catch (_error) {
-    try {
-      cachedNodeCrypto = await import('crypto');
-      return cachedNodeCrypto;
-    } catch (_err) {
-      return null;
-    }
-  }
+function getBufferConstructor(): BufferConstructor | undefined {
+  return (globalThis as { Buffer?: BufferConstructor }).Buffer;
 }

@@ -6,7 +6,16 @@ export interface LogContext {
 
 function sendToMonitoringService(log: any) {
   try {
-    fetch('/api/logs', {
+    const isBrowserEnvironment =
+      typeof window !== 'undefined' && typeof document !== 'undefined';
+
+    if (!isBrowserEnvironment || typeof fetch !== 'function') {
+      return;
+    }
+
+    const endpoint = new URL('/api/logs', window.location.origin);
+
+    fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(log),
