@@ -189,6 +189,12 @@ const checks = [
     ],
   },
   {
+    heading: 'Backend API',
+    required: [
+      { key: 'VITE_API_BASE_URL', description: 'Base URL for the Express onboarding API' },
+    ],
+  },
+  {
     heading: 'Supabase (Backend)',
     required: [
       { key: 'SUPABASE_URL', description: 'Supabase project URL for server usage' },
