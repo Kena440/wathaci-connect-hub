@@ -14,6 +14,32 @@ import { ImageUpload } from '@/components/ImageUpload';
 import { ArrowLeft } from 'lucide-react';
 import { sectors, countries } from '../data/countries';
 
+const investmentStageOptions = [
+  { value: 'pre_seed', label: 'Pre-seed & Seed' },
+  { value: 'series_a', label: 'Series A' },
+  { value: 'series_b_plus', label: 'Series B and Beyond' },
+  { value: 'growth', label: 'Growth & Expansion' },
+  { value: 'infrastructure', label: 'Infrastructure Projects' },
+];
+
+const donorTypeOptions = [
+  { value: 'individual', label: 'Individual Donor' },
+  { value: 'corporate', label: 'Corporate Foundation' },
+  { value: 'family_foundation', label: 'Family Foundation' },
+  { value: 'international', label: 'International Organization' },
+  { value: 'government', label: 'Government Agency' },
+  { value: 'faith_based', label: 'Faith-based Organization' },
+];
+
+const institutionTypeOptions = [
+  { value: 'ministry', label: 'Ministry' },
+  { value: 'agency', label: 'Agency' },
+  { value: 'council', label: 'Council' },
+  { value: 'commission', label: 'Commission' },
+  { value: 'parastate', label: 'Parastatal' },
+  { value: 'other', label: 'Other Government Institution' },
+];
+
 interface ProfileFormProps {
   accountType: string;
   onSubmit: (data: any) => void;
@@ -35,6 +61,24 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
     cardholder_name: initialData?.card_details?.cardholder_name || '',
     profile_image_url: null,
     linkedin_url: '',
+    annual_revenue: initialData?.annual_revenue ?? '',
+    investment_focus: initialData?.investment_focus || '',
+    investment_ticket_min: initialData?.investment_ticket_min ?? '',
+    investment_ticket_max: initialData?.investment_ticket_max ?? '',
+    investment_stage: initialData?.investment_stage || '',
+    investment_regions: initialData?.investment_regions || '',
+    impact_focus: initialData?.impact_focus || '',
+    support_services: initialData?.support_services || '',
+    support_preferences: initialData?.support_preferences || '',
+    partnership_preferences: initialData?.partnership_preferences || '',
+    donor_type: initialData?.donor_type || '',
+    funding_focus: initialData?.funding_focus || '',
+    annual_funding_budget: initialData?.annual_funding_budget ?? '',
+    institution_type: initialData?.institution_type || '',
+    department: initialData?.department || '',
+    government_focus: initialData?.government_focus || '',
+    programs: initialData?.programs || '',
+    partnership_needs: initialData?.partnership_needs || '',
     ...initialData
   });
 
@@ -262,10 +306,326 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
       </div>
       <div>
         <Label>LinkedIn Profile URL</Label>
-        <Input 
+        <Input
           value={formData.linkedin_url || ''}
           onChange={(e) => handleInputChange('linkedin_url', e.target.value)}
           placeholder="https://linkedin.com/company/your-company"
+        />
+      </div>
+    </>
+  );
+
+  const renderInvestorFields = () => (
+    <>
+      <ImageUpload
+        currentImage={formData.profile_image_url}
+        onImageChange={(url) => handleInputChange('profile_image_url', url)}
+        label="Organization Logo"
+        type="logo"
+      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label>Organization Name</Label>
+          <Input
+            value={formData.business_name || ''}
+            onChange={(e) => handleInputChange('business_name', e.target.value)}
+          />
+        </div>
+        <div>
+          <Label>Registration Number</Label>
+          <Input
+            value={formData.registration_number || ''}
+            onChange={(e) => handleInputChange('registration_number', e.target.value)}
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <Label>Annual Investment Capacity (USD)</Label>
+          <Input
+            type="number"
+            value={formData.annual_revenue ?? ''}
+            onChange={(e) => handleInputChange('annual_revenue', e.target.value)}
+          />
+        </div>
+        <div>
+          <Label>Typical Ticket Size (Min)</Label>
+          <Input
+            type="number"
+            value={formData.investment_ticket_min ?? ''}
+            onChange={(e) => handleInputChange('investment_ticket_min', e.target.value)}
+          />
+        </div>
+        <div>
+          <Label>Typical Ticket Size (Max)</Label>
+          <Input
+            type="number"
+            value={formData.investment_ticket_max ?? ''}
+            onChange={(e) => handleInputChange('investment_ticket_max', e.target.value)}
+          />
+        </div>
+      </div>
+      <div>
+        <Label>Preferred Investment Stage</Label>
+        <Select
+          value={formData.investment_stage || ''}
+          onValueChange={(value) => handleInputChange('investment_stage', value)}
+        >
+          <SelectTrigger><SelectValue placeholder="Select stage" /></SelectTrigger>
+          <SelectContent>
+            {investmentStageOptions.map((stage) => (
+              <SelectItem key={stage.value} value={stage.value}>
+                {stage.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>Investment Focus Areas</Label>
+        <Textarea
+          value={formData.investment_focus || ''}
+          onChange={(e) => handleInputChange('investment_focus', e.target.value)}
+          placeholder="e.g. Agriculture, Renewable Energy, Financial Inclusion"
+          rows={3}
+        />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label>Geographic Focus</Label>
+          <Textarea
+            value={formData.investment_regions || ''}
+            onChange={(e) => handleInputChange('investment_regions', e.target.value)}
+            placeholder="Regions or countries you focus on"
+            rows={3}
+          />
+        </div>
+        <div>
+          <Label>Impact Priorities</Label>
+          <Textarea
+            value={formData.impact_focus || ''}
+            onChange={(e) => handleInputChange('impact_focus', e.target.value)}
+            placeholder="Impact themes such as climate resilience, women's economic empowerment, etc."
+            rows={3}
+          />
+        </div>
+      </div>
+      <div>
+        <Label>Support Provided Beyond Capital</Label>
+        <Textarea
+          value={formData.support_services || ''}
+          onChange={(e) => handleInputChange('support_services', e.target.value)}
+          placeholder="Describe advisory, mentorship, or technical support offered to portfolio companies"
+          rows={3}
+        />
+      </div>
+      <div>
+        <Label>LinkedIn Profile URL</Label>
+        <Input
+          value={formData.linkedin_url || ''}
+          onChange={(e) => handleInputChange('linkedin_url', e.target.value)}
+          placeholder="https://linkedin.com/company/your-organization"
+        />
+      </div>
+    </>
+  );
+
+  const renderDonorFields = () => (
+    <>
+      <ImageUpload
+        currentImage={formData.profile_image_url}
+        onImageChange={(url) => handleInputChange('profile_image_url', url)}
+        label="Organization Logo"
+        type="logo"
+      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label>Organization Name</Label>
+          <Input
+            value={formData.business_name || ''}
+            onChange={(e) => handleInputChange('business_name', e.target.value)}
+          />
+        </div>
+        <div>
+          <Label>Registration Number</Label>
+          <Input
+            value={formData.registration_number || ''}
+            onChange={(e) => handleInputChange('registration_number', e.target.value)}
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label>Donor Type</Label>
+          <Select
+            value={formData.donor_type || ''}
+            onValueChange={(value) => handleInputChange('donor_type', value)}
+          >
+            <SelectTrigger><SelectValue placeholder="Select donor type" /></SelectTrigger>
+            <SelectContent>
+              {donorTypeOptions.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>Annual Funding Budget (USD)</Label>
+          <Input
+            type="number"
+            value={formData.annual_funding_budget ?? ''}
+            onChange={(e) => handleInputChange('annual_funding_budget', e.target.value)}
+          />
+        </div>
+      </div>
+      <div>
+        <Label>Funding Focus Areas</Label>
+        <Textarea
+          value={formData.funding_focus || ''}
+          onChange={(e) => handleInputChange('funding_focus', e.target.value)}
+          placeholder="e.g. Education, Healthcare, Women-led Enterprises"
+          rows={3}
+        />
+      </div>
+      <div>
+        <Label>Support Offered</Label>
+        <Textarea
+          value={formData.support_preferences || ''}
+          onChange={(e) => handleInputChange('support_preferences', e.target.value)}
+          placeholder="Describe non-financial support such as mentorship, capacity building, or volunteer programs"
+          rows={3}
+        />
+      </div>
+      <div>
+        <Label>Impact Priorities</Label>
+        <Textarea
+          value={formData.impact_focus || ''}
+          onChange={(e) => handleInputChange('impact_focus', e.target.value)}
+          placeholder="Impact outcomes you prioritize in your funding"
+          rows={3}
+        />
+      </div>
+      <div>
+        <Label>Partnership Preferences</Label>
+        <Textarea
+          value={formData.partnership_preferences || ''}
+          onChange={(e) => handleInputChange('partnership_preferences', e.target.value)}
+          placeholder="Preferred partners, collaboration models, or grant structures"
+          rows={3}
+        />
+      </div>
+      <div>
+        <Label>LinkedIn Profile URL</Label>
+        <Input
+          value={formData.linkedin_url || ''}
+          onChange={(e) => handleInputChange('linkedin_url', e.target.value)}
+          placeholder="https://linkedin.com/company/your-organization"
+        />
+      </div>
+    </>
+  );
+
+  const renderGovernmentFields = () => (
+    <>
+      <ImageUpload
+        currentImage={formData.profile_image_url}
+        onImageChange={(url) => handleInputChange('profile_image_url', url)}
+        label="Institution Emblem"
+        type="logo"
+      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label>Institution Name</Label>
+          <Input
+            value={formData.business_name || ''}
+            onChange={(e) => handleInputChange('business_name', e.target.value)}
+          />
+        </div>
+        <div>
+          <Label>Registration Number</Label>
+          <Input
+            value={formData.registration_number || ''}
+            onChange={(e) => handleInputChange('registration_number', e.target.value)}
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <Label>Institution Type</Label>
+          <Select
+            value={formData.institution_type || ''}
+            onValueChange={(value) => handleInputChange('institution_type', value)}
+          >
+            <SelectTrigger><SelectValue placeholder="Select institution type" /></SelectTrigger>
+            <SelectContent>
+              {institutionTypeOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>Department / Division</Label>
+          <Input
+            value={formData.department || ''}
+            onChange={(e) => handleInputChange('department', e.target.value)}
+          />
+        </div>
+        <div>
+          <Label>Annual Program Budget (USD)</Label>
+          <Input
+            type="number"
+            value={formData.annual_revenue ?? ''}
+            onChange={(e) => handleInputChange('annual_revenue', e.target.value)}
+          />
+        </div>
+      </div>
+      <div>
+        <Label>Primary Focus Areas</Label>
+        <Textarea
+          value={formData.government_focus || ''}
+          onChange={(e) => handleInputChange('government_focus', e.target.value)}
+          placeholder="e.g. SME development, skills training, infrastructure"
+          rows={3}
+        />
+      </div>
+      <div>
+        <Label>Key Programs & Initiatives</Label>
+        <Textarea
+          value={formData.programs || ''}
+          onChange={(e) => handleInputChange('programs', e.target.value)}
+          placeholder="List major programs, priority sectors, or flagship initiatives"
+          rows={3}
+        />
+      </div>
+      <div>
+        <Label>Partnership Needs</Label>
+        <Textarea
+          value={formData.partnership_needs || ''}
+          onChange={(e) => handleInputChange('partnership_needs', e.target.value)}
+          placeholder="Describe collaboration needs with SMEs, investors, donors, or other partners"
+          rows={3}
+        />
+      </div>
+      <div>
+        <Label>Impact Priorities</Label>
+        <Textarea
+          value={formData.impact_focus || ''}
+          onChange={(e) => handleInputChange('impact_focus', e.target.value)}
+          placeholder="Outcomes you aim to achieve (e.g. job creation, export growth)"
+          rows={3}
+        />
+      </div>
+      <div>
+        <Label>LinkedIn Profile URL</Label>
+        <Input
+          value={formData.linkedin_url || ''}
+          onChange={(e) => handleInputChange('linkedin_url', e.target.value)}
+          placeholder="https://linkedin.com/company/your-institution"
         />
       </div>
     </>
@@ -346,6 +706,9 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
           {accountType === 'sole_proprietor' && renderSoleProprietorFields()}
           {accountType === 'professional' && renderProfessionalFields()}
           {accountType === 'sme' && renderSMEFields()}
+          {accountType === 'investor' && renderInvestorFields()}
+          {accountType === 'donor' && renderDonorFields()}
+          {accountType === 'government' && renderGovernmentFields()}
 
           {/* Payment Method Section */}
           <div className="border-t pt-6">

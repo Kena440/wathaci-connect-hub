@@ -7,7 +7,20 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Edit, MapPin, Phone, Mail, Building, Calendar, Users, DollarSign, CreditCard } from 'lucide-react';
+import {
+  Edit,
+  MapPin,
+  Phone,
+  Mail,
+  Building,
+  Calendar,
+  Users,
+  DollarSign,
+  CreditCard,
+  Globe,
+  Target,
+  Handshake
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export const ProfileReview = () => {
@@ -87,6 +100,39 @@ export const ProfileReview = () => {
       'government': 'Government Institution'
     };
     return labels[type as keyof typeof labels] || type;
+  };
+
+  const formatInvestmentStage = (stage: string) => {
+    const stages: Record<string, string> = {
+      pre_seed: 'Pre-seed & Seed',
+      series_a: 'Series A',
+      series_b_plus: 'Series B and Beyond',
+      growth: 'Growth & Expansion',
+      infrastructure: 'Infrastructure Projects'
+    };
+
+    return stages[stage] ?? stage;
+  };
+
+  const formatAmount = (value: unknown) => {
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    const numericValue =
+      typeof value === 'number'
+        ? value
+        : Number(String(value).replace(/[^0-9.-]/g, ''));
+
+    if (!Number.isFinite(numericValue)) {
+      return String(value);
+    }
+
+    return numericValue.toLocaleString(undefined, {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0
+    });
   };
 
   const formatQualification = (qualification: unknown) => {
@@ -286,6 +332,192 @@ export const ProfileReview = () => {
                   <div className="flex items-center gap-3">
                     <DollarSign className="h-5 w-5 text-muted-foreground" />
                     <span>Funding requirement: ${profile.funding_requirements}</span>
+                  </div>
+                )}
+              </>
+            )}
+            {profile.account_type === 'investor' && (
+              <>
+                {profile.business_name && (
+                  <div>
+                    <h4 className="font-medium">Organization Name</h4>
+                    <p className="text-muted-foreground">{profile.business_name}</p>
+                  </div>
+                )}
+                {profile.annual_revenue && (
+                  <div className="flex items-center gap-3">
+                    <DollarSign className="h-5 w-5 text-muted-foreground" />
+                    <span>
+                      Annual investment capacity: {formatAmount(profile.annual_revenue)}
+                    </span>
+                  </div>
+                )}
+                {(profile.investment_ticket_min || profile.investment_ticket_max) && (
+                  <div className="flex items-center gap-3">
+                    <DollarSign className="h-5 w-5 text-muted-foreground" />
+                    <span>
+                      Ticket size:
+                      {profile.investment_ticket_min
+                        ? ` ${formatAmount(profile.investment_ticket_min)}`
+                        : ''}
+                      {profile.investment_ticket_max
+                        ? ` - ${formatAmount(profile.investment_ticket_max)}`
+                        : ''}
+                    </span>
+                  </div>
+                )}
+                {profile.investment_stage && (
+                  <div className="flex items-center gap-3">
+                    <Target className="h-5 w-5 text-muted-foreground" />
+                    <span>Preferred stage: {formatInvestmentStage(profile.investment_stage)}</span>
+                  </div>
+                )}
+                {profile.investment_focus && (
+                  <div>
+                    <h4 className="font-medium">Investment Focus Areas</h4>
+                    <p className="text-muted-foreground whitespace-pre-line">
+                      {profile.investment_focus}
+                    </p>
+                  </div>
+                )}
+                {profile.investment_regions && (
+                  <div className="flex items-center gap-3">
+                    <Globe className="h-5 w-5 text-muted-foreground" />
+                    <span>{profile.investment_regions}</span>
+                  </div>
+                )}
+                {profile.impact_focus && (
+                  <div>
+                    <h4 className="font-medium">Impact Priorities</h4>
+                    <p className="text-muted-foreground whitespace-pre-line">
+                      {profile.impact_focus}
+                    </p>
+                  </div>
+                )}
+                {profile.support_services && (
+                  <div>
+                    <h4 className="font-medium">Support Beyond Capital</h4>
+                    <p className="text-muted-foreground whitespace-pre-line">
+                      {profile.support_services}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+            {profile.account_type === 'donor' && (
+              <>
+                {profile.business_name && (
+                  <div>
+                    <h4 className="font-medium">Organization Name</h4>
+                    <p className="text-muted-foreground">{profile.business_name}</p>
+                  </div>
+                )}
+                {profile.donor_type && (
+                  <div className="flex items-center gap-3">
+                    <Building className="h-5 w-5 text-muted-foreground" />
+                    <span>{profile.donor_type.replace(/_/g, ' ')}</span>
+                  </div>
+                )}
+                {profile.annual_funding_budget && (
+                  <div className="flex items-center gap-3">
+                    <DollarSign className="h-5 w-5 text-muted-foreground" />
+                    <span>
+                      Annual funding budget: {formatAmount(profile.annual_funding_budget)}
+                    </span>
+                  </div>
+                )}
+                {profile.funding_focus && (
+                  <div>
+                    <h4 className="font-medium">Funding Focus Areas</h4>
+                    <p className="text-muted-foreground whitespace-pre-line">
+                      {profile.funding_focus}
+                    </p>
+                  </div>
+                )}
+                {profile.support_preferences && (
+                  <div>
+                    <h4 className="font-medium">Support Offered</h4>
+                    <p className="text-muted-foreground whitespace-pre-line">
+                      {profile.support_preferences}
+                    </p>
+                  </div>
+                )}
+                {profile.impact_focus && (
+                  <div>
+                    <h4 className="font-medium">Impact Priorities</h4>
+                    <p className="text-muted-foreground whitespace-pre-line">
+                      {profile.impact_focus}
+                    </p>
+                  </div>
+                )}
+                {profile.partnership_preferences && (
+                  <div>
+                    <h4 className="font-medium">Partnership Preferences</h4>
+                    <p className="text-muted-foreground whitespace-pre-line">
+                      {profile.partnership_preferences}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+            {profile.account_type === 'government' && (
+              <>
+                {profile.business_name && (
+                  <div>
+                    <h4 className="font-medium">Institution Name</h4>
+                    <p className="text-muted-foreground">{profile.business_name}</p>
+                  </div>
+                )}
+                {profile.institution_type && (
+                  <div className="flex items-center gap-3">
+                    <Building className="h-5 w-5 text-muted-foreground" />
+                    <span>{profile.institution_type.replace(/_/g, ' ')}</span>
+                  </div>
+                )}
+                {profile.department && (
+                  <div className="flex items-center gap-3">
+                    <Users className="h-5 w-5 text-muted-foreground" />
+                    <span>Department: {profile.department}</span>
+                  </div>
+                )}
+                {profile.annual_revenue && (
+                  <div className="flex items-center gap-3">
+                    <DollarSign className="h-5 w-5 text-muted-foreground" />
+                    <span>
+                      Annual program budget: {formatAmount(profile.annual_revenue)}
+                    </span>
+                  </div>
+                )}
+                {profile.government_focus && (
+                  <div>
+                    <h4 className="font-medium">Primary Focus Areas</h4>
+                    <p className="text-muted-foreground whitespace-pre-line">
+                      {profile.government_focus}
+                    </p>
+                  </div>
+                )}
+                {profile.programs && (
+                  <div>
+                    <h4 className="font-medium">Key Programs & Initiatives</h4>
+                    <p className="text-muted-foreground whitespace-pre-line">
+                      {profile.programs}
+                    </p>
+                  </div>
+                )}
+                {profile.partnership_needs && (
+                  <div className="flex items-center gap-3">
+                    <Handshake className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-muted-foreground whitespace-pre-line">
+                      {profile.partnership_needs}
+                    </span>
+                  </div>
+                )}
+                {profile.impact_focus && (
+                  <div>
+                    <h4 className="font-medium">Impact Priorities</h4>
+                    <p className="text-muted-foreground whitespace-pre-line">
+                      {profile.impact_focus}
+                    </p>
                   </div>
                 )}
               </>

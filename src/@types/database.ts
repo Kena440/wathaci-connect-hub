@@ -64,6 +64,23 @@ export interface BusinessInfo {
   employee_count?: number;
   annual_revenue?: number;
   funding_stage?: string;
+  investment_focus?: string;
+  investment_ticket_min?: number;
+  investment_ticket_max?: number;
+  investment_stage?: string;
+  investment_regions?: string;
+  impact_focus?: string;
+  support_services?: string;
+  support_preferences?: string;
+  partnership_preferences?: string;
+  donor_type?: string;
+  funding_focus?: string;
+  annual_funding_budget?: number;
+  institution_type?: string;
+  department?: string;
+  government_focus?: string;
+  programs?: string;
+  partnership_needs?: string;
 }
 
 export interface PaymentInfo {
@@ -242,6 +259,140 @@ export interface SMENeedsAssessment {
   identified_gaps: string[];
   priority_areas: string[];
   
+  completed_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProfessionalNeedsAssessment {
+  id: string;
+  user_id: string;
+  primary_profession: string;
+  years_of_experience: number;
+  specialization_areas: string[];
+  current_employment_status: 'employed' | 'self_employed' | 'consultant' | 'unemployed' | 'retired';
+  services_offered: string[];
+  service_delivery_modes: string[];
+  hourly_rate_min: number;
+  hourly_rate_max: number;
+  target_client_types: string[];
+  client_size_preference: string[];
+  industry_focus: string[];
+  availability_hours_per_week: number;
+  project_duration_preference: 'short_term' | 'medium_term' | 'long_term' | 'flexible';
+  travel_willingness: 'local_only' | 'regional' | 'national' | 'international';
+  remote_work_capability: boolean;
+  key_skills: string[];
+  certification_status: string[];
+  continuous_learning_interest: boolean;
+  mentorship_interest: 'provide' | 'receive' | 'both' | 'none';
+  client_acquisition_challenges: string[];
+  marketing_channels: string[];
+  business_development_support_needed: string[];
+  networking_preferences: string[];
+  collaboration_interest: boolean;
+  partnership_types: string[];
+  referral_system_interest: boolean;
+  professional_profile: Record<string, any>;
+  professional_strategy: string[];
+  completed_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InvestorNeedsAssessment {
+  id: string;
+  user_id: string;
+  investment_amount_min: number;
+  investment_amount_max: number;
+  investment_horizon: 'short_term' | 'medium_term' | 'long_term';
+  risk_tolerance: 'low' | 'moderate' | 'high';
+  support_types: string[];
+  technical_assistance_areas: string[];
+  mentorship_availability: boolean;
+  preferred_industries: string[];
+  business_stages: string[];
+  geographic_focus: string[];
+  equity_percentage_min: number;
+  equity_percentage_max: number;
+  board_participation: boolean;
+  follow_on_investment: boolean;
+  due_diligence_requirements: string[];
+  decision_timeline: string;
+  investment_committee: boolean;
+  impact_focus: boolean;
+  esg_criteria: string[];
+  social_impact_importance: number;
+  co_investment_interest: boolean;
+  lead_investor_preference: 'lead' | 'follow' | 'either';
+  syndicate_participation: boolean;
+  investor_profile: Record<string, any>;
+  investment_strategy: string[];
+  completed_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DonorNeedsAssessment {
+  id: string;
+  user_id: string;
+  annual_donation_budget: number;
+  donation_frequency: 'one_time' | 'monthly' | 'quarterly' | 'annually';
+  donation_amount_per_recipient: number;
+  focus_areas: string[];
+  target_beneficiaries: string[];
+  geographic_focus: string[];
+  support_types: string[];
+  capacity_building_interest: boolean;
+  mentorship_availability: boolean;
+  impact_measurement_importance: number;
+  reporting_requirements: string[];
+  follow_up_engagement: boolean;
+  organization_size_preference: string[];
+  organization_stage_preference: string[];
+  religious_affiliation_preference: 'any' | 'christian' | 'muslim' | 'other' | 'secular_only';
+  selection_criteria: string[];
+  application_process: string;
+  decision_timeline: string;
+  collaborative_funding: boolean;
+  partner_organizations: string[];
+  volunteer_opportunities: boolean;
+  donor_profile: Record<string, any>;
+  donor_strategy: string[];
+  completed_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GovernmentNeedsAssessment {
+  id: string;
+  user_id: string;
+  institution_name: string;
+  institution_type: 'ministry' | 'agency' | 'council' | 'commission' | 'parastate' | 'other';
+  department_division: string;
+  geographic_jurisdiction: string[];
+  current_programs: string[];
+  target_beneficiaries: string[];
+  annual_budget_allocation: number;
+  program_reach: 'local' | 'provincial' | 'national' | 'regional';
+  partnership_interests: string[];
+  collaboration_types: string[];
+  preferred_partners: string[];
+  capacity_building_areas: string[];
+  staff_development_priorities: string[];
+  technical_assistance_needs: string[];
+  policy_development_focus: string[];
+  regulatory_challenges: string[];
+  stakeholder_engagement_priorities: string[];
+  digitalization_priorities: string[];
+  innovation_focus_areas: string[];
+  technology_adoption_challenges: string[];
+  monitoring_systems: boolean;
+  evaluation_frequency: 'monthly' | 'quarterly' | 'annually' | 'project_based';
+  impact_measurement_priorities: string[];
+  reporting_requirements: string[];
+  government_profile: Record<string, any>;
+  government_strategy: string[];
   completed_at: string;
   created_at: string;
   updated_at: string;

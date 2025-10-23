@@ -102,9 +102,9 @@ export const ProfileSetup = () => {
 
   const handleProfileSubmit = async (profileData: any) => {
     if (!user) return;
-    
+
     setLoading(true);
-    
+
     try {
       const sanitizeValue = (value?: string | null) => {
         if (!value) return null;
@@ -251,6 +251,14 @@ export const ProfileSetup = () => {
         : [];
 
       const sanitizedProfile: Record<string, unknown> = {};
+      const numericFields = new Set([
+        'experience_years',
+        'employees_count',
+        'annual_revenue',
+        'annual_funding_budget',
+        'investment_ticket_min',
+        'investment_ticket_max'
+      ]);
 
       for (const [key, value] of Object.entries(profilePayload)) {
         if (Array.isArray(value)) {
@@ -264,7 +272,15 @@ export const ProfileSetup = () => {
             sanitizedProfile[key] = value;
           }
         } else if (typeof value === 'string') {
-          sanitizedProfile[key] = sanitizeValue(value);
+          const sanitizedValue = sanitizeValue(value);
+          if (sanitizedValue === null) {
+            sanitizedProfile[key] = null;
+          } else if (numericFields.has(key)) {
+            const numeric = Number(sanitizedValue.replace(/,/g, ''));
+            sanitizedProfile[key] = Number.isFinite(numeric) ? numeric : sanitizedValue;
+          } else {
+            sanitizedProfile[key] = sanitizedValue;
+          }
         } else {
           sanitizedProfile[key] = value ?? null;
         }
