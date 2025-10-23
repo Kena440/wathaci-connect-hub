@@ -13,6 +13,7 @@ import { User, Mail, Lock, Building, Eye, EyeOff, Phone } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { validatePhoneNumber } from '@/lib/payment-config';
 import { registerUser } from '@/lib/api/register-user';
+import { toast } from '@/components/ui/use-toast';
 
 // Validation schema
 const getStartedSchema = z
@@ -109,14 +110,22 @@ export const GetStarted = () => {
         profile_completed: false,
       });
 
-      await registerUser({
-        firstName: trimmedFirstName,
-        lastName: trimmedLastName,
-        email: data.email.trim(),
-        accountType: data.accountType,
-        company: trimmedCompany ? trimmedCompany : null,
-        mobileNumber: trimmedMobile ? trimmedMobile : null,
-      });
+      try {
+        await registerUser({
+          firstName: trimmedFirstName,
+          lastName: trimmedLastName,
+          email: data.email.trim(),
+          accountType: data.accountType,
+          company: trimmedCompany ? trimmedCompany : null,
+          mobileNumber: trimmedMobile ? trimmedMobile : null,
+        });
+      } catch (registrationError: any) {
+        console.warn('Optional CRM registration failed:', registrationError);
+        toast({
+          title: 'Profile sync delayed',
+          description: 'Your account is ready, and we\'ll finish syncing your profile shortly.',
+        });
+      }
 
       navigate('/profile-setup');
     } catch (error: any) {
@@ -159,18 +168,19 @@ export const GetStarted = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} autoComplete="on" className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
               <div className="relative">
                 <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="firstName"
-                  placeholder="First name"
-                  {...register('firstName')}
-                  className={`pl-10 ${errors.firstName ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
-                />
+              <Input
+                id="firstName"
+                autoComplete="given-name"
+                placeholder="First name"
+                {...register('firstName')}
+                className={`pl-10 ${errors.firstName ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
+              />
               </div>
               {errors.firstName && (
                 <p className="text-sm text-red-600 mt-1">{errors.firstName.message}</p>
@@ -180,6 +190,7 @@ export const GetStarted = () => {
               <Label htmlFor="lastName">Last Name</Label>
               <Input
                 id="lastName"
+                autoComplete="family-name"
                 placeholder="Last name"
                 {...register('lastName')}
                 className={errors.lastName ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}
@@ -197,6 +208,7 @@ export const GetStarted = () => {
               <Input
                 id="email"
                 type="email"
+                autoComplete="email"
                 placeholder="Enter your email"
                 {...register('email')}
                 className={`pl-10 ${errors.email ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
@@ -214,6 +226,7 @@ export const GetStarted = () => {
               <Input
                 id="mobileNumber"
                 type="tel"
+                autoComplete="tel"
                 placeholder="e.g., +260 96 1234567"
                 {...register('mobileNumber')}
                 className={`pl-10 ${errors.mobileNumber ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
@@ -233,6 +246,7 @@ export const GetStarted = () => {
               <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 id="company"
+                autoComplete="organization"
                 placeholder="Company name"
                 {...register('company')}
                 className="pl-10"
@@ -271,13 +285,14 @@ export const GetStarted = () => {
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Password"
-                  {...register('password')}
-                  className={`pl-10 pr-10 ${errors.password ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
-                />
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                placeholder="Password"
+                {...register('password')}
+                className={`pl-10 pr-10 ${errors.password ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
+              />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -293,13 +308,14 @@ export const GetStarted = () => {
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
               <div className="relative">
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="Confirm password"
-                  {...register('confirmPassword')}
-                  className={`pr-10 ${errors.confirmPassword ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
-                />
+              <Input
+                id="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                placeholder="Confirm password"
+                {...register('confirmPassword')}
+                className={`pr-10 ${errors.confirmPassword ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
+              />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
