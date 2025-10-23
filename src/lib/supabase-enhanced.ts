@@ -106,8 +106,11 @@ const supabaseUrl = resolveFirstEnvValue(SUPABASE_URL_ENV_KEYS);
 const supabaseKey = resolveFirstEnvValue(SUPABASE_KEY_ENV_KEYS);
 
 if ((!supabaseUrl || !supabaseKey) && !isTestEnvironment) {
-  throw new Error(
-    'Missing Supabase configuration. Please set VITE_SUPABASE_URL (or its aliases) and either VITE_SUPABASE_KEY or VITE_SUPABASE_ANON_KEY environment variables.'
+  console.warn(
+    [
+      'Missing Supabase configuration detected. Falling back to the mock Supabase client so the UI can still render.',
+      'Set VITE_SUPABASE_URL (or its aliases) and either VITE_SUPABASE_KEY or VITE_SUPABASE_ANON_KEY environment variables to enable full functionality.',
+    ].join(' ')
   );
 }
 
