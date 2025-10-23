@@ -365,6 +365,99 @@ export class UserService extends BaseService<User> {
   }
 
   /**
+   * Sends a one-time password to the provided email to confirm login.
+   */
+  async sendLoginOtp(email: string): Promise<DatabaseResponse<{ success: true }>> {
+    return withErrorHandling(
+      async () => {
+        try {
+          const emailRedirectTo = getEmailRedirectTo();
+
+          const { error } = await supabase.auth.signInWithOtp({
+            email,
+            options: {
+              shouldCreateUser: false,
+              ...(emailRedirectTo ? { emailRedirectTo } : {}),
+            },
+          });
+
+          if (error) {
+            if (isNetworkError(error)) {
+              return {
+                data: null,
+                error: new Error('Unable to send verification code. Please check your connection and try again.'),
+              };
+            }
+
+            return { data: null, error };
+          }
+
+          return { data: { success: true }, error: null };
+        } catch (error: any) {
+          if (isNetworkError(error) || error.name === 'TypeError') {
+            return {
+              data: null,
+              error: new Error('Unable to send verification code. Please check your connection and try again.'),
+            };
+          }
+
+          throw error;
+        }
+      },
+      'UserService.sendLoginOtp'
+    );
+  }
+
+  /**
+   * Confirms a one-time password and establishes a new authenticated session.
+   */
+  async verifyLoginOtp(email: string, token: string): Promise<DatabaseResponse<User>> {
+    return withErrorHandling(
+      async () => {
+        try {
+          const { data, error } = await supabase.auth.verifyOtp({
+            email,
+            token,
+            type: 'email',
+          });
+
+          if (error) {
+            if (isNetworkError(error)) {
+              return {
+                data: null,
+                error: new Error('Unable to verify the code. Please check your connection and try again.'),
+              };
+            }
+
+            return { data: null, error };
+          }
+
+          const authUser = data?.user;
+
+          if (!authUser) {
+            return { data: null, error: new Error('Invalid or expired verification code.') };
+          }
+
+          return {
+            data: mapAuthUserToUser(authUser),
+            error: null,
+          };
+        } catch (error: any) {
+          if (isNetworkError(error) || error.name === 'TypeError') {
+            return {
+              data: null,
+              error: new Error('Unable to verify the code. Please check your connection and try again.'),
+            };
+          }
+
+          throw error;
+        }
+      },
+      'UserService.verifyLoginOtp'
+    );
+  }
+
+  /**
    * Sign up new user
    */
   async signUp(

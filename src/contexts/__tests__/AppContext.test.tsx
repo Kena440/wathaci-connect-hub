@@ -5,9 +5,11 @@ import { supabase } from '@/lib/supabase-enhanced';
 import { toast } from '@/components/ui/use-toast';
 
 jest.mock('@/lib/supabase-enhanced', () => {
-  const auth = {
+  const auth: any = {
     getUser: jest.fn(),
     signInWithPassword: jest.fn(),
+    signInWithOtp: jest.fn(),
+    verifyOtp: jest.fn(),
     signUp: jest.fn(),
     signOut: jest.fn(),
     onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } }))
@@ -16,7 +18,7 @@ jest.mock('@/lib/supabase-enhanced', () => {
     supabase: { auth, from: jest.fn() },
     withErrorHandling: async (operation: any) => {
       const result = await operation();
-      return { data: result.data ?? null, error: result.error ?? null };
+      return { data: (result as any).data ?? null, error: (result as any).error ?? null };
     },
   };
 });
@@ -29,6 +31,8 @@ const mockSupabase = supabase as unknown as {
   auth: {
     getUser: jest.Mock;
     signInWithPassword: jest.Mock;
+    signInWithOtp: jest.Mock;
+    verifyOtp: jest.Mock;
     signUp: jest.Mock;
     signOut: jest.Mock;
     onAuthStateChange: jest.Mock;
@@ -81,6 +85,8 @@ const renderWithContext = async () => {
 beforeEach(() => {
   jest.clearAllMocks();
   mockSupabase.auth.signInWithPassword.mockReset();
+  mockSupabase.auth.signInWithOtp.mockReset();
+  mockSupabase.auth.verifyOtp.mockReset();
   mockSupabase.auth.signUp.mockReset();
   mockSupabase.auth.signOut.mockReset();
   mockSupabase.from.mockReset?.();
@@ -94,7 +100,7 @@ beforeEach(() => {
 });
 
 describe('AppContext auth actions', () => {
-  test('signIn success triggers toast', async () => {
+  test('initiateSignIn sends OTP for Supabase users', async () => {
     const profile = { profile_completed: true, account_type: 'sme' } as any;
     mockSupabase.auth.getUser.mockResolvedValueOnce({ data: { user: null } } as any);
     mockSupabase.auth.signInWithPassword.mockResolvedValue({
@@ -104,8 +110,47 @@ describe('AppContext auth actions', () => {
           email: 'test@example.com',
           created_at: 'now',
           updated_at: 'now',
+          user_metadata: {},
+        },
+      },
+      error: null,
+    } as any);
+    mockSupabase.auth.signOut.mockResolvedValue({ error: null } as any);
+    mockSupabase.auth.signInWithOtp.mockResolvedValue({ data: { user: null, session: null }, error: null } as any);
+    mockSupabase.from.mockImplementation(() => mockProfileChain(profile) as any);
+
+    const ctx = await renderWithContext();
+    const result = await ctx.initiateSignIn('test@example.com', 'password');
+
+    expect(mockSupabase.auth.signInWithPassword).toHaveBeenCalledWith({ email: 'test@example.com', password: 'password' });
+    expect(mockSupabase.auth.signInWithOtp).toHaveBeenCalledWith(expect.objectContaining({ email: 'test@example.com' }));
+    expect(result).toEqual({ otpSent: true, offlineState: null });
+    expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Verification code sent' }));
+  });
+
+  test('initiateSignIn failure throws transformed error and no toast', async () => {
+    const error = { message: 'Invalid login credentials' };
+    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null } } as any);
+    mockSupabase.auth.signInWithPassword.mockResolvedValue({ error } as any);
+    mockSupabase.from.mockImplementation(() => mockProfileChain() as any);
+
+    const ctx = await renderWithContext();
+    await expect(ctx.initiateSignIn('test@example.com', 'bad')).rejects.toThrow('Invalid email or password. Please check your credentials and try again.');
+    expect(mockToast).not.toHaveBeenCalled();
+  });
+
+  test('verifyOtp completes sign-in and refreshes user state', async () => {
+    const profile = { profile_completed: true, account_type: 'sme' } as any;
+    mockSupabase.auth.verifyOtp.mockResolvedValue({
+      data: {
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          created_at: 'now',
+          updated_at: 'now',
           user_metadata: { account_type: 'sme', profile_completed: true },
         },
+        session: {},
       },
       error: null,
     } as any);
@@ -119,30 +164,17 @@ describe('AppContext auth actions', () => {
           user_metadata: { account_type: 'sme', profile_completed: true },
         },
       },
+      error: null,
     } as any);
     mockSupabase.from.mockImplementation(() => mockProfileChain(profile) as any);
 
     const ctx = await renderWithContext();
-    const result = await ctx.signIn('test@example.com', 'password');
+    const result = await ctx.verifyOtp('test@example.com', '123456');
 
-    expect(mockSupabase.auth.signInWithPassword).toHaveBeenCalledWith({ email: 'test@example.com', password: 'password' });
-    expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
-      title: 'Welcome back!',
-      description: 'You have been signed in successfully.',
-    }));
-    expect(result.user).toEqual(expect.objectContaining({ id: 'user-123', email: 'test@example.com' }));
+    expect(mockSupabase.auth.verifyOtp).toHaveBeenCalledWith({ email: 'test@example.com', token: '123456', type: 'email' });
+    expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Welcome back!' }));
+    expect(result.user).toEqual(expect.objectContaining({ email: 'test@example.com', account_type: 'sme' }));
     expect(result.profile).toEqual(profile);
-  });
-
-  test('signIn failure throws error and no toast', async () => {
-    const error = new Error('Invalid');
-    mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null } } as any);
-    mockSupabase.auth.signInWithPassword.mockResolvedValue({ error } as any);
-    mockSupabase.from.mockImplementation(() => mockProfileChain() as any);
-
-    const ctx = await renderWithContext();
-    await expect(ctx.signIn('test@example.com', 'bad')).rejects.toThrow('Invalid');
-    expect(mockToast).not.toHaveBeenCalled();
   });
 
   test('signUp success inserts profile and shows toast', async () => {
@@ -250,13 +282,14 @@ describe('AppContext auth actions', () => {
     });
 
     const ctx = await renderWithContext();
-    let result!: ReturnType<typeof ctx.signIn> extends Promise<infer R> ? R : never;
+    let result!: Awaited<ReturnType<typeof ctx.initiateSignIn>>;
     await act(async () => {
-      result = await ctx.signIn('admin@wathaci.test', 'AdminPass123!');
+      result = await ctx.initiateSignIn('admin@wathaci.test', 'AdminPass123!');
     });
 
-    expect(result.user).toEqual(expect.objectContaining({ email: 'admin@wathaci.test' }));
-    expect(result.profile).toEqual(expect.objectContaining({ account_type: 'admin' }));
+    expect(result.otpSent).toBe(false);
+    expect(result.offlineState?.user).toEqual(expect.objectContaining({ email: 'admin@wathaci.test' }));
+    expect(result.offlineState?.profile).toEqual(expect.objectContaining({ account_type: 'admin' }));
     expect(window.localStorage.getItem('wathaci_offline_session')).toBeTruthy();
     await waitFor(() => expect(ctx.user).toEqual(expect.objectContaining({ email: 'admin@wathaci.test' })));
 
@@ -266,7 +299,7 @@ describe('AppContext auth actions', () => {
   test('refreshUser falls back to offline session when auth fails', async () => {
     const ctx = await renderWithContext();
     await act(async () => {
-      await ctx.signIn('admin@wathaci.test', 'AdminPass123!');
+      await ctx.initiateSignIn('admin@wathaci.test', 'AdminPass123!');
     });
 
     mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: new Error('network issue') } as any);

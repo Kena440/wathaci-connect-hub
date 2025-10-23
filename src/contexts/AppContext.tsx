@@ -118,10 +118,18 @@ interface AppContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  initiateSignIn: (email: string, password: string) => Promise<InitiateSignInResult>;
+  verifyOtp: (email: string, token: string) => Promise<AuthState>;
+  resendOtp: (email: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<AuthState>;
   signUp: (email: string, password: string, userData?: any) => Promise<AuthState>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<AuthState>;
+}
+
+interface InitiateSignInResult {
+  otpSent: boolean;
+  offlineState: AuthState | null;
 }
 
 const OFFLINE_SESSION_STORAGE_KEY = 'wathaci_offline_session';
@@ -173,6 +181,9 @@ const defaultAppContext: AppContextType = {
   user: null,
   profile: null,
   loading: true,
+  initiateSignIn: async () => ({ otpSent: false, offlineState: null }),
+  verifyOtp: async () => ({ user: null, profile: null }),
+  resendOtp: async () => {},
   signIn: async () => ({ user: null, profile: null }),
   signUp: async () => ({ user: null, profile: null }),
   signOut: async () => {},
@@ -191,6 +202,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const toggleSidebar = () => {
     setSidebarOpen(prev => !prev);
+  };
+
+  const resolveOfflineAuthState = (authUser: User | null): AuthState | null => {
+    if (!authUser) {
+      return null;
+    }
+
+    const offlineProfile = authUser.user_metadata?.[OFFLINE_PROFILE_METADATA_KEY] as Profile | undefined;
+    const isOfflineAccount = Boolean(authUser.user_metadata?.[OFFLINE_ACCOUNT_METADATA_KEY]);
+
+    if (!isOfflineAccount) {
+      return null;
+    }
+
+    const resolvedUser: User = {
+      ...authUser,
+      profile_completed: offlineProfile?.profile_completed ?? authUser.profile_completed,
+      account_type: offlineProfile?.account_type ?? authUser.account_type,
+    };
+
+    const offlineState: AuthState = {
+      user: resolvedUser,
+      profile: offlineProfile ?? null,
+    };
+
+    setUser(resolvedUser);
+    if (offlineProfile) {
+      setProfile(offlineProfile);
+    } else {
+      setProfile(null);
+    }
+
+    persistOfflineSession(offlineState);
+    setLoading(false);
+
+    return offlineState;
   };
 
   const refreshUser = async (): Promise<AuthState> => {
@@ -325,70 +372,148 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   };
 
-  const signIn = async (email: string, password: string): Promise<AuthState> => {
+  const initiateSignIn = async (email: string, password: string): Promise<InitiateSignInResult> => {
     const { data: user, error } = await userService.signIn(email, password);
 
     if (error) {
-      // Provide user-friendly error messages
       let errorMessage = error.message || 'Failed to sign in';
-      
-      // Check for common error patterns and provide helpful messages
-      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+      const normalized = errorMessage.toLowerCase();
+
+      if (normalized.includes('network') || normalized.includes('fetch')) {
         errorMessage = 'We couldn\'t reach WATHACI servers right now. Please try again shortly.';
-      } else if (errorMessage.includes('Invalid login credentials')) {
+      } else if (normalized.includes('invalid login credentials')) {
         errorMessage = 'Invalid email or password. Please check your credentials and try again.';
-      } else if (errorMessage.includes('Email not confirmed')) {
+      } else if (normalized.includes('email not confirmed')) {
         errorMessage = 'Please verify your email address before signing in. Check your inbox for the verification link.';
       }
-      
+
       throw new Error(errorMessage);
     }
-    
-    toast({
-      title: "Welcome back!",
-      description: "You have been signed in successfully.",
-    });
 
-    const offlineProfile = user?.user_metadata?.[OFFLINE_PROFILE_METADATA_KEY] as Profile | undefined;
-    const isOfflineAccount = Boolean(user?.user_metadata?.[OFFLINE_ACCOUNT_METADATA_KEY]);
+    const offlineState = resolveOfflineAuthState(user ?? null);
 
-    if (isOfflineAccount && user) {
-      const resolvedUser: User = {
-        ...user,
-        profile_completed: offlineProfile?.profile_completed ?? user.profile_completed,
-        account_type: offlineProfile?.account_type ?? user.account_type,
+    if (offlineState) {
+      toast({
+        title: 'Welcome back!',
+        description: 'You have been signed in successfully.',
+      });
+
+      return {
+        otpSent: false,
+        offlineState,
       };
+    }
 
-      const offlineState: AuthState = {
-        user: resolvedUser,
-        profile: offlineProfile ?? null,
-      };
+    clearOfflineSession();
 
-      setUser(resolvedUser);
+    try {
+      await supabase.auth.signOut();
+    } catch (signOutError) {
+      console.warn('Unable to clear pre-OTP session state:', signOutError);
+    }
 
-      if (offlineProfile) {
-        setProfile(offlineProfile);
+    const { error: otpError } = await userService.sendLoginOtp(email);
+
+    if (otpError) {
+      let errorMessage = otpError.message || 'Failed to send verification code.';
+      const normalized = errorMessage.toLowerCase();
+
+      if (normalized.includes('network') || normalized.includes('fetch')) {
+        errorMessage = 'We could not send the verification code due to a network issue. Please try again.';
       }
 
-      persistOfflineSession(offlineState);
-      setLoading(false);
+      throw new Error(errorMessage);
+    }
+
+    toast({
+      title: 'Verification code sent',
+      description: 'Enter the 6-digit code we sent to your email to finish signing in.',
+    });
+
+    return {
+      otpSent: true,
+      offlineState: null,
+    };
+  };
+
+  const verifyOtp = async (email: string, token: string): Promise<AuthState> => {
+    const { data: user, error } = await userService.verifyLoginOtp(email, token);
+
+    if (error) {
+      let errorMessage = error.message || 'Invalid or expired verification code.';
+      const normalized = errorMessage.toLowerCase();
+
+      if (normalized.includes('network') || normalized.includes('fetch')) {
+        errorMessage = 'We could not verify the code due to a network issue. Please try again.';
+      } else if (normalized.includes('invalid') || normalized.includes('expired')) {
+        errorMessage = 'The verification code is invalid or has expired. Please request a new code.';
+      }
+
+      throw new Error(errorMessage);
+    }
+
+    const offlineState = resolveOfflineAuthState(user ?? null);
+
+    if (offlineState) {
+      toast({
+        title: 'Welcome back!',
+        description: 'You have been signed in successfully.',
+      });
 
       return offlineState;
     }
 
     clearOfflineSession();
 
-    // Refresh user data after successful sign in
     const refreshedState = await refreshUser();
 
-    // Fallback to the user returned by the auth API if refresh didn't provide one
+    toast({
+      title: 'Welcome back!',
+      description: 'You have been signed in successfully.',
+    });
+
     if (!refreshedState.user && user) {
       setUser(user);
-      clearOfflineSession();
       return { user, profile: null };
     }
 
     return refreshedState;
+  };
+
+  const resendOtp = async (email: string) => {
+    const { error } = await userService.sendLoginOtp(email);
+
+    if (error) {
+      let errorMessage = error.message || 'Unable to resend verification code.';
+      const normalized = errorMessage.toLowerCase();
+
+      if (normalized.includes('network') || normalized.includes('fetch')) {
+        errorMessage = 'We could not resend the verification code due to a network issue. Please try again.';
+      }
+
+      throw new Error(errorMessage);
+    }
+
+    toast({
+      title: 'Verification code sent',
+      description: 'Check your email for the latest verification code.',
+    });
+  };
+
+  const signIn = async (email: string, password: string): Promise<AuthState> => {
+    const result = await initiateSignIn(email, password);
+
+    if (result.offlineState) {
+      return result.offlineState;
+    }
+
+    throw Object.assign(
+      new Error('A verification code has been sent to your email. Enter the code to complete sign in.'),
+      {
+        name: 'OtpVerificationRequiredError',
+        code: 'OTP_REQUIRED',
+      }
+    );
   };
 
   const signUp = async (email: string, password: string, userData?: any): Promise<AuthState> => {
@@ -538,6 +663,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         user,
         profile,
         loading,
+        initiateSignIn,
+        verifyOtp,
+        resendOtp,
         signIn,
         signUp,
         signOut,

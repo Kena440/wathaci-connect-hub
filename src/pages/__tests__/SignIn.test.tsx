@@ -5,7 +5,9 @@ import SignIn from '../SignIn';
 // Mock the AppContext
 jest.mock('@/contexts/AppContext', () => ({
   useAppContext: () => ({
-    signIn: jest.fn().mockRejectedValue(new Error('Invalid credentials')),
+    initiateSignIn: jest.fn().mockResolvedValue({ otpSent: true, offlineState: null }),
+    verifyOtp: jest.fn().mockResolvedValue({ user: null, profile: null }),
+    resendOtp: jest.fn(),
   }),
 }));
 
@@ -46,7 +48,7 @@ describe('SignIn Validation', () => {
   it('shows validation error for short password', async () => {
     render(<SignInWrapper />);
     
-    const passwordInput = screen.getByLabelText(/password/i);
+    const passwordInput = screen.getByLabelText(/password/i, { selector: 'input' });
     const submitButton = screen.getByRole('button', { name: /sign in/i });
 
     fireEvent.change(passwordInput, { target: { value: '123' } });
@@ -61,7 +63,7 @@ describe('SignIn Validation', () => {
     render(<SignInWrapper />);
     
     const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
+    const passwordInput = screen.getByLabelText(/password/i, { selector: 'input' });
     const submitButton = screen.getByRole('button', { name: /sign in/i });
 
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
