@@ -740,9 +740,9 @@ export class ProfileService extends BaseService<Profile> {
           sole_proprietor: ['business_name', 'registration_number'],
           professional: ['qualifications', 'specialization'],
           sme: ['business_name', 'registration_number', 'industry_sector'],
-          investor: ['business_name', 'annual_revenue'],
-          donor: ['business_name'],
-          government: ['business_name', 'registration_number'],
+          investor: ['business_name', 'annual_revenue', 'investment_focus', 'investment_stage'],
+          donor: ['business_name', 'donor_type', 'annual_funding_budget', 'funding_focus'],
+          government: ['business_name', 'registration_number', 'institution_type', 'department', 'government_focus'],
           admin: []
         };
 
