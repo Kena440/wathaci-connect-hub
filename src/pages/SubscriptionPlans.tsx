@@ -8,6 +8,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { subscriptionPlans, getPlansForUserType, getUserTypeLabel } from '@/data/subscriptionPlans';
 import { UserTypeSubscriptions } from '@/components/UserTypeSubscriptions';
 import { SubscriptionCard } from '@/components/SubscriptionCard';
+import BackToHomeButton from '@/components/BackToHomeButton';
 
 export const SubscriptionPlans = () => {
   const [selectedUserType, setSelectedUserType] = useState<string>('all');
@@ -40,6 +41,9 @@ export const SubscriptionPlans = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-emerald-50 py-12 px-4">
       <div className="max-w-7xl mx-auto">
+        <div className="mb-6">
+          <BackToHomeButton />
+        </div>
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Choose Your Plan</h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">

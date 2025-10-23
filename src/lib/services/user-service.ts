@@ -47,6 +47,7 @@ const offlineAccounts: OfflineAccount[] = [
       payment_method: 'phone',
       payment_phone: '+260211000000',
       use_same_phone: true,
+      bio: 'Administrator account for WATHACI CONNECT platform operations.',
       qualifications: [],
       gaps_identified: [],
     };
@@ -91,6 +92,7 @@ const offlineAccounts: OfflineAccount[] = [
       payment_phone: '+260955000000',
       use_same_phone: true,
       industry_sector: 'Technology',
+      bio: 'Sample SME account showcasing platform capabilities.',
       qualifications: [],
       gaps_identified: [],
     };

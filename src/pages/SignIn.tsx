@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/contexts/AppContext';
+import BackToHomeButton from '@/components/BackToHomeButton';
 
 // Validation schema
 const signInSchema = z.object({
@@ -62,13 +63,16 @@ const SignIn = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 relative">
-      <div 
+      <div
         className="fixed inset-0 bg-center bg-cover"
         style={{
           backgroundImage: "url('/images/Partnership%20Hub.png')",
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-br from-orange-50/70 via-white/60 to-green-50/70" />
+      <div className="absolute top-6 left-6 z-20">
+        <BackToHomeButton />
+      </div>
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <img
@@ -170,9 +174,7 @@ const SignIn = () => {
         </Card>
 
         <div className="mt-8 text-center">
-          <Link to="/" className="text-gray-600 hover:text-gray-800 font-medium">
-            ← Back to Home
-          </Link>
+          <BackToHomeButton variant="link" />
         </div>
       </div>
     </div>

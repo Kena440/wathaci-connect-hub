@@ -17,6 +17,7 @@ import { PartnershipHub } from "./pages/PartnershipHub";
 import FundingHub from "./pages/FundingHub";
 import { ProfileSetup } from "./pages/ProfileSetup";
 import { ProfileReview } from "./components/ProfileReview";
+import { ProfileEdit } from "./pages/ProfileEdit";
 import FreelancerHub from "./pages/FreelancerHub";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -41,6 +42,14 @@ export const AppRoutes = () => (
     <Route path="/signin" element={<SignIn />} />
     <Route path="/get-started" element={<GetStarted />} />
     <Route path="/profile-setup" element={<ProfileSetup />} />
+    <Route
+      path="/profile-edit"
+      element={
+        <PrivateRoute>
+          <ProfileEdit />
+        </PrivateRoute>
+      }
+    />
     <Route path="/profile-review" element={<ProfileReview />} />
     <Route path="/subscription-plans" element={<SubscriptionPlans />} />
     <Route path="/partnership-hub" element={<PartnershipHub />} />

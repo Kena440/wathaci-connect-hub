@@ -7,6 +7,7 @@ import { DonateButton } from '@/components/DonateButton';
 import AppLayout from '@/components/AppLayout';
 import IndustryMatcher from '@/components/industry/IndustryMatcher';
 import { Users, Lightbulb, Heart, Target } from 'lucide-react';
+import BackToHomeButton from '@/components/BackToHomeButton';
 
 const FreelancerHub = () => {
   const [activeTab, setActiveTab] = useState('directory');
@@ -22,6 +23,9 @@ const FreelancerHub = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/70 via-emerald-600/60 to-blue-800/70" />
         <div className="relative z-10 py-16 text-white">
+          <div className="max-w-6xl mx-auto px-6 mb-8">
+            <BackToHomeButton variant="secondary" />
+          </div>
           <div className="max-w-6xl mx-auto px-6">
             <div className="flex items-center justify-between">
               <div>

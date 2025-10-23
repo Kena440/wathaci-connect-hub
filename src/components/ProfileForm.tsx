@@ -690,16 +690,18 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
           {/* Bio Section */}
           <div>
             <Label>Bio</Label>
-            <Textarea 
-              value={formData.bio || ''}
-              onChange={(e) => handleInputChange('bio', e.target.value)}
-              placeholder="Tell others about yourself and what you do..."
-              rows={4}
-            />
-            <p className="text-sm text-muted-foreground mt-1">
-              This will be shown to anyone who views your profile
-            </p>
+          <Textarea
+            value={formData.bio || ''}
+            onChange={(e) => handleInputChange('bio', e.target.value)}
+            placeholder="Tell others about yourself and what you do..."
+            rows={4}
+            maxLength={400}
+          />
+          <div className="flex items-center justify-between text-sm text-muted-foreground mt-1">
+            <span>This will be shown to anyone who views your profile</span>
+            <span>{(formData.bio?.length ?? 0)} / 400</span>
           </div>
+        </div>
           </div>
 
           {/* Account Type Specific Fields */}

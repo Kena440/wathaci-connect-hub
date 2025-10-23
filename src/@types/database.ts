@@ -53,6 +53,7 @@ export interface PersonalInfo {
   };
   profile_image_url?: string;
   linkedin_url?: string;
+  bio?: string;
 }
 
 export interface BusinessInfo {

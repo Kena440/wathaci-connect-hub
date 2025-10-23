@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import BackToHomeButton from '@/components/BackToHomeButton';
 
 const TestError = () => {
   useEffect(() => {
@@ -7,7 +8,8 @@ const TestError = () => {
   }, []);
 
   return (
-    <div>
+    <div className="p-6 space-y-4">
+      <BackToHomeButton />
       <h1>Test Error Page</h1>
       <p>This page should trigger the ErrorBoundary.</p>
     </div>

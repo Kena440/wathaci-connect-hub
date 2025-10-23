@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import BackToHomeButton from '@/components/BackToHomeButton';
 import {
   Edit,
   MapPin,
@@ -68,22 +69,30 @@ export const ProfileReview = () => {
   }, [user, navigate, fetchProfile]);
 
   const handleEditProfile = () => {
-    navigate('/profile-setup');
+    navigate('/profile-edit');
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading profile...</div>;
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <BackToHomeButton />
+        <span className="text-muted-foreground">Loading profile...</span>
+      </div>
+    );
   }
 
   if (!profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground mb-4">Profile not found.</p>
-            <Button onClick={() => navigate('/profile-setup')}>
-              Create Profile
-            </Button>
+          <CardContent className="pt-6 text-center space-y-4">
+            <p className="text-muted-foreground">Profile not found.</p>
+            <div className="flex flex-col gap-2">
+              <Button onClick={() => navigate('/profile-setup')}>
+                Create Profile
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/')}>Go Home</Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -180,6 +189,8 @@ export const ProfileReview = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-emerald-50 py-8 px-4">
       <div className="max-w-4xl mx-auto space-y-6">
+        <BackToHomeButton />
+
         {/* Header */}
         <Card>
           <CardHeader>
@@ -212,6 +223,20 @@ export const ProfileReview = () => {
             </div>
           </CardHeader>
         </Card>
+
+        {profile.bio && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Bio</CardTitle>
+              <CardDescription>Share this overview with the community.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground whitespace-pre-line leading-relaxed">
+                {profile.bio}
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Contact Information */}
         <Card>

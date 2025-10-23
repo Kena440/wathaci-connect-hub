@@ -1,8 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import BackToHomeButton from "@/components/BackToHomeButton";
 
 export default function TermsOfService() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="mb-6">
+        <BackToHomeButton />
+      </div>
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl font-bold text-center">Terms of Service</CardTitle>

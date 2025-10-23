@@ -7,6 +7,7 @@ import StatsSection from '@/components/StatsSection';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import { SubscriptionBanner } from '@/components/SubscriptionBanner';
 import { useAppContext } from '@/contexts/AppContext';
+import BackToHomeButton from '@/components/BackToHomeButton';
 
 const Index: React.FC = () => {
   const { user } = useAppContext();
@@ -27,6 +28,9 @@ const Index: React.FC = () => {
           className="absolute inset-0 bg-gradient-to-r from-blue-600/70 to-emerald-600/70"
         />
         <div className="relative z-10">
+          <div className="container mx-auto px-4 py-4 flex justify-end">
+            <BackToHomeButton variant="outline" />
+          </div>
           <HeroSection />
           {user && (
             <div className="container mx-auto px-4 py-6">

@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Linkedin, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Linkedin } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
+import BackToHomeButton from "@/components/BackToHomeButton";
 
 interface TeamMember {
   name: string;
@@ -46,13 +46,7 @@ export default function AboutUs() {
         />
         <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-white/70 to-blue-50/60" />
         <div className="relative z-10 container mx-auto px-4 py-8 max-w-4xl space-y-8 min-h-screen">
-          <Link
-            to="/"
-            className="inline-flex items-center text-sm text-blue-600 hover:underline"
-          >
-            <ArrowLeft className="mr-1 h-4 w-4" />
-            Back to Home
-          </Link>
+          <BackToHomeButton variant="secondary" />
           <Card>
             <CardHeader>
               <CardTitle className="text-3xl font-bold text-center">About Us</CardTitle>

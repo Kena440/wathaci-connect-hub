@@ -13,6 +13,7 @@ import { User, Mail, Lock, Building, Eye, EyeOff, Phone } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { validatePhoneNumber } from '@/lib/payment-config';
 import { registerUser } from '@/lib/api/register-user';
+import BackToHomeButton from '@/components/BackToHomeButton';
 
 // Validation schema
 const getStartedSchema = z
@@ -133,26 +134,29 @@ export const GetStarted = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
-      <div 
+      <div
         className="fixed inset-0 bg-center bg-cover"
         style={{
           backgroundImage: "url('/images/Partnership%20Hub.png')",
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-br from-orange-50/70 via-white/60 to-green-50/70" />
+      <div className="absolute top-6 left-6 z-20">
+        <BackToHomeButton />
+      </div>
       <Card className="w-full max-w-lg relative z-10">
-      <CardHeader className="text-center">
-        <img
-          src="https://d64gsuwffb70l.cloudfront.net/686a39ec793daf0c658a746a_1753699300137_a4fb9790.png"
-          alt="WATHACI CONNECT"
-          loading="lazy"
-          decoding="async"
-          className="h-20 w-auto mx-auto mb-4 drop-shadow-lg"
-        />
-        <CardTitle className="text-2xl">Get Started</CardTitle>
-        <CardDescription>Create your WATHACI account</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        <CardHeader className="text-center">
+          <img
+            src="https://d64gsuwffb70l.cloudfront.net/686a39ec793daf0c658a746a_1753699300137_a4fb9790.png"
+            alt="WATHACI CONNECT"
+            loading="lazy"
+            decoding="async"
+            className="h-20 w-auto mx-auto mb-4 drop-shadow-lg"
+          />
+          <CardTitle className="text-2xl">Get Started</CardTitle>
+          <CardDescription>Create your WATHACI account</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
         {serverError && (
           <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
             {serverError}

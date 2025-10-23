@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabase-enhanced';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { PaymentStatusTracker } from '@/components/PaymentStatusTracker';
+import BackToHomeButton from '@/components/BackToHomeButton';
 
 // Products will be fetched from database in production
 
@@ -83,7 +84,7 @@ const Marketplace = () => {
   return (
     <AppLayout>
       <div className="min-h-screen bg-gray-50 relative">
-        <div 
+        <div
           className="fixed inset-0 bg-center bg-cover"
           style={{
             backgroundImage:
@@ -92,6 +93,9 @@ const Marketplace = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/70 to-emerald-600/70" />
         <div className="relative z-10 py-16 text-white">
+          <div className="max-w-6xl mx-auto px-6 mb-6 flex justify-start">
+            <BackToHomeButton variant="secondary" />
+          </div>
           <div className="max-w-6xl mx-auto px-6 text-center">
             <h1 className="text-5xl font-bold mb-4">AI-Powered Marketplace</h1>
             <p className="text-xl mb-8">Discover services from freelancers, partners, and resources with intelligent AI analysis</p>

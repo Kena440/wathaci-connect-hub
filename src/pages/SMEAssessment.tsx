@@ -7,7 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase-enhanced';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CheckCircle, TrendingUp } from 'lucide-react';
+import { CheckCircle, TrendingUp } from 'lucide-react';
+import BackToHomeButton from '@/components/BackToHomeButton';
 
 interface AssessmentData {
   assessment: any;
@@ -134,10 +135,6 @@ export const SMEAssessment = () => {
     }
   };
 
-  const handleBackToHome = () => {
-    navigate('/');
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -154,14 +151,9 @@ export const SMEAssessment = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50">
         <div className="max-w-4xl mx-auto p-6 pt-12">
-          <Button 
-            variant="ghost" 
-            onClick={handleBackToHome}
-            className="mb-6"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Button>
+          <div className="mb-6">
+            <BackToHomeButton variant="ghost" />
+          </div>
 
           <div className="text-center mb-8">
             <TrendingUp className="w-16 h-16 mx-auto text-orange-600 mb-4" />
@@ -293,10 +285,13 @@ export const SMEAssessment = () => {
   if (currentView === 'assessment') {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
-        <SMENeedsAssessment 
-          onComplete={handleAssessmentComplete}
-          onSkip={handleSkipAssessment}
-        />
+        <div className="max-w-4xl mx-auto px-4 space-y-6">
+          <BackToHomeButton />
+          <SMENeedsAssessment
+            onComplete={handleAssessmentComplete}
+            onSkip={handleSkipAssessment}
+          />
+        </div>
       </div>
     );
   }
@@ -305,12 +300,15 @@ export const SMEAssessment = () => {
   if (currentView === 'results' && assessmentData) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
-        <AssessmentResults
-          assessment={assessmentData.assessment}
-          recommendations={assessmentData.recommendations}
-          onContactProfessional={handleContactProfessional}
-          onRetakeAssessment={handleRetakeAssessment}
-        />
+        <div className="max-w-5xl mx-auto px-4 space-y-6">
+          <BackToHomeButton />
+          <AssessmentResults
+            assessment={assessmentData.assessment}
+            recommendations={assessmentData.recommendations}
+            onContactProfessional={handleContactProfessional}
+            onRetakeAssessment={handleRetakeAssessment}
+          />
+        </div>
       </div>
     );
   }

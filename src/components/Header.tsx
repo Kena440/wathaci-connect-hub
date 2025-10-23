@@ -44,6 +44,7 @@ const Header = () => {
   };
 
   const showGetStarted = !user || !user.profile_completed;
+  const editProfilePath = user?.profile_completed ? '/profile-edit' : '/profile-setup';
 
   return (
     <header className="bg-gradient-to-r from-orange-50 to-green-50 shadow-lg sticky top-0 z-50 border-b-2 border-orange-200">
@@ -113,7 +114,7 @@ const Header = () => {
                     <Link to="/profile-review">{t('viewProfile')}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/profile-setup">{t('editProfile')}</Link>
+                    <Link to={editProfilePath}>{t('editProfile')}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/subscription-plans">{t('subscriptionPlans')}</Link>
@@ -198,6 +199,11 @@ const Header = () => {
                       <Button variant="outline" size="sm" className="w-full border-orange-300">
                         <User className="w-4 h-4 mr-2" />
                         {t('viewProfile')}
+                      </Button>
+                    </Link>
+                    <Link to={editProfilePath}>
+                      <Button variant="outline" size="sm" className="w-full border-orange-300">
+                        {t('editProfile')}
                       </Button>
                     </Link>
                     <Link to="/subscription-plans">

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { supabase } from '@/lib/supabase-enhanced';
+import BackToHomeButton from '@/components/BackToHomeButton';
 
 interface AssessmentData {
   assessment: any;
@@ -133,7 +134,8 @@ export const ProfessionalAssessment = () => {
   if (currentView === 'intro') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 py-8 px-4">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <BackToHomeButton />
           <Card>
             <CardHeader className="text-center">
               <CardTitle className="text-2xl text-purple-900">Professional Needs Assessment</CardTitle>
@@ -195,10 +197,13 @@ export const ProfessionalAssessment = () => {
   if (currentView === 'assessment') {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
-        <ProfessionalNeedsAssessment 
-          onComplete={handleAssessmentComplete}
-          onSkip={handleSkipAssessment}
-        />
+        <div className="max-w-4xl mx-auto px-4 space-y-6">
+          <BackToHomeButton />
+          <ProfessionalNeedsAssessment
+            onComplete={handleAssessmentComplete}
+            onSkip={handleSkipAssessment}
+          />
+        </div>
       </div>
     );
   }
@@ -207,12 +212,15 @@ export const ProfessionalAssessment = () => {
   if (currentView === 'results' && assessmentData) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
-        <AssessmentResults
-          assessment={assessmentData.assessment}
-          recommendations={assessmentData.strategy || []}
-          onContactProfessional={handleContactProfessional}
-          onRetakeAssessment={handleRetakeAssessment}
-        />
+        <div className="max-w-5xl mx-auto px-4 space-y-6">
+          <BackToHomeButton />
+          <AssessmentResults
+            assessment={assessmentData.assessment}
+            recommendations={assessmentData.strategy || []}
+            onContactProfessional={handleContactProfessional}
+            onRetakeAssessment={handleRetakeAssessment}
+          />
+        </div>
       </div>
     );
   }

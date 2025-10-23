@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileText, Download, Eye, Calendar, User, Search } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
+import BackToHomeButton from '@/components/BackToHomeButton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { LencoPayment } from '@/components/LencoPayment';
 import { useAppContext } from '@/contexts/AppContext';
@@ -219,6 +220,9 @@ const Resources = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/70 to-blue-600/70" />
         <div className="relative z-10 py-16 text-white">
+          <div className="max-w-6xl mx-auto px-6 mb-6 flex justify-start">
+            <BackToHomeButton variant="secondary" />
+          </div>
           <div className="max-w-6xl mx-auto px-6 text-center">
             <h1 className="text-5xl font-bold mb-4">Business Resources</h1>
             <p className="text-xl mb-8">Tools, templates, and knowledge to grow your business</p>

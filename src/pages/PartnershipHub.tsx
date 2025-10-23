@@ -12,6 +12,7 @@ import { Footer } from '@/components/Footer';
 import { supabase } from '@/lib/supabase-enhanced';
 import IndustryMatcher from '@/components/industry/IndustryMatcher';
 import { Handshake, Users, TrendingUp, Award, Building, Globe, CheckCircle, Star, Target } from 'lucide-react';
+import BackToHomeButton from '@/components/BackToHomeButton';
 
 const partnerTypes = [
   {
@@ -104,6 +105,9 @@ export const PartnershipHub = () => {
       />
       <div className="absolute inset-0 bg-gradient-to-br from-orange-50/70 via-white/60 to-green-50/70" />
       <div className="relative z-10 py-16 text-gray-900">
+        <div className="max-w-6xl mx-auto px-6 mb-6 flex justify-start">
+          <BackToHomeButton />
+        </div>
         <div className="max-w-6xl mx-auto px-6 text-center">
           <Handshake className="w-16 h-16 mx-auto mb-6 text-gray-900" />
           <h1 className="text-4xl font-bold mb-4 text-gray-900">Partnership Hub</h1>
