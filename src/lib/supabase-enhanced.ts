@@ -2,12 +2,25 @@
  * Enhanced Supabase client configuration with error handling and validation
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import supabasePkg from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+const { createClient } = supabasePkg as any;
+
+// Safely access environment variables in both browser and Node contexts
+const getEnv = (): Record<string, string | undefined> => {
+  // Vite exposes variables on import.meta.env in the browser.
+  // When running under Node (e.g. during tests) this object does not exist,
+  // so fall back to process.env instead.
+  return (typeof import.meta !== 'undefined' && (import.meta as any).env)
+    ? (import.meta as any).env
+    : process.env;
+};
 
 // Environment validation
 const validateEnvironment = (): { url: string; key: string } => {
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  const key = import.meta.env.VITE_SUPABASE_KEY;
+  const env = getEnv();
+  const url = env.VITE_SUPABASE_URL as string | undefined;
+  const key = env.VITE_SUPABASE_KEY as string | undefined;
 
   if (!url) {
     throw new Error('Missing VITE_SUPABASE_URL environment variable');
@@ -31,13 +44,25 @@ const validateEnvironment = (): { url: string; key: string } => {
 const createSupabaseClient = (): SupabaseClient => {
   const { url, key } = validateEnvironment();
 
+  // In Node environments, window/localStorage may be undefined. Provide a
+  // minimal in-memory storage fallback so the client can be instantiated
+  // without accessing browser APIs.
+  const storage =
+    typeof window !== 'undefined' && window.localStorage
+      ? window.localStorage
+      : {
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {},
+        };
+
   const client = createClient(url, key, {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
       // Storage for auth tokens
-      storage: window.localStorage,
+      storage,
     },
     global: {
       headers: {

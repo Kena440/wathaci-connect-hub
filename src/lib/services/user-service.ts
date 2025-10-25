@@ -2,15 +2,15 @@
  * User and Profile service for handling all user-related database operations
  */
 
-import { BaseService } from './base-service';
-import { supabase, withErrorHandling } from '@/lib/supabase-enhanced';
-import type { 
-  User, 
-  Profile, 
-  AccountType, 
+import { BaseService } from './base-service.ts';
+import { supabase, withErrorHandling } from '../supabase-enhanced.ts';
+import type {
+  User,
+  Profile,
+  AccountType,
   ProfileFilters,
-  DatabaseResponse 
-} from '@/@types/database';
+  DatabaseResponse
+} from '../../@types/database.ts';
 
 export class UserService extends BaseService<User> {
   constructor() {

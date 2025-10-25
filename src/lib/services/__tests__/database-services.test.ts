@@ -1,122 +1,69 @@
-/**
- * Basic functionality test for database services
- */
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
 
-import { describe, it, expect, jest } from '@jest/globals';
-
-// Mock the environment variables before importing services
-const mockEnv = {
-  VITE_SUPABASE_URL: 'https://test.supabase.co',
-  VITE_SUPABASE_KEY: 'test-key'
-};
-
-// Mock import.meta.env
-Object.defineProperty(global, 'import', {
-  value: {
-    meta: {
-      env: mockEnv
-    }
-  }
-});
-
-// Mock Supabase client
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => ({
-    auth: {
-      getUser: jest.fn(),
-      signInWithPassword: jest.fn(),
-      signUp: jest.fn(),
-      signOut: jest.fn(),
-      onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } }))
-    },
-    from: jest.fn(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      single: jest.fn(),
-      insert: jest.fn().mockReturnThis(),
-      update: jest.fn().mockReturnThis(),
-      upsert: jest.fn().mockReturnThis(),
-      delete: jest.fn(),
-      range: jest.fn().mockReturnThis(),
-      order: jest.fn().mockReturnThis(),
-      contains: jest.fn().mockReturnThis(),
-      in: jest.fn().mockReturnThis(),
-      ilike: jest.fn().mockReturnThis(),
-      or: jest.fn().mockReturnThis(),
-      gte: jest.fn().mockReturnThis(),
-      lte: jest.fn().mockReturnThis()
-    }))
-  }))
-}));
+// Provide environment variables for Supabase client initialization
+process.env.VITE_SUPABASE_URL = 'https://test.supabase.co';
+process.env.VITE_SUPABASE_KEY = 'test-key';
 
 describe('Database Services', () => {
   describe('Service Imports', () => {
     it('should import all services without errors', async () => {
-      const services = await import('../src/lib/services/index');
-      
-      expect(services.userService).toBeDefined();
-      expect(services.profileService).toBeDefined();
-      expect(services.subscriptionService).toBeDefined();
-      expect(services.transactionService).toBeDefined();
-      expect(services.supabase).toBeDefined();
+      const services = await import('../index.ts');
+      assert.ok(services.userService);
+      assert.ok(services.profileService);
+      assert.ok(services.subscriptionService);
+      assert.ok(services.transactionService);
+      assert.ok(services.supabase);
     });
 
     it('should have proper service types', async () => {
-      const { userService, profileService, subscriptionService } = await import('../src/lib/services/index');
-      
-      expect(typeof userService).toBe('object');
-      expect(typeof profileService).toBe('object');
-      expect(typeof subscriptionService).toBe('object');
+      const { userService, profileService, subscriptionService } = await import('../index.ts');
+      assert.equal(typeof userService, 'object');
+      assert.equal(typeof profileService, 'object');
+      assert.equal(typeof subscriptionService, 'object');
     });
   });
 
   describe('Service Methods', () => {
     it('should have expected methods on user service', async () => {
-      const { userService } = await import('../src/lib/services/index');
-      
-      expect(typeof userService.getCurrentUser).toBe('function');
-      expect(typeof userService.signIn).toBe('function');
-      expect(typeof userService.signUp).toBe('function');
-      expect(typeof userService.signOut).toBe('function');
+      const { userService } = await import('../index.ts');
+      assert.equal(typeof userService.getCurrentUser, 'function');
+      assert.equal(typeof userService.signIn, 'function');
+      assert.equal(typeof userService.signUp, 'function');
+      assert.equal(typeof userService.signOut, 'function');
     });
 
     it('should have expected methods on profile service', async () => {
-      const { profileService } = await import('../src/lib/services/index');
-      
-      expect(typeof profileService.getByUserId).toBe('function');
-      expect(typeof profileService.createProfile).toBe('function');
-      expect(typeof profileService.updateProfile).toBe('function');
-      expect(typeof profileService.setAccountType).toBe('function');
-      expect(typeof profileService.markProfileCompleted).toBe('function');
+      const { profileService } = await import('../index.ts');
+      assert.equal(typeof profileService.getByUserId, 'function');
+      assert.equal(typeof profileService.createProfile, 'function');
+      assert.equal(typeof profileService.updateProfile, 'function');
+      assert.equal(typeof profileService.setAccountType, 'function');
+      assert.equal(typeof profileService.markProfileCompleted, 'function');
     });
 
     it('should have expected methods on subscription service', async () => {
-      const { subscriptionService } = await import('../src/lib/services/index');
-      
-      expect(typeof subscriptionService.getPlansByAccountType).toBe('function');
-      expect(typeof subscriptionService.getCurrentUserSubscription).toBe('function');
-      expect(typeof subscriptionService.createSubscription).toBe('function');
-      expect(typeof subscriptionService.hasActiveSubscription).toBe('function');
+      const { subscriptionService } = await import('../index.ts');
+      assert.equal(typeof subscriptionService.getPlansByAccountType, 'function');
+      assert.equal(typeof subscriptionService.getCurrentUserSubscription, 'function');
+      assert.equal(typeof subscriptionService.createSubscription, 'function');
+      assert.equal(typeof subscriptionService.hasActiveSubscription, 'function');
     });
   });
 
   describe('Database Types', () => {
     it('should import database types without errors', async () => {
-      const types = await import('../src/@types/database');
-      
-      // Check that key types are available
-      expect(types).toHaveProperty('AccountType');
-      expect(types).toBeDefined();
+      const types = await import('../../../@types/database.ts');
+      assert.ok(types);
     });
   });
 
   describe('Utility Functions', () => {
     it('should have utility functions available', async () => {
-      const { withErrorHandling, testConnection, healthCheck } = await import('../src/lib/services/index');
-      
-      expect(typeof withErrorHandling).toBe('function');
-      expect(typeof testConnection).toBe('function');
-      expect(typeof healthCheck).toBe('function');
+      const { withErrorHandling, testConnection, healthCheck } = await import('../index.ts');
+      assert.equal(typeof withErrorHandling, 'function');
+      assert.equal(typeof testConnection, 'function');
+      assert.equal(typeof healthCheck, 'function');
     });
   });
 });

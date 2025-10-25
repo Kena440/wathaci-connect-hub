@@ -2,15 +2,15 @@
  * Subscription service for handling subscription plans and user subscriptions
  */
 
-import { BaseService } from './base-service';
-import { supabase, withErrorHandling } from '@/lib/supabase-enhanced';
-import type { 
-  SubscriptionPlan, 
-  UserSubscription, 
+import { BaseService } from './base-service.ts';
+import { supabase, withErrorHandling } from '../supabase-enhanced.ts';
+import type {
+  SubscriptionPlan,
+  UserSubscription,
   Transaction,
   AccountType,
-  DatabaseResponse 
-} from '@/@types/database';
+  DatabaseResponse
+} from '../../@types/database.ts';
 
 export class SubscriptionService extends BaseService<UserSubscription> {
   constructor() {

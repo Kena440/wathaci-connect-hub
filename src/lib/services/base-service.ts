@@ -3,8 +3,8 @@
  * and utilities that other service classes can extend.
  */
 
-import { supabase, withErrorHandling, withRetry } from '@/lib/supabase-enhanced';
-import type { DatabaseResponse, PaginatedResponse, PaginationParams } from '@/@types/database';
+import { supabase, withErrorHandling, withRetry } from '../supabase-enhanced.ts';
+import type { DatabaseResponse, PaginatedResponse, PaginationParams } from '../../@types/database.ts';
 
 export abstract class BaseService<T = any> {
   protected tableName: string;
