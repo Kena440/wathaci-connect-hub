@@ -69,12 +69,54 @@ export const getPaymentConfig = (): PaymentConfig => {
 // Validate payment configuration
 export const validatePaymentConfig = (config: PaymentConfig): boolean => {
   if (!config.publicKey) {
-    console.warn('Payment Warning: Lenco public key not configured - payment features will be disabled');
+    console.warn(
+      'Payment Warning: Lenco public key not configured - payment features will be disabled'
+    );
     return false;
   }
-  
+
   if (!config.apiUrl) {
-    console.warn('Payment Warning: Lenco API URL not configured - payment features will be disabled');
+    console.warn(
+      'Payment Warning: Lenco API URL not configured - payment features will be disabled'
+    );
+    return false;
+  }
+
+  if (!config.currency) {
+    console.warn(
+      'Payment Warning: Payment currency not configured - payment features will be disabled'
+    );
+    return false;
+  }
+
+  if (!config.country) {
+    console.warn(
+      'Payment Warning: Payment country not configured - payment features will be disabled'
+    );
+    return false;
+  }
+
+  if (
+    typeof config.platformFeePercentage !== 'number' ||
+    isNaN(config.platformFeePercentage)
+  ) {
+    console.warn(
+      'Payment Warning: Platform fee percentage not configured or invalid - payment features will be disabled'
+    );
+    return false;
+  }
+
+  if (typeof config.minAmount !== 'number' || isNaN(config.minAmount)) {
+    console.warn(
+      'Payment Warning: Minimum payment amount not configured or invalid - payment features will be disabled'
+    );
+    return false;
+  }
+
+  if (typeof config.maxAmount !== 'number' || isNaN(config.maxAmount)) {
+    console.warn(
+      'Payment Warning: Maximum payment amount not configured or invalid - payment features will be disabled'
+    );
     return false;
   }
 

@@ -80,6 +80,14 @@ VITE_APP_ENV="development"
 VITE_APP_NAME="WATHACI CONNECT"
 ```
 
+These payment configuration values are mandatory. The application validates that
+`VITE_PAYMENT_CURRENCY`, `VITE_PAYMENT_COUNTRY`, `VITE_PLATFORM_FEE_PERCENTAGE`,
+`VITE_MIN_PAYMENT_AMOUNT` and `VITE_MAX_PAYMENT_AMOUNT` are present and that the
+numeric fields contain valid numbers. If any of these are missing or invalid,
+warnings such as "Payment currency not configured" or "Platform fee percentage
+not configured or invalid" will be logged and payment features will be
+disabled.
+
 ### Development vs Production
 
 **Development Settings:**
