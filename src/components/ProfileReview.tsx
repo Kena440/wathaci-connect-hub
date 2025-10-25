@@ -68,7 +68,7 @@ export const ProfileReview = () => {
   }, [user, navigate, fetchProfile]);
 
   const handleEditProfile = () => {
-    navigate('/profile-setup');
+    navigate({ pathname: '/profile-setup', search: '?tab=profile&mode=edit' });
   };
 
   if (loading) {

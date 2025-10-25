@@ -405,6 +405,12 @@ export const GetStarted = () => {
             Sign In
           </Link>
         </div>
+
+        <div className="mt-6 text-center">
+          <Link to="/" className="text-gray-600 hover:text-gray-800 font-medium">
+            ← Back to Home
+          </Link>
+        </div>
       </CardContent>
     </Card>
     </div>
