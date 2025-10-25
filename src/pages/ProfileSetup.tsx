@@ -24,6 +24,7 @@ export const ProfileSetup = () => {
   const { user, refreshUser } = useAppContext();
 
   const activeTab = searchParams.get('tab') || 'profile';
+  const mode = searchParams.get('mode');
 
   const checkExistingProfile = useCallback(async () => {
     if (!user) return;
@@ -66,6 +67,13 @@ export const ProfileSetup = () => {
 
     void checkExistingProfile();
   }, [user, navigate, checkExistingProfile]);
+
+  useEffect(() => {
+    if (mode === 'edit' && existingProfile) {
+      setSelectedAccountType(existingProfile.account_type || '');
+      setShowProfileForm(true);
+    }
+  }, [mode, existingProfile]);
 
   const handleAccountTypeSelect = async () => {
     if (!selectedAccountType || !user) return;
