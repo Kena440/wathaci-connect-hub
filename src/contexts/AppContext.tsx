@@ -29,7 +29,7 @@ const defaultAppContext: AppContextType = {
 
 const AppContext = createContext<AppContextType>(defaultAppContext);
 
-export const useAppContext = () => useContext(AppContext);
+export { AppContext };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);

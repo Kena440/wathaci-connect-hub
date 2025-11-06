@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
-import { useAppContext } from '@/contexts/AppContext';
+import { useAppContext } from '@/hooks/useAppContext';
 import { subscriptionPlans, getPlansForUserType, getUserTypeLabel } from '@/data/subscriptionPlans';
 import { UserTypeSubscriptions } from '@/components/UserTypeSubscriptions';
 import { SubscriptionCard } from '@/components/SubscriptionCard';

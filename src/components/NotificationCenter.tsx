@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
 import { supabase } from '../lib/supabase';
-import { useAppContext } from '../contexts/AppContext';
+import { useAppContext } from '@/hooks/useAppContext';
 
 interface Notification {
   id: string;

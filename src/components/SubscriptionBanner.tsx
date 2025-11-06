@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { X, Crown, Zap } from 'lucide-react';
-import { useAppContext } from '@/contexts/AppContext';
+import { useAppContext } from '@/hooks/useAppContext';
 import { getPlansForUserType, getUserTypeLabel } from '@/data/subscriptionPlans';
 import { SubscriptionCard } from '@/components/SubscriptionCard';
 

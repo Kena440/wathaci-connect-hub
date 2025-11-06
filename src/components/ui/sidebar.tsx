@@ -730,7 +730,6 @@ export {
   SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
-  useSidebar,
   SidebarNav,
   SidebarNavItem,
   SidebarSection,

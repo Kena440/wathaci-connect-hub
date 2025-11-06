@@ -6,7 +6,7 @@ import MarketplacePreview from '@/components/MarketplacePreview';
 import StatsSection from '@/components/StatsSection';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import { SubscriptionBanner } from '@/components/SubscriptionBanner';
-import { useAppContext } from '@/contexts/AppContext';
+import { useAppContext } from '@/hooks/useAppContext';
 
 const Index: React.FC = () => {
   const { user } = useAppContext();

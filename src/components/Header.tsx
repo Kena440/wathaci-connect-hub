@@ -4,7 +4,7 @@ import { Menu, X, Globe, User, LogOut, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { NotificationCenter } from './NotificationCenter';
 import { DonateButton } from './DonateButton';
-import { useAppContext } from '@/contexts/AppContext';
+import { useAppContext } from '@/hooks/useAppContext';
 import {
   DropdownMenu,
   DropdownMenuContent,

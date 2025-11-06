@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Textarea } from './ui/textarea';
 import { supabase } from '../lib/supabase';
-import { useAppContext } from '../contexts/AppContext';
+import { useAppContext } from '@/hooks/useAppContext';
 
 export const GapMatcher: React.FC = () => {
   const [gaps, setGaps] = useState('');
