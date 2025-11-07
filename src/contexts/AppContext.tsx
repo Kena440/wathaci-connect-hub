@@ -550,8 +550,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const profileErrorCode = (profileError as any)?.code;
         const isAuthPending = profileErrorCode === 'PGRST301' ||
           profileErrorCode === '401' ||
+          profileErrorCode === '42501' ||
           message.includes('jwt') ||
-          message.includes('unauthorized');
+          message.includes('unauthorized') ||
+          message.includes('row-level security');
 
         if (!isAuthPending) {
           let profileErrorMessage = 'Failed to create user profile';
