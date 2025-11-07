@@ -19,7 +19,16 @@ const app = express();
 
 logPaymentReadiness();
 
-app.use(express.json());
+app.use(express.json({
+  limit: '1mb',
+  verify: (req, res, buf) => {
+    if (buf?.length) {
+      req.rawBody = buf.toString('utf8');
+    } else {
+      req.rawBody = '';
+    }
+  },
+}));
 
 // Security middlewares
 app.use(helmet()); // Sets various HTTP headers for security
