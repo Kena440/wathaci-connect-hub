@@ -83,6 +83,12 @@ export const GetStarted = () => {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col items-center gap-2 border-t border-orange-100/70 bg-orange-50/50 py-6">
+          <p className="text-sm text-gray-600">
+            New to WATHACI CONNECT?{' '}
+            <Link to="/signup" className="text-orange-600 font-semibold hover:text-orange-700">
+              Create an account
+            </Link>
+          </p>
           <p className="text-sm text-gray-600">Already have an account?</p>
           <Button asChild variant="outline" className="border-orange-200 text-orange-700 hover:bg-orange-100">
             <Link to="/signin">Sign in to continue</Link>

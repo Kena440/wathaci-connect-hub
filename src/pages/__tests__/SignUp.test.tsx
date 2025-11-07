@@ -1,72 +1,66 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { BrowserRouter } from 'react-router-dom';
-import { GetStarted } from '../GetStarted';
+import { SignUp } from '../SignUp';
 
-// Mock the AppContext
 jest.mock('@/contexts/AppContext', () => ({
   useAppContext: () => ({
     signUp: jest.fn().mockResolvedValue({}),
   }),
 }));
 
-const GetStartedWrapper = () => (
+jest.mock('@/lib/api/register-user', () => ({
+  registerUser: jest.fn().mockResolvedValue({ user: {} }),
+}));
+
+const SignUpWrapper = () => (
   <BrowserRouter>
-    <GetStarted />
+    <SignUp />
   </BrowserRouter>
 );
 
-beforeAll(() => {
-  class ResizeObserver {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  }
-  // @ts-expect-error - ResizeObserver is not available in the jsdom environment
-  global.ResizeObserver = ResizeObserver;
-});
-
-describe('GetStarted Validation', () => {
+describe('SignUp Validation', () => {
   it('shows validation error for invalid email format', async () => {
-    render(<GetStartedWrapper />);
+    render(<SignUpWrapper />);
 
     const emailInput = screen.getByLabelText(/email/i);
     fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
+    fireEvent.blur(emailInput);
 
     await waitFor(() => {
-      expect(screen.getByText('Please enter a valid email address')).toBeTruthy();
+      expect(screen.getByText('Please enter a valid email address')).toBeInTheDocument();
     });
   });
 
   it('shows validation error for weak password', async () => {
-    render(<GetStartedWrapper />);
+    render(<SignUpWrapper />);
 
     const passwordInput = screen.getByLabelText(/^password$/i);
     fireEvent.change(passwordInput, { target: { value: '123' } });
+    fireEvent.blur(passwordInput);
 
     await waitFor(() => {
-      expect(
-        screen.getByText('Password must be at least 8 characters long')
-      ).toBeTruthy();
+      expect(screen.getByText('Password must be at least 8 characters long')).toBeInTheDocument();
     });
   });
 
   it('shows validation error when passwords do not match', async () => {
-    render(<GetStartedWrapper />);
+    render(<SignUpWrapper />);
 
     const passwordInput = screen.getByLabelText(/^password$/i);
     const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
 
     fireEvent.change(passwordInput, { target: { value: 'Password1' } });
     fireEvent.change(confirmPasswordInput, { target: { value: 'Password2' } });
+    fireEvent.blur(confirmPasswordInput);
 
     await waitFor(() => {
-      expect(screen.getByText('Passwords do not match')).toBeTruthy();
+      expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
     });
   });
 
   it('requires accepting terms and disables submission until the form is valid', async () => {
-    render(<GetStartedWrapper />);
+    render(<SignUpWrapper />);
 
     const submitButton = screen.getByRole('button', { name: /create account/i });
     expect(submitButton).toBeDisabled();
@@ -87,28 +81,22 @@ describe('GetStarted Validation', () => {
       target: { value: 'Password1' },
     });
 
-    fireEvent.click(screen.getByText('Select account type'));
-    fireEvent.click(screen.getByRole('option', { name: 'Professional' }));
+    fireEvent.click(screen.getByLabelText(/Professional/i));
 
-    // Terms not accepted yet, button should remain disabled
     expect(submitButton).toBeDisabled();
 
-    // Accept terms
-    fireEvent.click(screen.getByRole('checkbox'));
+    const termsCheckbox = screen.getByRole('checkbox', { name: /terms of service/i });
+    fireEvent.click(termsCheckbox);
 
     await waitFor(() => {
       expect(submitButton).toBeEnabled();
     });
 
-    // Uncheck to trigger validation error
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(termsCheckbox);
 
     await waitFor(() => {
-      expect(
-        screen.getByText('You must agree to the terms and conditions')
-      ).toBeTruthy();
+      expect(screen.getByText('You must agree to the terms and conditions')).toBeInTheDocument();
       expect(submitButton).toBeDisabled();
     });
   });
 });
-

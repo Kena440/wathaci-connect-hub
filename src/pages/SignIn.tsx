@@ -261,8 +261,8 @@ const SignIn = () => {
                 <div className="mt-6 text-center">
                   <p className="text-gray-600">
                     Don't have an account?{' '}
-                    <Link to="/get-started" className="text-orange-600 hover:text-orange-700 font-medium">
-                      Get Started
+                    <Link to="/signup" className="text-orange-600 hover:text-orange-700 font-medium">
+                      Create one
                     </Link>
                   </p>
                 </div>
