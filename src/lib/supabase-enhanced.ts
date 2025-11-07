@@ -190,6 +190,17 @@ function createMockSupabaseClient() {
   };
 
   const mockAuthUsers = new Map<string, { password: string; user: MockAuthUser }>();
+  const OTP_EXPIRY_MS = 5 * 60 * 1000;
+  const otpChallenges = new Map<
+    string,
+    {
+      token: string;
+      expiresAt: number;
+      type: 'email';
+    }
+  >();
+
+  const generateOtpToken = () => Math.floor(100000 + Math.random() * 900000).toString();
   const authListeners = new Set<(event: string, session: { user: MockAuthUser | null } | null) => void>();
   let currentUser: MockAuthUser | null = null;
 
@@ -321,6 +332,114 @@ function createMockSupabaseClient() {
         notifyAuthListeners('SIGNED_IN', currentUser);
 
         return { data: { user: currentUser }, error: null };
+      },
+      signInWithOtp: async ({
+        email,
+        options,
+      }: {
+        email: string;
+        options?: { shouldCreateUser?: boolean; emailRedirectTo?: string; data?: Record<string, any> };
+      }) => {
+        const normalizedEmail = (email || '').toLowerCase();
+
+        if (!normalizedEmail) {
+          return {
+            data: null,
+            error: { message: 'Email is required', status: 400 },
+          };
+        }
+
+        let record = mockAuthUsers.get(normalizedEmail);
+
+        if (!record) {
+          if (options?.shouldCreateUser) {
+            const newUser = createMockAuthUser({
+              email: normalizedEmail,
+              user_metadata: options?.data ?? {},
+            });
+            mockAuthUsers.set(normalizedEmail, { password: '', user: newUser });
+            record = { password: '', user: newUser };
+          } else {
+            return {
+              data: null,
+              error: { message: 'User not registered', status: 404 },
+            };
+          }
+        }
+
+        const token = generateOtpToken();
+        otpChallenges.set(normalizedEmail, {
+          token,
+          expiresAt: Date.now() + OTP_EXPIRY_MS,
+          type: 'email',
+        });
+
+        console.info('[mock-supabase] Generated OTP for %s: %s', normalizedEmail, token);
+
+        return { data: { user: null, session: null }, error: null };
+      },
+      verifyOtp: async ({
+        email,
+        token,
+        type,
+      }: {
+        email: string;
+        token: string;
+        type?: string;
+      }) => {
+        const normalizedEmail = (email || '').toLowerCase();
+
+        if ((type ?? 'email') !== 'email') {
+          return {
+            data: null,
+            error: { message: 'Unsupported verification type', status: 400 },
+          };
+        }
+
+        const challenge = otpChallenges.get(normalizedEmail);
+
+        if (!challenge) {
+          return {
+            data: null,
+            error: { message: 'No pending verification code', status: 404 },
+          };
+        }
+
+        if (challenge.expiresAt < Date.now()) {
+          otpChallenges.delete(normalizedEmail);
+          return {
+            data: null,
+            error: { message: 'Verification code expired', status: 400 },
+          };
+        }
+
+        if (challenge.token !== token) {
+          return {
+            data: null,
+            error: { message: 'Invalid verification code', status: 400 },
+          };
+        }
+
+        const record = mockAuthUsers.get(normalizedEmail);
+
+        if (!record) {
+          otpChallenges.delete(normalizedEmail);
+          return {
+            data: null,
+            error: { message: 'User not registered', status: 404 },
+          };
+        }
+
+        currentUser = {
+          ...record.user,
+          updated_at: new Date().toISOString(),
+        };
+
+        mockAuthUsers.set(normalizedEmail, { password: record.password, user: currentUser });
+        otpChallenges.delete(normalizedEmail);
+        notifyAuthListeners('SIGNED_IN', currentUser);
+
+        return { data: { user: currentUser, session: null }, error: null };
       },
       signUp: async ({ email, password, options }: { email: string; password: string; options?: { data?: Record<string, any> } }) => {
         const normalizedEmail = (email || '').toLowerCase();
