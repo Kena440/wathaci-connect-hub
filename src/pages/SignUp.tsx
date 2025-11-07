@@ -74,7 +74,6 @@ export const SignUp = () => {
       confirmPassword: '',
       company: '',
       mobileNumber: '',
-      termsAccepted: false,
     },
   });
 
