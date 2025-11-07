@@ -44,7 +44,7 @@ const TestimonialsSection = () => {
   };
 
   return (
-    <section className="py-16 px-6 bg-gradient-to-br from-blue-50 to-emerald-50">
+    <section className="py-16 px-6 bg-white/60 backdrop-blur-sm">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <Badge className="mb-4 bg-amber-100 text-amber-800 border-amber-300">
