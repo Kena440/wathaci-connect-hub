@@ -11,6 +11,11 @@ module.exports = {
     '<rootDir>/src/**/__tests__/**/*.(ts|tsx|js)',
     '<rootDir>/src/**/*.(test|spec).(ts|tsx|js)',
   ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '<rootDir>/src/test/',
+    '<rootDir>/src/components/__tests__/LencoPayment.manual-verification.ts',
+  ],
   collectCoverageFrom: [
     'src/**/*.(ts|tsx)',
     '!src/**/*.d.ts',
