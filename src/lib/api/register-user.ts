@@ -5,7 +5,11 @@ const normalizeBaseUrl = (baseUrl: string | undefined) => {
 
 const API_TIMEOUT_MS = 15000;
 
-const API_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
+const DEFAULT_DEV_API_BASE_URL = import.meta.env.DEV ? 'http://localhost:3000' : undefined;
+
+const API_BASE_URL = normalizeBaseUrl(
+  import.meta.env.VITE_API_BASE_URL ?? DEFAULT_DEV_API_BASE_URL,
+);
 
 export type RegisterUserPayload = {
   firstName: string;
