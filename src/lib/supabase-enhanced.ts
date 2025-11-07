@@ -6,13 +6,13 @@ import { createClient } from '@supabase/supabase-js';
 import type { MarketplaceService } from '@/data/marketplace';
 import {
   marketplaceProducts as datasetProducts,
-  marketplaceServices as datasetServices,
   filterServicesByControls,
   runMarketplaceSearch,
   buildMarketplaceRecommendations,
   generatePricingAnalysis,
   generateAssistantResponse,
-  generateProfessionalMatches
+  generateProfessionalMatches,
+  getMarketplaceCatalog
 } from '@/data/marketplace';
 
 type SupabaseClientLike = ReturnType<typeof createClient> | ReturnType<typeof createMockSupabaseClient>;
@@ -145,7 +145,7 @@ const createMockAuthUser = (overrides: Partial<MockAuthUser> = {}): MockAuthUser
 };
 
 function createMockSupabaseClient() {
-  const mockData: Record<string, any[]> = {
+  const mockData: Record<string, any> = {
     user_subscriptions: [
       {
         id: 'sub_mock_active',
@@ -175,8 +175,12 @@ function createMockSupabaseClient() {
       }
     ],
     marketplace_orders: [],
-    marketplace_services: datasetServices.map(service => ({ ...service })),
-    marketplace_products: datasetProducts.map(product => ({ ...product })),
+    get marketplace_services() {
+      return getMarketplaceCatalog();
+    },
+    get marketplace_products() {
+      return datasetProducts.map(product => ({ ...product }));
+    },
     transactions: [
       {
         id: 'txn_mock_recent',

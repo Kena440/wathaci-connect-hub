@@ -11,6 +11,9 @@ import { Link } from 'react-router-dom';
 import {
   marketplaceServices as fallbackServices,
   filterServicesByControls,
+  generateServicesFromProfessionals,
+  mergeMarketplaceServices,
+  setDynamicMarketplaceServices,
   type MarketplaceService
 } from '@/data/marketplace';
 import { useToast } from '@/hooks/use-toast';
@@ -76,6 +79,8 @@ export const IntegratedMarketplace = ({ onAddToCart, onOrderNow }: IntegratedMar
 
   const loadServices = useCallback(async () => {
     setLoading(true);
+    let generatedServices: MarketplaceService[] = [];
+
     try {
       const filters = {
         category: selectedCategory,
@@ -84,16 +89,90 @@ export const IntegratedMarketplace = ({ onAddToCart, onOrderNow }: IntegratedMar
         priceRange: priceRange
       };
 
-      const { data, error } = await supabase.functions.invoke('marketplace-manager', {
+      const marketplacePromise = supabase.functions.invoke('marketplace-manager', {
         body: { action: 'search', filters }
       });
 
-      if (error) throw error;
-      const payload = (data?.data || []) as MarketplaceService[];
-      setServices(payload.length ? payload : applyFilters(fallbackServices));
+      const profilesPromise = supabase
+        .from('profiles')
+        .select(
+          `id, first_name, last_name, business_name, account_type, country, address, industry_sector, experience_years, specialization, profile_image_url, linkedin_url, description, profile_completed, updated_at`
+        )
+        .in('account_type', ['professional', 'sole_proprietor'])
+        .eq('profile_completed', true)
+        .order('updated_at', { ascending: false })
+        .limit(120);
+
+      const [{ data: marketplaceData, error: marketplaceError }, { data: profileRows, error: profileError }] = await Promise.all([
+        marketplacePromise,
+        profilesPromise
+      ]);
+
+      let remoteServices: MarketplaceService[] = [];
+      if (marketplaceError) {
+        console.error('Marketplace manager error:', marketplaceError);
+      }
+
+      if (!marketplaceError && Array.isArray(marketplaceData?.data)) {
+        remoteServices = (marketplaceData.data as MarketplaceService[]) ?? [];
+      }
+
+      if (profileError) {
+        console.error('Error loading professional profiles:', profileError);
+      }
+
+      if (!profileError && Array.isArray(profileRows) && profileRows.length > 0) {
+        const professionalIds = profileRows
+          .map((profile: any) => profile?.id)
+          .filter((id: string | undefined): id is string => typeof id === 'string');
+
+        let assessments: any[] = [];
+        if (professionalIds.length > 0) {
+          const { data: assessmentRows, error: assessmentError } = await supabase
+            .from('professional_needs_assessments')
+            .select(
+              `id, user_id, primary_profession, years_of_experience, current_employment_status, specialization_areas, services_offered, service_delivery_modes, hourly_rate_min, hourly_rate_max, target_client_types, client_size_preference, industry_focus, availability_hours_per_week, project_duration_preference, remote_work_capability, key_skills, certification_status`
+            )
+            .in('user_id', professionalIds);
+
+          if (assessmentError) {
+            console.error('Error loading professional assessments:', assessmentError);
+          }
+
+          if (!assessmentError && Array.isArray(assessmentRows)) {
+            assessments = assessmentRows;
+          }
+        }
+
+        const assessmentByUser = new Map<string, any>();
+        assessments.forEach(assessment => {
+          if (assessment?.user_id && !assessmentByUser.has(assessment.user_id)) {
+            assessmentByUser.set(assessment.user_id, assessment);
+          }
+        });
+
+        const professionalSources = profileRows.map((profile: any) => ({
+          profile,
+          assessment: assessmentByUser.get(profile.id)
+        }));
+
+        generatedServices = generateServicesFromProfessionals(professionalSources);
+      }
+
+      setDynamicMarketplaceServices(generatedServices);
+
+      const combinedCatalog = mergeMarketplaceServices(
+        generatedServices,
+        remoteServices,
+        fallbackServices
+      );
+
+      setServices(applyFilters(combinedCatalog));
     } catch (error) {
       console.error('Error loading services:', error);
-      setServices(applyFilters(fallbackServices));
+      setDynamicMarketplaceServices(generatedServices);
+      const fallbackCatalog = mergeMarketplaceServices(generatedServices, fallbackServices);
+      setServices(applyFilters(fallbackCatalog));
     } finally {
       setLoading(false);
     }
