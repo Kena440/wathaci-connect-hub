@@ -6,6 +6,8 @@ jest.mock('../pages/Marketplace', () => ({ default: () => <div>Marketplace Page<
 jest.mock('../pages/Resources', () => ({ default: () => <div>Resources Page</div> }));
 jest.mock('../pages/NotFound', () => ({ default: () => <div>Not Found</div> }));
 jest.mock('../pages/SignIn', () => ({ SignIn: () => <div>Sign In Page</div> }));
+jest.mock('../pages/ForgotPassword', () => ({ default: () => <div>Forgot Password Page</div> }));
+jest.mock('../pages/ResetPassword', () => ({ default: () => <div>Reset Password Page</div> }));
 jest.mock('../pages/GetStarted', () => ({ GetStarted: () => <div>Get Started Page</div> }));
 jest.mock('../pages/SubscriptionPlans', () => ({ SubscriptionPlans: () => <div>Subscription Plans Page</div> }));
 jest.mock('../pages/PartnershipHub', () => ({ PartnershipHub: () => <div>Partnership Hub Page</div> }));
@@ -30,6 +32,8 @@ const publicRoutes = [
   { path: '/freelancer-hub', text: 'Freelancer Hub Page' },
   { path: '/resources', text: 'Resources Page' },
   { path: '/signin', text: 'Sign In Page' },
+  { path: '/forgot-password', text: 'Forgot Password Page' },
+  { path: '/reset-password', text: 'Reset Password Page' },
   { path: '/get-started', text: 'Get Started Page' },
   { path: '/profile-setup', text: 'Profile Setup Page' },
   { path: '/profile-review', text: 'Profile Review Page' },

@@ -201,7 +201,7 @@ const buildAbsoluteUrl = (value: string, baseUrl?: string): string | undefined =
   }
 };
 
-const getEmailRedirectTo = (): string | undefined => {
+const getEmailRedirectTo = (fallbackPath = FALLBACK_EMAIL_REDIRECT_PATH): string | undefined => {
   const baseUrl = getRuntimeBaseUrl();
 
   for (const key of EMAIL_REDIRECT_URL_KEYS) {
@@ -216,7 +216,7 @@ const getEmailRedirectTo = (): string | undefined => {
 
   const pathCandidate =
     EMAIL_REDIRECT_PATH_KEYS.map(resolveEnvValue).find((value): value is string => Boolean(value)) ||
-    FALLBACK_EMAIL_REDIRECT_PATH;
+    fallbackPath;
 
   if (pathCandidate) {
     const resolved = buildAbsoluteUrl(pathCandidate, baseUrl);
@@ -514,6 +514,102 @@ export class UserService extends BaseService<User> {
         }
       },
       'UserService.signUp'
+    );
+  }
+
+  /**
+   * Sends a password reset link to the provided email.
+   */
+  async requestPasswordReset(email: string): Promise<DatabaseResponse<{ success: true }>> {
+    return withErrorHandling(
+      async () => {
+        try {
+          const normalizedEmail = normaliseEmail(email);
+          const offlineAccount = offlineAccounts.find(
+            account => normaliseEmail(account.email) === normalizedEmail
+          );
+
+          if (offlineAccount) {
+            return { data: { success: true }, error: null };
+          }
+
+          const emailRedirectTo = getEmailRedirectTo('/reset-password');
+
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            ...(emailRedirectTo ? { redirectTo: emailRedirectTo } : {}),
+          });
+
+          if (error) {
+            if (isNetworkError(error)) {
+              return {
+                data: null,
+                error: new Error(
+                  'Unable to reach the authentication service. Please try again shortly.'
+                ),
+              };
+            }
+
+            return { data: null, error };
+          }
+
+          return { data: { success: true }, error: null };
+        } catch (error: any) {
+          if (isNetworkError(error) || error.name === 'TypeError') {
+            return {
+              data: null,
+              error: new Error('Unable to reach the authentication service. Please try again shortly.'),
+            };
+          }
+
+          throw error;
+        }
+      },
+      'UserService.requestPasswordReset'
+    );
+  }
+
+  /**
+   * Updates the password for the authenticated user.
+   */
+  async updatePassword(password: string): Promise<DatabaseResponse<{ success: true }>> {
+    return withErrorHandling(
+      async () => {
+        try {
+          const { data, error } = await supabase.auth.updateUser({ password });
+
+          if (error) {
+            if (isNetworkError(error)) {
+              return {
+                data: null,
+                error: new Error(
+                  'Unable to reach the authentication service. Please try again shortly.'
+                ),
+              };
+            }
+
+            return { data: null, error };
+          }
+
+          if (!data?.user) {
+            return {
+              data: null,
+              error: new Error('Unable to update password. Please try again.'),
+            };
+          }
+
+          return { data: { success: true }, error: null };
+        } catch (error: any) {
+          if (isNetworkError(error) || error.name === 'TypeError') {
+            return {
+              data: null,
+              error: new Error('Unable to reach the authentication service. Please try again shortly.'),
+            };
+          }
+
+          throw error;
+        }
+      },
+      'UserService.updatePassword'
     );
   }
 

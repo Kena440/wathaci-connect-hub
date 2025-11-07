@@ -10,6 +10,8 @@ import Marketplace from "./pages/Marketplace";
 import Resources from "./pages/Resources";
 import NotFound from "./pages/NotFound";
 import { SignIn } from "./pages/SignIn";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import { GetStarted } from "./pages/GetStarted";
 import { SubscriptionPlans } from "./pages/SubscriptionPlans";
 import { PartnershipHub } from "./pages/PartnershipHub";
@@ -29,6 +31,8 @@ export const AppRoutes = () => (
     <Route path="/freelancer-hub" element={<FreelancerHub />} />
     <Route path="/resources" element={<Resources />} />
     <Route path="/signin" element={<SignIn />} />
+    <Route path="/forgot-password" element={<ForgotPassword />} />
+    <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/get-started" element={<GetStarted />} />
     <Route path="/profile-setup" element={<ProfileSetup />} />
     <Route path="/profile-review" element={<ProfileReview />} />
