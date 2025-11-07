@@ -19,6 +19,8 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const SignIn = lazy(() =>
   import("./pages/SignIn").then((module) => ({ default: module.SignIn }))
 );
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const GetStarted = lazy(() =>
   import("./pages/GetStarted").then((module) => ({ default: module.GetStarted }))
 );
@@ -79,6 +81,8 @@ export const AppRoutes = () => (
       <Route path="/freelancer-hub" element={<FreelancerHub />} />
       <Route path="/resources" element={<Resources />} />
       <Route path="/signin" element={<SignIn />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/get-started" element={<GetStarted />} />
       <Route path="/profile-setup" element={<ProfileSetup />} />
       <Route path="/profile-review" element={<ProfileReview />} />
