@@ -13,8 +13,8 @@ module.exports = {
   ],
   testPathIgnorePatterns: [
     '/node_modules/',
-    '<rootDir>/src/test/',
-    '<rootDir>/src/components/__tests__/LencoPayment.manual-verification.ts',
+    '<rootDir>/src/test/',  // Exclude Node.js native test files
+    '<rootDir>/src/components/__tests__/LencoPayment.manual-verification.ts',  // Not a test file - manual verification script
   ],
   collectCoverageFrom: [
     'src/**/*.(ts|tsx)',

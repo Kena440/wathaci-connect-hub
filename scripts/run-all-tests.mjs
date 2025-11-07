@@ -11,6 +11,9 @@ let hasErrors = false;
 
 /**
  * Run a test command and capture the result
+ * 
+ * Note: This function resolves (not rejects) on errors to allow all test suites
+ * to run even if one fails. The hasErrors flag tracks failures for final exit code.
  */
 function runTests(name, command, args, env = {}) {
   return new Promise((resolve) => {
@@ -62,7 +65,7 @@ async function runAllTests() {
   await runTests(
     'Frontend Tests (Jest)',
     'npm',
-    ['run', 'test:jest', '--', '--passWithNoTests']
+    ['run', 'test:frontend', '--', '--passWithNoTests']
   );
 
   // Summary
