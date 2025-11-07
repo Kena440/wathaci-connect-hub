@@ -3,6 +3,7 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Textarea } from './ui/textarea';
 import { supabase } from '@/lib/supabase-enhanced';
+import { generateProfessionalMatches } from '@/data/marketplace';
 import { useAppContext } from '../contexts/AppContext';
 
 export const GapMatcher: React.FC = () => {
@@ -27,9 +28,11 @@ export const GapMatcher: React.FC = () => {
       });
 
       if (error) throw error;
-      setMatches(data.matches || []);
+      const fallbackMatches = generateProfessionalMatches(gapsList);
+      setMatches(data?.matches?.length ? data.matches : fallbackMatches);
     } catch (error) {
       console.error('Error finding matches:', error);
+      setMatches(generateProfessionalMatches(gapsList));
     } finally {
       setLoading(false);
     }

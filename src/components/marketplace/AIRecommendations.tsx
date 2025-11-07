@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, TrendingUp, Users, Clock } from 'lucide-react';
 import { supabase } from '@/lib/supabase-enhanced';
+import { buildMarketplaceRecommendations } from '@/data/marketplace';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface Recommendation {
@@ -48,16 +49,16 @@ const AIRecommendations = ({
 
       if (error) throw error;
 
-      if (data?.recommendations) {
-        setRecommendations(data.recommendations);
-        setErrorMessage(null);
-      } else {
-        setRecommendations([]);
-      }
+      const payload = data?.recommendations?.length
+        ? data.recommendations
+        : buildMarketplaceRecommendations(activeTab);
+
+      setRecommendations(payload);
+      setErrorMessage(null);
     } catch (error) {
       console.error('Failed to fetch recommendations:', error);
-      setRecommendations([]);
-      setErrorMessage('Recommendations are currently unavailable. Please try again in a moment.');
+      setRecommendations(buildMarketplaceRecommendations(activeTab));
+      setErrorMessage('Showing smart recommendations while the AI service reconnects.');
     } finally {
       setIsLoading(false);
     }

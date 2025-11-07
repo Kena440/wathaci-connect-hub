@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Search, Sparkles, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase-enhanced';
+import { runMarketplaceSearch } from '@/data/marketplace';
 
 interface AISearchProps {
   onSearch: (query: string, filters: any) => void;
@@ -28,7 +29,7 @@ const AISearch = ({ onSearch, onAIRecommendations }: AISearchProps) => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('ai-professional-matcher', {
-        body: { 
+        body: {
           query,
           type: 'marketplace_search',
           filters: activeFilters
@@ -37,17 +38,31 @@ const AISearch = ({ onSearch, onAIRecommendations }: AISearchProps) => {
 
       if (error) throw error;
 
-      if (data?.recommendations) {
-        onAIRecommendations(data.recommendations);
+      const fallback = runMarketplaceSearch(query, activeFilters);
+      const recommendations = data?.recommendations?.length
+        ? data.recommendations
+        : fallback.recommendations;
+      const suggestionList = data?.suggestions?.length
+        ? data.suggestions
+        : fallback.suggestions;
+
+      if (recommendations?.length) {
+        onAIRecommendations(recommendations);
       }
-      
-      if (data?.suggestions) {
-        setSuggestions(data.suggestions);
+
+      if (suggestionList?.length) {
+        setSuggestions(suggestionList);
       }
 
       onSearch(query, { categories: activeFilters });
     } catch (error) {
       console.error('AI search error:', error);
+      const fallback = runMarketplaceSearch(query, activeFilters);
+      if (fallback.recommendations.length) {
+        onAIRecommendations(fallback.recommendations);
+      }
+      setSuggestions(fallback.suggestions);
+      onSearch(query, { categories: activeFilters });
     } finally {
       setIsLoading(false);
     }
