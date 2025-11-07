@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 
 const MarketplacePreview = () => {
   return (
-    <section className="py-16 px-6 bg-white">
+    <section className="py-16 px-6 bg-white/60 backdrop-blur-sm">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <Badge className="mb-4 bg-emerald-100 text-emerald-800 border-emerald-300">
