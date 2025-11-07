@@ -45,14 +45,14 @@ const protectedRoutes = [
 ];
 
 describe('AppRoutes', () => {
-  it.each(publicRoutes)('renders %s', ({ path, text }) => {
+  it.each(publicRoutes)('renders %s', async ({ path, text }) => {
     appContextMock.user = null;
     render(
       <MemoryRouter initialEntries={[path]}>
         <AppRoutes />
       </MemoryRouter>
     );
-    expect(screen.getByText(text)).toBeInTheDocument();
+    expect(await screen.findByText(text)).toBeInTheDocument();
   });
 
   describe('protected routes', () => {
@@ -66,24 +66,24 @@ describe('AppRoutes', () => {
       expect(await screen.findByText('Sign In Page')).toBeInTheDocument();
     });
 
-    it.each(protectedRoutes)('renders %s when authenticated', ({ path, text }) => {
+    it.each(protectedRoutes)('renders %s when authenticated', async ({ path, text }) => {
       appContextMock.user = { id: '1' };
       render(
         <MemoryRouter initialEntries={[path]}>
           <AppRoutes />
         </MemoryRouter>
       );
-      expect(screen.getByText(text)).toBeInTheDocument();
+      expect(await screen.findByText(text)).toBeInTheDocument();
     });
   });
 
-  it('renders NotFound for unknown paths', () => {
+  it('renders NotFound for unknown paths', async () => {
     appContextMock.user = null;
     render(
       <MemoryRouter initialEntries={['/unknown']}>
         <AppRoutes />
       </MemoryRouter>
     );
-    expect(screen.getByText('Not Found')).toBeInTheDocument();
+    expect(await screen.findByText('Not Found')).toBeInTheDocument();
   });
 });
