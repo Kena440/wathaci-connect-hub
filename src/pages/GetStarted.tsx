@@ -14,6 +14,8 @@ import { useAppContext } from '@/contexts/AppContext';
 import { validatePhoneNumber } from '@/lib/payment-config';
 import { registerUser } from '@/lib/api/register-user';
 import { toast } from '@/components/ui/use-toast';
+import { AccountTypeSelection } from '@/components/AccountTypeSelection';
+import { accountTypes } from '@/data/accountTypes';
 
 // Validation schema
 const getStartedSchema = z
@@ -67,6 +69,8 @@ export const GetStarted = () => {
     register,
     handleSubmit,
     control,
+    setValue,
+    watch,
     formState: { errors, isValid },
   } = useForm<GetStartedFormData>({
     resolver: zodResolver(getStartedSchema),
@@ -83,6 +87,12 @@ export const GetStarted = () => {
       agreeToTerms: false,
     },
   });
+
+  const selectedAccountType = watch('accountType');
+
+  const handleAccountTypeSelect = (value: string) => {
+    setValue('accountType', value, { shouldValidate: true, shouldDirty: true });
+  };
 
   const onSubmit = async (data: GetStartedFormData) => {
     setLoading(true);
@@ -254,30 +264,42 @@ export const GetStarted = () => {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="accountType">Account Type</Label>
-            <Controller
-              name="accountType"
-              control={control}
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select account type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sole_proprietor">Sole Proprietor</SelectItem>
-                    <SelectItem value="professional">Professional</SelectItem>
-                    <SelectItem value="sme">Small & Medium Enterprise</SelectItem>
-                    <SelectItem value="investor">Investor</SelectItem>
-                    <SelectItem value="donor">Donor</SelectItem>
-                    <SelectItem value="government">Government Institution</SelectItem>
-                  </SelectContent>
-                </Select>
+          <div className="space-y-4">
+            <div>
+              <Label>Account Type</Label>
+              <AccountTypeSelection
+                options={accountTypes}
+                selected={selectedAccountType}
+                onSelect={handleAccountTypeSelect}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="accountType">Account Type (Dropdown)</Label>
+              <Controller
+                name="accountType"
+                control={control}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger id="accountType">
+                      <SelectValue placeholder="Select account type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accountTypes.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <p className="text-xs text-gray-500">
+                Prefer using the keyboard? Pick your account type from this accessible dropdown.
+              </p>
+              {errors.accountType && (
+                <p className="text-sm text-red-600 mt-1">{errors.accountType.message}</p>
               )}
-            />
-            {errors.accountType && (
-              <p className="text-sm text-red-600 mt-1">{errors.accountType.message}</p>
-            )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
