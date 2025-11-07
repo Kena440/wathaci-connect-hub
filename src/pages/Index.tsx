@@ -16,10 +16,11 @@ const Index: React.FC = () => {
       <div className="relative min-h-screen bg-white/50 backdrop-blur-sm">
         <div
           aria-hidden="true"
-          className="fixed inset-0 bg-center bg-cover"
+          className="fixed inset-0 bg-center bg-no-repeat"
           style={{
             backgroundImage:
               "url('/images/ChatGPT%20Image%20Sep%2023%2C%202025%2C%2001_52_19%20PM.png')",
+            backgroundSize: 'contain',
           }}
         />
         <div
