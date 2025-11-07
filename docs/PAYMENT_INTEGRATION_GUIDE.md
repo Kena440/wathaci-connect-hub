@@ -71,9 +71,9 @@ VITE_SUPABASE_KEY="your-anon-key"
 # VITE_SUPABASE_ANON_KEY="your-anon-key"
 
 # Lenco Payment Gateway Configuration
-VITE_LENCO_PUBLIC_KEY="pub-dea560c94d379a23e7b85a265d7bb9acbd585481e6e1393e"
-LENCO_SECRET_KEY="843a2b242591e9a58370da44e11bb2575b20780f27c8efe39a6ed24ecba0b668"
-LENCO_WEBHOOK_SECRET="bc09f682f3bbbf3d851b125b9914984c272471e16cd2a4f14f9406706f7c98cd293bf0d"
+VITE_LENCO_PUBLIC_KEY="pub-3006dad8759d155443350fd71181013558c3d05479009c661c36c145b8e4199f"
+LENCO_SECRET_KEY="sec-0e69663249fc5c0cadae832ddd3454e24fed447d3407f6d0c338c8686087afa0"
+LENCO_WEBHOOK_SECRET="18011b2de00e44b04596740ce1b3c57f0e222ed8ce66be281a8fb2c2ad6db96b3fdeb9d748ca982d5078bbbbca170f25"
 VITE_LENCO_API_URL="https://api.lenco.co/access/v2"
 
 # Payment Configuration
@@ -135,9 +135,9 @@ VITE_APP_NAME="WATHACI CONNECT"
    > signature validation and real-time notifications.
 4. **Set function secrets**
    ```bash
-   supabase secrets set \
-     LENCO_SECRET_KEY="843a2b242591e9a58370da44e11bb2575b20780f27c8efe39a6ed24ecba0b668" \
-     LENCO_WEBHOOK_SECRET="bc09f682f3bbbf3d851b125b9914984c272471e16cd2a4f14f9406706f7c98cd293bf0d"
+  supabase secrets set \
+    LENCO_SECRET_KEY="sec-0e69663249fc5c0cadae832ddd3454e24fed447d3407f6d0c338c8686087afa0" \
+    LENCO_WEBHOOK_SECRET="18011b2de00e44b04596740ce1b3c57f0e222ed8ce66be281a8fb2c2ad6db96b3fdeb9d748ca982d5078bbbbca170f25"
    ```
 5. **Verify deployment** – note the generated URL:
    `https://<project-ref>.functions.supabase.co/lenco-webhook`
