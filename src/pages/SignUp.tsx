@@ -65,7 +65,6 @@ export const SignUp = () => {
   } = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
     mode: 'onChange',
-    reValidateMode: 'onChange',
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -74,7 +73,6 @@ export const SignUp = () => {
       confirmPassword: '',
       company: '',
       mobileNumber: '',
-      termsAccepted: false,
     },
   });
 
