@@ -1,437 +1,96 @@
-import { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Building, Eye, EyeOff, Phone } from 'lucide-react';
-import { useAppContext } from '@/contexts/AppContext';
-import { validatePhoneNumber } from '@/lib/payment-config';
-import { registerUser } from '@/lib/api/register-user';
-import { toast } from '@/components/ui/use-toast';
-import { AccountTypeSelection } from '@/components/AccountTypeSelection';
-import { accountTypes } from '@/data/accountTypes';
+import { ArrowRight } from 'lucide-react';
+import { accountTypes, type AccountTypeValue } from '@/data/accountTypes';
 
-// Validation schema
-const getStartedSchema = z
-  .object({
-    firstName: z.string().min(1, 'First name is required'),
-    lastName: z.string().min(1, 'Last name is required'),
-    email: z
-      .string()
-      .min(1, 'Email is required')
-      .email('Please enter a valid email address'),
-    mobileNumber: z
-      .string()
-      .optional()
-      .refine((phone) => {
-        if (!phone || phone.trim() === '') return true; // Optional field
-        return validatePhoneNumber(phone);
-      }, {
-        message: 'Please enter a valid mobile money number (e.g., +260 96 1234567)',
-      }),
-    password: z
-      .string()
-      .min(8, 'Password must be at least 8 characters long')
-      .regex(/[a-z]/, 'Password must include a lowercase letter')
-      .regex(/[A-Z]/, 'Password must include an uppercase letter')
-      .regex(/\d/, 'Password must include a number'),
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
-    company: z.string().optional(),
-    accountType: z.string().min(1, 'Account type is required'),
-    agreeToTerms: z
-      .boolean()
-      .refine((val) => val === true, {
-        message: 'You must agree to the terms and conditions',
-      }),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    path: ['confirmPassword'],
-    message: 'Passwords do not match',
-  });
-
-type GetStartedFormData = z.infer<typeof getStartedSchema>;
+const accountTypeRoutes: Record<AccountTypeValue, string> = {
+  sole_proprietor: '/sme-assessment',
+  professional: '/professional-assessment',
+  sme: '/sme-assessment',
+  investor: '/investor-assessment',
+  donor: '/donor-assessment',
+  government: '/government-assessment',
+};
 
 export const GetStarted = () => {
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [serverError, setServerError] = useState('');
   const navigate = useNavigate();
-  const { signUp } = useAppContext();
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    formState: { errors, isValid },
-  } = useForm<GetStartedFormData>({
-    resolver: zodResolver(getStartedSchema),
-    mode: 'onChange',
-    defaultValues: {
-      firstName: '',
-      lastName: '',
-      email: '',
-      mobileNumber: '',
-      password: '',
-      confirmPassword: '',
-      company: '',
-      accountType: '',
-      agreeToTerms: false,
-    },
-  });
-
-  const onSubmit = async (data: GetStartedFormData) => {
-    setLoading(true);
-    setServerError('');
-
-    try {
-      const trimmedFirstName = data.firstName.trim();
-      const trimmedLastName = data.lastName.trim();
-      const trimmedCompany = data.company?.trim();
-      const trimmedMobile = data.mobileNumber?.trim();
-
-      await signUp(data.email, data.password, {
-        first_name: trimmedFirstName,
-        last_name: trimmedLastName,
-        company: trimmedCompany ?? null,
-        account_type: data.accountType,
-        ...(trimmedMobile
-          ? {
-              phone: trimmedMobile,
-              payment_phone: trimmedMobile,
-              payment_method: 'phone' as const,
-            }
-          : {}),
-        full_name: `${trimmedFirstName} ${trimmedLastName}`.trim(),
-        profile_completed: false,
-      });
-
-      try {
-        await registerUser({
-          firstName: trimmedFirstName,
-          lastName: trimmedLastName,
-          email: data.email.trim(),
-          accountType: data.accountType,
-          company: trimmedCompany ? trimmedCompany : null,
-          mobileNumber: trimmedMobile ? trimmedMobile : null,
-        });
-      } catch (registrationError: any) {
-        console.warn('Optional CRM registration failed:', registrationError);
-        toast({
-          title: 'Profile sync delayed',
-          description: 'Your account is ready, and we\'ll finish syncing your profile shortly.',
-        });
-      }
-
-      navigate('/profile-setup');
-    } catch (error: any) {
-      // Display user-friendly error message
-      const errorMessage = error.message || 'Failed to create account. Please try again.';
-      setServerError(errorMessage);
-      
-      // Log the full error for debugging
-      console.error('Sign up error:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleSelectAccountType = (value: AccountTypeValue) => {
+    const target = accountTypeRoutes[value];
+    if (!target) return;
+    navigate(target);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
-      <div 
+      <div
         className="fixed inset-0 bg-center bg-cover"
         style={{
           backgroundImage: "url('/images/Partnership%20Hub.png')",
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-br from-orange-50/70 via-white/60 to-green-50/70" />
-      <Card className="w-full max-w-lg relative z-10">
-      <CardHeader className="text-center">
-        <img
-          src="https://d64gsuwffb70l.cloudfront.net/686a39ec793daf0c658a746a_1753699300137_a4fb9790.png"
-          alt="WATHACI CONNECT"
-          loading="lazy"
-          decoding="async"
-          className="h-20 w-auto mx-auto mb-4 drop-shadow-lg"
-        />
-        <CardTitle className="text-2xl">Get Started</CardTitle>
-        <CardDescription>Create your WATHACI account</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {serverError && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
-            {serverError}
+      <Card className="w-full max-w-5xl relative z-10 border-orange-100/70 shadow-2xl">
+        <CardHeader className="text-center space-y-3">
+          <img
+            src="https://d64gsuwffb70l.cloudfront.net/686a39ec793daf0c658a746a_1753699300137_a4fb9790.png"
+            alt="WATHACI CONNECT"
+            loading="lazy"
+            decoding="async"
+            className="h-16 w-auto mx-auto drop-shadow-lg"
+          />
+          <CardTitle className="text-3xl font-semibold text-gray-900">Choose how you want to get started</CardTitle>
+          <CardDescription className="text-base">
+            Pick the option that best matches your goals and we&apos;ll take you straight to the right profile experience.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            {accountTypes.map(({ value, label, description, icon: Icon, onboardingFocus }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => handleSelectAccountType(value)}
+                className="group relative flex h-full flex-col rounded-xl border border-orange-100 bg-white/90 p-6 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-orange-200 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+              >
+                <div className="flex items-start gap-4">
+                  <span className="rounded-full bg-orange-100 p-3 text-orange-600">
+                    <Icon className="h-6 w-6" />
+                  </span>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">{label}</h3>
+                    <p className="mt-1 text-sm text-gray-600">{description}</p>
+                  </div>
+                </div>
+                <div className="mt-4 space-y-2">
+                  <h4 className="text-sm font-medium text-gray-900">What we&apos;ll guide you through</h4>
+                  <ul className="space-y-1 text-sm text-gray-600">
+                    {onboardingFocus.map((focus) => (
+                      <li key={focus} className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+                        <span>{focus}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-orange-600">
+                  Start as {label}
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </span>
+              </button>
+            ))}
           </div>
-        )}
-
-        <form onSubmit={handleSubmit(onSubmit)} autoComplete="on" className="space-y-6">
-          <section className="space-y-3">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Account setup</h2>
-              <p className="text-sm text-gray-600">
-                Start by telling us who you are so we can personalise your onboarding journey.
-              </p>
-            </div>
-            <Controller
-              name="accountType"
-              control={control}
-              render={({ field }) => (
-                <AccountTypeSelection
-                  options={accountTypes}
-                  selected={field.value}
-                  onSelect={(value) => {
-                    field.onChange(value);
-                    field.onBlur();
-                  }}
-                  error={errors.accountType?.message}
-                />
-              )}
-            />
-          </section>
-
-          <section className="space-y-4">
-            <div>
-              <h3 className="text-base font-semibold text-gray-900">Personal details</h3>
-              <p className="text-sm text-gray-600">We use this information to create your profile.</p>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="firstName"
-                    autoComplete="given-name"
-                    placeholder="First name"
-                    {...register('firstName')}
-                    className={`pl-10 ${errors.firstName ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
-                  />
-                </div>
-                {errors.firstName && (
-                  <p className="text-sm text-red-600 mt-1">{errors.firstName.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <div className="relative">
-                  <Input
-                    id="lastName"
-                    autoComplete="family-name"
-                    placeholder="Last name"
-                    {...register('lastName')}
-                    className={errors.lastName ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}
-                  />
-                </div>
-                {errors.lastName && (
-                  <p className="text-sm text-red-600 mt-1">{errors.lastName.message}</p>
-                )}
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="Enter your email"
-                    {...register('email')}
-                    className={`pl-10 ${errors.email ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
-                  />
-                </div>
-                {errors.email && (
-                  <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>
-                )}
-              </div>
-            </div>
-          </section>
-
-          <section className="space-y-4">
-            <div>
-              <h3 className="text-base font-semibold text-gray-900">Contact details</h3>
-              <p className="text-sm text-gray-600">Optional information that helps us serve you better.</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="mobileNumber">Mobile number (optional)</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="mobileNumber"
-                  type="tel"
-                  autoComplete="tel"
-                  placeholder="e.g., +260 96 1234567"
-                  {...register('mobileNumber')}
-                  className={`pl-10 ${errors.mobileNumber ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
-                />
-              </div>
-              {errors.mobileNumber && (
-                <p className="text-sm text-red-600 mt-1">{errors.mobileNumber.message}</p>
-              )}
-              <p className="text-xs text-gray-500 mt-1">
-                Add your mobile number for mobile money payments (MTN, Airtel, Zamtel).
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="company">Company (optional)</Label>
-              <div className="relative">
-                <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="company"
-                  autoComplete="organization"
-                  placeholder="Company name"
-                  {...register('company')}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-          </section>
-
-          <section className="space-y-4">
-            <div>
-              <h3 className="text-base font-semibold text-gray-900">Secure your account</h3>
-              <p className="text-sm text-gray-600">Create a strong password to keep your account safe.</p>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    placeholder="Password"
-                    {...register('password')}
-                    className={`pl-10 pr-10 ${errors.password ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
-                  />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-sm text-red-600 mt-1">{errors.password.message}</p>
-              )}
-            </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    placeholder="Confirm password"
-                    {...register('confirmPassword')}
-                    className={`pr-10 ${errors.confirmPassword ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
-                  />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-                >
-                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              {errors.confirmPassword && (
-                <p className="text-sm text-red-600 mt-1">{errors.confirmPassword.message}</p>
-              )}
-            </div>
-            </div>
-          </section>
-
-          <div className="flex items-center space-x-2">
-            <Controller
-              name="agreeToTerms"
-              control={control}
-              render={({ field }) => (
-                <Checkbox id="terms" checked={field.value} onCheckedChange={field.onChange} />
-              )}
-            />
-            <Label htmlFor="terms" className="text-sm">
-              I agree to the{' '}
-              <Link to="/terms" className="text-blue-600 hover:underline">
-                Terms of Service
-              </Link>{' '}
-              and{' '}
-              <Link to="/privacy" className="text-blue-600 hover:underline">
-                Privacy Policy
-              </Link>
-            </Label>
-          </div>
-          {errors.agreeToTerms && (
-            <p className="text-sm text-red-600 mt-1">{errors.agreeToTerms.message}</p>
-          )}
-
-          <Button type="submit" className="w-full" disabled={!isValid || loading}>
-            {loading ? 'Creating Account...' : 'Create Account'}
+        </CardContent>
+        <CardFooter className="flex flex-col items-center gap-2 border-t border-orange-100/70 bg-orange-50/50 py-6">
+          <p className="text-sm text-gray-600">Already have an account?</p>
+          <Button asChild variant="outline" className="border-orange-200 text-orange-700 hover:bg-orange-100">
+            <Link to="/signin">Sign in to continue</Link>
           </Button>
-          
-          {/* Development bypass for testing - only show in dev mode */}
-          {process.env.NODE_ENV === 'development' && (
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full mt-2"
-              onClick={async () => {
-                setLoading(true);
-                setServerError('');
-                try {
-                  await signUp('dev-test@example.com', 'DevTest123!', {
-                    first_name: 'Dev',
-                    last_name: 'Test',
-                    account_type: 'sole_proprietor',
-                    full_name: 'Dev Test',
-                    phone: '+260961234567',
-                    payment_phone: '+260961234567',
-                    payment_method: 'phone',
-                    profile_completed: false,
-                  });
-
-                  await registerUser({
-                    firstName: 'Dev',
-                    lastName: 'Test',
-                    email: 'dev-test@example.com',
-                    accountType: 'sole_proprietor',
-                    company: null,
-                    mobileNumber: null,
-                  });
-                  navigate('/profile-setup');
-                } catch (error: any) {
-                  setServerError(`Development Test: ${error.message}`);
-                } finally {
-                  setLoading(false);
-                }
-              }}
-            >
-              🔧 Dev Test Sign-Up (Bypass Form)
-            </Button>
-          )}
-        </form>
-
-        <div className="text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link to="/signin" className="text-blue-600 hover:underline font-medium">
-            Sign In
-          </Link>
-        </div>
-
-        <div className="mt-6 text-center">
-          <Link to="/" className="text-gray-600 hover:text-gray-800 font-medium">
-            ← Back to Home
-          </Link>
-        </div>
-      </CardContent>
-    </Card>
+        </CardFooter>
+      </Card>
     </div>
   );
 };
 
+export default GetStarted;
