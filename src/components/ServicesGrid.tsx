@@ -48,7 +48,7 @@ const services = [
 
 const ServicesGrid = () => {
   return (
-    <section className="py-16 px-6 bg-gray-50">
+    <section className="py-16 px-6 bg-white/60 backdrop-blur-sm">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <Badge className="mb-4 bg-blue-100 text-blue-800 border-blue-300">

@@ -176,8 +176,8 @@ const StatsSection = () => {
   ];
 
   return (
-    <section className="py-16 bg-gradient-to-r from-orange-50 to-green-50">
-      <div className="max-w-7xl mx-auto px-6">
+    <section className="py-16 px-6 bg-white/60 backdrop-blur-sm">
+      <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
             Our Impact & Growth
