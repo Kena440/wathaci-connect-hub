@@ -25,6 +25,27 @@ npm --prefix backend test
   to the server console for monitoring, and forwards them to the `frontend_logs`
   Supabase table when configured.
 - `GET /api/logs` – Returns the most recent 50 log entries for operational diagnostics.
+- `POST /api/payment/webhook` – Receives Lenco payment webhooks, validates the
+  `x-lenco-signature` header using the configured `LENCO_WEBHOOK_SECRET`, and
+  immediately acknowledges valid requests with a 200 response.
+
+## Production deployment checklist for webhooks
+
+1. Deploy the Express server behind a TLS-terminating reverse proxy (for
+   example, Nginx, Caddy, Cloudflare Tunnels, or an HTTPS-capable PaaS). Ensure
+   the proxy forwards the raw request body so signature verification succeeds.
+2. Expose the webhook endpoint publicly (e.g.,
+   `https://api.example.com/api/payment/webhook`) and register that HTTPS URL in
+   the Lenco dashboard. Store the same value in your runtime configuration via
+   `LENCO_WEBHOOK_URL` so readiness checks surface misconfiguration quickly.
+3. Configure `LENCO_WEBHOOK_SECRET` with the live signing secret issued by
+   Lenco. The backend refuses to process webhook calls when this secret is
+   missing, uses placeholder text, or when signatures do not match the computed
+   HMAC digest.
+4. Trigger a test delivery from the Lenco dashboard after every deployment.
+   Successful events appear in the backend logs with the
+   `[lenco-webhook] Received …` prefix, confirming that signature validation and
+   logging both executed.
 
 ## Supabase integration
 

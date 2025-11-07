@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
+import crypto from 'node:crypto';
 
 process.env.ALLOW_IN_MEMORY_REGISTRATION = 'true';
 
@@ -211,6 +212,64 @@ test('POST /resolve/lenco-merchant surfaces Lenco validation errors', async () =
       delete process.env.LENCO_API_URL;
     } else {
       process.env.LENCO_API_URL = previousApiUrl;
+    }
+
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('POST /api/payment/webhook validates Lenco signature', async () => {
+  const server = app.listen(0);
+  const { port } = server.address();
+
+  const previousSecret = process.env.LENCO_WEBHOOK_SECRET;
+  process.env.LENCO_WEBHOOK_SECRET = 'whsec_live_example_1234567890';
+
+  const payload = {
+    event: 'payment.success',
+    data: {
+      reference: 'INV-12345',
+      status: 'success',
+    },
+  };
+
+  const rawBody = JSON.stringify(payload);
+  const signature = crypto
+    .createHash('sha256')
+    .update(`${process.env.LENCO_WEBHOOK_SECRET}${rawBody}`)
+    .digest('hex');
+
+  try {
+    const res = await fetch(`http://localhost:${port}/api/payment/webhook`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-lenco-signature': signature,
+      },
+      body: rawBody,
+    });
+
+    assert.strictEqual(res.status, 200);
+    const body = await res.json();
+    assert.deepStrictEqual(body, { received: true });
+
+    const invalidRes = await fetch(`http://localhost:${port}/api/payment/webhook`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-lenco-signature': 'invalid-signature',
+      },
+      body: rawBody,
+    });
+
+    assert.strictEqual(invalidRes.status, 400);
+    const invalidBody = await invalidRes.json();
+    assert.deepStrictEqual(invalidBody, { error: 'Invalid webhook signature' });
+  } finally {
+    if (previousSecret === undefined) {
+      delete process.env.LENCO_WEBHOOK_SECRET;
+    } else {
+      process.env.LENCO_WEBHOOK_SECRET = previousSecret;
     }
 
     await new Promise((resolve) => server.close(resolve));
