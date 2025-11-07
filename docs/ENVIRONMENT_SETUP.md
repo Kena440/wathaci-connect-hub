@@ -81,9 +81,9 @@ Located at `backend/.env`, this file contains:
 
 - `VITE_PAYMENT_CURRENCY` - ISO currency code (e.g., `ZMW` for Zambian Kwacha)
 - `VITE_PAYMENT_COUNTRY` - ISO country code (e.g., `ZM` for Zambia)
-- `VITE_PLATFORM_FEE_PERCENTAGE` - Platform fee percentage (e.g., `5` for 5%)
-- `VITE_MIN_PAYMENT_AMOUNT` - Minimum payment amount (e.g., `5`)
-- `VITE_MAX_PAYMENT_AMOUNT` - Maximum payment amount (e.g., `1000000`)
+- `VITE_PLATFORM_FEE_PERCENTAGE` - Platform fee percentage (e.g., `10` for 10%)
+- `VITE_MIN_PAYMENT_AMOUNT` - Minimum payment amount (e.g., `0`)
+- `VITE_MAX_PAYMENT_AMOUNT` - Maximum payment amount (e.g., `50000`)
 
 ### Application Metadata
 

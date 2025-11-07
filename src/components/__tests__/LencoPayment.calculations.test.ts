@@ -47,11 +47,11 @@ describe('Lenco Payment Amount Calculations', () => {
     it('should calculate fees correctly for each subscription plan', () => {
       subscriptionPlans.forEach((plan: any) => {
         const totalAmount = plan.lencoAmount / 100; // Convert back to base currency
-        const managementFee = totalAmount * 0.02; // 2% fee
+        const managementFee = totalAmount * 0.10; // 10% fee
         const providerAmount = totalAmount - managementFee;
 
-        expect(managementFee).toBe(totalAmount * 0.02);
-        expect(providerAmount).toBe(totalAmount * 0.98);
+        expect(managementFee).toBe(totalAmount * 0.10);
+        expect(providerAmount).toBe(totalAmount * 0.90);
         expect(managementFee + providerAmount).toBe(totalAmount);
 
         // Fees should be reasonable
@@ -95,28 +95,28 @@ describe('Lenco Payment Amount Calculations', () => {
       const testAmounts = [1, 10, 50, 100, 500, 1000, 5000];
 
       testAmounts.forEach(amount => {
-        const managementFee = amount * 0.02;
+        const managementFee = amount * 0.10;
         const providerAmount = amount - managementFee;
 
-        expect(managementFee).toBe(amount * 0.02);
-        expect(providerAmount).toBe(amount * 0.98);
+        expect(managementFee).toBe(amount * 0.10);
+        expect(providerAmount).toBe(amount * 0.90);
         expect(parseFloat((managementFee + providerAmount).toFixed(2))).toBe(amount);
 
-        // Verify fee percentage is exactly 2%
-        expect(managementFee / amount).toBeCloseTo(0.02, 10);
+        // Verify fee percentage is exactly 10%
+        expect(managementFee / amount).toBeCloseTo(0.10, 10);
       });
     });
 
     it('should handle edge case amounts', () => {
       const edgeCases = [
-        { amount: 0.01, fee: 0.0002, provider: 0.0098 },
-        { amount: 0.1, fee: 0.002, provider: 0.098 },
-        { amount: 10000, fee: 200, provider: 9800 },
-        { amount: 100000, fee: 2000, provider: 98000 }
+        { amount: 0.01, fee: 0.001, provider: 0.009 },
+        { amount: 0.1, fee: 0.01, provider: 0.09 },
+        { amount: 10000, fee: 1000, provider: 9000 },
+        { amount: 50000, fee: 5000, provider: 45000 }
       ];
 
       edgeCases.forEach(({ amount, fee, provider }) => {
-        const calculatedFee = amount * 0.02;
+        const calculatedFee = amount * 0.10;
         const calculatedProvider = amount - calculatedFee;
 
         expect(calculatedFee).toBeCloseTo(fee, 4);
@@ -168,15 +168,15 @@ describe('Lenco Payment Amount Calculations', () => {
     });
 
     it('should handle large amounts appropriately', () => {
-      const largeAmounts = [10000, 50000, 100000, 1000000];
-      
+      const largeAmounts = [10000, 25000, 50000];
+
       largeAmounts.forEach(amount => {
-        const managementFee = amount * 0.02;
+        const managementFee = amount * 0.10;
         const providerAmount = amount - managementFee;
-        
+
         // Large amounts should still calculate correctly
-        expect(managementFee).toBe(amount * 0.02);
-        expect(providerAmount).toBe(amount * 0.98);
+        expect(managementFee).toBe(amount * 0.10);
+        expect(providerAmount).toBe(amount * 0.90);
         
         // Fee should be reasonable even for large amounts
         expect(managementFee).toBeLessThan(amount);
@@ -188,33 +188,33 @@ describe('Lenco Payment Amount Calculations', () => {
   describe('Business Logic Validation', () => {
     it('should ensure provider receives majority of payment', () => {
       const testAmounts = [10, 50, 100, 500, 1000];
-      
+
       testAmounts.forEach(amount => {
-        const managementFee = amount * 0.02;
+        const managementFee = amount * 0.10;
         const providerAmount = amount - managementFee;
-        
+
         // Provider should always receive more than the platform fee
         expect(providerAmount).toBeGreaterThan(managementFee);
-        
-        // Provider should receive at least 95% of the payment
-        expect(providerAmount / amount).toBeGreaterThanOrEqual(0.98);
+
+        // Provider should receive at least 90% of the payment
+        expect(providerAmount / amount).toBeGreaterThanOrEqual(0.90);
       });
     });
 
     it('should validate minimum and maximum payment amounts', () => {
       // These would be business rules for the payment system
-      const minAmount = 1; // Minimum 1 Kwacha
-      const maxAmount = 1000000; // Maximum 1 million Kwacha
-      
-      expect(minAmount).toBeGreaterThan(0);
+      const minAmount = 0; // Minimum 0 Kwacha
+      const maxAmount = 50000; // Maximum 50,000 Kwacha
+
+      expect(minAmount).toBeGreaterThanOrEqual(0);
       expect(maxAmount).toBeGreaterThan(minAmount);
-      
+
       // Test fee calculations at boundaries
-      const minFee = minAmount * 0.02;
-      const maxFee = maxAmount * 0.02;
-      
-      expect(minFee).toBe(0.02);
-      expect(maxFee).toBe(20000);
+      const minFee = minAmount * 0.10;
+      const maxFee = maxAmount * 0.10;
+
+      expect(minFee).toBe(0);
+      expect(maxFee).toBe(5000);
     });
 
     it('should ensure subscription plans are within reasonable ranges', () => {
@@ -233,10 +233,10 @@ describe('Lenco Payment Amount Calculations', () => {
     });
   });
 
-  describe('New Platform Fee Structure (5% for marketplace/resource, 0% for donations/subscriptions)', () => {
+  describe('New Platform Fee Structure (10% for marketplace/resource, 0% for donations/subscriptions)', () => {
     const testCases = [
-      { amount: 100, transactionType: 'marketplace', expectedFeePercentage: 5, expectedFee: 5, expectedProvider: 95 },
-      { amount: 200, transactionType: 'resource', expectedFeePercentage: 5, expectedFee: 10, expectedProvider: 190 },
+      { amount: 100, transactionType: 'marketplace', expectedFeePercentage: 10, expectedFee: 10, expectedProvider: 90 },
+      { amount: 200, transactionType: 'resource', expectedFeePercentage: 10, expectedFee: 20, expectedProvider: 180 },
       { amount: 50, transactionType: 'donation', expectedFeePercentage: 0, expectedFee: 0, expectedProvider: 50 },
       { amount: 100, transactionType: 'subscription', expectedFeePercentage: 0, expectedFee: 0, expectedProvider: 100 }
     ];
@@ -279,38 +279,38 @@ describe('Lenco Payment Amount Calculations', () => {
       });
     });
 
-    it('should apply 5% fee to marketplace transactions', () => {
+    it('should apply 10% fee to marketplace transactions', () => {
       const testAmounts = [100, 250, 500, 1000];
-      
+
       testAmounts.forEach(amount => {
         const breakdown = lencoPaymentService.calculatePaymentTotal(amount, 'marketplace');
-        const expectedFee = Math.round((amount * 0.05) * 100) / 100;
+        const expectedFee = Math.round((amount * 0.10) * 100) / 100;
         expect(breakdown.platformFee).toBe(expectedFee);
         expect(breakdown.providerReceives).toBe(amount - expectedFee);
-        expect(breakdown.feePercentage).toBe(5);
+        expect(breakdown.feePercentage).toBe(10);
       });
     });
 
-    it('should apply 5% fee to resource transactions', () => {
+    it('should apply 10% fee to resource transactions', () => {
       const testAmounts = [20, 50, 75, 150];
-      
+
       testAmounts.forEach(amount => {
         const breakdown = lencoPaymentService.calculatePaymentTotal(amount, 'resource');
-        const expectedFee = Math.round((amount * 0.05) * 100) / 100;
+        const expectedFee = Math.round((amount * 0.10) * 100) / 100;
         expect(breakdown.platformFee).toBe(expectedFee);
         expect(breakdown.providerReceives).toBe(amount - expectedFee);
-        expect(breakdown.feePercentage).toBe(5);
+        expect(breakdown.feePercentage).toBe(10);
       });
     });
 
     it('should default to marketplace transaction type when none specified', () => {
       const amount = 100;
       const breakdown = lencoPaymentService.calculatePaymentTotal(amount);
-      
-      // Should default to 5% fee like marketplace
-      expect(breakdown.feePercentage).toBe(5);
-      expect(breakdown.platformFee).toBe(5);
-      expect(breakdown.providerReceives).toBe(95);
+
+      // Should default to 10% fee like marketplace
+      expect(breakdown.feePercentage).toBe(10);
+      expect(breakdown.platformFee).toBe(10);
+      expect(breakdown.providerReceives).toBe(90);
     });
   });
 });

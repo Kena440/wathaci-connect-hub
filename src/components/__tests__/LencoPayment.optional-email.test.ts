@@ -7,17 +7,17 @@ jest.mock('@/lib/payment-config', () => ({
   getPaymentConfig: () => ({
     publicKey: 'test-key',
     apiUrl: 'https://api.lenco.co/access/v2',
-    currency: 'ZMK',
+    currency: 'ZMW',
     country: 'ZM',
-    platformFeePercentage: 2,
-    minAmount: 5,
-    maxAmount: 1000000,
+    platformFeePercentage: 10,
+    minAmount: 0,
+    maxAmount: 50000,
     environment: 'development'
   }),
   validatePaymentConfig: () => true,
   generatePaymentReference: () => 'WC_TEST_123',
   validatePhoneNumber: (phone: string) => /^09[5-7]\d{7}$/.test(phone),
-  calculatePlatformFee: (amount: number) => Math.round(amount * 0.02 * 100) / 100
+  calculatePlatformFee: (amount: number) => Math.round(amount * 0.10 * 100) / 100
 }));
 
 import { lencoPaymentService } from '@/lib/services/lenco-payment-service';

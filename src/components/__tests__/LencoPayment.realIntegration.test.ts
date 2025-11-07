@@ -224,17 +224,17 @@ testSuite('Lenco Payment Real Integration Tests', () => {
   });
 
   describe('Fee Calculation Validation', () => {
-    it('should calculate 2% platform fee correctly', () => {
+    it('should calculate 10% platform fee correctly', () => {
       const testAmounts = [10, 50, 100, 500, 1000];
-      
+
       testAmounts.forEach(amount => {
-        const fee = amount * 0.02;
+        const fee = amount * 0.10;
         const providerAmount = amount - fee;
-        
-        expect(fee).toBe(amount * 0.02);
-        expect(providerAmount).toBe(amount * 0.98);
+
+        expect(fee).toBe(amount * 0.10);
+        expect(providerAmount).toBe(amount * 0.90);
         expect(fee + providerAmount).toBe(amount);
-        
+
         // Provider should always get more than the platform
         expect(providerAmount).toBeGreaterThan(fee);
       });
@@ -242,13 +242,13 @@ testSuite('Lenco Payment Real Integration Tests', () => {
 
     it('should handle decimal precision correctly', () => {
       const amounts = [10.50, 99.99, 1.01, 0.99];
-      
+
       amounts.forEach(amount => {
-        const fee = Math.round(amount * 0.02 * 100) / 100; // Round to 2 decimal places
+        const fee = Math.round(amount * 0.10 * 100) / 100; // Round to 2 decimal places
         const providerAmount = Math.round((amount - fee) * 100) / 100;
-        
-        expect(fee).toBeCloseTo(amount * 0.02, 2);
-        expect(providerAmount).toBeCloseTo(amount * 0.98, 2);
+
+        expect(fee).toBeCloseTo(amount * 0.10, 2);
+        expect(providerAmount).toBeCloseTo(amount * 0.90, 2);
       });
     });
   });
@@ -295,22 +295,22 @@ testSuite('Lenco Payment Real Integration Tests', () => {
 
   describe('Business Rules Validation', () => {
     it('should enforce minimum payment amounts', () => {
-      const minimumAmount = 1; // ZMW 1 minimum
-      const testAmounts = [0.50, 0.99, 1.00, 5.00];
-      
+      const minimumAmount = 0; // ZMW 0 minimum
+      const testAmounts = [0, 0.99, 1.00, 5.00];
+
       testAmounts.forEach(amount => {
         const isValid = amount >= minimumAmount;
-        expect(isValid).toBe(amount >= 1);
+        expect(isValid).toBe(amount >= 0);
       });
     });
 
     it('should enforce maximum payment amounts', () => {
-      const maximumAmount = 100000; // ZMW 100,000 maximum
-      const testAmounts = [50000, 100000, 100001, 200000];
-      
+      const maximumAmount = 50000; // ZMW 50,000 maximum
+      const testAmounts = [25000, 50000, 50001, 100000];
+
       testAmounts.forEach(amount => {
         const isValid = amount <= maximumAmount;
-        expect(isValid).toBe(amount <= 100000);
+        expect(isValid).toBe(amount <= 50000);
       });
     });
 

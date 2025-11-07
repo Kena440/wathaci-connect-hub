@@ -92,11 +92,11 @@ After creating the files, update them with your actual credentials:
 - `LENCO_SECRET_KEY` – Lenco secret API key (accepts `sec-…`, `sk_live_…`, or legacy 64-character hex secrets).
 - `LENCO_WEBHOOK_SECRET` – Secret used to validate Lenco webhooks.
 - `VITE_LENCO_API_URL` – Lenco API base URL, `https://api.lenco.co/access/v2`.
-- `VITE_PAYMENT_CURRENCY` – ISO currency code for payments, e.g. `ZMK`.
+- `VITE_PAYMENT_CURRENCY` – ISO currency code for payments, e.g. `ZMW`.
 - `VITE_PAYMENT_COUNTRY` – ISO country code, e.g. `ZM`.
-- `VITE_PLATFORM_FEE_PERCENTAGE` – Platform fee percentage applied to each payment.
-- `VITE_MIN_PAYMENT_AMOUNT` – Minimum allowed payment amount.
-- `VITE_MAX_PAYMENT_AMOUNT` – Maximum allowed payment amount.
+- `VITE_PLATFORM_FEE_PERCENTAGE` – Platform fee percentage applied to each payment (e.g. `10`).
+- `VITE_MIN_PAYMENT_AMOUNT` – Minimum allowed payment amount (e.g. `0`).
+- `VITE_MAX_PAYMENT_AMOUNT` – Maximum allowed payment amount (e.g. `50000`).
 - `VITE_APP_ENV` – Set to `production` for live deployments.
 - `VITE_APP_NAME` – Application display name.
 

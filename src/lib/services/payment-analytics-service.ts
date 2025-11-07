@@ -178,7 +178,7 @@ export class PaymentAnalyticsService {
       // Calculate platform fees based on transaction types
       // Donations and subscriptions are exempt from platform fees
       const marketplaceAndResourceRevenue = services + other;
-      const feePercentage = getPlatformFeePercentage('marketplace'); // 5% for marketplace/resource transactions
+      const feePercentage = getPlatformFeePercentage('marketplace'); // Configured fee for marketplace/resource transactions
       const platformFees = marketplaceAndResourceRevenue * (feePercentage / 100);
       
       const totalRevenue = subscriptions + services + other + donations;
