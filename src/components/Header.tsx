@@ -43,7 +43,8 @@ const Header = () => {
     return user?.email?.split('@')[0] || 'Profile';
   };
 
-  const showGetStarted = !user || !user.profile_completed;
+  const showSignUpCta = !user;
+  const showProfileCta = !!user && !user.profile_completed;
 
   return (
     <header className="bg-gradient-to-r from-orange-50 to-green-50 shadow-lg sticky top-0 z-50 border-b-2 border-orange-200">
@@ -133,13 +134,19 @@ const Header = () => {
               </Link>
             )}
 
-            {showGetStarted && (
-              <Link to="/get-started">
+            {showProfileCta ? (
+              <Link to="/profile-setup">
+                <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white">
+                  Complete Profile
+                </Button>
+              </Link>
+            ) : showSignUpCta ? (
+              <Link to="/signup">
                 <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white">
                   {t('getStarted')}
                 </Button>
               </Link>
-            )}
+            ) : null}
           </div>
 
           <button
@@ -223,13 +230,19 @@ const Header = () => {
                   </Link>
                 )}
 
-                {showGetStarted && (
-                  <Link to="/get-started">
+                {showProfileCta ? (
+                  <Link to="/profile-setup">
+                    <Button size="sm" className="bg-orange-600 hover:bg-orange-700 w-full">
+                      Complete Profile
+                    </Button>
+                  </Link>
+                ) : showSignUpCta ? (
+                  <Link to="/signup">
                     <Button size="sm" className="bg-orange-600 hover:bg-orange-700 w-full">
                       {t('getStarted')}
                     </Button>
                   </Link>
-                )}
+                ) : null}
               </div>
             </nav>
           </div>
