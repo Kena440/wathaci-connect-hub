@@ -3,6 +3,17 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import type { MarketplaceService } from '@/data/marketplace';
+import {
+  marketplaceProducts as datasetProducts,
+  marketplaceServices as datasetServices,
+  filterServicesByControls,
+  runMarketplaceSearch,
+  buildMarketplaceRecommendations,
+  generatePricingAnalysis,
+  generateAssistantResponse,
+  generateProfessionalMatches
+} from '@/data/marketplace';
 
 type SupabaseClientLike = ReturnType<typeof createClient> | ReturnType<typeof createMockSupabaseClient>;
 
@@ -163,6 +174,9 @@ function createMockSupabaseClient() {
         updated_at: new Date().toISOString()
       }
     ],
+    marketplace_orders: [],
+    marketplace_services: datasetServices.map(service => ({ ...service })),
+    marketplace_products: datasetProducts.map(product => ({ ...product })),
     transactions: [
       {
         id: 'txn_mock_recent',
@@ -541,6 +555,85 @@ function createMockSupabaseClient() {
             },
             error: null,
           };
+        }
+
+        if (name === 'marketplace-manager') {
+          const action = body.action ?? 'search';
+
+          if (action === 'search') {
+            const filters = body.filters ?? {};
+            const services = filterServicesByControls(
+              (mockData.marketplace_services || []) as MarketplaceService[],
+              filters
+            );
+
+            return {
+              data: { data: services },
+              error: null
+            };
+          }
+
+          if (action === 'list-products') {
+            return {
+              data: { data: mockData.marketplace_products || [] },
+              error: null
+            };
+          }
+
+          if (action === 'list-services') {
+            return {
+              data: { data: mockData.marketplace_services || [] },
+              error: null
+            };
+          }
+
+          return { data: { data: [] }, error: null };
+        }
+
+        if (name === 'ai-professional-matcher') {
+          const type = body.type;
+
+          if (type === 'marketplace_search') {
+            const query = typeof body.query === 'string' ? body.query : '';
+            const filters = Array.isArray(body.filters) ? body.filters : [];
+            return {
+              data: runMarketplaceSearch(query, filters),
+              error: null
+            };
+          }
+
+          if (type === 'marketplace_recommendations') {
+            const recommendationType = body.recommendationType ?? 'personalized';
+            return {
+              data: { recommendations: buildMarketplaceRecommendations(recommendationType) },
+              error: null
+            };
+          }
+
+          if (type === 'pricing_analysis') {
+            const analysis = generatePricingAnalysis({
+              description: body.description ?? '',
+              category: body.category,
+              location: body.location
+            });
+            return { data: analysis, error: null };
+          }
+
+          if (type === 'marketplace_assistant') {
+            const assistant = generateAssistantResponse(body.message ?? '', body.context);
+            return { data: assistant, error: null };
+          }
+
+          if (type === 'marketplace_recommendation') {
+            const recommendationType = body.recommendationType ?? 'personalized';
+            return {
+              data: { recommendations: buildMarketplaceRecommendations(recommendationType) },
+              error: null
+            };
+          }
+
+          const matches = generateProfessionalMatches(Array.isArray(body.gaps) ? body.gaps : []);
+          return { data: { matches }, error: null };
         }
 
         return { data: { success: true, data: {} }, error: null };

@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { TrendingUp, DollarSign, BarChart3, Lightbulb } from 'lucide-react';
 import { supabase } from '@/lib/supabase-enhanced';
+import { generatePricingAnalysis } from '@/data/marketplace';
 
 interface PricingSuggestion {
   suggestedPrice: number;
@@ -65,11 +66,18 @@ const AIPricingSuggestions = ({
           competitorCount: 0
         });
         setErrorMessage(null);
+      } else {
+        const fallback = generatePricingAnalysis({ description, category, location });
+        setSuggestions(fallback.pricing);
+        setMarketData(fallback.marketData);
+        setErrorMessage(null);
       }
     } catch (error) {
       console.error('Pricing analysis error:', error);
-      setSuggestions(null);
-      setErrorMessage('We could not generate pricing insights right now. Please try again later.');
+      const fallback = generatePricingAnalysis({ description, category, location });
+      setSuggestions(fallback.pricing);
+      setMarketData(fallback.marketData);
+      setErrorMessage('We are using marketplace benchmarks while the pricing assistant reconnects.');
     } finally {
       setIsLoading(false);
     }

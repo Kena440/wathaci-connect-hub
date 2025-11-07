@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Send, Bot, User, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase-enhanced';
+import { generateAssistantResponse } from '@/data/marketplace';
 
 interface Message {
   id: string;
@@ -63,22 +64,26 @@ const AIAssistant = ({ isOpen, onClose, context }: AIAssistantProps) => {
 
       if (error) throw error;
 
+      const fallback = generateAssistantResponse(message, context);
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: data?.response || 'I apologize, but I\'m having trouble processing your request right now. Please try again.',
+        content: data?.response || fallback.response,
         timestamp: new Date(),
-        suggestions: data?.suggestions || []
+        suggestions: data?.suggestions?.length ? data.suggestions : fallback.suggestions
       };
 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('AI Assistant error:', error);
+      const fallback = generateAssistantResponse(message, context);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: 'I\'m sorry, I\'m experiencing some technical difficulties. Please try again in a moment.',
-        timestamp: new Date()
+        content: fallback.response,
+        timestamp: new Date(),
+        suggestions: fallback.suggestions
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {

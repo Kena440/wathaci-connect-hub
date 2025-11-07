@@ -1,33 +1,46 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ServiceProviderCard } from './ServiceProviderCard';
 import { supabase } from '@/lib/supabase-enhanced';
-import { Search, Filter, Grid, List, Loader2, Users, Building, BookOpen } from 'lucide-react';
+import { Search, Filter, Grid, List, Loader2, Users, Building, BookOpen, ShoppingCart } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import {
+  marketplaceServices as fallbackServices,
+  filterServicesByControls,
+  type MarketplaceService
+} from '@/data/marketplace';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
-interface Service {
-  id: string;
-  title: string;
-  description: string;
-  provider: string;
-  providerType: 'freelancer' | 'partnership' | 'resource';
-  category: string;
-  skills: string[];
-  location: string;
-  deliveryTime: string;
-  rating: number;
-  reviews: number;
-  currency: string;
-  price: number;
-  image: string;
+interface IntegratedMarketplaceProps {
+  onAddToCart?: (service: MarketplaceService) => void;
+  onOrderNow?: (service: MarketplaceService) => void;
 }
 
-export const IntegratedMarketplace = () => {
-  const [services, setServices] = useState<Service[]>([]);
+const providerLinks: Record<MarketplaceService['providerType'], { label: string; path: string; accent: string }> = {
+  freelancer: {
+    label: 'Visit Freelancer Hub',
+    path: '/freelancer-hub',
+    accent: 'text-blue-600 hover:text-blue-700'
+  },
+  partnership: {
+    label: 'Explore Partnership Hub',
+    path: '/partnership-hub',
+    accent: 'text-emerald-600 hover:text-emerald-700'
+  },
+  resource: {
+    label: 'Browse Resources Library',
+    path: '/resources',
+    accent: 'text-purple-600 hover:text-purple-700'
+  }
+};
+
+export const IntegratedMarketplace = ({ onAddToCart, onOrderNow }: IntegratedMarketplaceProps) => {
+  const [services, setServices] = useState<MarketplaceService[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -35,10 +48,11 @@ export const IntegratedMarketplace = () => {
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [priceRange, setPriceRange] = useState('');
   const [viewMode, setViewMode] = useState('grid');
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedService, setSelectedService] = useState<MarketplaceService | null>(null);
+  const { toast } = useToast();
 
   const categories = [
-    'all', 'technology', 'marketing', 'design', 'business', 
+    'all', 'technology', 'marketing', 'design', 'business',
     'finance', 'legal', 'consulting', 'education'
   ];
 
@@ -48,6 +62,17 @@ export const IntegratedMarketplace = () => {
     { value: 'partnership', label: 'Partners', icon: Building },
     { value: 'resource', label: 'Resources', icon: BookOpen }
   ];
+
+  const applyFilters = useCallback(
+    (data: MarketplaceService[]) =>
+      filterServicesByControls(data, {
+        category: selectedCategory,
+        providerType: selectedProviderType,
+        location: selectedLocation,
+        priceRange
+      }),
+    [priceRange, selectedCategory, selectedLocation, selectedProviderType]
+  );
 
   const loadServices = useCallback(async () => {
     setLoading(true);
@@ -64,24 +89,29 @@ export const IntegratedMarketplace = () => {
       });
 
       if (error) throw error;
-      setServices((data.data || []) as Service[]);
+      const payload = (data?.data || []) as MarketplaceService[];
+      setServices(payload.length ? payload : applyFilters(fallbackServices));
     } catch (error) {
       console.error('Error loading services:', error);
-      setServices([]);
+      setServices(applyFilters(fallbackServices));
     } finally {
       setLoading(false);
     }
-  }, [priceRange, selectedCategory, selectedLocation, selectedProviderType]);
+  }, [applyFilters, priceRange, selectedCategory, selectedLocation, selectedProviderType]);
 
   useEffect(() => {
     void loadServices();
   }, [loadServices]);
 
-  const filteredServices = services.filter((service) =>
-    service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    service.provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    service.skills.some((skill) => skill.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredServices = useMemo(
+    () =>
+      services.filter((service) =>
+        service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        service.provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        service.skills.some((skill) => skill.toLowerCase().includes(searchTerm.toLowerCase()))
+      ),
+    [searchTerm, services]
   );
 
   const getProviderTypeStats = () => {
@@ -95,10 +125,12 @@ export const IntegratedMarketplace = () => {
   const stats = getProviderTypeStats();
 
   if (selectedService) {
+    const providerLink = providerLinks[selectedService.providerType];
+
     return (
       <div className="max-w-4xl mx-auto p-6">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={() => setSelectedService(null)}
           className="mb-6"
         >
@@ -128,9 +160,9 @@ export const IntegratedMarketplace = () => {
                   <div>
                     <h4 className="font-semibold mb-2">Skills & Expertise</h4>
                     <div className="flex flex-wrap gap-2">
-                        {selectedService.skills.map((skill: string, idx: number) => (
-                          <Badge key={idx} variant="outline">{skill}</Badge>
-                        ))}
+                      {selectedService.skills.map((skill: string, idx: number) => (
+                        <Badge key={idx} variant="outline">{skill}</Badge>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -158,9 +190,29 @@ export const IntegratedMarketplace = () => {
                     <div className="text-3xl font-bold text-blue-600 mb-4">
                       {selectedService.currency}{selectedService.price.toLocaleString()}
                     </div>
-                    <Button className="w-full" size="lg">
-                      Order Now with Lenco Pay
-                    </Button>
+                    <div className="flex flex-col gap-3">
+                      <Button
+                        className="w-full"
+                        size="lg"
+                        onClick={() => {
+                          onOrderNow?.(selectedService);
+                          onAddToCart?.(selectedService);
+                          toast({
+                            title: 'Added to checkout',
+                            description: `${selectedService.title} is ready in your cart.`
+                          });
+                        }}
+                      >
+                        <ShoppingCart className="w-4 h-4 mr-2" />
+                        Order Now with Lenco Pay
+                      </Button>
+                      <Link
+                        to={providerLink.path}
+                        className={cn('text-sm font-medium text-center transition-colors', providerLink.accent)}
+                      >
+                        {providerLink.label}
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -211,14 +263,14 @@ export const IntegratedMarketplace = () => {
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-              <Input 
+              <Input
                 placeholder="Search services..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
-            
+
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger>
                 <SelectValue placeholder="Category" />
@@ -254,6 +306,7 @@ export const IntegratedMarketplace = () => {
                 <SelectItem value="lusaka">Lusaka</SelectItem>
                 <SelectItem value="ndola">Ndola</SelectItem>
                 <SelectItem value="kitwe">Kitwe</SelectItem>
+                <SelectItem value="livingstone">Livingstone</SelectItem>
                 <SelectItem value="online">Online</SelectItem>
               </SelectContent>
             </Select>
@@ -287,9 +340,9 @@ export const IntegratedMarketplace = () => {
       ) : (
         <div className={`grid gap-6 ${viewMode === 'grid' ? 'md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
           {filteredServices.map((service) => (
-            <ServiceProviderCard 
-              key={service.id} 
-              service={service} 
+            <ServiceProviderCard
+              key={service.id}
+              service={service}
               onSelect={setSelectedService}
             />
           ))}
@@ -299,8 +352,8 @@ export const IntegratedMarketplace = () => {
       {filteredServices.length === 0 && !loading && (
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">No services found matching your criteria.</p>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => {
               setSearchTerm('');
               setSelectedCategory('all');
@@ -317,3 +370,4 @@ export const IntegratedMarketplace = () => {
     </div>
   );
 };
+
