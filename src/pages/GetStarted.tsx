@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Building, Eye, EyeOff, Phone } from 'lucide-react';
@@ -69,8 +68,6 @@ export const GetStarted = () => {
     register,
     handleSubmit,
     control,
-    setValue,
-    watch,
     formState: { errors, isValid },
   } = useForm<GetStartedFormData>({
     resolver: zodResolver(getStartedSchema),
@@ -87,12 +84,6 @@ export const GetStarted = () => {
       agreeToTerms: false,
     },
   });
-
-  const selectedAccountType = watch('accountType');
-
-  const handleAccountTypeSelect = (value: string) => {
-    setValue('accountType', value, { shouldValidate: true, shouldDirty: true });
-  };
 
   const onSubmit = async (data: GetStartedFormData) => {
     setLoading(true);
@@ -178,143 +169,147 @@ export const GetStarted = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} autoComplete="on" className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                id="firstName"
-                autoComplete="given-name"
-                placeholder="First name"
-                {...register('firstName')}
-                className={`pl-10 ${errors.firstName ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
-              />
-              </div>
-              {errors.firstName && (
-                <p className="text-sm text-red-600 mt-1">{errors.firstName.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                id="lastName"
-                autoComplete="family-name"
-                placeholder="Last name"
-                {...register('lastName')}
-                className={errors.lastName ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}
-              />
-              {errors.lastName && (
-                <p className="text-sm text-red-600 mt-1">{errors.lastName.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                placeholder="Enter your email"
-                {...register('email')}
-                className={`pl-10 ${errors.email ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
-              />
-            </div>
-            {errors.email && (
-              <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="mobileNumber">Mobile Number (Optional)</Label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                id="mobileNumber"
-                type="tel"
-                autoComplete="tel"
-                placeholder="e.g., +260 96 1234567"
-                {...register('mobileNumber')}
-                className={`pl-10 ${errors.mobileNumber ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
-              />
-            </div>
-            {errors.mobileNumber && (
-              <p className="text-sm text-red-600 mt-1">{errors.mobileNumber.message}</p>
-            )}
-            <p className="text-xs text-gray-500 mt-1">
-              Add your mobile number for mobile money payments (MTN, Airtel, Zamtel)
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="company">Company (Optional)</Label>
-            <div className="relative">
-              <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                id="company"
-                autoComplete="organization"
-                placeholder="Company name"
-                {...register('company')}
-                className="pl-10"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} autoComplete="on" className="space-y-6">
+          <section className="space-y-3">
             <div>
-              <Label>Account Type</Label>
-              <AccountTypeSelection
-                options={accountTypes}
-                selected={selectedAccountType}
-                onSelect={handleAccountTypeSelect}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="accountType">Account Type (Dropdown)</Label>
-              <Controller
-                name="accountType"
-                control={control}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger id="accountType">
-                      <SelectValue placeholder="Select account type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accountTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              <p className="text-xs text-gray-500">
-                Prefer using the keyboard? Pick your account type from this accessible dropdown.
+              <h2 className="text-lg font-semibold text-gray-900">Account setup</h2>
+              <p className="text-sm text-gray-600">
+                Start by telling us who you are so we can personalise your onboarding journey.
               </p>
-              {errors.accountType && (
-                <p className="text-sm text-red-600 mt-1">{errors.accountType.message}</p>
-              )}
             </div>
-          </div>
+            <Controller
+              name="accountType"
+              control={control}
+              render={({ field }) => (
+                <AccountTypeSelection
+                  options={accountTypes}
+                  selected={field.value}
+                  onSelect={(value) => {
+                    field.onChange(value);
+                    field.onBlur();
+                  }}
+                  error={errors.accountType?.message}
+                />
+              )}
+            />
+          </section>
 
-          <div className="grid grid-cols-2 gap-4">
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-base font-semibold text-gray-900">Personal details</h3>
+              <p className="text-sm text-gray-600">We use this information to create your profile.</p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="firstName"
+                    autoComplete="given-name"
+                    placeholder="First name"
+                    {...register('firstName')}
+                    className={`pl-10 ${errors.firstName ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
+                  />
+                </div>
+                {errors.firstName && (
+                  <p className="text-sm text-red-600 mt-1">{errors.firstName.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <div className="relative">
+                  <Input
+                    id="lastName"
+                    autoComplete="family-name"
+                    placeholder="Last name"
+                    {...register('lastName')}
+                    className={errors.lastName ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}
+                  />
+                </div>
+                {errors.lastName && (
+                  <p className="text-sm text-red-600 mt-1">{errors.lastName.message}</p>
+                )}
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="Enter your email"
+                    {...register('email')}
+                    className={`pl-10 ${errors.email ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
+                  />
+                </div>
+                {errors.email && (
+                  <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-base font-semibold text-gray-900">Contact details</h3>
+              <p className="text-sm text-gray-600">Optional information that helps us serve you better.</p>
+            </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="mobileNumber">Mobile number (optional)</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="new-password"
-                placeholder="Password"
-                {...register('password')}
-                className={`pl-10 pr-10 ${errors.password ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
-              />
+                <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="mobileNumber"
+                  type="tel"
+                  autoComplete="tel"
+                  placeholder="e.g., +260 96 1234567"
+                  {...register('mobileNumber')}
+                  className={`pl-10 ${errors.mobileNumber ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
+                />
+              </div>
+              {errors.mobileNumber && (
+                <p className="text-sm text-red-600 mt-1">{errors.mobileNumber.message}</p>
+              )}
+              <p className="text-xs text-gray-500 mt-1">
+                Add your mobile number for mobile money payments (MTN, Airtel, Zamtel).
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="company">Company (optional)</Label>
+              <div className="relative">
+                <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="company"
+                  autoComplete="organization"
+                  placeholder="Company name"
+                  {...register('company')}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-base font-semibold text-gray-900">Secure your account</h3>
+              <p className="text-sm text-gray-600">Create a strong password to keep your account safe.</p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    placeholder="Password"
+                    {...register('password')}
+                    className={`pl-10 pr-10 ${errors.password ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
+                  />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -327,17 +322,17 @@ export const GetStarted = () => {
                 <p className="text-sm text-red-600 mt-1">{errors.password.message}</p>
               )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <div className="relative">
-              <Input
-                id="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
-                autoComplete="new-password"
-                placeholder="Confirm password"
-                {...register('confirmPassword')}
-                className={`pr-10 ${errors.confirmPassword ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    placeholder="Confirm password"
+                    {...register('confirmPassword')}
+                    className={`pr-10 ${errors.confirmPassword ? 'border-red-300 focus:border-red-400 focus:ring-red-400' : ''}`}
+                  />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -350,7 +345,8 @@ export const GetStarted = () => {
                 <p className="text-sm text-red-600 mt-1">{errors.confirmPassword.message}</p>
               )}
             </div>
-          </div>
+            </div>
+          </section>
 
           <div className="flex items-center space-x-2">
             <Controller

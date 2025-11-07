@@ -1,5 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { CheckCircle2 } from 'lucide-react';
 import type { AccountTypeDefinition } from '@/data/accountTypes';
 
@@ -7,36 +9,41 @@ interface AccountTypeSelectionProps {
   options: AccountTypeDefinition[];
   selected?: string;
   onSelect: (value: string) => void;
+  error?: string;
 }
 
-export const AccountTypeSelection = ({ options, selected, onSelect }: AccountTypeSelectionProps) => {
+export const AccountTypeSelection = ({ options, selected, onSelect, error }: AccountTypeSelectionProps) => {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <p className="text-sm text-gray-600">
         Choose the account type that matches your role so we can tailor the onboarding experience and forms for you.
       </p>
-      <div className="grid gap-4 md:grid-cols-2">
+      <RadioGroup
+        value={selected}
+        onValueChange={onSelect}
+        className="grid gap-4 md:grid-cols-2"
+        aria-label="Account type"
+      >
         {options.map((option) => {
           const Icon = option.icon;
           const isSelected = option.value === selected;
+          const radioId = `account-type-${option.value}`;
 
           return (
-            <button
-              type="button"
+            <Label
               key={option.value}
-              onClick={() => onSelect(option.value)}
-              className="w-full text-left focus:outline-none"
-              aria-pressed={isSelected}
-              aria-label={`Select ${option.label} account type`}
+              htmlFor={radioId}
+              className={`relative cursor-pointer rounded-lg focus-within:ring-2 focus-within:ring-blue-300 ${
+                isSelected ? '' : 'transition-transform hover:-translate-y-0.5'
+              }`}
             >
+              <RadioGroupItem value={option.value} id={radioId} className="sr-only" />
               <Card
-                className={
-                  `h-full transition-shadow ${
-                    isSelected
-                      ? 'border-blue-500 shadow-lg ring-2 ring-blue-200'
-                      : 'hover:border-blue-300 hover:shadow-md'
-                  }`
-                }
+                className={`h-full transition-shadow ${
+                  isSelected
+                    ? 'border-blue-500 shadow-lg ring-2 ring-blue-200'
+                    : 'hover:border-blue-300 hover:shadow-md'
+                }`}
               >
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
                   <div className="flex items-start gap-3">
@@ -90,10 +97,11 @@ export const AccountTypeSelection = ({ options, selected, onSelect }: AccountTyp
                   </div>
                 </CardContent>
               </Card>
-            </button>
+            </Label>
           );
         })}
-      </div>
+      </RadioGroup>
+      {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   );
 };
