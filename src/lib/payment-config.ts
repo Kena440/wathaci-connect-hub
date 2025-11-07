@@ -111,9 +111,9 @@ export const getPaymentConfig = (): PaymentConfig => {
     apiUrl: resolveRuntimeValue('VITE_LENCO_API_URL') || 'https://api.lenco.co/access/v2',
     currency: resolveRuntimeValue('VITE_PAYMENT_CURRENCY') || 'ZMW',
     country: resolveRuntimeValue('VITE_PAYMENT_COUNTRY') || 'ZM',
-    platformFeePercentage: parseFloat(resolveRuntimeValue('VITE_PLATFORM_FEE_PERCENTAGE') || '5'),
-    minAmount: parseFloat(resolveRuntimeValue('VITE_MIN_PAYMENT_AMOUNT') || '5'),
-    maxAmount: parseFloat(resolveRuntimeValue('VITE_MAX_PAYMENT_AMOUNT') || '1000000'),
+    platformFeePercentage: parseFloat(resolveRuntimeValue('VITE_PLATFORM_FEE_PERCENTAGE') || '10'),
+    minAmount: parseFloat(resolveRuntimeValue('VITE_MIN_PAYMENT_AMOUNT') || '0'),
+    maxAmount: parseFloat(resolveRuntimeValue('VITE_MAX_PAYMENT_AMOUNT') || '50000'),
     environment,
     webhookUrl: resolveRuntimeValue('VITE_LENCO_WEBHOOK_URL') || resolveRuntimeValue('LENCO_WEBHOOK_URL') || undefined,
   };
@@ -167,7 +167,7 @@ export const getPlatformFeePercentage = (transactionType?: TransactionType): num
     return 0;
   }
   
-  // Use configured fee percentage for marketplace and resource transactions (5%)
+  // Use configured fee percentage for marketplace and resource transactions
   return config.platformFeePercentage;
 };
 

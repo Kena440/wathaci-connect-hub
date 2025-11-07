@@ -37,6 +37,7 @@ export const LencoPayment = ({ amount, description, transactionType = 'marketpla
   // Calculate payment breakdown
   const totalAmount = typeof amount === 'string' ? parseFloat(amount.toString().replace(/[^\d.]/g, '')) : parseFloat(amount.toString());
   const paymentBreakdown = lencoPaymentService.calculatePaymentTotal(totalAmount, transactionType);
+  const paymentConfig = lencoPaymentService.getConfig();
 
   // Validate configuration
   const isConfigured = lencoPaymentService.isConfigured();
@@ -48,12 +49,12 @@ export const LencoPayment = ({ amount, description, transactionType = 'marketpla
       newErrors.config = 'Payment system is not properly configured. Please contact support.';
     }
 
-    if (totalAmount < 5) {
-      newErrors.amount = 'Minimum payment amount is ZMW 5.00';
+    if (totalAmount < paymentConfig.minAmount) {
+      newErrors.amount = `Minimum payment amount is ${formatAmount(paymentConfig.minAmount)}`;
     }
 
-    if (totalAmount > 1000000) {
-      newErrors.amount = 'Maximum payment amount is ZMW 1,000,000.00';
+    if (totalAmount > paymentConfig.maxAmount) {
+      newErrors.amount = `Maximum payment amount is ${formatAmount(paymentConfig.maxAmount)}`;
     }
 
 

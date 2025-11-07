@@ -31,9 +31,9 @@ npm run env:check
 | `VITE_LENCO_API_URL` | Lenco API base URL | `https://api.lenco.co/access/v2` | All |
 | `VITE_PAYMENT_CURRENCY` | ISO currency code | `ZMW` | All |
 | `VITE_PAYMENT_COUNTRY` | ISO country code | `ZM` | All |
-| `VITE_PLATFORM_FEE_PERCENTAGE` | Platform fee percentage | `5` | All |
-| `VITE_MIN_PAYMENT_AMOUNT` | Minimum payment amount | `5` | All |
-| `VITE_MAX_PAYMENT_AMOUNT` | Maximum payment amount | `1000000` | All |
+| `VITE_PLATFORM_FEE_PERCENTAGE` | Platform fee percentage | `10` | All |
+| `VITE_MIN_PAYMENT_AMOUNT` | Minimum payment amount | `0` | All |
+| `VITE_MAX_PAYMENT_AMOUNT` | Maximum payment amount | `50000` | All |
 | `VITE_APP_ENV` | Runtime environment | `production` or `development` | All |
 | `VITE_APP_NAME` | Application display name | `WATHACI CONNECT` | All |
 

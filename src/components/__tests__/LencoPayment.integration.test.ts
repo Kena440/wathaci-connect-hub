@@ -19,12 +19,12 @@ describe('Lenco Payment Integration Tests', () => {
     it('should handle payment requests with proper structure', async () => {
       // Mock successful payment response
       mockSupabaseInvoke.mockResolvedValueOnce({
-        data: { 
-          success: true, 
+        data: {
+          success: true,
           transaction_id: 'TXN123456',
           amount: 100.00,
-          fee: 2.00,
-          provider_amount: 98.00
+          fee: 10.00,
+          provider_amount: 90.00
         },
         error: null
       });
@@ -251,11 +251,11 @@ describe('Lenco Payment Integration Tests', () => {
       const testAmounts = [10, 50, 100, 500, 1000];
       
       testAmounts.forEach(amount => {
-        const fee = amount * 0.02; // 2% platform fee
+        const fee = amount * 0.10; // 10% platform fee
         const providerAmount = amount - fee;
-        
-        expect(fee).toBe(amount * 0.02);
-        expect(providerAmount).toBe(amount * 0.98);
+
+        expect(fee).toBe(amount * 0.10);
+        expect(providerAmount).toBe(amount * 0.90);
         expect(fee + providerAmount).toBe(amount);
       });
     });

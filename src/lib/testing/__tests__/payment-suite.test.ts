@@ -3,9 +3,9 @@ process.env.VITE_LENCO_PUBLIC_KEY = 'pk_test_123';
 process.env.VITE_LENCO_API_URL = 'https://mock-payments.test';
 process.env.VITE_PAYMENT_CURRENCY = 'ZMW';
 process.env.VITE_PAYMENT_COUNTRY = 'ZM';
-process.env.VITE_PLATFORM_FEE_PERCENTAGE = '2';
-process.env.VITE_MIN_PAYMENT_AMOUNT = '5';
-process.env.VITE_MAX_PAYMENT_AMOUNT = '100000';
+process.env.VITE_PLATFORM_FEE_PERCENTAGE = '10';
+process.env.VITE_MIN_PAYMENT_AMOUNT = '0';
+process.env.VITE_MAX_PAYMENT_AMOUNT = '50000';
 
 import { paymentTestSuite } from '../payment-test-suite';
 

@@ -47,11 +47,11 @@ export const manualVerificationSteps = {
       title: "Test Fee Calculation",
       action: "Enter different payment amounts and verify fee calculation",
       examples: [
-        { amount: "100", expectedFee: "2.00", expectedProvider: "98.00" },
-        { amount: "50", expectedFee: "1.00", expectedProvider: "49.00" },
-        { amount: "25", expectedFee: "0.50", expectedProvider: "24.50" }
+        { amount: "100", expectedFee: "10.00", expectedProvider: "90.00" },
+        { amount: "50", expectedFee: "5.00", expectedProvider: "45.00" },
+        { amount: "25", expectedFee: "2.50", expectedProvider: "22.50" }
       ],
-      expected: "Platform fee varies by transaction type: 5% for marketplace/resource, 0% for donations/subscriptions"
+      expected: "Platform fee varies by transaction type: 10% for marketplace/resource, 0% for donations/subscriptions"
     },
     
     {
@@ -80,21 +80,21 @@ export const manualVerificationSteps = {
       transactionType: "donation"
     },
     {
-      scenario: "Marketplace Transaction (5% Fee)",
+      scenario: "Marketplace Transaction (10% Fee)",
       amount: 100,
       provider: "airtel",
-      phone: "0971234567", 
-      expectedFee: 5.00,
-      expectedNet: 95.00,
+      phone: "0971234567",
+      expectedFee: 10.00,
+      expectedNet: 90.00,
       transactionType: "marketplace"
     },
     {
-      scenario: "Resource Purchase (5% Fee)",
+      scenario: "Resource Purchase (10% Fee)",
       amount: 75,
       provider: "zamtel",
       phone: "0951234567",
-      expectedFee: 3.75,
-      expectedNet: 71.25,
+      expectedFee: 7.50,
+      expectedNet: 67.50,
       transactionType: "resource"
     },
     {
@@ -109,26 +109,27 @@ export const manualVerificationSteps = {
     {
       scenario: "Medium Subscription Payment",
       amount: 100,
-      provider: "airtel", 
+      provider: "airtel",
       phone: "0961234567",
-      expectedFee: 2.00,
-      expectedNet: 98.00
+      expectedFee: 0.00,
+      expectedNet: 100.00,
+      transactionType: "subscription"
     },
     {
-      scenario: "Large Enterprise Payment (5% Fee)",
+      scenario: "Large Enterprise Payment (10% Fee)",
       amount: 2000,
       provider: "zamtel",
-      phone: "0951234567", 
-      expectedFee: 100.00,
-      expectedNet: 1900.00,
+      phone: "0951234567",
+      expectedFee: 200.00,
+      expectedNet: 1800.00,
       transactionType: "marketplace"
     }
   ],
 
   verificationChecklist: [
     "✓ LencoPayment component renders correctly",
-    "✓ Fee calculation varies by transaction type: 5% marketplace/resource, 0% donations/subscriptions",
-    "✓ Provider receives 98% of payment amount",
+    "✓ Fee calculation varies by transaction type: 10% marketplace/resource, 0% donations/subscriptions",
+    "✓ Provider receives 90% of payment amount for fee-applicable transactions",
     "✓ Mobile money providers (MTN, Airtel, Zamtel) are available",
     "✓ Phone number validation works for Zambian formats",
     "✓ Error handling displays appropriate messages",
@@ -167,12 +168,12 @@ export function validatePaymentRequest(paymentData: {
   };
 
   // Validate amount
-  if (!paymentData.amount || paymentData.amount <= 0) {
+  if (paymentData.amount === undefined || paymentData.amount === null || paymentData.amount < 0) {
     validation.valid = false;
-    validation.errors.push("Amount must be greater than 0");
+    validation.errors.push("Amount cannot be negative");
   }
 
-  if (paymentData.amount > 100000) {
+  if (paymentData.amount > 50000) {
     validation.warnings.push("Large amount - verify this is intentional");
   }
 
@@ -206,7 +207,7 @@ export function validatePaymentRequest(paymentData: {
 
   // Calculate and validate fees based on transaction type
   const transactionType = paymentData.description?.toLowerCase().includes('donation') ? 'donation' : 'marketplace';
-  const feePercentage = transactionType === 'donation' ? 0 : 5; // 0% for donations, 5% for marketplace
+  const feePercentage = transactionType === 'donation' ? 0 : 10; // 0% for donations, 10% for marketplace/resource
   const fee = paymentData.amount * (feePercentage / 100);
   const providerAmount = paymentData.amount - fee;
 

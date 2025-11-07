@@ -77,11 +77,11 @@ LENCO_WEBHOOK_SECRET="bc09f682f3bbbf3d851b125b9914984c272471e16cd2a4f14f9406706f
 VITE_LENCO_API_URL="https://api.lenco.co/access/v2"
 
 # Payment Configuration
-VITE_PAYMENT_CURRENCY="ZMK"
+VITE_PAYMENT_CURRENCY="ZMW"
 VITE_PAYMENT_COUNTRY="ZM"
-VITE_PLATFORM_FEE_PERCENTAGE="2"
-VITE_MIN_PAYMENT_AMOUNT="5"
-VITE_MAX_PAYMENT_AMOUNT="1000000"
+VITE_PLATFORM_FEE_PERCENTAGE="10"
+VITE_MIN_PAYMENT_AMOUNT="0"
+VITE_MAX_PAYMENT_AMOUNT="50000"
 
 # Environment
 VITE_APP_ENV="development"
@@ -508,7 +508,7 @@ curl -X POST "https://api.lenco.co/access/v2/transfer-recipients/mobile-money" \
 
 ```typescript
 // Always validate payment amounts
-if (amount < 5 || amount > 1000000) {
+if (amount < 0 || amount > 50000) {
   throw new Error('Invalid payment amount');
 }
 

@@ -42,9 +42,9 @@ In the Vercel dashboard:
 ### Payment Configuration (Required)
    - `VITE_PAYMENT_CURRENCY` – ISO currency code (e.g., `ZMW`)
    - `VITE_PAYMENT_COUNTRY` – ISO country code (e.g., `ZM`)
-   - `VITE_PLATFORM_FEE_PERCENTAGE` – Platform fee percentage (e.g., `5`)
-   - `VITE_MIN_PAYMENT_AMOUNT` – Minimum payment amount (e.g., `5`)
-   - `VITE_MAX_PAYMENT_AMOUNT` – Maximum payment amount (e.g., `1000000`)
+   - `VITE_PLATFORM_FEE_PERCENTAGE` – Platform fee percentage (e.g., `10`)
+   - `VITE_MIN_PAYMENT_AMOUNT` – Minimum payment amount (e.g., `0`)
+   - `VITE_MAX_PAYMENT_AMOUNT` – Maximum payment amount (e.g., `50000`)
 
 ### Application Metadata (Required)
    - `VITE_APP_ENV` – Set to `production` for Production environment, `development` for Preview/Development
