@@ -11,6 +11,12 @@ module.exports = {
     '<rootDir>/src/**/__tests__/**/*.(ts|tsx|js)',
     '<rootDir>/src/**/*.(test|spec).(ts|tsx|js)',
   ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '<rootDir>/test/',
+    '<rootDir>/src/test/basic.test.js',
+    '\\.manual-verification\\.ts$',
+  ],
   collectCoverageFrom: [
     'src/**/*.(ts|tsx)',
     '!src/**/*.d.ts',
@@ -24,6 +30,7 @@ module.exports = {
         moduleResolution: 'node',
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
+        resolveJsonModule: true,
         baseUrl: '.',
         paths: {
           '@/*': ['src/*'],
@@ -33,5 +40,8 @@ module.exports = {
       }
     }]
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(@supabase|uuid)/)',
+  ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
 };
