@@ -60,7 +60,7 @@ export interface PricingSuggestionResult {
 
 const toCurrency = (value: number) => Math.round(value);
 
-const SERVICES: MarketplaceService[] = [
+const BASE_SERVICES: MarketplaceService[] = [
   {
     id: 'svc-branding-101',
     title: 'Brand Identity Accelerator',
@@ -251,7 +251,322 @@ const normalize = (value?: string) => (value || '').toLowerCase();
 const matchesQuery = (text: string, query: string) =>
   normalize(text).includes(normalize(query));
 
-export const marketplaceServices = SERVICES;
+let dynamicServiceCatalog: MarketplaceService[] = [];
+
+const slugify = (value: string, fallback: string) => {
+  const normalized = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '')
+    .trim();
+
+  if (normalized.length === 0) {
+    return fallback;
+  }
+
+  return normalized.slice(0, 64);
+};
+
+const dedupeServices = (services: MarketplaceService[]) => {
+  const unique = new Map<string, MarketplaceService>();
+
+  services.forEach(service => {
+    if (!service?.id) {
+      return;
+    }
+
+    if (!unique.has(service.id)) {
+      unique.set(service.id, { ...service });
+    }
+  });
+
+  return Array.from(unique.values());
+};
+
+const toNumeric = (value: unknown, fallback = 0) => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+export const mergeMarketplaceServices = (
+  ...groups: Array<MarketplaceService[] | undefined>
+): MarketplaceService[] => {
+  const merged: MarketplaceService[] = [];
+
+  groups.forEach(group => {
+    if (!group || group.length === 0) {
+      return;
+    }
+
+    group.forEach(service => {
+      merged.push(service);
+    });
+  });
+
+  return dedupeServices(merged);
+};
+
+export const setDynamicMarketplaceServices = (services: MarketplaceService[]) => {
+  dynamicServiceCatalog = dedupeServices(services);
+};
+
+export const getMarketplaceCatalog = (
+  overrides?: MarketplaceService[]
+): MarketplaceService[] => {
+  if (overrides && overrides.length > 0) {
+    return mergeMarketplaceServices(overrides, BASE_SERVICES);
+  }
+
+  return mergeMarketplaceServices(dynamicServiceCatalog, BASE_SERVICES);
+};
+
+type ProfessionalServiceSource = {
+  profile?: {
+    id: string;
+    first_name?: string | null;
+    last_name?: string | null;
+    business_name?: string | null;
+    account_type?: string | null;
+    country?: string | null;
+    address?: string | null;
+    industry_sector?: string | null;
+    experience_years?: number | null;
+    specialization?: string | null;
+    profile_image_url?: string | null;
+    linkedin_url?: string | null;
+    description?: string | null;
+  };
+  assessment?: {
+    id: string;
+    user_id: string;
+    primary_profession?: string | null;
+    years_of_experience?: number | null;
+    current_employment_status?: string | null;
+    specialization_areas?: string[] | null;
+    services_offered?: string[] | null;
+    service_delivery_modes?: string[] | null;
+    hourly_rate_min?: number | null;
+    hourly_rate_max?: number | null;
+    target_client_types?: string[] | null;
+    client_size_preference?: string[] | null;
+    industry_focus?: string[] | null;
+    availability_hours_per_week?: number | null;
+    project_duration_preference?: string | null;
+    remote_work_capability?: boolean | null;
+    key_skills?: string[] | null;
+    certification_status?: string[] | null;
+  };
+};
+
+const mapProjectDurationToDelivery = (duration?: string | null) => {
+  switch (duration) {
+    case 'short_term':
+      return '1-3 weeks';
+    case 'medium_term':
+      return '1-3 months';
+    case 'long_term':
+      return '3+ months';
+    case 'flexible':
+      return 'Flexible timeline';
+    default:
+      return 'Flexible delivery';
+  }
+};
+
+const deriveProviderType = (
+  accountType?: string | null,
+  employmentStatus?: string | null,
+  deliveryModes?: string[] | null
+): MarketplaceService['providerType'] => {
+  const normalizedAccount = normalize(accountType);
+  const normalizedStatus = normalize(employmentStatus);
+  const normalizedModes = (deliveryModes ?? []).map(mode => normalize(mode));
+
+  if (normalizedModes.includes('online_course') || normalizedModes.includes('training')) {
+    return 'resource';
+  }
+
+  if (normalizedStatus === 'employed' || normalizedAccount === 'sme') {
+    return 'partnership';
+  }
+
+  return 'freelancer';
+};
+
+const toTitleCase = (value?: string | null) => {
+  if (!value) {
+    return '';
+  }
+  return value
+    .split(' ')
+    .filter(Boolean)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
+const buildProviderName = (source: ProfessionalServiceSource['profile']) => {
+  if (!source) {
+    return 'Verified Professional';
+  }
+
+  if (source.business_name) {
+    return source.business_name;
+  }
+
+  const nameParts = [source.first_name, source.last_name].filter(Boolean);
+  if (nameParts.length > 0) {
+    return nameParts.map(toTitleCase).join(' ');
+  }
+
+  return 'Verified Professional';
+};
+
+const computePricing = (minRate?: number | null, maxRate?: number | null) => {
+  const hourlyMin = typeof minRate === 'number' && !Number.isNaN(minRate) ? minRate : 200;
+  const hourlyMax = typeof maxRate === 'number' && !Number.isNaN(maxRate) ? maxRate : hourlyMin * 1.6;
+  const averageHourly = (hourlyMin + hourlyMax) / 2;
+
+  // Estimate project price assuming 35 billable hours for packaged service
+  const estimated = Math.max(averageHourly * 35, 1500);
+  return Math.round(estimated);
+};
+
+const clampRating = (value: number) => Math.max(4, Math.min(5, value));
+
+const deriveSkills = (source: ProfessionalServiceSource) => {
+  const skills = new Set<string>();
+  const { assessment, profile } = source;
+
+  (assessment?.key_skills ?? []).forEach(skill => {
+    if (skill) {
+      skills.add(toTitleCase(skill));
+    }
+  });
+
+  (assessment?.specialization_areas ?? []).forEach(area => {
+    if (area) {
+      skills.add(toTitleCase(area));
+    }
+  });
+
+  if (profile?.specialization) {
+    profile.specialization
+      .split(/[,/]/)
+      .map(item => item.trim())
+      .filter(Boolean)
+      .forEach(item => skills.add(toTitleCase(item)));
+  }
+
+  if (assessment?.certification_status) {
+    assessment.certification_status.forEach(cert => {
+      if (cert) {
+        skills.add(toTitleCase(cert));
+      }
+    });
+  }
+
+  return Array.from(skills).slice(0, 8);
+};
+
+const buildServiceDescription = (
+  serviceName: string,
+  source: ProfessionalServiceSource,
+  skills: string[],
+  experienceYears: number
+) => {
+  const providerName = buildProviderName(source.profile);
+  const focusArea = source.assessment?.industry_focus?.[0] || source.assessment?.primary_profession;
+  const normalizedFocus = focusArea ? toTitleCase(focusArea) : null;
+  const expertiseSnippet = skills.slice(0, 3).join(', ');
+  const experienceSnippet = experienceYears > 0 ? `${experienceYears}+ years` : 'extensive';
+
+  const segments = [
+    `${serviceName} delivered by ${providerName}.`,
+    normalizedFocus ? `Focus area: ${normalizedFocus}.` : null,
+    skills.length > 0 ? `Key expertise: ${expertiseSnippet}.` : null,
+    `Backed by ${experienceSnippet} of hands-on professional experience.`
+  ];
+
+  return segments.filter(Boolean).join(' ');
+};
+
+export const generateServicesFromProfessionals = (
+  sources: ProfessionalServiceSource[]
+): MarketplaceService[] => {
+  if (!Array.isArray(sources) || sources.length === 0) {
+    return [];
+  }
+
+  const generated: MarketplaceService[] = [];
+
+  sources.forEach(source => {
+    const { assessment } = source;
+    const servicesOffered = assessment?.services_offered ?? [];
+
+    if (!Array.isArray(servicesOffered) || servicesOffered.length === 0) {
+      return;
+    }
+
+    const providerName = buildProviderName(source.profile);
+    const location = source.profile?.country || source.profile?.address || 'Zambia';
+    const experienceYears = toNumeric(
+      assessment?.years_of_experience ?? source.profile?.experience_years,
+      0
+    );
+    const skills = deriveSkills(source);
+    const providerType = deriveProviderType(
+      source.profile?.account_type ?? null,
+      assessment?.current_employment_status ?? null,
+      assessment?.service_delivery_modes ?? null
+    );
+    const deliveryTime = mapProjectDurationToDelivery(assessment?.project_duration_preference);
+    const categorySource =
+      assessment?.industry_focus?.[0] ||
+      assessment?.primary_profession ||
+      source.profile?.industry_sector ||
+      'Consulting';
+    const normalizedCategory = toTitleCase(categorySource) || 'Consulting';
+    const pricing = computePricing(assessment?.hourly_rate_min, assessment?.hourly_rate_max);
+    const ratingBase = 4.2 + Math.min(experienceYears * 0.03, 0.6);
+    const rating = parseFloat(clampRating(ratingBase).toFixed(1));
+    const reviews = Math.max(6, Math.round(Math.max(experienceYears, 1) * 4));
+
+    servicesOffered.slice(0, 5).forEach((serviceName, index) => {
+      if (!serviceName) {
+        return;
+      }
+
+      const slug = slugify(serviceName, `service-${assessment?.user_id}-${index}`);
+      const id = `${assessment?.user_id || source.profile?.id || 'professional'}-${slug}`;
+      const description = buildServiceDescription(serviceName, source, skills, experienceYears);
+
+      generated.push({
+        id,
+        title: toTitleCase(serviceName),
+        description,
+        provider: providerName,
+        providerType,
+        category: normalizedCategory,
+        skills: skills.length > 0 ? skills : ['Consulting', 'Advisory'],
+        location,
+        deliveryTime,
+        rating,
+        reviews,
+        currency: 'K',
+        price: pricing,
+        image: source.profile?.profile_image_url || '/placeholder.svg',
+      } as MarketplaceService);
+    });
+  });
+
+  return dedupeServices(generated);
+};
+
+export const marketplaceServices = BASE_SERVICES;
 export const marketplaceProducts = PRODUCTS;
 
 export const filterServicesByControls = (
@@ -286,7 +601,8 @@ export const runMarketplaceSearch = (query: string, activeFilters: string[] = []
   }
 
   const filters = new Set(activeFilters.map(normalize));
-  const serviceMatches = SERVICES.filter(service => {
+  const catalog = getMarketplaceCatalog();
+  const serviceMatches = catalog.filter(service => {
     const matchesFilters = filters.size === 0 || filters.has(normalize(service.category)) || service.skills.some(skill => filters.has(normalize(skill)));
     return matchesFilters && (
       matchesQuery(service.title, query) ||
@@ -354,7 +670,7 @@ export const runMarketplaceSearch = (query: string, activeFilters: string[] = []
 export const buildMarketplaceRecommendations = (
   mode: 'personalized' | 'trending' | 'similar'
 ): MarketplaceRecommendation[] => {
-  const popularServices = [...SERVICES].sort((a, b) => b.rating - a.rating);
+  const popularServices = [...getMarketplaceCatalog()].sort((a, b) => b.rating - a.rating);
   const popularProducts = [...PRODUCTS].sort((a, b) => b.rating - a.rating);
 
   if (mode === 'trending') {
@@ -422,7 +738,7 @@ export const generatePricingAnalysis = ({
   const normalizedCategory = normalize(category);
   const normalizedLocation = normalize(location);
 
-  const relevantServices = SERVICES.filter(service => {
+  const relevantServices = getMarketplaceCatalog().filter(service => {
     const categoryMatch = !normalizedCategory || normalize(service.category) === normalizedCategory;
     const locationMatch = !normalizedLocation || normalize(service.location) === normalizedLocation || normalize(service.location) === 'online';
     return categoryMatch && locationMatch;
@@ -436,7 +752,7 @@ export const generatePricingAnalysis = ({
 
   const combinedPrices = [...relevantServices.map(service => service.price), ...relevantProducts.map(product => product.price)];
 
-  const fallbackPrices = combinedPrices.length > 0 ? combinedPrices : [...SERVICES, ...PRODUCTS].map(item => ('price' in item ? item.price : 0));
+  const fallbackPrices = combinedPrices.length > 0 ? combinedPrices : [...getMarketplaceCatalog(), ...PRODUCTS].map(item => ('price' in item ? item.price : 0));
   const prices = fallbackPrices.length > 0 ? fallbackPrices : [2500, 4200, 5300];
 
   const minPrice = Math.min(...prices);
@@ -516,8 +832,10 @@ export const generateAssistantResponse = (
 export const generateProfessionalMatches = (gaps: string[]) => {
   const normalizedGaps = gaps.map(normalize).filter(Boolean);
 
+  const catalog = getMarketplaceCatalog();
+
   if (normalizedGaps.length === 0) {
-    return SERVICES.slice(0, 3).map(service => ({
+    return catalog.slice(0, 3).map(service => ({
       id: service.id,
       full_name: service.provider,
       expertise_areas: service.skills,
@@ -525,7 +843,7 @@ export const generateProfessionalMatches = (gaps: string[]) => {
     }));
   }
 
-  return SERVICES.map(service => {
+  return catalog.map(service => {
     const overlap = service.skills.filter(skill => normalizedGaps.includes(normalize(skill))).length;
     const baseScore = overlap / Math.max(service.skills.length, 1);
     return {

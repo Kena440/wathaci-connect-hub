@@ -21,7 +21,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { PaymentWithNegotiation } from '@/components/PaymentWithNegotiation';
 import {
   marketplaceProducts as fallbackProducts,
-  marketplaceServices,
+  getMarketplaceCatalog,
   type MarketplaceProduct,
   type MarketplaceService,
   runMarketplaceSearch
@@ -207,7 +207,8 @@ const Marketplace = () => {
         handleViewDetails(match);
       }
     } else if (recommendation?.type === 'service') {
-      const match = marketplaceServices.find(service => service.id === recommendation.id);
+      const catalog = getMarketplaceCatalog();
+      const match = catalog.find(service => service.id === recommendation.id);
       if (match) {
         setActiveTab('integrated');
         handleOrderServiceNow(match);
