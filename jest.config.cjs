@@ -13,8 +13,9 @@ module.exports = {
   ],
   testPathIgnorePatterns: [
     '/node_modules/',
-    '<rootDir>/src/test/',  // Exclude Node.js native test files
-    '<rootDir>/src/components/__tests__/LencoPayment.manual-verification.ts',  // Not a test file - manual verification script
+    '<rootDir>/test/',
+    '<rootDir>/src/test/basic.test.js',
+    '\\.manual-verification\\.ts$',
   ],
   collectCoverageFrom: [
     'src/**/*.(ts|tsx)',
@@ -23,12 +24,14 @@ module.exports = {
   ],
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
+      isolatedModules: true,
       tsconfig: {
         jsx: 'react-jsx',
         module: 'esnext',
         moduleResolution: 'node',
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
+        resolveJsonModule: true,
         baseUrl: '.',
         paths: {
           '@/*': ['src/*'],
@@ -38,5 +41,8 @@ module.exports = {
       }
     }]
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(@supabase|uuid)/)',
+  ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
 };

@@ -54,7 +54,7 @@ const StatsSection = () => {
       if (error) throw error;
 
       // Convert business stats to our format
-      const statsMap = businessStats?.reduce((acc, stat) => {
+      const statsMap = businessStats?.reduce((acc: Record<string, number>, stat: any) => {
         acc[stat.stat_type] = stat.stat_value;
         return acc;
       }, {} as Record<string, number>) || {};

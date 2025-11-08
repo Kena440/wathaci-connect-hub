@@ -313,8 +313,8 @@ function createMockSupabaseClient() {
         }
         const targetId = payload?.id || workingData[0]?.id;
         if (targetId) {
-          mockData[table] = mockData[table].map(item => item.id === targetId ? { ...item, ...payload } : item);
-          workingData = mockData[table].filter(item => item.id === targetId);
+          mockData[table] = mockData[table].map((item: any) => item.id === targetId ? { ...item, ...payload } : item);
+          workingData = mockData[table].filter((item: any) => item.id === targetId);
         }
         return { data: workingData[0] ?? null, error: null };
       },

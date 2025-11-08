@@ -235,18 +235,12 @@ The current test suite provides excellent coverage of critical functionality. Th
 
 ## 📚 Running Tests
 
-### All Tests
-```bash
-npm test                   # Run all tests (backend + frontend) 🧪
-npm run test:backend       # Backend tests only ✅
-npm run test:frontend      # Frontend tests only 🟡
-```
-
 ### All Checks
 ```bash
-npm run lint               # Linting ✅
-npm run typecheck          # Type checking ✅
-npm run test:jest          # Frontend unit tests (alias) 🟡
+npm run lint              # Linting ✅
+npm run typecheck         # Type checking ✅
+npm run test:jest         # Frontend unit tests 🟡
+npm test                  # Backend tests ✅ (run in backend/ dir)
 npm run test:accessibility # Accessibility tests ✅
 ```
 
