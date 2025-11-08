@@ -569,16 +569,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
+    // Show success message
+    // Note: If email confirmation is enabled in Supabase, the session won't be active yet
+    const refreshedState = await refreshUser();
+    const sessionActive = !!refreshedState.user;
+    
     toast({
       title: "Account created!",
-      description: "Please check your email to verify your account.",
+      description: sessionActive 
+        ? "You're all set! Complete your profile to get started."
+        : "Please check your email to verify your account.",
     });
 
     if (!user) {
       return { user: null, profile: null };
     }
-
-    const refreshedState = await refreshUser();
 
     // If Supabase hasn't started a session yet (email confirmation flow),
     // fall back to the newly created entities so the UI can continue gracefully.

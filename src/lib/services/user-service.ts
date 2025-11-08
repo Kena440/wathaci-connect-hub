@@ -315,10 +315,7 @@ export class UserService extends BaseService<User> {
     return withErrorHandling(
       async () => {
         try {
-          const trimmedEmail = (email || '').trim();
-          const resolvedEmail = normaliseEmail(trimmedEmail) || trimmedEmail;
-
-          const offlineAccount = getOfflineAccount(resolvedEmail, password);
+          const offlineAccount = getOfflineAccount(email, password);
 
           if (offlineAccount) {
             return {
@@ -328,7 +325,7 @@ export class UserService extends BaseService<User> {
           }
 
           const { data, error } = await supabase.auth.signInWithPassword({
-            email: resolvedEmail,
+            email,
             password,
           });
 
@@ -375,11 +372,9 @@ export class UserService extends BaseService<User> {
       async () => {
         try {
           const emailRedirectTo = getEmailRedirectTo();
-          const trimmedEmail = (email || '').trim();
-          const resolvedEmail = normaliseEmail(trimmedEmail) || trimmedEmail;
 
           const { error } = await supabase.auth.signInWithOtp({
-            email: resolvedEmail,
+            email,
             options: {
               shouldCreateUser: false,
               ...(emailRedirectTo ? { emailRedirectTo } : {}),
@@ -420,10 +415,8 @@ export class UserService extends BaseService<User> {
     return withErrorHandling(
       async () => {
         try {
-          const trimmedEmail = (email || '').trim();
-          const resolvedEmail = normaliseEmail(trimmedEmail) || trimmedEmail;
           const { data, error } = await supabase.auth.verifyOtp({
-            email: resolvedEmail,
+            email,
             token,
             type: 'email',
           });
@@ -476,8 +469,6 @@ export class UserService extends BaseService<User> {
       async () => {
         try {
           const emailRedirectTo = getEmailRedirectTo();
-          const trimmedEmail = (email || '').trim();
-          const resolvedEmail = normaliseEmail(trimmedEmail) || trimmedEmail;
 
           const signUpOptions: { data?: Record<string, any>; emailRedirectTo?: string } = {};
 
@@ -490,7 +481,7 @@ export class UserService extends BaseService<User> {
           }
 
           const signUpPayload = {
-            email: resolvedEmail,
+            email,
             password,
             ...(Object.keys(signUpOptions).length ? { options: signUpOptions } : {}),
           };
@@ -533,8 +524,7 @@ export class UserService extends BaseService<User> {
     return withErrorHandling(
       async () => {
         try {
-          const trimmedEmail = (email || '').trim();
-          const normalizedEmail = normaliseEmail(trimmedEmail);
+          const normalizedEmail = normaliseEmail(email);
           const offlineAccount = offlineAccounts.find(
             account => normaliseEmail(account.email) === normalizedEmail
           );
@@ -545,7 +535,7 @@ export class UserService extends BaseService<User> {
 
           const emailRedirectTo = getEmailRedirectTo('/reset-password');
 
-          const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail || trimmedEmail, {
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
             ...(emailRedirectTo ? { redirectTo: emailRedirectTo } : {}),
           });
 

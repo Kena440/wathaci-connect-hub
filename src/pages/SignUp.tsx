@@ -84,6 +84,7 @@ export const SignUp = () => {
     const normalizedCompany = values.company?.trim() || null;
     const normalizedMobile = values.mobileNumber?.trim() || null;
 
+    // Try to record registration in backend (optional - don't block on this)
     try {
       await registerUser({
         firstName: values.firstName.trim(),
@@ -94,12 +95,11 @@ export const SignUp = () => {
         mobileNumber: normalizedMobile,
       });
     } catch (error: any) {
-      const message = error?.message ?? 'We could not create your account at this time. Please try again later.';
-      setSubmitError(message);
-      toast({ title: 'Sign up failed', description: message, variant: 'destructive' });
-      return;
+      // Log registration tracking failure but continue with sign-up
+      console.warn('Registration tracking failed (non-critical):', error.message);
     }
 
+    // Create the actual user account in Supabase
     try {
       await signUp(values.email.trim(), values.password, {
         first_name: values.firstName.trim(),
@@ -113,9 +113,9 @@ export const SignUp = () => {
 
       navigate('/profile-setup?mode=edit');
     } catch (error: any) {
-      const message = error?.message ?? 'Unable to finish creating your account. Please try again later.';
+      const message = error?.message ?? 'Unable to create your account. Please try again later.';
       setSubmitError(message);
-      toast({ title: 'Account setup incomplete', description: message, variant: 'destructive' });
+      toast({ title: 'Sign up failed', description: message, variant: 'destructive' });
     }
   });
 
