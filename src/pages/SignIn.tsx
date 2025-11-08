@@ -16,6 +16,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 const signInSchema = z.object({
   email: z
     .string()
+    .trim()
     .min(1, 'Email is required')
     .email('Please enter a valid email address'),
   password: z
@@ -68,7 +69,8 @@ const SignIn = () => {
     setOtpError('');
 
     try {
-      const result = await initiateSignIn(data.email, data.password);
+      const normalizedEmail = data.email.trim();
+      const result = await initiateSignIn(normalizedEmail, data.password);
 
       if (result.offlineState) {
         reset();
@@ -76,7 +78,7 @@ const SignIn = () => {
         return;
       }
 
-      setPendingEmail(data.email);
+      setPendingEmail(normalizedEmail);
       setStep('otp');
       setOtpCode('');
       setResendCountdown(30);
