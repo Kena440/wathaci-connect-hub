@@ -498,6 +498,42 @@ function createMockSupabaseClient() {
           error: null,
         };
       },
+      resetPasswordForEmail: async (email: string, options?: { redirectTo?: string }) => {
+        const normalizedEmail = (email || '').toLowerCase();
+        const record = mockAuthUsers.get(normalizedEmail);
+
+        if (!record) {
+          return {
+            data: null,
+            error: { message: 'User not found', status: 404 },
+          };
+        }
+
+        console.info('[mock-supabase] Password reset email would be sent to %s', normalizedEmail);
+        return { data: {}, error: null };
+      },
+      updateUser: async ({ password }: { password?: string; data?: Record<string, any> }) => {
+        if (!currentUser) {
+          return {
+            data: null,
+            error: { message: 'Not authenticated', status: 401 },
+          };
+        }
+
+        if (password) {
+          const normalizedEmail = currentUser.email.toLowerCase();
+          const record = mockAuthUsers.get(normalizedEmail);
+          
+          if (record) {
+            mockAuthUsers.set(normalizedEmail, { 
+              password, 
+              user: currentUser 
+            });
+          }
+        }
+
+        return { data: { user: currentUser }, error: null };
+      },
     },
     functions: {
       invoke: async (name: string, options?: { body?: any }) => {

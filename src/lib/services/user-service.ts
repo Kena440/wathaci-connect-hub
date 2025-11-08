@@ -696,7 +696,7 @@ export class ProfileService extends BaseService<Profile> {
     );
 
     if (!creationResult.error) {
-      return creationResult;
+      return creationResult as DatabaseResponse<Profile>;
     }
 
     const errorCode = (creationResult.error as any)?.code;
@@ -707,7 +707,7 @@ export class ProfileService extends BaseService<Profile> {
       errorMessage.includes('already exists');
 
     if (!isDuplicateError) {
-      return creationResult;
+      return creationResult as DatabaseResponse<Profile>;
     }
 
     return this.updateProfile(userId, profileFields);
@@ -814,13 +814,27 @@ export class ProfileService extends BaseService<Profile> {
   async updateProfessionalInfo(
     userId: string,
     professionalData: {
-      qualifications?: Array<{ name: string; institution: string; year: number }>;
+      qualifications?: Array<{ 
+        name?: string; 
+        institution?: string; 
+        year?: string | number;
+        degree?: string;
+        field?: string;
+      }>;
       experience_years?: number;
       specialization?: string;
       gaps_identified?: string[];
     }
   ): Promise<DatabaseResponse<Profile>> {
-    return this.updateProfile(userId, professionalData);
+    // Normalize qualifications to match the database schema
+    const normalizedData = {
+      ...professionalData,
+      qualifications: professionalData.qualifications?.map(q => ({
+        ...q,
+        year: q.year !== undefined ? String(q.year) : undefined,
+      })),
+    };
+    return this.updateProfile(userId, normalizedData as Partial<Profile>);
   }
 
   /**
