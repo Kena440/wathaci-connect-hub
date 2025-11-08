@@ -68,7 +68,7 @@ const SignIn = () => {
     setOtpError('');
 
     try {
-      const result = await initiateSignIn(data.email, data.password);
+      const result = await initiateSignIn(data.email.trim(), data.password.trim());
 
       if (result.offlineState) {
         reset();
@@ -76,7 +76,7 @@ const SignIn = () => {
         return;
       }
 
-      setPendingEmail(data.email);
+      setPendingEmail(data.email.trim());
       setStep('otp');
       setOtpCode('');
       setResendCountdown(30);
