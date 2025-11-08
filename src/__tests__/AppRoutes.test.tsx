@@ -1,23 +1,33 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-jest.mock('../pages/Index', () => ({ default: () => <div>Home Page</div> }));
-jest.mock('../pages/Marketplace', () => ({ default: () => <div>Marketplace Page</div> }));
-jest.mock('../pages/Resources', () => ({ default: () => <div>Resources Page</div> }));
-jest.mock('../pages/NotFound', () => ({ default: () => <div>Not Found</div> }));
-jest.mock('../pages/SignIn', () => ({ SignIn: () => <div>Sign In Page</div> }));
-jest.mock('../pages/ForgotPassword', () => ({ default: () => <div>Forgot Password Page</div> }));
-jest.mock('../pages/ResetPassword', () => ({ default: () => <div>Reset Password Page</div> }));
-jest.mock('../pages/GetStarted', () => ({ GetStarted: () => <div>Get Started Page</div> }));
-jest.mock('../pages/SubscriptionPlans', () => ({ SubscriptionPlans: () => <div>Subscription Plans Page</div> }));
-jest.mock('../pages/PartnershipHub', () => ({ PartnershipHub: () => <div>Partnership Hub Page</div> }));
-jest.mock('../pages/ProfileSetup', () => ({ ProfileSetup: () => <div>Profile Setup Page</div> }));
-jest.mock('../components/ProfileReview', () => ({ ProfileReview: () => <div>Profile Review Page</div> }));
-jest.mock('../pages/FreelancerHub', () => ({ default: () => <div>Freelancer Hub Page</div> }));
-jest.mock('../pages/PrivacyPolicy', () => ({ default: () => <div>Privacy Policy Page</div> }));
-jest.mock('../pages/TermsOfService', () => ({ default: () => <div>Terms Of Service Page</div> }));
-jest.mock('../pages/Messages', () => ({ default: () => <div>Messages Page</div> }));
-jest.mock('../pages/FundingHub', () => ({ default: () => <div>Funding Hub Page</div> }));
+const createLazyMock = (label: string, namedExport?: string) => {
+  const Component = () => <div>{label}</div>;
+  return {
+    __esModule: true as const,
+    default: Component,
+    ...(namedExport ? { [namedExport]: Component } : {}),
+  };
+};
+
+jest.mock('../pages/Index', () => createLazyMock('Home Page'));
+jest.mock('../pages/Marketplace', () => createLazyMock('Marketplace Page'));
+jest.mock('../pages/Resources', () => createLazyMock('Resources Page'));
+jest.mock('../pages/NotFound', () => createLazyMock('Not Found'));
+jest.mock('../pages/SignIn', () => createLazyMock('Sign In Page', 'SignIn'));
+jest.mock('../pages/SignUp', () => createLazyMock('Sign Up Page', 'SignUp'));
+jest.mock('../pages/ForgotPassword', () => createLazyMock('Forgot Password Page'));
+jest.mock('../pages/ResetPassword', () => createLazyMock('Reset Password Page'));
+jest.mock('../pages/GetStarted', () => createLazyMock('Get Started Page', 'GetStarted'));
+jest.mock('../pages/SubscriptionPlans', () => createLazyMock('Subscription Plans Page', 'SubscriptionPlans'));
+jest.mock('../pages/PartnershipHub', () => createLazyMock('Partnership Hub Page', 'PartnershipHub'));
+jest.mock('../pages/ProfileSetup', () => createLazyMock('Profile Setup Page', 'ProfileSetup'));
+jest.mock('../components/ProfileReview', () => createLazyMock('Profile Review Page', 'ProfileReview'));
+jest.mock('../pages/FreelancerHub', () => createLazyMock('Freelancer Hub Page'));
+jest.mock('../pages/PrivacyPolicy', () => createLazyMock('Privacy Policy Page'));
+jest.mock('../pages/TermsOfService', () => createLazyMock('Terms Of Service Page'));
+jest.mock('../pages/Messages', () => createLazyMock('Messages Page'));
+jest.mock('../pages/FundingHub', () => createLazyMock('Funding Hub Page'));
 
 const appContextMock: { user: { id: string } | null } = { user: null };
 jest.mock('@/contexts/AppContext', () => ({
@@ -32,6 +42,7 @@ const publicRoutes = [
   { path: '/freelancer-hub', text: 'Freelancer Hub Page' },
   { path: '/resources', text: 'Resources Page' },
   { path: '/signin', text: 'Sign In Page' },
+  { path: '/signup', text: 'Sign Up Page' },
   { path: '/forgot-password', text: 'Forgot Password Page' },
   { path: '/reset-password', text: 'Reset Password Page' },
   { path: '/get-started', text: 'Get Started Page' },
