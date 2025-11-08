@@ -62,31 +62,6 @@ npm run keys:rotate
 
 ### Testing
 
-#### `run-all-tests.mjs`
-**Purpose**: Unified test runner for all project tests  
-**Usage**: `npm test`  
-**Description**: Runs both backend (Node.js native test runner) and frontend (Jest) test suites in sequence. Provides a consolidated test summary showing results from all test frameworks.
-
-**Features**:
-- Runs backend integration tests using Node.js native `--test` flag
-- Runs frontend unit tests using Jest
-- Reports combined pass/fail status
-- Exits with appropriate code for CI/CD integration
-
-#### `run-tests.mjs`
-**Purpose**: Backend-only test runner  
-**Usage**: `npm run test:backend`  
-**Description**: Runs only the Node.js native tests for backend integration testing. Tests include:
-- API endpoint validation
-- Request sanitization
-- Payment webhook verification
-- Lenco merchant resolution
-- Translation key consistency
-
-**Environment Variables**:
-- `NODE_ENV=test` (automatically set)
-- `ALLOW_IN_MEMORY_REGISTRATION=true` (automatically set for testing)
-
 #### `test-webhook-integration.js`
 **Purpose**: Tests Lenco webhook integration  
 **Usage**: 
@@ -104,30 +79,6 @@ node scripts/test-webhook-integration.js <webhook-url> <webhook-secret>
 node scripts/test-webhook-integration.js \
   https://YOUR_PROJECT_REF.supabase.co/functions/v1/lenco-webhook \
   whsec_your_secret_key
-```
-
-### Test Commands Summary
-
-```bash
-# Run all tests (backend + frontend)
-npm test
-
-# Run backend tests only
-npm run test:backend
-
-# Run frontend tests only
-npm run test:frontend
-# or
-npm run test:jest
-
-# Run Jest in watch mode
-npm run test:jest:watch
-
-# Run accessibility tests only
-npm run test:accessibility
-
-# Update Jest snapshots
-npm run test:jest -- -u
 ```
 
 ## Common Workflows

@@ -19,12 +19,12 @@ jest.mock('../pages/TermsOfService', () => ({ default: () => <div>Terms Of Servi
 jest.mock('../pages/Messages', () => ({ default: () => <div>Messages Page</div> }));
 jest.mock('../pages/FundingHub', () => ({ default: () => <div>Funding Hub Page</div> }));
 
-const appContextMock = { user: null };
+const appContextMock: { user: { id: string } | null } = { user: null };
 jest.mock('@/contexts/AppContext', () => ({
   useAppContext: () => ({ user: appContextMock.user, loading: false }),
 }));
 
-import { AppRoutes } from '../App.tsx';
+import { AppRoutes } from '../App';
 
 const publicRoutes = [
   { path: '/', text: 'Home Page' },
