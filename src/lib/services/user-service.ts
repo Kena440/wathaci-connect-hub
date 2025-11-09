@@ -143,6 +143,18 @@ const EMAIL_REDIRECT_PATH_KEYS = [
   'EMAIL_CONFIRMATION_REDIRECT_PATH',
 ];
 
+const PASSWORD_RESET_REDIRECT_URL_KEYS = [
+  'VITE_PASSWORD_RESET_REDIRECT_URL',
+  'PASSWORD_RESET_REDIRECT_URL',
+  'VITE_SUPABASE_PASSWORD_RESET_REDIRECT_URL',
+  'SUPABASE_PASSWORD_RESET_REDIRECT_URL',
+];
+
+const PASSWORD_RESET_REDIRECT_PATH_KEYS = [
+  'VITE_PASSWORD_RESET_REDIRECT_PATH',
+  'PASSWORD_RESET_REDIRECT_PATH',
+];
+
 const normalizeBaseUrl = (value: string): string | undefined => {
   try {
     const url = new URL(value);
@@ -201,10 +213,21 @@ const buildAbsoluteUrl = (value: string, baseUrl?: string): string | undefined =
   }
 };
 
-const getEmailRedirectTo = (fallbackPath = FALLBACK_EMAIL_REDIRECT_PATH): string | undefined => {
+type RedirectConfig = {
+  urlKeys?: string[];
+  pathKeys?: string[];
+};
+
+const getEmailRedirectTo = (
+  fallbackPath = FALLBACK_EMAIL_REDIRECT_PATH,
+  options: RedirectConfig = {}
+): string | undefined => {
   const baseUrl = getRuntimeBaseUrl();
 
-  for (const key of EMAIL_REDIRECT_URL_KEYS) {
+  const urlKeys = options.urlKeys?.length ? options.urlKeys : EMAIL_REDIRECT_URL_KEYS;
+  const pathKeys = options.pathKeys?.length ? options.pathKeys : EMAIL_REDIRECT_PATH_KEYS;
+
+  for (const key of urlKeys) {
     const value = resolveEnvValue(key);
     if (value) {
       const resolved = buildAbsoluteUrl(value, baseUrl);
@@ -215,7 +238,7 @@ const getEmailRedirectTo = (fallbackPath = FALLBACK_EMAIL_REDIRECT_PATH): string
   }
 
   const pathCandidate =
-    EMAIL_REDIRECT_PATH_KEYS.map(resolveEnvValue).find((value): value is string => Boolean(value)) ||
+    pathKeys.map(resolveEnvValue).find((value): value is string => Boolean(value)) ||
     fallbackPath;
 
   if (pathCandidate) {
@@ -543,7 +566,10 @@ export class UserService extends BaseService<User> {
             return { data: { success: true }, error: null };
           }
 
-          const emailRedirectTo = getEmailRedirectTo('/reset-password');
+          const emailRedirectTo = getEmailRedirectTo('/reset-password', {
+            urlKeys: PASSWORD_RESET_REDIRECT_URL_KEYS,
+            pathKeys: PASSWORD_RESET_REDIRECT_PATH_KEYS,
+          });
 
           const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail || trimmedEmail, {
             ...(emailRedirectTo ? { redirectTo: emailRedirectTo } : {}),
