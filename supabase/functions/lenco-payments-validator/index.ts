@@ -1,22 +1,15 @@
-// supabase/functions/lenco-payments-validator/index.ts
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Get env vars
-const supabaseUrl = Deno.env.get("SUPABASE_URL");
-const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+// Env vars
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const lencoSecret = Deno.env.get("LENCO_WEBHOOK_SECRET");
 
-if (!supabaseUrl || !serviceRoleKey) {
-  throw new Error("Missing Supabase configuration in environment variables");
-}
-
-// Supabase client with service role (for inserts)
 const supabase = createClient(supabaseUrl, serviceRoleKey);
 
 Deno.serve(async (req) => {
   const incomingSecret = req.headers.get("x-lenco-secret");
 
-  // Basic auth check
   if (!lencoSecret || !incomingSecret || incomingSecret !== lencoSecret) {
     await logWebhook({
       source: "lenco",
@@ -26,13 +19,10 @@ Deno.serve(async (req) => {
       error: "Invalid or missing x-lenco-secret",
     });
 
-    return json(
-      { error: "unauthorized" },
-      401,
-    );
+    return json({ error: "unauthorized" }, 401);
   }
 
-  let body: unknown = null;
+  let body: any = null;
 
   try {
     body = await req.json();
@@ -45,44 +35,92 @@ Deno.serve(async (req) => {
       error: "Invalid JSON body",
     });
 
-    return json(
-      { error: "invalid_json" },
-      400,
+    return json({ error: "invalid_json" }, 400);
+  }
+
+  const event = body?.event ?? null;
+
+  // Always log the raw webhook
+  await logWebhook({
+    source: "lenco",
+    event,
+    payload: body,
+    http_status: 200,
+    error: null,
+  }).catch((e) => console.error("logWebhook failed:", e));
+
+  // ---- Per-event handling ----
+  if (event === "payment.completed") {
+    await handlePaymentCompleted(body).catch((e) =>
+      console.error("handlePaymentCompleted failed:", e)
     );
+  } else {
+    console.log("Unhandled event type:", event);
   }
 
-  const event = (body as { event?: string | null } | null)?.event ?? null;
-
-  // Try to log the payload
-  try {
-    await logWebhook({
-      source: "lenco",
-      event,
-      payload: body,
-      http_status: 200,
-      error: null,
-    });
-  } catch (e) {
-    console.error("DB insert failed:", e);
-    // We still return 200 to Lenco so they don't retry endlessly
-  }
-
-  // Here you could add any business logic:
-  // - update balances
-  // - mark payment as completed
-  // - etc.
-
-  return json(
-    { ok: true, message: "Webhook accepted" },
-    200,
-  );
+  return json({ ok: true, message: "Webhook accepted" }, 200);
 });
 
-// Helper: insert into webhook_logs
+// Handle payment.completed event with idempotency
+async function handlePaymentCompleted(body: any) {
+  const data = body?.data ?? {};
+
+  const reference: string | undefined = data.reference;
+  const amountRaw = data.amount;
+  const currency: string | undefined = data.currency;
+  const status: string | undefined = data.status;
+
+  if (!reference) {
+    console.warn("payment.completed without reference – skipping");
+    return;
+  }
+
+  // Idempotency: if this reference already exists, don't insert again
+  const { data: existing, error: existingErr } = await supabase
+    .from("lenco_payments")
+    .select("id, status")
+    .eq("reference", reference)
+    .maybeSingle();
+
+  if (existingErr) {
+    console.error("Error checking existing payment:", existingErr);
+  }
+
+  if (existing) {
+    console.log("Payment already processed, reference:", reference);
+    return;
+  }
+
+  // Normalise amount
+  let amount: number | null = null;
+  if (typeof amountRaw === "number") {
+    amount = amountRaw;
+  } else if (typeof amountRaw === "string") {
+    const parsed = Number(amountRaw);
+    amount = isNaN(parsed) ? null : parsed;
+  }
+
+  const { error: insertErr } = await supabase.from("lenco_payments").insert({
+    reference,
+    amount,
+    currency,
+    status,
+    raw_payload: body,
+  });
+
+  if (insertErr) {
+    console.error("Error inserting lenco_payments:", insertErr);
+    throw insertErr;
+  }
+
+  console.log("Stored new payment with reference:", reference);
+}
+
+// Log all webhooks
 async function logWebhook(args: {
   source: string;
   event: string | null;
-  payload: unknown;
+  payload: any;
   http_status: number;
   error: string | null;
 }) {
@@ -102,7 +140,6 @@ async function logWebhook(args: {
   }
 }
 
-// Helper: JSON response
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
