@@ -10,7 +10,7 @@ const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(supabaseUrl, serviceRoleKey);
 
 Deno.serve(async (req) => {
-  const incomingSecret = req.headers.get("x-lenco-secret");
+  const incomingSecret = req.headers.get("x-lenco-signature");
 
   // Simple auth check
   if (incomingSecret !== EXPECTED_SECRET) {
@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
       {
         ok: false,
         error: "unauthorized",
-        reason: "x-lenco-secret header is missing or incorrect",
+        reason: "x-lenco-signature header is missing or incorrect",
       },
       401,
     );
