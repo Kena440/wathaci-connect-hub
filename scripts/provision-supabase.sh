@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SQL_DIR="${SCRIPT_DIR}/../backend/supabase"
+VERIFY_SCRIPT="${SCRIPT_DIR}/verify-supabase-schema.sh"
 
 if [[ ! -d "${SQL_DIR}" ]]; then
   echo "Error: Unable to locate Supabase SQL directory at ${SQL_DIR}" >&2
@@ -48,9 +49,19 @@ for file in "${SQL_FILES[@]}"; do
   fi
 
   echo "\n➡️  Executing ${file}"
-  psql "${CONNECTION_STRING}" --file "${SQL_PATH}"
+  PGPASSWORD="${SUPABASE_DB_PASSWORD:-}" \
+    psql "${CONNECTION_STRING}" \
+      --set ON_ERROR_STOP=1 \
+      --file "${SQL_PATH}"
   echo "✅  Completed ${file}"
 
 done
 
 echo "\n🎉 Supabase schema provisioning complete."
+
+if [[ -x "${VERIFY_SCRIPT}" ]]; then
+  echo "\n🔎 Running post-provision verification checks..."
+  "${VERIFY_SCRIPT}"
+else
+  echo "\n⚠️  Skipping post-provision verification: ${VERIFY_SCRIPT} not found or not executable."
+fi
