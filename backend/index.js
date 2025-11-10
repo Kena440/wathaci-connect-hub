@@ -70,7 +70,8 @@ const userRoutes = require('./routes/users');
 const logRoutes = require('./routes/logs');
 const paymentRoutes = require('./routes/payment');
 const resolveRoutes = require('./routes/resolve');
-app.use('/users', userRoutes);
+
+app.use(['/users', '/api/users'], userRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/resolve', resolveRoutes);
