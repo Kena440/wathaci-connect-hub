@@ -56,6 +56,30 @@ test('POST /users registers sanitized user payloads', async () => {
   await new Promise((resolve) => server.close(resolve));
 });
 
+test('POST /api/users routes to the same registration handler', async () => {
+  const server = app.listen(0);
+  const { port } = server.address();
+
+  const res = await fetch(`http://localhost:${port}/api/users`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      firstName: 'Bob',
+      lastName: 'Mwila',
+      email: `bob-${crypto.randomUUID()}@example.com`,
+      accountType: 'professional',
+    }),
+  });
+
+  assert.strictEqual(res.status, 201);
+  const data = await res.json();
+  assert.strictEqual(data.user.firstName, 'Bob');
+  assert.strictEqual(data.user.lastName, 'Mwila');
+  assert.strictEqual(data.user.accountType, 'professional');
+
+  await new Promise((resolve) => server.close(resolve));
+});
+
 test('POST /api/logs stores sanitized log entries', async () => {
   const server = app.listen(0);
   const { port } = server.address();

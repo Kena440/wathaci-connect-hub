@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { accountTypes, type AccountTypeValue } from '@/data/accountTypes';
+import { useAppContext } from '@/contexts/AppContext';
 
 const accountTypeRoutes: Record<AccountTypeValue, string> = {
   sole_proprietor: '/sme-assessment',
@@ -15,10 +16,42 @@ const accountTypeRoutes: Record<AccountTypeValue, string> = {
 
 export const GetStarted = () => {
   const navigate = useNavigate();
+  const { user, profile } = useAppContext();
+
+  const availableAccountTypes = accountTypes.map(({ value }) => value);
+
+  const isSupportedAccountType = (value: unknown): value is AccountTypeValue =>
+    typeof value === 'string' && (availableAccountTypes as string[]).includes(value);
+
+  const buildProfileSetupPath = (accountType: AccountTypeValue, mode?: 'edit') => {
+    const params = new URLSearchParams({ accountType });
+    if (mode) {
+      params.set('mode', mode);
+    }
+
+    return `/profile-setup?${params.toString()}`;
+  };
 
   const handleSelectAccountType = (value: AccountTypeValue) => {
-    const target = accountTypeRoutes[value];
-    if (!target) return;
+    if (!value) return;
+
+    if (!user) {
+      navigate(`/signup?${new URLSearchParams({ accountType: value }).toString()}`);
+      return;
+    }
+
+    const profileAccountType = profile?.account_type;
+    const isProfileCompleted = Boolean(profile?.profile_completed ?? user?.profile_completed);
+    const normalizedProfileAccountType = isSupportedAccountType(profileAccountType)
+      ? profileAccountType
+      : undefined;
+
+    if (!isProfileCompleted || normalizedProfileAccountType !== value) {
+      navigate(buildProfileSetupPath(value, isProfileCompleted ? 'edit' : undefined));
+      return;
+    }
+
+    const target = accountTypeRoutes[value] ?? '/profile-review';
     navigate(target);
   };
 

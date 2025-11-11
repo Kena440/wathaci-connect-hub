@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Building2, Phone, UserRound } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,17 +51,26 @@ export type SignUpFormData = z.infer<typeof signUpSchema>;
 
 export const SignUp = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { signUp } = useAppContext();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const preselectedAccountType = (() => {
+    const paramValue = searchParams.get('accountType');
+    if (!paramValue) return undefined;
+
+    return accountTypes.find(({ value }) => value === paramValue)?.value;
+  })();
+
   const {
     register,
     control,
     handleSubmit,
     formState: { errors, isSubmitting, isValid },
+    setValue,
   } = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
     mode: 'onChange',
@@ -75,8 +84,15 @@ export const SignUp = () => {
       company: '',
       mobileNumber: '',
       termsAccepted: false,
+      ...(preselectedAccountType ? { accountType: preselectedAccountType } : {}),
     },
   });
+
+  useEffect(() => {
+    if (preselectedAccountType) {
+      setValue('accountType', preselectedAccountType);
+    }
+  }, [preselectedAccountType, setValue]);
 
   const onSubmit = handleSubmit(async values => {
     setSubmitError(null);

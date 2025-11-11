@@ -41,6 +41,8 @@ serve(async (req) => {
     return new Response('Method not allowed', { status: 405, headers: corsHeaders });
   }
 
+  let requestUserId: string | null = null;
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -65,22 +67,42 @@ serve(async (req) => {
     const supabaseClient = createClient(supabaseUrl, serviceRoleKey);
 
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ status: false, message: 'Missing authorization header' }),
-        { status: 401, headers: jsonHeaders },
-      );
-    }
+    const serviceRoleHeader = req.headers.get('x-service-role-key');
+    const apiKeyHeader = req.headers.get('apikey') ?? serviceRoleHeader;
+    const bearerToken = authHeader?.replace(/^Bearer\s+/i, '').trim() ?? '';
+    const normalizedServiceRoleKey = serviceRoleKey.trim();
 
-    const accessToken = authHeader.replace('Bearer ', '').trim();
-    const { data: authData, error: authError } = await supabaseClient.auth.getUser(accessToken);
+    const serviceRoleCandidates = [
+      bearerToken,
+      apiKeyHeader?.trim() ?? '',
+      serviceRoleHeader?.trim() ?? '',
+    ].filter((value) => value.length > 0);
 
-    if (authError || !authData?.user) {
-      logger.warn('Unauthorized transfer recipient attempt', { authError: authError?.message });
-      return new Response(
-        JSON.stringify({ status: false, message: 'Unauthorized' }),
-        { status: 401, headers: jsonHeaders },
-      );
+    const isServiceRoleRequest = serviceRoleCandidates.some(
+      (candidate) => candidate === normalizedServiceRoleKey,
+    );
+
+    if (!isServiceRoleRequest) {
+      if (!bearerToken) {
+        return new Response(
+          JSON.stringify({ status: false, message: 'Missing authorization header' }),
+          { status: 401, headers: jsonHeaders },
+        );
+      }
+
+      const { data: authData, error: authError } = await supabaseClient.auth.getUser(bearerToken);
+
+      if (authError || !authData?.user) {
+        logger.warn('Unauthorized transfer recipient attempt', { authError: authError?.message });
+        return new Response(
+          JSON.stringify({ status: false, message: 'Unauthorized' }),
+          { status: 401, headers: jsonHeaders },
+        );
+      }
+
+      requestUserId = authData.user.id;
+    } else {
+      requestUserId = req.headers.get('x-client-user-id')?.trim() || null;
     }
 
     const body: TransferRecipientRequestBody = await req.json().catch(() => ({}));
@@ -96,7 +118,7 @@ serve(async (req) => {
     const maskedWallet = maskWalletNumber(walletNumber);
 
     logger.info('Creating Lenco transfer recipient', {
-      userId: authData.user.id,
+      userId: requestUserId ?? 'service-role',
       walletIdentifier: maskedWallet,
     });
 
@@ -113,7 +135,7 @@ serve(async (req) => {
 
     if (!lencoResponse.ok || !responseBody) {
       logger.error('Lenco transfer recipient creation failed', responseBody, {
-        userId: authData.user.id,
+        userId: requestUserId ?? 'service-role',
         walletIdentifier: maskedWallet,
         status: lencoResponse.status,
       });
@@ -138,7 +160,9 @@ serve(async (req) => {
       { status: 200, headers: jsonHeaders },
     );
   } catch (error) {
-    logger.error('Unexpected error while creating transfer recipient', error);
+    logger.error('Unexpected error while creating transfer recipient', error, {
+      userId: requestUserId ?? 'service-role',
+    });
     return new Response(
       JSON.stringify({ status: false, message: 'Unexpected error creating transfer recipient' }),
       { status: 500, headers: jsonHeaders },

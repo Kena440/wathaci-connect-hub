@@ -341,7 +341,7 @@ app.use(
   })
 );
 
-app.post("/my/webhook/url", (req, res) => {
+app.post("/my/webhook/url", async (req, res) => {
   const signature = req.header("x-lenco-signature");
   const secret = process.env.LENCO_WEBHOOK_SECRET ?? "";
 
@@ -356,9 +356,61 @@ app.post("/my/webhook/url", (req, res) => {
 
   const event = req.body; // Parsed JSON payload
 
-  // TODO: handle the event (e.g., update payment status)
+  // Handle the webhook event
+  try {
+    const { event: eventType, data } = event;
+    const { reference, status, id: transactionId, amount, currency } = data;
 
-  return res.status(200).send("received");
+    // Map Lenco event types to internal payment statuses
+    const statusMap = {
+      'payment.success': 'completed',
+      'payment.failed': 'failed',
+      'payment.pending': 'pending',
+      'payment.cancelled': 'cancelled'
+    };
+
+    const paymentStatus = statusMap[eventType] || 'unknown';
+
+    // Update payment record in database
+    // Replace with your actual database update logic
+    await updatePaymentInDatabase({
+      reference: reference,
+      status: paymentStatus,
+      lencoTransactionId: transactionId,
+      amount: amount,
+      currency: currency,
+      gatewayResponse: JSON.stringify(data),
+      paidAt: eventType === 'payment.success' ? new Date() : null,
+      updatedAt: new Date()
+    });
+
+    // Log webhook event for audit trail
+    await logWebhookEvent({
+      eventType: eventType,
+      reference: reference,
+      status: 'processed',
+      payload: event,
+      processedAt: new Date()
+    });
+
+    console.log(`Webhook processed: ${eventType} for reference ${reference}`);
+    return res.status(200).send("received");
+  } catch (error) {
+    console.error('Webhook processing error:', error);
+    
+    // Log failed webhook for manual review
+    await logWebhookEvent({
+      eventType: event.event,
+      reference: event.data?.reference,
+      status: 'failed',
+      errorMessage: error.message,
+      payload: event,
+      processedAt: new Date()
+    });
+
+    // Return 200 to prevent Lenco from retrying (error is logged for manual review)
+    return res.status(200).send("received");
+  }
 });
 ```
 
@@ -380,10 +432,76 @@ if (!$signature || !hash_equals($expected, $signature)) {
 
 $event = json_decode($rawBody);
 
-// TODO: handle the event payload
+// Handle the webhook event
+try {
+    $eventType = $event->event;
+    $data = $event->data;
+    $reference = $data->reference;
+    $status = $data->status;
+    $transactionId = $data->id;
+    $amount = $data->amount;
+    $currency = $data->currency;
 
-http_response_code(200);
-echo 'received';
+    // Map Lenco event types to internal payment statuses
+    $statusMap = [
+        'payment.success' => 'completed',
+        'payment.failed' => 'failed',
+        'payment.pending' => 'pending',
+        'payment.cancelled' => 'cancelled'
+    ];
+
+    $paymentStatus = $statusMap[$eventType] ?? 'unknown';
+
+    // Update payment record in database
+    // Replace with your actual database update logic
+    // Example using PDO:
+    // $stmt = $pdo->prepare("UPDATE payments SET status = ?, lenco_transaction_id = ?, 
+    //                        gateway_response = ?, paid_at = ?, updated_at = NOW() 
+    //                        WHERE reference = ?");
+    // $paidAt = ($eventType === 'payment.success') ? date('Y-m-d H:i:s') : null;
+    // $stmt->execute([$paymentStatus, $transactionId, json_encode($data), $paidAt, $reference]);
+
+    // Update transaction/payment state in your database
+    updatePaymentInDatabase([
+        'reference' => $reference,
+        'status' => $paymentStatus,
+        'lenco_transaction_id' => $transactionId,
+        'amount' => $amount,
+        'currency' => $currency,
+        'gateway_response' => json_encode($data),
+        'paid_at' => ($eventType === 'payment.success') ? date('Y-m-d H:i:s') : null,
+        'updated_at' => date('Y-m-d H:i:s')
+    ]);
+
+    // Log webhook event for audit trail
+    logWebhookEvent([
+        'event_type' => $eventType,
+        'reference' => $reference,
+        'status' => 'processed',
+        'payload' => $rawBody,
+        'processed_at' => date('Y-m-d H:i:s')
+    ]);
+
+    error_log("Webhook processed: $eventType for reference $reference");
+    http_response_code(200);
+    echo 'received';
+} catch (Exception $e) {
+    error_log('Webhook processing error: ' . $e->getMessage());
+    
+    // Log failed webhook for manual review
+    logWebhookEvent([
+        'event_type' => $event->event ?? 'unknown',
+        'reference' => $event->data->reference ?? null,
+        'status' => 'failed',
+        'error_message' => $e->getMessage(),
+        'payload' => $rawBody,
+        'processed_at' => date('Y-m-d H:i:s')
+    ]);
+
+    // Return 200 to prevent Lenco from retrying (error is logged for manual review)
+    http_response_code(200);
+    echo 'received';
+}
 ?>
 ```
 
