@@ -6,12 +6,12 @@ import { accountTypes, type AccountTypeValue } from '@/data/accountTypes';
 import { useAppContext } from '@/contexts/AppContext';
 
 const accountTypeRoutes: Record<AccountTypeValue, string> = {
-  sole_proprietor: '/sme-assessment',
-  professional: '/professional-assessment',
-  sme: '/sme-assessment',
-  investor: '/investor-assessment',
-  donor: '/donor-assessment',
-  government: '/government-assessment',
+  sole_proprietor: '/onboarding/sme/needs-assessment',
+  professional: '/onboarding/professional/needs-assessment',
+  sme: '/onboarding/sme/needs-assessment',
+  investor: '/onboarding/investor/needs-assessment',
+  donor: '/onboarding/donor/needs-assessment',
+  government: '/onboarding/government/needs-assessment',
 };
 
 export const GetStarted = () => {
