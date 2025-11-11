@@ -58,6 +58,9 @@ Deno.serve(async (req) => {
 
   await logWebhookEvent(body, 200, null);
 
+  // Process the webhook event
+  await processWebhookEvent(body);
+
   return json({ ok: true, message: "Webhook accepted", body });
 });
 
@@ -88,6 +91,194 @@ function json(body: unknown, status = 200): Response {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+/**
+ * Process webhook event and update relevant records
+ * Handles both regular payments and donations
+ */
+async function processWebhookEvent(payload: unknown) {
+  if (!supabase) {
+    console.error("lenco-payments-validator: Supabase client not initialized");
+    return;
+  }
+
+  try {
+    // Extract webhook data
+    const webhookData = payload as {
+      event?: string;
+      data?: {
+        reference?: string;
+        status?: string;
+        amount?: number;
+        currency?: string;
+        id?: string;
+        gateway_response?: unknown;
+        paid_at?: string;
+        metadata?: {
+          transaction_type?: string;
+          donation_id?: string;
+        };
+      };
+    };
+
+    const event = webhookData.event;
+    const data = webhookData.data;
+
+    if (!event || !data || !data.reference) {
+      console.log("lenco-payments-validator: Missing required webhook data");
+      return;
+    }
+
+    const reference = data.reference;
+    const status = data.status?.toLowerCase();
+    const transactionType = data.metadata?.transaction_type;
+
+    console.log(`Processing webhook for reference: ${reference}, status: ${status}, type: ${transactionType}`);
+
+    // Determine if this is a donation or regular payment
+    const isDonation = transactionType === "donation" || reference.startsWith("DON-");
+
+    if (isDonation) {
+      // Handle donation webhook
+      await processDonationWebhook(reference, status, data);
+    } else {
+      // Handle regular payment webhook (existing logic)
+      await processPaymentWebhook(reference, status, data);
+    }
+  } catch (error) {
+    console.error("lenco-payments-validator: Error processing webhook", error);
+  }
+}
+
+/**
+ * Process donation-specific webhook
+ */
+async function processDonationWebhook(
+  reference: string,
+  status: string | undefined,
+  data: {
+    id?: string;
+    amount?: number;
+    currency?: string;
+    gateway_response?: unknown;
+    paid_at?: string;
+  }
+) {
+  if (!supabase) return;
+
+  try {
+    // Check if donation exists and get current status
+    const { data: existingDonation, error: fetchError } = await supabase
+      .from("donations")
+      .select("id, status")
+      .eq("lenco_reference", reference)
+      .single();
+
+    if (fetchError || !existingDonation) {
+      console.error(`Donation not found for reference: ${reference}`, fetchError);
+      return;
+    }
+
+    // Idempotency check: don't re-process completed donations
+    if (existingDonation.status === "completed") {
+      console.log(`Donation ${reference} already completed, skipping`);
+      return;
+    }
+
+    // Map Lenco status to donation status
+    let donationStatus: string;
+    if (status === "success" || status === "completed") {
+      donationStatus = "completed";
+    } else if (status === "failed") {
+      donationStatus = "failed";
+    } else {
+      donationStatus = "pending";
+    }
+
+    // Update donation record
+    const { error: updateError } = await supabase
+      .from("donations")
+      .update({
+        status: donationStatus,
+        lenco_transaction_id: data.id,
+        gateway_response: data.gateway_response,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("lenco_reference", reference);
+
+    if (updateError) {
+      console.error(`Failed to update donation ${reference}`, updateError);
+    } else {
+      console.log(`Successfully updated donation ${reference} to status: ${donationStatus}`);
+    }
+  } catch (error) {
+    console.error("Error processing donation webhook", error);
+  }
+}
+
+/**
+ * Process regular payment webhook (existing payments table)
+ */
+async function processPaymentWebhook(
+  reference: string,
+  status: string | undefined,
+  data: {
+    id?: string;
+    amount?: number;
+    currency?: string;
+    gateway_response?: unknown;
+    paid_at?: string;
+  }
+) {
+  if (!supabase) return;
+
+  try {
+    // Check if payment exists
+    const { data: existingPayment, error: fetchError } = await supabase
+      .from("payments")
+      .select("id, status")
+      .eq("reference", reference)
+      .single();
+
+    if (fetchError || !existingPayment) {
+      console.log(`Payment not found for reference: ${reference}`);
+      return;
+    }
+
+    // Idempotency check
+    if (existingPayment.status === "completed") {
+      console.log(`Payment ${reference} already completed, skipping`);
+      return;
+    }
+
+    // Map status
+    const paymentStatus = status === "success" || status === "completed" 
+      ? "completed" 
+      : status === "failed" 
+      ? "failed" 
+      : "pending";
+
+    // Update payment record
+    const { error: updateError } = await supabase
+      .from("payments")
+      .update({
+        status: paymentStatus,
+        lenco_transaction_id: data.id,
+        gateway_response: data.gateway_response,
+        paid_at: data.paid_at,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("reference", reference);
+
+    if (updateError) {
+      console.error(`Failed to update payment ${reference}`, updateError);
+    } else {
+      console.log(`Successfully updated payment ${reference} to status: ${paymentStatus}`);
+    }
+  } catch (error) {
+    console.error("Error processing payment webhook", error);
+  }
 }
 
 function timingSafeEqual(a: string, b: string): boolean {
