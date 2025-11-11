@@ -2,6 +2,21 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## 🚀 Production Launch Checklist
+
+Before deploying WATHACI CONNECT to production, complete all items in the **[Production Launch Checklist](docs/release/LAUNCH_CHECKLIST.md)**.
+
+This comprehensive checklist covers:
+- ✅ Management approvals and sign-offs
+- ✅ Configuration validation (API, Supabase, Lenco)
+- ✅ Pre-launch testing (auth, payments, cross-browser)
+- ✅ Security and compliance checks
+- ✅ Monitoring and post-launch operations
+
+**Critical**: Ensure `VITE_API_BASE_URL` is set to your live backend API before production deployment. See the checklist for details.
+
+---
+
 ## Supabase CLI Setup
 
 The Supabase CLI is installed and configured for this project. To get started:
