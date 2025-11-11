@@ -240,7 +240,9 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
                 <p className="mt-2 text-sm text-gray-600">
                   Your donation enables us to source professionals and fund logistics to help struggling SMEs cover short-term
                   business gaps — through technical assistance, capacity building and systems  — strengthening them for
-                  investment readiness and sustainability.
+                  investment readiness and sustainability. We identify SMEs through transparent calls for proposals and
+                  competitions, making these structured application rounds part of the criteria used to select who receives
+                  support.
                 </p>
               </div>
               <button
