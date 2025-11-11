@@ -238,11 +238,12 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
                 <h2 className="text-xl font-semibold text-gray-900">Support SMEs through Wathaci Connect</h2>
                 {/* Required SME impact message (per business requirements). */}
                 <p className="mt-2 text-sm text-gray-600">
-                  Your donation enables us to source professionals and fund logistics to help struggling SMEs cover short-term
-                  business gaps — through technical assistance, capacity building and systems  — strengthening them for
-                  investment readiness and sustainability. We identify SMEs through transparent calls for proposals and
-                  competitions, making these structured application rounds part of the criteria used to select who receives
-                  support.
+                  Every contribution keeps promising Zambian SMEs moving forward. Your support helps us show up on the ground
+                  with advisors, coaches, and practical resources that unlock day-to-day resilience while building long-term
+                  confidence. We champion founders through transparent calls for proposals and collaborative selection rounds,
+                  ensuring the most committed businesses receive tailored capacity building, systems support, and growth
+                  capital preparation. As our funding base grows, we also plan to recycle part of these donations into
+                  revolving grants so more entrepreneurs can benefit from the same lifeline you helped create.
                 </p>
               </div>
               <button
