@@ -1,4 +1,4 @@
-import type { SupabaseConfigStatus } from "@/lib/supabaseClient";
+import type { SupabaseConfigStatus } from "@/config/appConfig";
 import type { PaymentConfig } from "@/lib/payment-config";
 
 interface ConfigurationErrorProps {
@@ -23,15 +23,14 @@ export const ConfigurationError = ({ supabaseStatus, paymentStatus }: Configurat
     const missingSections: string[] = [];
 
     if (supabaseStatus.missingUrlKeys.length > 0) {
-      missingSections.push(
-        `Supabase URL (${supabaseStatus.missingUrlKeys.join(", ")})`
-      );
+      const aliases = supabaseStatus.aliasUrlKeys.length > 0 ? ` (aliases checked: ${supabaseStatus.aliasUrlKeys.join(", ")})` : "";
+      missingSections.push(`Supabase URL → set ${supabaseStatus.canonicalUrlKey}${aliases}`);
     }
 
     if (supabaseStatus.missingAnonKeys.length > 0) {
-      missingSections.push(
-        `Supabase anon/public key (${supabaseStatus.missingAnonKeys.join(", ")})`
-      );
+      const aliases =
+        supabaseStatus.aliasAnonKeys.length > 0 ? ` (aliases checked: ${supabaseStatus.aliasAnonKeys.join(", ")})` : "";
+      missingSections.push(`Supabase anon/public key → set ${supabaseStatus.canonicalAnonKey}${aliases}`);
     }
 
     if (missingSections.length > 0) {

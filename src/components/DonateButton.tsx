@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useState } from "react";
-import { supabaseClient, supabaseConfigStatus } from "@/lib/supabaseClient";
+import { supabaseClient } from "@/lib/supabaseClient";
+import { supabaseConfigStatus } from "@/config/appConfig";
 
 type PaymentMethod = "mobile_money" | "card";
 

@@ -3,6 +3,8 @@
  * Centralized configuration for Lenco payment integration
  */
 
+import { getEnvValue, type EnvKey } from "@/config/appConfig";
+
 export interface PaymentConfig {
   publicKey: string;
   apiUrl: string;
@@ -13,6 +15,11 @@ export interface PaymentConfig {
   maxAmount: number;
   environment: 'development' | 'production';
   webhookUrl?: string;
+  sources?: {
+    publicKey?: EnvKey;
+    apiUrl?: EnvKey;
+    webhookUrl?: EnvKey;
+  };
 }
 
 export type TransactionType = 'marketplace' | 'resource' | 'donation' | 'subscription';
@@ -56,66 +63,66 @@ export interface PaymentStatus {
 // Load configuration from environment variables
 const DEFAULT_DEV_PUBLIC_KEY = 'pub-dea560c94d379a23e7b85a265d7bb9acbd585481e6e1393e';
 
-const resolveRuntimeValue = (key: string): string | undefined => {
-  try {
-    const importMeta = (() => {
-      try {
-        return (0, eval)('import.meta');
-      } catch {
-        return undefined;
-      }
-    })();
+const LENCO_PUBLIC_KEY_KEYS: readonly EnvKey[] = ["VITE_LENCO_PUBLIC_KEY", "LENCO_PUBLIC_KEY"];
+const LENCO_API_URL_KEYS: readonly EnvKey[] = ["VITE_LENCO_API_URL", "LENCO_API_URL"];
+const LENCO_WEBHOOK_URL_KEYS: readonly EnvKey[] = ["VITE_LENCO_WEBHOOK_URL", "LENCO_WEBHOOK_URL"];
+const PLATFORM_FEE_KEYS: readonly EnvKey[] = ["VITE_PLATFORM_FEE_PERCENTAGE", "PLATFORM_FEE_PERCENTAGE"];
+const MIN_AMOUNT_KEYS: readonly EnvKey[] = ["VITE_MIN_PAYMENT_AMOUNT", "MIN_PAYMENT_AMOUNT"];
+const MAX_AMOUNT_KEYS: readonly EnvKey[] = ["VITE_MAX_PAYMENT_AMOUNT", "MAX_PAYMENT_AMOUNT"];
+const CURRENCY_KEYS: readonly EnvKey[] = ["VITE_PAYMENT_CURRENCY", "PAYMENT_CURRENCY"];
+const COUNTRY_KEYS: readonly EnvKey[] = ["VITE_PAYMENT_COUNTRY", "PAYMENT_COUNTRY"];
+const ENVIRONMENT_KEYS: readonly EnvKey[] = ["VITE_APP_ENV"];
 
-    const viteValue = importMeta?.env?.[key];
-    if (viteValue) {
-      return viteValue as string;
-    }
-  } catch (error) {
-    // import.meta is not available (e.g. during Jest tests)
-  }
+interface PaymentEnvResolution {
+  key?: EnvKey;
+  value?: string;
+}
 
-  if (typeof globalThis !== 'undefined') {
-    const runtimeValue = (globalThis as any).__APP_CONFIG__?.[key];
-    if (runtimeValue) {
-      return runtimeValue as string;
+const resolveFromEnv = (keys: readonly EnvKey[]): PaymentEnvResolution => {
+  for (const key of keys) {
+    const value = getEnvValue(key);
+    if (value) {
+      return { key, value };
     }
   }
-
-  if (typeof process !== 'undefined' && process.env) {
-    const processValue = process.env[key];
-    if (processValue) {
-      return processValue;
-    }
-  }
-
-  return undefined;
+  return {};
 };
 
-export const getPaymentEnvValue = (key: string): string | undefined => resolveRuntimeValue(key);
+export const getPaymentEnvValue = (key: string): string | undefined => {
+  return getEnvValue(key as EnvKey);
+};
 
 export const getPaymentConfig = (): PaymentConfig => {
-  const environment = (resolveRuntimeValue('VITE_APP_ENV') as 'development' | 'production') || 'development';
+  const environment =
+    (resolveFromEnv(ENVIRONMENT_KEYS).value as 'development' | 'production' | undefined) ||
+    (import.meta.env.MODE === 'production' ? 'production' : 'development');
 
-  let publicKey = resolveRuntimeValue('VITE_LENCO_PUBLIC_KEY') || '';
-  if (!publicKey) {
-    publicKey = resolveRuntimeValue('LENCO_PUBLIC_KEY') || '';
-  }
+  const publicKeyResolution = resolveFromEnv(LENCO_PUBLIC_KEY_KEYS);
+  let publicKey = publicKeyResolution.value || '';
 
   if (!publicKey && environment === 'development') {
     console.warn('Payment Warning: Missing VITE_LENCO_PUBLIC_KEY. Falling back to default development key.');
     publicKey = DEFAULT_DEV_PUBLIC_KEY;
   }
 
+  const apiUrlResolution = resolveFromEnv(LENCO_API_URL_KEYS);
+  const webhookResolution = resolveFromEnv(LENCO_WEBHOOK_URL_KEYS);
+
   const config: PaymentConfig = {
     publicKey,
-    apiUrl: resolveRuntimeValue('VITE_LENCO_API_URL') || 'https://api.lenco.co/access/v2',
-    currency: resolveRuntimeValue('VITE_PAYMENT_CURRENCY') || 'ZMW',
-    country: resolveRuntimeValue('VITE_PAYMENT_COUNTRY') || 'ZM',
-    platformFeePercentage: parseFloat(resolveRuntimeValue('VITE_PLATFORM_FEE_PERCENTAGE') || '10'),
-    minAmount: parseFloat(resolveRuntimeValue('VITE_MIN_PAYMENT_AMOUNT') || '0'),
-    maxAmount: parseFloat(resolveRuntimeValue('VITE_MAX_PAYMENT_AMOUNT') || '50000'),
+    apiUrl: apiUrlResolution.value || 'https://api.lenco.co/access/v2',
+    currency: resolveFromEnv(CURRENCY_KEYS).value || 'ZMW',
+    country: resolveFromEnv(COUNTRY_KEYS).value || 'ZM',
+    platformFeePercentage: parseFloat(resolveFromEnv(PLATFORM_FEE_KEYS).value || '10'),
+    minAmount: parseFloat(resolveFromEnv(MIN_AMOUNT_KEYS).value || '0'),
+    maxAmount: parseFloat(resolveFromEnv(MAX_AMOUNT_KEYS).value || '50000'),
     environment,
-    webhookUrl: resolveRuntimeValue('VITE_LENCO_WEBHOOK_URL') || resolveRuntimeValue('LENCO_WEBHOOK_URL') || undefined,
+    webhookUrl: webhookResolution.value || undefined,
+    sources: {
+      publicKey: publicKeyResolution.key,
+      apiUrl: apiUrlResolution.key,
+      webhookUrl: webhookResolution.key,
+    },
   };
 
   return config;

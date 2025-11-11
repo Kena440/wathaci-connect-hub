@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Send, Bot, User, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase-enhanced';
 import { generateAssistantResponse } from '@/data/marketplace';
-import { supabaseConfigStatus } from '@/lib/supabaseClient';
+import { supabaseConfigStatus } from '@/config/appConfig';
 
 interface Message {
   id: string;
