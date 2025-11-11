@@ -1,126 +1,11 @@
-import { createClient, type SupabaseClientOptions, type SupabaseClient as SupabaseJsClient } from "@supabase/supabase-js";
+import {
+  createClient,
+  type SupabaseClient as SupabaseJsClient,
+  type SupabaseClientOptions,
+} from "@supabase/supabase-js";
+
 import type { Database } from "@/@types/database";
-
-type EnvKey =
-  | "VITE_SUPABASE_URL"
-  | "SUPABASE_URL"
-  | "VITE_SUPABASE_PROJECT_URL"
-  | "SUPABASE_PROJECT_URL"
-  | "VITE_SUPABASE_ANON_KEY"
-  | "SUPABASE_ANON_KEY"
-  | "VITE_SUPABASE_KEY"
-  | "SUPABASE_KEY";
-
-interface EnvResolution {
-  key?: EnvKey;
-  value?: string;
-}
-
-export interface SupabaseConfigStatus {
-  hasValidConfig: boolean;
-  resolvedUrl?: string;
-  resolvedAnonKey?: string;
-  resolvedUrlKey?: EnvKey;
-  resolvedAnonKeyKey?: EnvKey;
-  missingUrlKeys: EnvKey[];
-  missingAnonKeys: EnvKey[];
-  errorMessage?: string;
-  usingFallbackClient: boolean;
-}
-
-const sanitizeEnvValue = (value: unknown): string | undefined => {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-
-  const trimmed = value.trim();
-  if (!trimmed || trimmed.toLowerCase() === "undefined" || trimmed.toLowerCase() === "null") {
-    return undefined;
-  }
-
-  return trimmed.replace(/^['"`]+|['"`]+$/g, "").trim();
-};
-
-const readEnv = (key: EnvKey): string | undefined => {
-  if (typeof process !== "undefined" && process.env) {
-    const candidate = sanitizeEnvValue(process.env[key]);
-    if (candidate) return candidate;
-  }
-
-  if (typeof window !== "undefined" && (window as any)?.__APP_CONFIG__) {
-    const candidate = sanitizeEnvValue((window as any).__APP_CONFIG__[key]);
-    if (candidate) return candidate;
-  }
-
-  try {
-    const meta = Function("return typeof import.meta !== 'undefined' ? import.meta : undefined")();
-    const candidate = sanitizeEnvValue(meta?.env?.[key]);
-    if (candidate) return candidate;
-  } catch (error) {
-    if (import.meta.env.DEV) {
-      console.warn("[supabaseClient] Unable to inspect import.meta for", key, error);
-    }
-  }
-
-  return undefined;
-};
-
-const resolveEnv = (keys: EnvKey[]): EnvResolution => {
-  for (const key of keys) {
-    const value = readEnv(key);
-    if (value) {
-      return { key, value };
-    }
-  }
-
-  return {};
-};
-
-const SUPABASE_URL_KEYS: EnvKey[] = [
-  "VITE_SUPABASE_URL",
-  "SUPABASE_URL",
-  "VITE_SUPABASE_PROJECT_URL",
-  "SUPABASE_PROJECT_URL",
-];
-
-const SUPABASE_ANON_KEYS: EnvKey[] = [
-  "VITE_SUPABASE_ANON_KEY",
-  "SUPABASE_ANON_KEY",
-  "VITE_SUPABASE_KEY",
-  "SUPABASE_KEY",
-];
-
-const urlResolution = resolveEnv(SUPABASE_URL_KEYS);
-const anonResolution = resolveEnv(SUPABASE_ANON_KEYS);
-
-const missingUrlKeys = urlResolution.value ? [] : SUPABASE_URL_KEYS;
-const missingAnonKeys = anonResolution.value ? [] : SUPABASE_ANON_KEYS;
-
-const configErrorMessages: string[] = [];
-
-if (!urlResolution.value) {
-  configErrorMessages.push(
-    `Missing Supabase URL environment variable. Provide one of: ${SUPABASE_URL_KEYS.join(", ")}.`
-  );
-}
-
-if (!anonResolution.value) {
-  configErrorMessages.push(
-    `Missing Supabase anon/public key. Provide one of: ${SUPABASE_ANON_KEYS.join(", ")}.`
-  );
-}
-
-export const supabaseConfigStatus: SupabaseConfigStatus = {
-  hasValidConfig: Boolean(urlResolution.value && anonResolution.value),
-  resolvedUrl: urlResolution.value,
-  resolvedAnonKey: anonResolution.value,
-  resolvedUrlKey: urlResolution.key,
-  resolvedAnonKeyKey: anonResolution.key,
-  missingUrlKeys,
-  missingAnonKeys,
-  errorMessage: configErrorMessages.join(" \n"),
-  usingFallbackClient: false,
-};
+import { getSupabaseClientConfiguration, supabaseConfigStatus } from "@/config/appConfig";
 
 const clientOptions: SupabaseClientOptions<"public"> = {
   auth: {
@@ -202,25 +87,31 @@ const createFallbackSupabaseClient = (error: Error): SupabaseClientType => {
 
 let internalClient: SupabaseClientType;
 
-if (supabaseConfigStatus.hasValidConfig) {
-  internalClient = createClient<Database>(
-    supabaseConfigStatus.resolvedUrl!,
-    supabaseConfigStatus.resolvedAnonKey!,
-    clientOptions,
-  );
+const resolvedConfig = getSupabaseClientConfiguration(clientOptions);
+
+if (resolvedConfig) {
+  internalClient = createClient<Database>(resolvedConfig.url, resolvedConfig.anonKey, resolvedConfig.options);
 } else {
   const error = new Error(
     supabaseConfigStatus.errorMessage ||
-      "Supabase configuration missing. Provide VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY before using the client.",
+      `Supabase configuration missing. Set ${supabaseConfigStatus.canonicalUrlKey} and ${supabaseConfigStatus.canonicalAnonKey}.`,
   );
-  if (!import.meta.env.SSR) {
+
+  if (typeof console !== "undefined" && !import.meta.env.SSR) {
     console.error("[supabaseClient]", error.message);
   }
+
   internalClient = createFallbackSupabaseClient(error);
   supabaseConfigStatus.usingFallbackClient = true;
 }
 
+export type SupabaseClient = typeof internalClient;
+
+export { supabaseConfigStatus } from "@/config/appConfig";
+
 export const supabaseClient = internalClient;
+
+export const getSupabaseClient = (): SupabaseClient => supabaseClient;
 
 export const logSupabaseAuthError = (context: string, error: unknown) => {
   if (!import.meta.env.DEV) {
@@ -233,6 +124,3 @@ export const logSupabaseAuthError = (context: string, error: unknown) => {
   console.groupEnd();
 };
 
-export type SupabaseClient = typeof supabaseClient;
-
-export const getSupabaseClient = (): SupabaseClient => supabaseClient;

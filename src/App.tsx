@@ -10,7 +10,7 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { PrivateRoute } from "./components/PrivateRoute";
 import { ConfigurationError } from "@/components/ConfigurationError";
 import { RouteChangeDebugger } from "@/components/RouteChangeDebugger";
-import { supabaseConfigStatus } from "@/lib/supabaseClient";
+import { supabaseConfigStatus } from "@/config/appConfig";
 import { getPaymentConfig } from "@/lib/payment-config";
 import "./i18n";
 
@@ -173,20 +173,39 @@ const InnerApp = () => {
     const fatalIssues: string[] = [];
     const warnings: string[] = [];
 
-    if (!config.publicKey) {
-      fatalIssues.push("Lenco public key (VITE_LENCO_PUBLIC_KEY or LENCO_PUBLIC_KEY)");
+    const isRuntimeProd = import.meta.env.PROD || config.environment === "production";
+
+    if (!config.sources?.publicKey) {
+      const message = "Lenco public key is not configured. Set VITE_LENCO_PUBLIC_KEY (alias: LENCO_PUBLIC_KEY).";
+      if (isRuntimeProd) {
+        fatalIssues.push(message);
+      } else {
+        warnings.push(message);
+      }
     }
 
-    if (!config.apiUrl) {
-      fatalIssues.push("Lenco API URL (VITE_LENCO_API_URL)");
+    if (!config.sources?.apiUrl) {
+      const message = "Lenco API URL is not configured. Set VITE_LENCO_API_URL (alias: LENCO_API_URL).";
+      if (isRuntimeProd) {
+        fatalIssues.push(message);
+      } else {
+        warnings.push(message);
+      }
     }
 
     if (config.environment === "production" && config.publicKey.startsWith("pk_test_")) {
-      fatalIssues.push("Production environment is configured with a test Lenco public key");
+      fatalIssues.push("Production environment is configured with a test Lenco public key (pk_test_...).");
     }
 
-    if (!config.webhookUrl) {
-      warnings.push("Lenco webhook URL is not configured; webhook events will not be received");
+    if (!config.sources?.webhookUrl) {
+      const message = "Lenco webhook URL is not configured. Set VITE_LENCO_WEBHOOK_URL (alias: LENCO_WEBHOOK_URL).";
+      if (isRuntimeProd) {
+        fatalIssues.push(message);
+      } else {
+        warnings.push(message);
+      }
+    } else if (!/^https:\/\//i.test(config.webhookUrl)) {
+      warnings.push("Lenco webhook URL must be HTTPS.");
     }
 
     return { config, fatalIssues, warnings } as const;
@@ -196,7 +215,8 @@ const InnerApp = () => {
     console.info("[app] Mounted", {
       mode: import.meta.env.MODE,
       supabaseConfigured: supabaseConfigStatus.hasValidConfig,
-      paymentPublicKeyConfigured: Boolean(paymentConfigSnapshot.config.publicKey),
+      paymentPublicKeyConfigured: Boolean(paymentConfigSnapshot.config.sources?.publicKey),
+      paymentWebhookConfigured: Boolean(paymentConfigSnapshot.config.sources?.webhookUrl),
     });
 
     return () => {
