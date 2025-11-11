@@ -1,21 +1,31 @@
 // supabase/functions/create-donation/index.ts
-// Edge Function that creates a donation record and initiates a Lenco payment session.
+// Edge Function: records a donation intent and boots a Lenco payment session.
+// The live Lenco API call is intentionally encapsulated inside `initiateLencoPayment`
+// so the integration team can swap in the production contract without touching
+// validation or persistence logic.
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-type DonationPayload = {
+type PaymentMethod = "mobile_money" | "card";
+
+type CreateDonationRequest = {
   amount?: number;
   currency?: string;
-  campaignId?: string | null;
+  paymentMethod?: PaymentMethod;
   donorName?: string | null;
+  donorEmail?: string | null;
+  donorPhone?: string | null;
+  donorUserId?: string | null;
+  campaignId?: string | null;
   donateAnonymously?: boolean;
   message?: string | null;
   source?: string | null;
-  donorUserId?: string | null;
 };
 
-type LencoPaymentSession = {
-  checkoutUrl?: string;
-  paymentInstructions?: Record<string, unknown>;
+type LencoInitiationResponse = {
+  checkoutUrl?: string | null;
+  paymentInstructions?: Record<string, unknown> | null;
+  raw?: unknown;
 };
 
 const corsHeaders = {
@@ -56,22 +66,25 @@ Deno.serve(async (req) => {
   }
 
   if (!supabase) {
-    console.error("create-donation: Supabase client is not configured");
+    console.error("create-donation: Supabase client not configured");
     return json({ ok: false, error: { message: "server_not_configured" } }, 500);
   }
 
-  let body: DonationPayload;
+  let payload: CreateDonationRequest;
   try {
-    body = (await req.json()) as DonationPayload;
+    payload = (await req.json()) as CreateDonationRequest;
   } catch (error) {
     console.error("create-donation: invalid JSON", error);
     return json({ ok: false, error: { message: "invalid_json" } }, 400);
   }
 
-  const amount = Number(body.amount);
+  const amount = Number(payload.amount);
   if (!Number.isFinite(amount) || amount <= 0) {
     return json(
-      { ok: false, error: { message: "Amount must be a positive number." } },
+      {
+        ok: false,
+        error: { message: "Amount must be a positive number.", code: "invalid_amount" },
+      },
       400
     );
   }
@@ -102,141 +115,230 @@ Deno.serve(async (req) => {
     );
   }
 
-  const currency = typeof body.currency === "string" && body.currency.trim()
-    ? body.currency.trim().toUpperCase()
-    : "ZMW";
+  const paymentMethod = normalizePaymentMethod(payload.paymentMethod);
+  if (!paymentMethod) {
+    return json(
+      {
+        ok: false,
+        error: {
+          message: "Payment method must be either mobile_money or card.",
+          code: "invalid_payment_method",
+        },
+      },
+      400
+    );
+  }
+
+  const donorPhone = payload.donorPhone?.trim();
+  if (paymentMethod === "mobile_money" && !donorPhone) {
+    return json(
+      {
+        ok: false,
+        error: {
+          message: "Mobile Money donations require the phone number that should receive the prompt.",
+          code: "missing_mobile_number",
+        },
+      },
+      400
+    );
+  }
+
+  const currency =
+    typeof payload.currency === "string" && payload.currency.trim()
+      ? payload.currency.trim().toUpperCase()
+      : "ZMW";
 
   const lencoReference = generateReference();
-  const platformFeeAmount = Math.round((platformFeePercentage / 100) * amount);
-  const netAmount = amount - platformFeeAmount;
+  const platformFeeAmount = roundCurrency((platformFeePercentage / 100) * amount);
+  const netAmount = roundCurrency(amount - platformFeeAmount);
 
   try {
-    const { data, error } = await supabase
+    const { data: inserted, error: insertError } = await supabase
       .from("donations")
       .insert({
-        campaign_id: body.campaignId ?? null,
-        donor_user_id: body.donorUserId ?? null,
-        donor_name: body.donateAnonymously ? null : body.donorName ?? null,
-        is_anonymous: Boolean(body.donateAnonymously),
+        campaign_id: payload.campaignId ?? null,
+        donor_user_id: payload.donorUserId ?? null,
+        donor_name: payload.donateAnonymously ? null : payload.donorName ?? null,
+        is_anonymous: Boolean(payload.donateAnonymously),
         amount,
         currency,
+        payment_method: paymentMethod,
         status: "pending",
         lenco_reference: lencoReference,
         platform_fee_amount: platformFeeAmount,
         net_amount: netAmount,
-        message: body.message ?? null,
-        source: body.source ?? "web",
+        message: payload.message ?? null,
+        source: payload.source ?? "web",
       })
       .select("id")
       .single();
 
-    if (error || !data) {
-      console.error("create-donation: failed to insert donation", error);
+    if (insertError || !inserted) {
+      console.error("create-donation: failed to insert donation", insertError);
       return json(
         { ok: false, error: { message: "Failed to create donation record." } },
         500
       );
     }
 
-    const lencoSession = await createLencoPaymentSession({
+    const lencoResponse = await initiateLencoPayment({
       amount,
       currency,
-      lencoReference,
-      donorName: body.donorName ?? undefined,
-      webhookUrl: Deno.env.get("LENCO_WEBHOOK_URL"),
+      paymentMethod,
+      reference: lencoReference,
+      webhookUrl: Deno.env.get("LENCO_WEBHOOK_URL") ?? Deno.env.get("VITE_LENCO_WEBHOOK_URL"),
+      donor: {
+        name: payload.donorName ?? undefined,
+        email: payload.donorEmail ?? undefined,
+        phone: donorPhone ?? undefined,
+      },
+      metadata: {
+        source: payload.source ?? "web",
+        campaignId: payload.campaignId ?? undefined,
+      },
     });
 
     return json({
       ok: true,
       data: {
-        donationId: data.id,
+        donationId: inserted.id,
         lencoReference,
-        checkoutUrl: lencoSession.checkoutUrl ?? null,
-        paymentInstructions: lencoSession.paymentInstructions ?? null,
+        checkoutUrl: lencoResponse.checkoutUrl ?? null,
+        paymentInstructions: lencoResponse.paymentInstructions ?? null,
+        status: "pending",
       },
     });
   } catch (error) {
     console.error("create-donation: unexpected error", error);
-    return json({ ok: false, error: { message: "unexpected_error" } }, 500);
+    return json(
+      {
+        ok: false,
+        error: { message: "unexpected_error", details: "An unexpected error occurred." },
+      },
+      500
+    );
   }
 });
 
-async function createLencoPaymentSession({
+async function initiateLencoPayment({
   amount,
   currency,
-  lencoReference,
+  paymentMethod,
+  reference,
   webhookUrl,
-  donorName,
+  donor,
+  metadata,
 }: {
   amount: number;
   currency: string;
-  lencoReference: string;
+  paymentMethod: PaymentMethod;
+  reference: string;
   webhookUrl: string | null | undefined;
-  donorName?: string;
-}): Promise<LencoPaymentSession> {
-  const lencoApiUrl = Deno.env.get("LENCO_API_URL") ?? Deno.env.get("VITE_LENCO_API_URL");
-  const lencoApiSecret = Deno.env.get("LENCO_API_SECRET") ?? Deno.env.get("LENCO_SECRET");
+  donor: { name?: string; email?: string; phone?: string };
+  metadata?: Record<string, unknown>;
+}): Promise<LencoInitiationResponse> {
+  const lencoApiBase =
+    Deno.env.get("LENCO_API_URL") ??
+    Deno.env.get("VITE_LENCO_API_URL") ??
+    "https://api.lenco.co/access/v2";
+  const lencoSecret = Deno.env.get("LENCO_API_SECRET") ?? Deno.env.get("LENCO_SECRET");
 
-  if (!lencoApiUrl || !lencoApiSecret) {
-    console.warn("create-donation: Lenco API credentials are not configured");
+  if (!lencoSecret) {
+    console.warn("create-donation: Lenco API secret missing – returning instructions only");
     return {
       paymentInstructions: {
         note:
-          "Lenco API credentials are missing. Configure LENCO_API_URL and LENCO_API_SECRET to enable live payments.",
+          "Lenco API credentials are missing. Configure LENCO_API_SECRET/LENCO_SECRET to enable live payments.",
+        reference,
       },
     };
   }
 
-  const payload = {
+  // Base payload that aligns with Lenco's payment initiation contract. Update this
+  // structure as soon as the production schema is finalised.
+  const payload: Record<string, unknown> = {
     amount,
     currency,
-    reference: lencoReference,
-    metadata: {
-      donorName: donorName ?? null,
-      platform: "wathaci-connect",
+    reference,
+    payment_method: paymentMethod,
+    callback_url: webhookUrl ?? null,
+    customer: {
+      name: donor.name ?? "Wathaci Connect Donor",
+      email: donor.email ?? null,
+      phone: donor.phone ?? null,
     },
-    callback_url: webhookUrl ?? Deno.env.get("LENCO_WEBHOOK_URL"),
-    // TODO: Replace `redirect_url` with the actual front-end confirmation page URL when available.
-    redirect_url: Deno.env.get("PAYMENT_MONITORING_ENDPOINT") ?? null,
+    metadata: {
+      platform: "wathaci-connect",
+      environment: Deno.env.get("DENO_DEPLOYMENT_ID") ? "production" : "local", // helpful for support
+      ...(metadata ?? {}),
+    },
   };
 
+  if (paymentMethod === "mobile_money") {
+    payload.mobile_money = {
+      phone: donor.phone,
+      // provider: "MTN" // Optional: supply explicit provider once decided.
+    };
+  }
+
+  // NOTE: Card payments typically require a redirect to Lenco's hosted checkout.
+  // When the card gateway exposes additional options (3DS, saved cards, etc.),
+  // extend this payload accordingly.
+
+  const endpointUrl = buildLencoUrl(lencoApiBase, "/payments/initiate");
+
   try {
-    // This is where the live Lenco payment session should be created.
-    // Replace the endpoint/payload with the production Lenco API contract when available.
-    const response = await fetch(`${lencoApiUrl.replace(/\/$/, "")}/payments`, {
+    const response = await fetch(endpointUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${lencoApiSecret}`,
+        Authorization: `Bearer ${lencoSecret}`,
       },
       body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
-      const text = await response.text();
-      console.error("create-donation: Lenco API responded with", response.status, text);
+      const errorText = await response.text();
+      console.error("create-donation: Lenco API error", response.status, errorText);
       return {
         paymentInstructions: {
-          note: "Donation recorded but Lenco session could not be created. Retry from the dashboard.",
+          note: "Donation recorded but Lenco payment session could not be created.",
+          reference,
           status: response.status,
-          response: text,
+          response: errorText,
         },
       };
     }
 
-    const json = (await response.json()) as {
-      data?: { checkout_url?: string };
+    const body = (await response.json()) as {
+      data?: { checkout_url?: string | null; [key: string]: unknown };
+      checkout_url?: string;
     };
 
+    const checkoutUrl =
+      body.data?.checkout_url ??
+      (typeof body.checkout_url === "string" ? body.checkout_url : null);
+
+    const instructions =
+      paymentMethod === "mobile_money"
+        ? {
+            note: "Check your phone and approve the Mobile Money prompt to finish the donation.",
+            reference,
+            ...(body.data ?? {}),
+          }
+        : (body.data ?? null);
+
     return {
-      checkoutUrl: json.data?.checkout_url,
-      paymentInstructions: json.data ?? undefined,
+      checkoutUrl,
+      paymentInstructions: instructions,
+      raw: body,
     };
   } catch (error) {
     console.error("create-donation: Error calling Lenco API", error);
     return {
       paymentInstructions: {
-        note: "Donation recorded but Lenco API call failed. Investigate network connectivity.",
+        note: "Donation recorded but Lenco API call failed. Please retry the payment from the donor dashboard.",
+        reference,
       },
     };
   }
@@ -248,6 +350,10 @@ function parseNumber(value: string | undefined | null, fallback: number): number
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function roundCurrency(amount: number): number {
+  return Math.round((amount + Number.EPSILON) * 100) / 100;
+}
+
 function formatCurrency(amount: number): string {
   return `K${amount.toLocaleString("en-ZM", { minimumFractionDigits: 0 })}`;
 }
@@ -256,6 +362,24 @@ function generateReference(): string {
   const timestamp = Date.now();
   const random = Math.random().toString(36).slice(2, 8).toUpperCase();
   return `DON-${timestamp}-${random}`;
+}
+
+function normalizePaymentMethod(
+  method: string | undefined | null
+): PaymentMethod | null {
+  if (!method) return null;
+  const normalized = method.toLowerCase();
+  if (normalized === "mobile_money" || normalized === "mobile-money") {
+    return "mobile_money";
+  }
+  if (normalized === "card") return "card";
+  return null;
+}
+
+function buildLencoUrl(baseUrl: string, path: string): string {
+  const normalizedBase = baseUrl.replace(/\/$/, "");
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${normalizedBase}${normalizedPath}`;
 }
 
 function json(body: unknown, status = 200): Response {

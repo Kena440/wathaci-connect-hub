@@ -1,6 +1,13 @@
 import { FormEvent, useMemo, useState } from "react";
 
+type PaymentMethod = "mobile_money" | "card";
+
 const PRESET_AMOUNTS = [20, 50, 100, 250];
+
+const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  mobile_money: "Mobile Money",
+  card: "Card",
+};
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("en-ZM", {
@@ -38,6 +45,7 @@ type CreateDonationResponse = {
     lencoReference: string;
     checkoutUrl?: string | null;
     paymentInstructions?: Record<string, unknown> | null;
+    status?: string | null;
   };
   error?: {
     code?: string;
@@ -53,8 +61,14 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
   const [donorName, setDonorName] = useState("");
   const [donateAnonymously, setDonateAnonymously] = useState(false);
   const [message, setMessage] = useState("");
+  const [donorEmail, setDonorEmail] = useState("");
+  const [donorPhone, setDonorPhone] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("mobile_money");
   const [isSubmitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paymentInstructions, setPaymentInstructions] = useState<
+    Record<string, unknown> | null
+  >(null);
 
   const minAmount = useMemo(
     () => parseEnvNumber(import.meta.env.VITE_MIN_PAYMENT_AMOUNT, 20),
@@ -97,13 +111,18 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
     setDonorName("");
     setDonateAnonymously(false);
     setMessage("");
+    setDonorEmail("");
+    setDonorPhone("");
+    setPaymentMethod("mobile_money");
     setSubmitting(false);
     setError(null);
+    setPaymentInstructions(null);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+    setPaymentInstructions(null);
 
     if (typeof amount !== "number") {
       setError("Please select or enter a donation amount.");
@@ -129,12 +148,20 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
     const anonKey =
       import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_KEY;
 
+    if (paymentMethod === "mobile_money" && !donorPhone.trim()) {
+      setError("Please provide the mobile number that should receive the payment prompt.");
+      return;
+    }
+
     const payload = {
       amount,
       currency: "ZMW",
+      paymentMethod,
       campaignId: campaignId ?? null,
       donorName: donateAnonymously ? null : donorName?.trim() || null,
       donateAnonymously,
+      donorEmail: donorEmail?.trim() || null,
+      donorPhone: donorPhone?.trim() || null,
       message: message?.trim() || null,
       source,
     };
@@ -169,17 +196,14 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
       }
 
       if (json.data?.paymentInstructions) {
-        // eslint-disable-next-line no-alert
-        alert(
-          "Donation created. Follow the provided payment instructions: " +
-            JSON.stringify(json.data.paymentInstructions)
-        );
-      } else {
-        // eslint-disable-next-line no-alert
-        alert("Donation created successfully.");
+        setPaymentInstructions(json.data.paymentInstructions);
+        return;
       }
 
-      closeModal();
+      // No checkout URL or instructions returned, show a generic confirmation.
+      setPaymentInstructions({
+        note: "Donation created successfully. Please monitor your email or dashboard for updates.",
+      });
     } catch (submitError) {
       console.error("DonateButton: Failed to create donation", submitError);
       setError(
@@ -212,11 +236,11 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">Support SMEs through Wathaci Connect</h2>
-                {/* SME impact message required by business brief. */}
+                {/* Required SME impact message (per business requirements). */}
                 <p className="mt-2 text-sm text-gray-600">
-                  Your donation helps struggling SMEs cover short-term gaps—like working capital,
-                  inventory, rent, and operational costs—so they can stabilise, strengthen their
-                  operations, and become investor-ready for long-term sustainability.
+                  Your donation enables us to source professionals and fund logistics to help struggling SMEs cover short-term
+                  business gaps — through technical assistance, capacity building and systems  — strengthening them for
+                  investment readiness and sustainability.
                 </p>
               </div>
               <button
@@ -281,6 +305,50 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
                 </p>
               </div>
 
+              <fieldset className="space-y-3">
+                <legend className="text-sm font-medium text-gray-700">Payment method</legend>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {(Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethod[]).map((method) => (
+                    <label
+                      key={method}
+                      className={`flex cursor-pointer items-center justify-between rounded-md border px-3 py-2 text-sm transition ${
+                        paymentMethod === method
+                          ? "border-red-600 bg-red-50 text-red-700"
+                          : "border-gray-200 text-gray-700 hover:border-red-300 hover:text-red-700"
+                      }`}
+                    >
+                      <span>{PAYMENT_METHOD_LABELS[method]}</span>
+                      <input
+                        type="radio"
+                        name="payment-method"
+                        value={method}
+                        checked={paymentMethod === method}
+                        onChange={() => {
+                          setPaymentMethod(method);
+                          setPaymentInstructions(null);
+                        }}
+                        className="sr-only"
+                      />
+                      <span
+                        aria-hidden
+                        className={`ml-2 inline-flex h-4 w-4 items-center justify-center rounded-full border ${
+                          paymentMethod === method
+                            ? "border-red-600 bg-red-600"
+                            : "border-gray-300 bg-white"
+                        }`}
+                      >
+                        {paymentMethod === method && <span className="block h-1.5 w-1.5 rounded-full bg-white" />}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {paymentMethod === "mobile_money"
+                    ? "You’ll receive a payment prompt on your phone. Confirm to complete your donation."
+                    : "You’ll be redirected to a secure payment page to complete your donation."}
+                </p>
+              </fieldset>
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-700" htmlFor="donor-name">
@@ -325,6 +393,40 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
                 </div>
               </div>
 
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700" htmlFor="donor-email">
+                    Email (optional)
+                  </label>
+                  <input
+                    id="donor-email"
+                    type="email"
+                    value={donorEmail}
+                    onChange={(event) => setDonorEmail(event.target.value)}
+                    className="mt-1 w-full rounded-md border border-gray-300 p-2 focus:border-red-500 focus:outline-none focus:ring-red-500"
+                    placeholder="jane.doe@email.com"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">We’ll email your receipt when the donation completes.</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700" htmlFor="donor-phone">
+                    Mobile number {paymentMethod === "mobile_money" ? "(required for Mobile Money)" : "(optional)"}
+                  </label>
+                  <input
+                    id="donor-phone"
+                    type="tel"
+                    value={donorPhone}
+                    onChange={(event) => setDonorPhone(event.target.value)}
+                    className="mt-1 w-full rounded-md border border-gray-300 p-2 focus:border-red-500 focus:outline-none focus:ring-red-500"
+                    placeholder="2607XXXXXXXX"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Use an MSISDN that can authorise the payment prompt.
+                  </p>
+                </div>
+              </div>
+
               {typeof amount === "number" && amount > 0 && (
                 <div className="rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
                   <div className="flex justify-between">
@@ -350,6 +452,18 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
               )}
 
               {error && <p className="text-sm text-red-600">{error}</p>}
+              {paymentInstructions && (
+                <div className="rounded-md border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800">
+                  <p className="font-medium">Donation created.</p>
+                  <pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-xs">
+                    {JSON.stringify(paymentInstructions, null, 2)}
+                  </pre>
+                  <p className="mt-2 text-xs text-blue-700">
+                    If you’re waiting for a Mobile Money prompt, keep this window open. Once the payment is approved, you’ll
+                    see the confirmation screen or receive an email.
+                  </p>
+                </div>
+              )}
 
               <div className="flex items-center justify-between">
                 <button
@@ -365,7 +479,7 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
                   className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-red-300"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Processing..." : "Proceed to donate"}
+                  {isSubmitting ? "Processing..." : "Proceed to Pay"}
                 </button>
               </div>
             </form>
