@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Send, Bot, User, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase-enhanced';
 import { generateAssistantResponse } from '@/data/marketplace';
+import { supabaseConfigStatus } from '@/lib/supabaseClient';
 
 interface Message {
   id: string;
@@ -37,6 +38,7 @@ const AIAssistant = ({ isOpen, onClose, context }: AIAssistantProps) => {
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const sendMessage = async (message: string) => {
     if (!message.trim()) return;
@@ -51,8 +53,15 @@ const AIAssistant = ({ isOpen, onClose, context }: AIAssistantProps) => {
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
     setIsLoading(true);
+    setStatusMessage(null);
 
     try {
+      if (!supabaseConfigStatus.hasValidConfig) {
+        console.warn("AIAssistant: Supabase configuration missing, using offline responses only.");
+        setStatusMessage("Assistant is running in offline mode until configuration is restored.");
+        throw new Error("supabase_not_configured");
+      }
+
       const { data, error } = await supabase.functions.invoke('ai-professional-matcher', {
         body: {
           type: 'marketplace_assistant',
@@ -76,7 +85,9 @@ const AIAssistant = ({ isOpen, onClose, context }: AIAssistantProps) => {
 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
-      console.error('AI Assistant error:', error);
+      if (!(error instanceof Error) || error.message !== 'supabase_not_configured') {
+        console.error('AI Assistant error:', error);
+      }
       const fallback = generateAssistantResponse(message, context);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -109,8 +120,13 @@ const AIAssistant = ({ isOpen, onClose, context }: AIAssistantProps) => {
             <X className="w-4 h-4" />
           </Button>
         </CardHeader>
-        
+
         <CardContent className="flex-1 flex flex-col p-0">
+          {statusMessage && (
+            <div className="mx-4 mt-2 rounded-md bg-amber-50 p-3 text-xs text-amber-700">
+              {statusMessage}
+            </div>
+          )}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map(message => (
               <div key={message.id} className={`flex gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
