@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase-enhanced';
-import { upsertProfile } from '@/lib/profile';
 import { ProfileForm } from '@/components/ProfileForm';
 import { DueDiligenceUpload } from '@/components/DueDiligenceUpload';
 import { useToast } from '@/hooks/use-toast';
@@ -151,15 +150,16 @@ export const ProfileSetup = () => {
 
       setLoading(true);
       try {
-        console.log('Setting account type:', accountType, 'for user:', user.id);
-        
-        // Use the robust upsertProfile helper
-        await upsertProfile({
-          account_type: accountType,
-          email: user.email,
-        });
+        const { error } = await supabase
+          .from('profiles')
+          .upsert({
+            id: user.id,
+            email: user.email,
+            account_type: accountType,
+            created_at: new Date().toISOString(),
+          });
 
-        console.log('Account type set successfully');
+        if (error) throw error;
         await refreshUser();
         setSelectedAccountType(accountType);
         setExistingProfile((prev: any) =>
@@ -167,10 +167,9 @@ export const ProfileSetup = () => {
         );
         setShowProfileForm(true);
       } catch (error: any) {
-        console.error('Failed to set account type:', error);
         toast({
           title: "Error",
-          description: error.message || "Failed to set account type. Please try again.",
+          description: error.message,
           variant: "destructive",
         });
       } finally {
@@ -186,28 +185,15 @@ export const ProfileSetup = () => {
   };
 
   const handleProfileSubmit = async (profileData: any) => {
-    if (!user) {
-      console.error('Profile submit failed: No authenticated user');
-      return;
-    }
+    if (!user) return;
 
-    console.log('Starting profile submission for user:', user.id);
     setLoading(true);
 
     try {
       const sanitizeValue = (value?: string | null) => {
         if (!value) return null;
-        const trimmed = value.trim();
-        return trimmed || null;
+        return value.trim() || null;
       };
-
-      // Validate critical fields
-      const phone = sanitizeValue(profileData.phone);
-      if (!phone) {
-        throw new Error('Phone number is required.');
-      }
-
-      console.log('Profile data validation passed');
 
       const extractCardDetails = (cardNumber: string, expiry: string, cardholderName: string | null) => {
         if (!cardholderName) {
@@ -384,13 +370,6 @@ export const ProfileSetup = () => {
         }
       }
 
-      console.log('Upserting profile with payload:', {
-        id: user.id,
-        account_type: selectedAccountType,
-        has_phone: !!sanitizedProfile.phone,
-        has_payment: !!paymentData.payment_method,
-      });
-
       const { error } = await supabase
         .from('profiles')
         .upsert({
@@ -404,17 +383,8 @@ export const ProfileSetup = () => {
           updated_at: new Date().toISOString()
         });
 
-      if (error) {
-        console.error('Profile upsert failed:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-        });
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('Profile upsert successful');
       await refreshUser();
 
       toast({
@@ -437,10 +407,9 @@ export const ProfileSetup = () => {
         navigate('/profile-review');
       }
     } catch (error: any) {
-      console.error('Profile submission failed:', error);
       toast({
         title: "Error",
-        description: error.message || "Could not save your profile. Please try again.",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
