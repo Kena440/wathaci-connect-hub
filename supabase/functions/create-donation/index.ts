@@ -14,6 +14,7 @@ type CreateDonationRequest = {
   paymentMethod?: PaymentMethod;
   donorName?: string | null;
   donorEmail?: string | null;
+  msisdn?: string | null;
   donorPhone?: string | null;
   donorUserId?: string | null;
   campaignId?: string | null;
@@ -55,6 +56,26 @@ const platformFeePercentage = parseNumber(
     Deno.env.get("VITE_PLATFORM_FEE_PERCENTAGE"),
   5
 );
+
+const MSISDN_REGEX = /^\+?[0-9]{9,15}$/;
+
+const normalizeMsisdn = (value: string | null | undefined): string | null => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("+")) {
+    return trimmed.replace(/\s+/g, "");
+  }
+
+  const digits = trimmed.replace(/[^0-9]/g, "");
+  if (!digits) return null;
+  return `+${digits.replace(/^0+/, "")}`;
+};
+
+const isValidMsisdn = (value: string | null | undefined): value is string => {
+  if (!value) return false;
+  return MSISDN_REGEX.test(value);
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -129,14 +150,14 @@ Deno.serve(async (req) => {
     );
   }
 
-  const donorPhone = payload.donorPhone?.trim();
-  if (paymentMethod === "mobile_money" && !donorPhone) {
+  const msisdn = normalizeMsisdn(payload.msisdn ?? payload.donorPhone ?? null);
+  if (!isValidMsisdn(msisdn)) {
     return json(
       {
         ok: false,
         error: {
-          message: "Mobile Money donations require the phone number that should receive the prompt.",
-          code: "missing_mobile_number",
+          message: "A valid MSISDN (mobile number with country code) is required to initiate payment.",
+          code: "invalid_msisdn",
         },
       },
       400
@@ -152,12 +173,27 @@ Deno.serve(async (req) => {
   const platformFeeAmount = roundCurrency((platformFeePercentage / 100) * amount);
   const netAmount = roundCurrency(amount - platformFeeAmount);
 
+  let donorUserId = payload.donorUserId ?? null;
+  const authHeader = req.headers.get("Authorization");
+  if (authHeader?.startsWith("Bearer ") && supabase) {
+    const token = authHeader.slice(7);
+    try {
+      const { data: authUser, error: authError } = await supabase.auth.getUser(token);
+      if (!authError && authUser?.user?.id) {
+        donorUserId = authUser.user.id;
+      }
+    } catch (authError) {
+      console.error("create-donation: failed to resolve authenticated user", authError);
+    }
+  }
+
   try {
     const { data: inserted, error: insertError } = await supabase
       .from("donations")
       .insert({
         campaign_id: payload.campaignId ?? null,
-        donor_user_id: payload.donorUserId ?? null,
+        msisdn,
+        donor_user_id: donorUserId,
         donor_name: payload.donateAnonymously ? null : payload.donorName ?? null,
         is_anonymous: Boolean(payload.donateAnonymously),
         amount,
@@ -190,11 +226,12 @@ Deno.serve(async (req) => {
       donor: {
         name: payload.donorName ?? undefined,
         email: payload.donorEmail ?? undefined,
-        phone: donorPhone ?? undefined,
+        phone: msisdn ?? undefined,
       },
       metadata: {
         source: payload.source ?? "web",
         campaignId: payload.campaignId ?? undefined,
+        msisdn,
       },
     });
 

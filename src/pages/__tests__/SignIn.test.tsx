@@ -2,12 +2,19 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import SignIn from '../SignIn';
 
-// Mock the AppContext
+const mockSignIn = jest.fn().mockResolvedValue({ user: null, profile: null });
+
 jest.mock('@/contexts/AppContext', () => ({
   useAppContext: () => ({
-    initiateSignIn: jest.fn().mockResolvedValue({ otpSent: true, offlineState: null }),
-    verifyOtp: jest.fn().mockResolvedValue({ user: null, profile: null }),
-    resendOtp: jest.fn(),
+    signIn: mockSignIn,
+    signUp: jest.fn(),
+    signOut: jest.fn(),
+    refreshUser: jest.fn(),
+    user: null,
+    profile: null,
+    loading: false,
+    sidebarOpen: false,
+    toggleSidebar: jest.fn(),
   }),
 }));
 
@@ -17,10 +24,14 @@ const SignInWrapper = () => (
   </BrowserRouter>
 );
 
+beforeEach(() => {
+  mockSignIn.mockClear();
+});
+
 describe('SignIn Validation', () => {
   it('shows validation errors for empty form submission', async () => {
     render(<SignInWrapper />);
-    
+
     const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
 
@@ -32,22 +43,22 @@ describe('SignIn Validation', () => {
 
   it('shows validation error for invalid email format', async () => {
     render(<SignInWrapper />);
-    
+
     const emailInput = screen.getByLabelText(/email/i);
     const submitButton = screen.getByRole('button', { name: /sign in/i });
 
     fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
-    fireEvent.blur(emailInput); // Trigger blur event to show validation
+    fireEvent.blur(emailInput);
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Please enter a valid email address')).toBeTruthy();
+      expect(screen.getByText('Enter a valid email address')).toBeTruthy();
     });
   });
 
   it('shows validation error for short password', async () => {
     render(<SignInWrapper />);
-    
+
     const passwordInput = screen.getByLabelText(/password/i, { selector: 'input' });
     const submitButton = screen.getByRole('button', { name: /sign in/i });
 
@@ -55,13 +66,13 @@ describe('SignIn Validation', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Password must be at least 6 characters long')).toBeTruthy();
+      expect(screen.getByText('Password must be at least 8 characters long')).toBeTruthy();
     });
   });
 
-  it('does not show validation errors for valid inputs', async () => {
+  it('submits valid credentials', async () => {
     render(<SignInWrapper />);
-    
+
     const emailInput = screen.getByLabelText(/email/i);
     const passwordInput = screen.getByLabelText(/password/i, { selector: 'input' });
     const submitButton = screen.getByRole('button', { name: /sign in/i });
@@ -70,12 +81,13 @@ describe('SignIn Validation', () => {
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
     fireEvent.click(submitButton);
 
-    // Should not show validation errors
     await waitFor(() => {
       expect(screen.queryByText('Email is required')).toBeNull();
-      expect(screen.queryByText('Please enter a valid email address')).toBeNull();
+      expect(screen.queryByText('Enter a valid email address')).toBeNull();
       expect(screen.queryByText('Password is required')).toBeNull();
-      expect(screen.queryByText('Password must be at least 6 characters long')).toBeNull();
+      expect(screen.queryByText('Password must be at least 8 characters long')).toBeNull();
     });
+
+    expect(mockSignIn).toHaveBeenCalledWith('test@example.com', 'password123');
   });
 });

@@ -14,6 +14,11 @@ const serviceRoleKey =
 const supabase =
   supabaseUrl && serviceRoleKey ? createClient(supabaseUrl, serviceRoleKey) : null;
 
+const MSISDN_REGEX = /^\+?[0-9]{9,15}$/;
+
+const isValidMsisdn = (value: unknown): value is string =>
+  typeof value === "string" && MSISDN_REGEX.test(value.trim());
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -75,7 +80,7 @@ Deno.serve(async (req) => {
   try {
     const { data: donation, error: donationError } = await supabase
       .from("donations")
-      .select("id, status")
+      .select("id, status, msisdn")
       .eq("lenco_reference", reference)
       .maybeSingle();
 
@@ -102,9 +107,19 @@ Deno.serve(async (req) => {
       return json({ ok: true, message: "Donation already in desired state" });
     }
 
+    const webhookMsisdn = extractMsisdn(body);
+    const updatePayload: Record<string, unknown> = {
+      status: normalizedStatus,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (webhookMsisdn && webhookMsisdn !== donation.msisdn) {
+      updatePayload.msisdn = webhookMsisdn;
+    }
+
     const { error: updateError } = await supabase
       .from("donations")
-      .update({ status: normalizedStatus, updated_at: new Date().toISOString() })
+      .update(updatePayload)
       .eq("id", donation.id);
 
     if (updateError) {
@@ -199,6 +214,25 @@ function extractEventDetails(payload: unknown): {
       : null;
 
   return { event, reference, status };
+}
+
+function extractMsisdn(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const candidate =
+    (payload as { data?: Record<string, unknown> }).data?.msisdn ??
+    (payload as { data?: { customer?: { phone?: unknown } } }).data?.customer?.phone ??
+    (payload as { msisdn?: unknown }).msisdn ??
+    (payload as { customer?: { phone?: unknown } }).customer?.phone ??
+    null;
+
+  if (isValidMsisdn(candidate)) {
+    return candidate.trim();
+  }
+
+  return null;
 }
 
 function normalizeLencoStatus(event: string | null, rawStatus: string | null):
