@@ -28,8 +28,8 @@ const SignUp = lazy(() =>
 );
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const GetStarted = lazy(() =>
-  import("./pages/GetStarted").then((module) => ({ default: module.GetStarted }))
+const GetStartedPage = lazy(() =>
+  import("./pages/GetStartedPage").then((module) => ({ default: module.GetStartedPage }))
 );
 const SubscriptionPlans = lazy(() =>
   import("./pages/SubscriptionPlans").then((module) => ({
@@ -119,7 +119,7 @@ export const AppRoutes = () => (
       <Route path="/signup" element={<SignUp />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/get-started" element={<GetStarted />} />
+      <Route path="/get-started" element={<GetStartedPage />} />
       <Route path="/profile-setup" element={<ProfileSetup />} />
       <Route path="/profile-review" element={<ProfileReview />} />
       <Route path="/subscription-plans" element={<SubscriptionPlans />} />
