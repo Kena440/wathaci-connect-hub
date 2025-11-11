@@ -1,7 +1,10 @@
+const { defaultsESM: tsJestPresets } = require('ts-jest/presets');
+
 /** @type {import('jest').Config} */
 module.exports = {
-  preset: 'ts-jest',
+  ...tsJestPresets,
   testEnvironment: 'jsdom',
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
@@ -22,24 +25,19 @@ module.exports = {
     '!src/**/*.d.ts',
     '!src/main.tsx',
   ],
+  globals: {
+    'ts-jest': {
+      useESM: true,
+      tsconfig: '<rootDir>/tsconfig.app.json',
+    },
+  },
   transform: {
+    ...tsJestPresets.transform,
     '^.+\\.tsx?$': ['ts-jest', {
-      isolatedModules: true,
-      tsconfig: {
-        jsx: 'react-jsx',
-        module: 'esnext',
-        moduleResolution: 'node',
-        esModuleInterop: true,
-        allowSyntheticDefaultImports: true,
-        resolveJsonModule: true,
-        baseUrl: '.',
-        paths: {
-          '@/*': ['src/*'],
-        },
-        typeRoots: ['node_modules/@types', 'src/@types'],
-        types: ['jest', 'jest-axe', '@testing-library/jest-dom', 'node'],
-      }
-    }]
+      tsconfig: '<rootDir>/tsconfig.app.json',
+      useESM: true,
+    }],
+    '^.+\\.(js|jsx)$': ['babel-jest', { configFile: '<rootDir>/babel.config.cjs' }],
   },
   transformIgnorePatterns: [
     'node_modules/(?!(@supabase|uuid)/)',

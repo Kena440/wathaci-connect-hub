@@ -49,12 +49,13 @@ describe('Header', () => {
 
     renderHeader();
 
-    const navLinks = ['Home', 'Marketplace', 'Freelancer Hub', 'Resources', 'Partnership Hub', 'Funding Hub', 'About Us'];
+    // The mock translation function returns the key itself, so we check for those keys
+    const navLinks = ['home', 'marketplace', 'freelancerHub', 'resources', 'partnershipHub', 'fundingHub', 'aboutUs'];
     navLinks.forEach((text) => {
       expect(screen.getByText(text)).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Sign In')).toBeInTheDocument();
+    expect(screen.getByText('signIn')).toBeInTheDocument();
   });
 
   it('shows sign out option for authenticated users', async () => {

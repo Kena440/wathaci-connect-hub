@@ -48,19 +48,13 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Verify authorization
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Missing authorization header');
+    const expectedSecret = Deno.env.get('LENCO_FUNCTION_SECRET') ?? Deno.env.get('LENCO_WEBHOOK_SECRET');
+    if (!expectedSecret) {
+      throw new Error('Function secret not configured');
     }
 
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-
-    userId = user?.id;
-
-    if (authError || !user) {
+    const providedSecret = req.headers.get('x-lenco-secret');
+    if (!providedSecret || providedSecret !== expectedSecret) {
       throw new Error('Unauthorized');
     }
 
@@ -68,6 +62,10 @@ serve(async (req) => {
     const action = typeof requestBody.action === 'string'
       ? requestBody.action.toLowerCase()
       : 'initialize';
+
+    userId = typeof requestBody.userId === 'string' && requestBody.userId.trim().length > 0
+      ? requestBody.userId.trim()
+      : undefined;
 
     if (action === 'verify') {
       const { reference: verifyReference } = requestBody;
@@ -192,6 +190,14 @@ serve(async (req) => {
       metadata
     }: PaymentRequest & { metadata?: Record<string, any> } = requestBody;
 
+    const metadataPayload = {
+      user_id: userId ?? null,
+      payment_method: paymentMethod,
+      provider: provider || null,
+      platform: 'WATHACI_CONNECT',
+      ...(metadata && typeof metadata === 'object' ? metadata : {}),
+    };
+
     // Validate payment request
     if (!amount || amount < 5) {
       throw new Error('Invalid payment amount');
@@ -217,13 +223,7 @@ serve(async (req) => {
       phone: phoneNumber || '',
       reference,
       callback_url: `${req.headers.get('origin')}/payment/callback`,
-      metadata: {
-        user_id: user.id,
-        payment_method: paymentMethod,
-        provider: provider || null,
-        platform: 'WATHACI_CONNECT',
-        ...metadata
-      }
+      metadata: metadataPayload
     };
 
     // Call Lenco API
@@ -256,7 +256,7 @@ serve(async (req) => {
       .from('payments')
       .insert({
         reference,
-        user_id: user.id,
+        user_id: userId ?? null,
         amount: typeof amount === 'number' && amount > 10000 ? amount / 100 : amount, // Store in base currency units
         currency: 'ZMK',
         status: 'pending',
@@ -315,3 +315,7 @@ serve(async (req) => {
     });
   }
 });
+
+export const config = {
+  verifyJWT: false,
+};

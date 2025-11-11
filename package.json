@@ -17,7 +17,7 @@
     "test:jest": "jest",
     "test:jest:watch": "jest --watch",
     "test:accessibility": "jest --testPathPatterns=\"accessibility\"",
-    "test:lighthouse": "lighthouse http://localhost:5173 --quiet --no-update-notifier --chrome-flags='--headless'",
+    "test:lighthouse": "node scripts/run-lighthouse.mjs",
     "supabase:provision": "bash ./scripts/provision-supabase.sh",
     "supabase:login": "bash ./scripts/supabase-login.sh",
     "supabase:init": "supabase init",

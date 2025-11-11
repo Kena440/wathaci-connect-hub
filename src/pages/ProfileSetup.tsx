@@ -11,9 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { UserTypeSubscriptions } from '@/components/UserTypeSubscriptions';
+import { accountTypes, type AccountTypeValue } from '@/data/accountTypes';
 
 export const ProfileSetup = () => {
-  const [selectedAccountType, setSelectedAccountType] = useState<string>('');
+  const [selectedAccountType, setSelectedAccountType] = useState<AccountTypeValue | ''>('');
   const [showProfileForm, setShowProfileForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [existingProfile, setExistingProfile] = useState<any>(null);
@@ -22,6 +23,18 @@ export const ProfileSetup = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { user, refreshUser } = useAppContext();
+  const [lastAutoAppliedAccountType, setLastAutoAppliedAccountType] = useState<AccountTypeValue | null>(null);
+
+  const validAccountTypeValues = new Set<AccountTypeValue>(accountTypes.map(({ value }) => value));
+
+  const accountTypeFromParams = (() => {
+    const paramValue = searchParams.get('accountType');
+    if (!paramValue) return null;
+
+    return validAccountTypeValues.has(paramValue as AccountTypeValue)
+      ? (paramValue as AccountTypeValue)
+      : null;
+  })();
 
   const activeTab = searchParams.get('tab') || 'profile';
   const mode = searchParams.get('mode');
@@ -30,6 +43,7 @@ export const ProfileSetup = () => {
     if (!user) return;
 
     try {
+      setLoading(true);
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
@@ -42,7 +56,7 @@ export const ProfileSetup = () => {
 
       if (profile) {
         setExistingProfile(profile);
-        if (profile.account_type) {
+        if (profile.account_type && validAccountTypeValues.has(profile.account_type)) {
           setSelectedAccountType(profile.account_type);
           if (profile.profile_completed) {
             setShowProfileForm(true);
@@ -56,8 +70,10 @@ export const ProfileSetup = () => {
         description: "Failed to load profile data.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
-  }, [toast, user]);
+  }, [toast, user, validAccountTypeValues]);
 
   useEffect(() => {
     if (!user) {
@@ -69,39 +85,99 @@ export const ProfileSetup = () => {
   }, [user, navigate, checkExistingProfile]);
 
   useEffect(() => {
+    if (!accountTypeFromParams || !user) {
+      return;
+    }
+
+    if (loading) {
+      return;
+    }
+
+    if (lastAutoAppliedAccountType === accountTypeFromParams) {
+      return;
+    }
+
+    if (selectedAccountType !== accountTypeFromParams) {
+      setSelectedAccountType(accountTypeFromParams);
+    }
+
+    if (existingProfile?.account_type === accountTypeFromParams) {
+      setShowProfileForm(true);
+      setLastAutoAppliedAccountType(accountTypeFromParams);
+      return;
+    }
+
+    void handleAccountTypeSelect(accountTypeFromParams);
+    setLastAutoAppliedAccountType(accountTypeFromParams);
+  }, [
+    accountTypeFromParams,
+    existingProfile,
+    handleAccountTypeSelect,
+    lastAutoAppliedAccountType,
+    loading,
+    selectedAccountType,
+    user,
+  ]);
+
+  useEffect(() => {
+    if (!accountTypeFromParams) {
+      setLastAutoAppliedAccountType(null);
+    }
+  }, [accountTypeFromParams]);
+
+  useEffect(() => {
     if (mode === 'edit' && existingProfile) {
-      setSelectedAccountType(existingProfile.account_type || '');
+      if (existingProfile.account_type && validAccountTypeValues.has(existingProfile.account_type)) {
+        setSelectedAccountType(existingProfile.account_type);
+      } else {
+        setSelectedAccountType('');
+      }
       setShowProfileForm(true);
     }
-  }, [mode, existingProfile]);
+  }, [mode, existingProfile, validAccountTypeValues]);
 
-  const handleAccountTypeSelect = async () => {
-    if (!selectedAccountType || !user) return;
-    
-    setLoading(true);
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({ 
-          id: user.id,
-          email: user.email,
-          account_type: selectedAccountType,
-          created_at: new Date().toISOString()
+  const handleAccountTypeSelect = useCallback(
+    async (type?: AccountTypeValue) => {
+      const accountType = type ?? selectedAccountType;
+
+      if (!accountType || !user) return;
+
+      if (existingProfile?.account_type === accountType) {
+        setSelectedAccountType(accountType);
+        setShowProfileForm(true);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .upsert({
+            id: user.id,
+            email: user.email,
+            account_type: accountType,
+            created_at: new Date().toISOString(),
+          });
+
+        if (error) throw error;
+        await refreshUser();
+        setSelectedAccountType(accountType);
+        setExistingProfile((prev: any) =>
+          prev ? { ...prev, account_type: accountType } : prev
+        );
+        setShowProfileForm(true);
+      } catch (error: any) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
         });
-
-      if (error) throw error;
-      await refreshUser();
-      setShowProfileForm(true);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [existingProfile, refreshUser, selectedAccountType, toast, user]
+  );
 
   const handlePrevious = () => {
     setShowProfileForm(false);

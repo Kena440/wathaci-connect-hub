@@ -87,15 +87,15 @@ npm run test:lighthouse
 
 Document any gaps (for example, missing Chrome in CI) in the release notes.
 
-> **Current QA gaps (October 2024)**
+> **Current QA status (October 2024 update)**
 >
-> - `npm run test:jest` currently fails because several suites import ESM-only helpers (for example, `import.meta` usage in `src/lib/supabase-enhanced.ts`) that Jest does not transform under the CommonJS runtime, and a few suites import `vitest` directly which Jest cannot execute.【e8e6fc†L1-L34】【edf1f5†L117-L188】
-> - `npm run test:lighthouse` cannot execute in local CI containers without a bundled Chrome/Chromium binary; Lighthouse exits early with `ChromePathNotSetError` when `CHROME_PATH` is unset.【6976f1†L1-L11】
+> - `npm run test:jest` now transpiles ESM-only helpers (including `src/lib/supabase-enhanced.ts`) through the Jest + ts-jest ESM preset and no longer relies on Vitest globals. Individual suites may still contain domain-specific assertion failures that should be resolved case-by-case.【F:jest.config.cjs†L1-L53】【F:tsconfig.app.json†L1-L28】
+> - `npm run test:lighthouse` resolves a Chrome/Chromium binary automatically via `scripts/run-lighthouse.mjs`. Ensure the CI image installs Chrome or exposes the executable through `CHROME_PATH` so Lighthouse can launch successfully.【F:scripts/run-lighthouse.mjs†L1-L73】【F:package.json†L10-L41】
 
 ### Follow-up actions to close QA gaps
 
-1. Extend the Jest configuration (or migrate suites) so that modules relying on `import.meta` and other ESM-only syntax are transpiled via SWC/Babel, and refactor any Vitest-specific helpers to Jest-compatible equivalents before re-running `npm run test:jest`.
-2. Provision a Chrome/Chromium binary (for example, install `chromium` in CI or set `CHROME_PATH` to an existing executable) so `npm run test:lighthouse` can launch successfully.
+1. Resolve the remaining suite-level assertion failures (for example, missing environment fixtures in authentication tests) so the Jest suite reports green before release.
+2. Provision a Chrome/Chromium binary in CI (for example, install `chromium` via the system package manager or set `CHROME_PATH` to the downloaded binary) prior to executing `npm run test:lighthouse`.
 
 ## 5. Operational & Security Readiness
 

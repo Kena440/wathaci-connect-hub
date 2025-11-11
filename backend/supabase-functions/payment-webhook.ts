@@ -3,15 +3,16 @@
  * Handles Lenco payment webhooks for real-time payment status updates
  */
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { logger } from '../../src/lib/logger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-lenco-signature',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-lenco-secret',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
+
+const EXPECTED_SECRET = Deno.env.get('LENCO_WEBHOOK_SECRET');
 
 interface WebhookPayload {
   event: 'payment.success' | 'payment.failed' | 'payment.pending' | 'payment.cancelled';
@@ -32,7 +33,7 @@ interface WebhookPayload {
   created_at: string;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -52,23 +53,26 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Verify webhook signature
-    const signature = req.headers.get('x-lenco-signature');
-    const webhookSecret = Deno.env.get('LENCO_WEBHOOK_SECRET');
-    
-    if (!signature || !webhookSecret) {
-      throw new Error('Missing webhook signature or secret');
+    const incomingSecret = req.headers.get('x-lenco-secret');
+
+    if (!EXPECTED_SECRET || incomingSecret !== EXPECTED_SECRET) {
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid signature',
+          debug: {
+            hasEnvSecret: !!EXPECTED_SECRET,
+            incomingSecret,
+          },
+        }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     }
 
     const rawBody = await req.text();
 
-    // Verify signature (simplified - in production, use proper HMAC verification)
-    const isSignatureValid = await verifySignature(signature, rawBody, webhookSecret);
-
-    if (!isSignatureValid) {
-      throw new Error('Invalid webhook signature');
-    }
-    
     // Parse webhook payload
     payload = JSON.parse(rawBody) as WebhookPayload;
     
@@ -335,49 +339,4 @@ function getNotificationMessage(event: string, paymentData: any): string {
   };
 
   return messages[event] || `Payment update for ${amount}`;
-}
-
-async function verifySignature(signature: string, rawBody: string, secret: string): Promise<boolean> {
-  const encoder = new TextEncoder();
-  const digestData = encoder.encode(secret + rawBody);
-  const digestBuffer = new Uint8Array(await crypto.subtle.digest('SHA-256', digestData));
-
-  const expectedHex = toHex(digestBuffer);
-  if (timingSafeEqual(expectedHex, signature)) {
-    return true;
-  }
-
-  const expectedBase64 = toBase64(digestBuffer);
-  if (timingSafeEqual(expectedBase64, signature)) {
-    return true;
-  }
-
-  return false;
-}
-
-function toHex(buffer: Uint8Array): string {
-  return Array.from(buffer)
-    .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-function toBase64(buffer: Uint8Array): string {
-  let binary = '';
-  buffer.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
-  return btoa(binary);
-}
-
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    return false;
-  }
-
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-
-  return result === 0;
 }
