@@ -55,6 +55,10 @@ All sign-up and sign-in failures have been successfully resolved. The platform i
 - [ ] Test with backend unavailable
 - [ ] Test with whitespace in inputs
 - [ ] Verify email confirmation flow
+- [ ] **NEW**: Test profile creation for SME account type
+- [ ] **NEW**: Test profile creation for Donor account type
+- [ ] **NEW**: Verify profile data is saved correctly
+- [ ] **NEW**: Test profile update/edit functionality
 
 ## Deployment Guide
 
