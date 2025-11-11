@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-lenco-secret",
+    "authorization, x-client-info, apikey, content-type, x-lenco-signature",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -30,9 +30,9 @@ Deno.serve(async (req) => {
     return json({ ok: false, error: "server_not_configured" }, 500);
   }
 
-  const providedSecret = req.headers.get("x-lenco-secret");
+  const providedSecret = req.headers.get("x-lenco-signature");
   if (!providedSecret) {
-    await logWebhookEvent(null, 401, "Missing x-lenco-secret header");
+    await logWebhookEvent(null, 401, "Missing x-lenco-signature header");
     return json({ ok: false, error: "Invalid signature" }, 401);
   }
 
