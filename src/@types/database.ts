@@ -45,6 +45,7 @@ export interface PersonalInfo {
   first_name?: string;
   last_name?: string;
   phone: string;
+  msisdn?: string;
   country: string;
   address?: string;
   coordinates?: {
@@ -86,6 +87,7 @@ export interface BusinessInfo {
 export interface PaymentInfo {
   payment_method: 'phone' | 'card';
   payment_phone?: string;
+  msisdn?: string;
   card_details?: {
     last4: string;
     expiry_month: number;
