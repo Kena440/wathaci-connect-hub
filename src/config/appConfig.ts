@@ -47,32 +47,32 @@ const sanitizeEnvValue = (value: unknown): string | undefined => {
   return trimmed.replace(/^['"`]+|['"`]+$/g, "").trim();
 };
 
+/**
+ * Read environment variable directly from import.meta.env.
+ * This must access import.meta.env directly (not via Function()) because
+ * Vite replaces import.meta.env.VITE_* with literal values at build time.
+ */
 const readEnv = (key: EnvKey): string | undefined => {
-  try {
-    const meta = (Function("return typeof import.meta !== 'undefined' ? import.meta : undefined")() as {
-      env?: Record<string, unknown>;
-    })?.env;
-    const candidate = sanitizeEnvValue(meta?.[key]);
-    if (candidate) {
-      return candidate;
-    }
-  } catch (error) {
-    if (typeof console !== "undefined" && typeof process !== "undefined" && process.env?.NODE_ENV !== "production") {
-      console.warn("[config] Unable to access import.meta for", key, error);
-    }
+  // CRITICAL: Access import.meta.env directly, not via Function()
+  // Vite replaces these at build time with the actual values
+  const candidate = sanitizeEnvValue(import.meta.env[key]);
+  if (candidate) {
+    return candidate;
   }
 
+  // Fallback for Node.js environments (like tests)
   if (typeof process !== "undefined" && process.env) {
-    const candidate = sanitizeEnvValue(process.env[key]);
-    if (candidate) {
-      return candidate;
+    const processCandidate = sanitizeEnvValue(process.env[key]);
+    if (processCandidate) {
+      return processCandidate;
     }
   }
 
+  // Fallback for runtime injection via globalThis
   if (typeof globalThis !== "undefined") {
-    const candidate = sanitizeEnvValue((globalThis as any)?.__APP_CONFIG__?.[key]);
-    if (candidate) {
-      return candidate;
+    const globalCandidate = sanitizeEnvValue((globalThis as any)?.__APP_CONFIG__?.[key]);
+    if (globalCandidate) {
+      return globalCandidate;
     }
   }
 
