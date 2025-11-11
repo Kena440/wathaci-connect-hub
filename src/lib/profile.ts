@@ -5,7 +5,7 @@
  * error handling, validation, and authentication checks.
  */
 
-import { supabase } from "./supabaseClient";
+import { supabaseClient as supabase } from "./supabaseClient";
 
 export type ProfilePayload = {
   account_type: "sme" | "donor" | "admin" | "sole_proprietor" | "professional" | "investor" | "government";

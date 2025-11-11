@@ -13,7 +13,7 @@ const mockSupabase = {
 };
 
 jest.mock('../supabaseClient', () => ({
-  supabase: mockSupabase,
+  supabaseClient: mockSupabase,
 }));
 
 describe('Profile Helper', () => {
