@@ -9,7 +9,6 @@ import { AppProvider } from "@/contexts/AppContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { PrivateRoute } from "./components/PrivateRoute";
 import { ConfigurationError } from "@/components/ConfigurationError";
-import { ConfigurationWarningBanner } from "@/components/ConfigurationWarningBanner";
 import { RouteChangeDebugger } from "@/components/RouteChangeDebugger";
 import { supabaseConfigStatus } from "@/config/appConfig";
 import { getPaymentConfig } from "@/lib/payment-config";
@@ -299,8 +298,6 @@ const InnerApp = () => {
   const shouldBlockRender =
     !supabaseConfigStatus.hasValidConfig || paymentConfigSnapshot.fatalIssues.length > 0;
 
-  const hasWarningsOnly = paymentConfigSnapshot.warnings.length > 0 && !shouldBlockRender;
-
   if (shouldBlockRender) {
     return (
       <ConfigurationError
@@ -316,7 +313,6 @@ const InnerApp = () => {
         <AppProvider>
           <Toaster />
           <Sonner />
-          {hasWarningsOnly && <ConfigurationWarningBanner warnings={paymentConfigSnapshot.warnings} />}
           <BrowserRouter>
             {import.meta.env.DEV ? <RouteChangeDebugger /> : null}
             <AppRoutes />

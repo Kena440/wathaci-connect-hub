@@ -1,25 +1,6 @@
-const normalizeBaseUrl = (baseUrl: string | undefined) => {
-  if (!baseUrl) return '';
-  return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-};
+import { API_BASE_URL, getApiEndpoint } from '@/config/api';
 
 const API_TIMEOUT_MS = 15000;
-
-// Safe accessor for import.meta to avoid Jest parse errors
-const getImportMetaEnv = () => {
-  try {
-    return new Function('return typeof import.meta !== "undefined" ? import.meta.env : {}')();
-  } catch {
-    return {};
-  }
-};
-
-const importMetaEnv = getImportMetaEnv();
-const DEFAULT_DEV_API_BASE_URL = importMetaEnv.DEV ? 'http://localhost:3000' : undefined;
-
-const API_BASE_URL = normalizeBaseUrl(
-  importMetaEnv.VITE_API_BASE_URL ?? DEFAULT_DEV_API_BASE_URL,
-);
 
 export type RegisterUserPayload = {
   firstName: string;
@@ -44,17 +25,8 @@ export type RegisterUserResponse = {
 };
 
 const buildEndpoint = () => {
-  if (API_BASE_URL) {
-    return `${API_BASE_URL}/users`;
-  }
-
-  if (importMetaEnv.PROD) {
-    throw new Error(
-      'Registration service URL is not configured. Set VITE_API_BASE_URL to your backend API base.',
-    );
-  }
-
-  return '/users';
+  // Use centralized API config
+  return getApiEndpoint('/users');
 };
 
 const extractErrorMessage = (data: unknown) => {
