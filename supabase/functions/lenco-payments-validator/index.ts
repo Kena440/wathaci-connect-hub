@@ -9,7 +9,8 @@ const corsHeaders = {
 };
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
-const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const serviceRoleKey =
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SERVICE_ROLE_KEY");
 const supabase =
   supabaseUrl && serviceRoleKey ? createClient(supabaseUrl, serviceRoleKey) : null;
 
@@ -36,6 +37,8 @@ Deno.serve(async (req) => {
     return json({ ok: false, error: "Invalid signature" }, 401);
   }
 
+  // TODO: Swap this shared-secret check for the official Lenco HMAC validation once
+  // the signing algorithm is confirmed in production.
   if (!timingSafeEqual(expectedSecret, providedSecret)) {
     await logWebhookEvent(null, 401, "Secret mismatch");
     return json({ ok: false, error: "Invalid signature" }, 401);
@@ -56,9 +59,67 @@ Deno.serve(async (req) => {
     return json({ ok: false, error: "Invalid JSON payload" }, 400);
   }
 
-  await logWebhookEvent(body, 200, null);
+  const { event, reference, status } = extractEventDetails(body);
 
-  return json({ ok: true, message: "Webhook accepted", body });
+  if (!event || !reference) {
+    await logWebhookEvent(body, 400, "Missing event or reference");
+    return json({ ok: false, error: "missing_reference" }, 400);
+  }
+
+  if (!supabase) {
+    console.error("lenco-payments-validator: Supabase client not configured");
+    await logWebhookEvent(body, 500, "Supabase not configured");
+    return json({ ok: false, error: "server_not_configured" }, 500);
+  }
+
+  try {
+    const { data: donation, error: donationError } = await supabase
+      .from("donations")
+      .select("id, status")
+      .eq("lenco_reference", reference)
+      .maybeSingle();
+
+    if (donationError) {
+      console.error("lenco-payments-validator: error fetching donation", donationError);
+      await logWebhookEvent(body, 500, "Database error fetching donation");
+      return json({ ok: false, error: "database_error" }, 500);
+    }
+
+    if (!donation) {
+      await logWebhookEvent(body, 404, "Donation not found");
+      return json({ ok: false, error: "donation_not_found" }, 404);
+    }
+
+    const normalizedStatus = normalizeLencoStatus(event, status);
+
+    if (!normalizedStatus) {
+      await logWebhookEvent(body, 202, "Ignored event");
+      return json({ ok: true, message: "Event ignored" });
+    }
+
+    if (donation.status === normalizedStatus) {
+      await logWebhookEvent(body, 200, null);
+      return json({ ok: true, message: "Donation already in desired state" });
+    }
+
+    const { error: updateError } = await supabase
+      .from("donations")
+      .update({ status: normalizedStatus, updated_at: new Date().toISOString() })
+      .eq("id", donation.id);
+
+    if (updateError) {
+      console.error("lenco-payments-validator: failed to update donation", updateError);
+      await logWebhookEvent(body, 500, "Failed to update donation status");
+      return json({ ok: false, error: "update_failed" }, 500);
+    }
+
+    await logWebhookEvent(body, 200, null);
+    return json({ ok: true, message: "Donation status updated", status: normalizedStatus });
+  } catch (error) {
+    console.error("lenco-payments-validator: unexpected error", error);
+    await logWebhookEvent(body, 500, "Unexpected error");
+    return json({ ok: false, error: "unexpected_error" }, 500);
+  }
 });
 
 async function logWebhookEvent(payload: unknown, httpStatus: number, error: string | null) {
@@ -101,4 +162,68 @@ function timingSafeEqual(a: string, b: string): boolean {
   }
 
   return result === 0;
+}
+
+type LencoWebhook = {
+  event?: string;
+  data?: {
+    reference?: string;
+    status?: string;
+  } & Record<string, unknown>;
+  reference?: string;
+  status?: string;
+};
+
+function extractEventDetails(payload: unknown): {
+  event: string | null;
+  reference: string | null;
+  status: string | null;
+} {
+  if (!payload || typeof payload !== "object") {
+    return { event: null, reference: null, status: null };
+  }
+
+  const body = payload as LencoWebhook;
+  const event = typeof body.event === "string" ? body.event : null;
+  const reference =
+    typeof body.reference === "string"
+      ? body.reference
+      : typeof body.data?.reference === "string"
+      ? body.data.reference
+      : null;
+  const status =
+    typeof body.status === "string"
+      ? body.status
+      : typeof body.data?.status === "string"
+      ? body.data.status
+      : null;
+
+  return { event, reference, status };
+}
+
+function normalizeLencoStatus(event: string | null, rawStatus: string | null):
+  | "pending"
+  | "completed"
+  | "failed"
+  | "cancelled"
+  | null {
+  const status = (rawStatus ?? event ?? "").toLowerCase();
+
+  if (["payment.completed", "successful", "completed", "success"].includes(status)) {
+    return "completed";
+  }
+
+  if (["payment.failed", "failed", "declined", "error"].includes(status)) {
+    return "failed";
+  }
+
+  if (["payment.cancelled", "cancelled"].includes(status)) {
+    return "cancelled";
+  }
+
+  if (["payment.pending", "pending", "in_progress"].includes(status)) {
+    return "pending";
+  }
+
+  return null;
 }
