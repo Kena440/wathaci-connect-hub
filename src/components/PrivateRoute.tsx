@@ -1,13 +1,13 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAppContext } from '@/contexts/AppContext';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 interface PrivateRouteProps {
   children: ReactNode;
 }
 
 export const PrivateRoute = ({ children }: PrivateRouteProps) => {
-  const { user, loading } = useAppContext();
+  const { user, loading } = useSupabaseAuth();
 
   if (loading) {
     return null;

@@ -6,6 +6,7 @@ import {
   OFFLINE_ACCOUNT_METADATA_KEY,
   OFFLINE_PROFILE_METADATA_KEY,
 } from '@/lib/services';
+import { logSupabaseAuthError } from '@/lib/supabaseClient';
 import { toast } from '@/components/ui/use-toast';
 import type { User, Profile } from '@/@types/database';
 
@@ -118,18 +119,10 @@ interface AppContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
-  initiateSignIn: (email: string, password: string) => Promise<InitiateSignInResult>;
-  verifyOtp: (email: string, token: string) => Promise<AuthState>;
-  resendOtp: (email: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<AuthState>;
   signUp: (email: string, password: string, userData?: any) => Promise<AuthState>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<AuthState>;
-}
-
-interface InitiateSignInResult {
-  otpSent: boolean;
-  offlineState: AuthState | null;
 }
 
 const OFFLINE_SESSION_STORAGE_KEY = 'wathaci_offline_session';
@@ -181,9 +174,6 @@ const defaultAppContext: AppContextType = {
   user: null,
   profile: null,
   loading: true,
-  initiateSignIn: async () => ({ otpSent: false, offlineState: null }),
-  verifyOtp: async () => ({ user: null, profile: null }),
-  resendOtp: async () => {},
   signIn: async () => ({ user: null, profile: null }),
   signUp: async () => ({ user: null, profile: null }),
   signOut: async () => {},
@@ -372,8 +362,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   };
 
-  const initiateSignIn = async (email: string, password: string): Promise<InitiateSignInResult> => {
-    const { data: user, error } = await userService.signIn(email, password);
+  const signIn = async (email: string, password: string): Promise<AuthState> => {
+    const { data: authUser, error } = await userService.signIn(email, password);
 
     if (error) {
       let errorMessage = error.message || 'Failed to sign in';
@@ -387,72 +377,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         errorMessage = 'Please verify your email address before signing in. Check your inbox for the verification link.';
       }
 
+      logSupabaseAuthError('signIn', error);
       throw new Error(errorMessage);
     }
 
-    const offlineState = resolveOfflineAuthState(user ?? null);
-
-    if (offlineState) {
-      toast({
-        title: 'Welcome back!',
-        description: 'You have been signed in successfully.',
-      });
-
-      return {
-        otpSent: false,
-        offlineState,
-      };
-    }
-
-    clearOfflineSession();
-
-    try {
-      await supabase.auth.signOut();
-    } catch (signOutError) {
-      console.warn('Unable to clear pre-OTP session state:', signOutError);
-    }
-
-    const { error: otpError } = await userService.sendLoginOtp(email);
-
-    if (otpError) {
-      let errorMessage = otpError.message || 'Failed to send verification code.';
-      const normalized = errorMessage.toLowerCase();
-
-      if (normalized.includes('network') || normalized.includes('fetch')) {
-        errorMessage = 'We could not send the verification code due to a network issue. Please try again.';
-      }
-
-      throw new Error(errorMessage);
-    }
-
-    toast({
-      title: 'Verification code sent',
-      description: 'Enter the 6-digit code we sent to your email to finish signing in.',
-    });
-
-    return {
-      otpSent: true,
-      offlineState: null,
-    };
-  };
-
-  const verifyOtp = async (email: string, token: string): Promise<AuthState> => {
-    const { data: user, error } = await userService.verifyLoginOtp(email, token);
-
-    if (error) {
-      let errorMessage = error.message || 'Invalid or expired verification code.';
-      const normalized = errorMessage.toLowerCase();
-
-      if (normalized.includes('network') || normalized.includes('fetch')) {
-        errorMessage = 'We could not verify the code due to a network issue. Please try again.';
-      } else if (normalized.includes('invalid') || normalized.includes('expired')) {
-        errorMessage = 'The verification code is invalid or has expired. Please request a new code.';
-      }
-
-      throw new Error(errorMessage);
-    }
-
-    const offlineState = resolveOfflineAuthState(user ?? null);
+    const offlineState = resolveOfflineAuthState(authUser ?? null);
 
     if (offlineState) {
       toast({
@@ -465,55 +394,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     clearOfflineSession();
 
+    if (!authUser) {
+      throw new Error('Sign in failed. Please try again.');
+    }
+
     const refreshedState = await refreshUser();
+
+    const finalState: AuthState = {
+      user: refreshedState.user ?? authUser,
+      profile: refreshedState.profile ?? null,
+    };
+
+    if (!refreshedState.user) {
+      setUser(authUser);
+    }
 
     toast({
       title: 'Welcome back!',
-      description: 'You have been signed in successfully.',
+      description: refreshedState.user
+        ? 'You have been signed in successfully.'
+        : 'Sign in succeeded. Complete your profile to unlock full access.',
     });
 
-    if (!refreshedState.user && user) {
-      setUser(user);
-      return { user, profile: null };
-    }
-
-    return refreshedState;
-  };
-
-  const resendOtp = async (email: string) => {
-    const { error } = await userService.sendLoginOtp(email);
-
-    if (error) {
-      let errorMessage = error.message || 'Unable to resend verification code.';
-      const normalized = errorMessage.toLowerCase();
-
-      if (normalized.includes('network') || normalized.includes('fetch')) {
-        errorMessage = 'We could not resend the verification code due to a network issue. Please try again.';
-      }
-
-      throw new Error(errorMessage);
-    }
-
-    toast({
-      title: 'Verification code sent',
-      description: 'Check your email for the latest verification code.',
-    });
-  };
-
-  const signIn = async (email: string, password: string): Promise<AuthState> => {
-    const result = await initiateSignIn(email, password);
-
-    if (result.offlineState) {
-      return result.offlineState;
-    }
-
-    throw Object.assign(
-      new Error('A verification code has been sent to your email. Enter the code to complete sign in.'),
-      {
-        name: 'OtpVerificationRequiredError',
-        code: 'OTP_REQUIRED',
-      }
-    );
+    return finalState;
   };
 
   const signUp = async (email: string, password: string, userData?: any): Promise<AuthState> => {
@@ -522,7 +425,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (error) {
       // Provide user-friendly error messages
       let errorMessage = error.message || 'Failed to create account';
-      
+
       // Check for common error patterns and provide helpful messages
       if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
         errorMessage = 'We couldn\'t reach WATHACI servers right now. Please try again shortly.';
@@ -531,7 +434,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } else if (errorMessage.includes('password')) {
         errorMessage = 'Password does not meet requirements. Please use a stronger password.';
       }
-      
+
+      logSupabaseAuthError('signUp', error);
       throw new Error(errorMessage);
     }
     
@@ -670,9 +574,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         user,
         profile,
         loading,
-        initiateSignIn,
-        verifyOtp,
-        resendOtp,
         signIn,
         signUp,
         signOut,

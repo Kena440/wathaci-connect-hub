@@ -1,4 +1,5 @@
 import { FormEvent, useMemo, useState } from "react";
+import { supabaseClient } from "@/lib/supabaseClient";
 
 type PaymentMethod = "mobile_money" | "card";
 
@@ -7,6 +8,20 @@ const PRESET_AMOUNTS = [20, 50, 100, 250];
 const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   mobile_money: "Mobile Money",
   card: "Card",
+};
+
+const MSISDN_REGEX = /^\+?[0-9]{9,15}$/;
+
+const normalizeMsisdn = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("+")) {
+    return trimmed.replace(/\s+/g, "");
+  }
+
+  const digits = trimmed.replace(/\D+/g, "");
+  if (!digits) return "";
+  return `+${digits}`;
 };
 
 const formatCurrency = (amount: number) =>
@@ -62,7 +77,7 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
   const [donateAnonymously, setDonateAnonymously] = useState(false);
   const [message, setMessage] = useState("");
   const [donorEmail, setDonorEmail] = useState("");
-  const [donorPhone, setDonorPhone] = useState("");
+  const [msisdn, setMsisdn] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("mobile_money");
   const [isSubmitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -112,7 +127,7 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
     setDonateAnonymously(false);
     setMessage("");
     setDonorEmail("");
-    setDonorPhone("");
+    setMsisdn("");
     setPaymentMethod("mobile_money");
     setSubmitting(false);
     setError(null);
@@ -148,8 +163,9 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
     const anonKey =
       import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_KEY;
 
-    if (paymentMethod === "mobile_money" && !donorPhone.trim()) {
-      setError("Please provide the mobile number that should receive the payment prompt.");
+    const normalizedMsisdn = normalizeMsisdn(msisdn);
+    if (!normalizedMsisdn || !MSISDN_REGEX.test(normalizedMsisdn)) {
+      setError("Enter a valid mobile number including the country code (e.g. +2609XXXXXXX).");
       return;
     }
 
@@ -161,7 +177,7 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
       donorName: donateAnonymously ? null : donorName?.trim() || null,
       donateAnonymously,
       donorEmail: donorEmail?.trim() || null,
-      donorPhone: donorPhone?.trim() || null,
+      msisdn: normalizedMsisdn,
       message: message?.trim() || null,
       source,
     };
@@ -169,24 +185,34 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
     setSubmitting(true);
 
     try {
-      const response = await fetch(
-        functionsUrl.endsWith("/create-donation")
-          ? functionsUrl
-          : `${functionsUrl.replace(/\/$/, "")}/create-donation`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(anonKey ? { apikey: anonKey } : {}),
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      const { data: sessionData } = await supabaseClient.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
 
-      const json = (await response.json()) as CreateDonationResponse;
+      const endpoint = functionsUrl.endsWith("/create-donation")
+        ? functionsUrl
+        : `${functionsUrl.replace(/\/$/, "")}/create-donation`;
 
-      if (!response.ok || !json.ok) {
-        throw new Error(json.error?.message || "Failed to start donation.");
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(anonKey ? { apikey: anonKey } : {}),
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const rawBody = await response.text();
+      let json: CreateDonationResponse | null = null;
+      try {
+        json = rawBody ? (JSON.parse(rawBody) as CreateDonationResponse) : null;
+      } catch (parseError) {
+        console.error("DonateButton: Unable to parse donation response", parseError, rawBody);
+      }
+
+      if (!response.ok || !json?.ok) {
+        const serverMessage = json?.error?.message || rawBody || "Failed to start donation.";
+        throw new Error(serverMessage);
       }
 
       const checkoutUrl = json.data?.checkoutUrl;
@@ -200,9 +226,8 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
         return;
       }
 
-      // No checkout URL or instructions returned, show a generic confirmation.
       setPaymentInstructions({
-        note: "Donation created successfully. Please monitor your email or dashboard for updates.",
+        note: "Donation created successfully. Please monitor your phone or email for payment updates.",
       });
     } catch (submitError) {
       console.error("DonateButton: Failed to create donation", submitError);
@@ -414,18 +439,18 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700" htmlFor="donor-phone">
-                    Mobile number {paymentMethod === "mobile_money" ? "(required for Mobile Money)" : "(optional)"}
+                    Mobile number (required for receipts and payment prompts)
                   </label>
                   <input
                     id="donor-phone"
                     type="tel"
-                    value={donorPhone}
-                    onChange={(event) => setDonorPhone(event.target.value)}
+                    value={msisdn}
+                    onChange={(event) => setMsisdn(event.target.value)}
                     className="mt-1 w-full rounded-md border border-gray-300 p-2 focus:border-red-500 focus:outline-none focus:ring-red-500"
-                    placeholder="2607XXXXXXXX"
+                    placeholder="+2609XXXXXXXX"
                   />
                   <p className="mt-1 text-xs text-gray-500">
-                    Use an MSISDN that can authorise the payment prompt.
+                    Enter the MSISDN tied to your Mobile Money wallet or card for confirmations and receipts.
                   </p>
                 </div>
               </div>
