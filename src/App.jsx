@@ -13,7 +13,7 @@ import { SignIn } from "./pages/SignIn";
 import { SignUp } from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import { GetStarted } from "./pages/GetStarted";
+import { GetStartedPage } from "./pages/GetStartedPage";
 import { SubscriptionPlans } from "./pages/SubscriptionPlans";
 import { PartnershipHub } from "./pages/PartnershipHub";
 import { ProfileSetup } from "./pages/ProfileSetup";
@@ -35,7 +35,7 @@ export const AppRoutes = () => (
     <Route path="/signup" element={<SignUp />} />
     <Route path="/forgot-password" element={<ForgotPassword />} />
     <Route path="/reset-password" element={<ResetPassword />} />
-    <Route path="/get-started" element={<GetStarted />} />
+    <Route path="/get-started" element={<GetStartedPage />} />
     <Route path="/profile-setup" element={<ProfileSetup />} />
     <Route path="/profile-review" element={<ProfileReview />} />
     <Route path="/subscription-plans" element={<SubscriptionPlans />} />

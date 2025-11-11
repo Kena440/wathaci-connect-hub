@@ -18,7 +18,9 @@ jest.mock('../pages/SignIn', () => createLazyMock('Sign In Page', 'SignIn'));
 jest.mock('../pages/SignUp', () => createLazyMock('Sign Up Page', 'SignUp'));
 jest.mock('../pages/ForgotPassword', () => createLazyMock('Forgot Password Page'));
 jest.mock('../pages/ResetPassword', () => createLazyMock('Reset Password Page'));
-jest.mock('../pages/GetStarted', () => createLazyMock('Get Started Page', 'GetStarted'));
+jest.mock('../pages/GetStartedPage', () =>
+  createLazyMock('Get Started Page', 'GetStartedPage')
+);
 jest.mock('../pages/SubscriptionPlans', () => createLazyMock('Subscription Plans Page', 'SubscriptionPlans'));
 jest.mock('../pages/PartnershipHub', () => createLazyMock('Partnership Hub Page', 'PartnershipHub'));
 jest.mock('../pages/ProfileSetup', () => createLazyMock('Profile Setup Page', 'ProfileSetup'));
