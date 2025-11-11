@@ -4,16 +4,14 @@ This template provides a minimal setup to get React working in Vite with HMR and
 
 ## 🚀 Production Launch Checklist
 
-Before deploying WATHACI CONNECT to production, complete all items in the **[Production Launch Checklist](docs/release/LAUNCH_CHECKLIST.md)**.
+Before deploying WATHACI CONNECT to production, complete all items in the **[Production Launch Checklist](docs/release/LAUNCH_CHECKLIST.md)** and follow the **[Production Deployment Guide](docs/PRODUCTION_DEPLOYMENT_GUIDE.md)**.
 
-This comprehensive checklist covers:
-- ✅ Management approvals and sign-offs
-- ✅ Configuration validation (API, Supabase, Lenco)
-- ✅ Pre-launch testing (auth, payments, cross-browser)
-- ✅ Security and compliance checks
-- ✅ Monitoring and post-launch operations
+### Key Pre-Launch Documents:
+- **[Production Launch Checklist](docs/release/LAUNCH_CHECKLIST.md)** - Management approvals, configuration validation, testing, and monitoring
+- **[Production Deployment Guide](docs/PRODUCTION_DEPLOYMENT_GUIDE.md)** - Step-by-step deployment instructions with rollback procedures
+- **[Profile Creation Troubleshooting](docs/PROFILE_CREATION_TROUBLESHOOTING.md)** - Diagnose and fix profile creation issues
 
-**Critical**: Ensure `VITE_API_BASE_URL` is set to your live backend API before production deployment. See the checklist for details.
+**Critical**: Ensure `VITE_API_BASE_URL` is set to your live backend API before production deployment. See the deployment guide for details.
 
 ---
 
