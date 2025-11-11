@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect, useMemo } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -8,6 +8,10 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AppProvider } from "@/contexts/AppContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { PrivateRoute } from "./components/PrivateRoute";
+import { ConfigurationError } from "@/components/ConfigurationError";
+import { RouteChangeDebugger } from "@/components/RouteChangeDebugger";
+import { supabaseConfigStatus } from "@/lib/supabaseClient";
+import { getPaymentConfig } from "@/lib/payment-config";
 import "./i18n";
 
 const queryClient = new QueryClient();
@@ -159,18 +163,73 @@ export const AppRoutes = () => (
 
 const App = () => (
   <ThemeProvider defaultTheme="light">
+    <InnerApp />
+  </ThemeProvider>
+);
+
+const InnerApp = () => {
+  const paymentConfigSnapshot = useMemo(() => {
+    const config = getPaymentConfig();
+    const fatalIssues: string[] = [];
+    const warnings: string[] = [];
+
+    if (!config.publicKey) {
+      fatalIssues.push("Lenco public key (VITE_LENCO_PUBLIC_KEY or LENCO_PUBLIC_KEY)");
+    }
+
+    if (!config.apiUrl) {
+      fatalIssues.push("Lenco API URL (VITE_LENCO_API_URL)");
+    }
+
+    if (config.environment === "production" && config.publicKey.startsWith("pk_test_")) {
+      fatalIssues.push("Production environment is configured with a test Lenco public key");
+    }
+
+    if (!config.webhookUrl) {
+      warnings.push("Lenco webhook URL is not configured; webhook events will not be received");
+    }
+
+    return { config, fatalIssues, warnings } as const;
+  }, []);
+
+  useEffect(() => {
+    console.info("[app] Mounted", {
+      mode: import.meta.env.MODE,
+      supabaseConfigured: supabaseConfigStatus.hasValidConfig,
+      paymentPublicKeyConfigured: Boolean(paymentConfigSnapshot.config.publicKey),
+    });
+
+    return () => {
+      console.info("[app] Unmounted");
+    };
+  }, [paymentConfigSnapshot]);
+
+  const shouldBlockRender =
+    !supabaseConfigStatus.hasValidConfig || paymentConfigSnapshot.fatalIssues.length > 0;
+
+  if (shouldBlockRender) {
+    return (
+      <ConfigurationError
+        supabaseStatus={supabaseConfigStatus}
+        paymentStatus={paymentConfigSnapshot}
+      />
+    );
+  }
+
+  return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AppProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            {import.meta.env.DEV ? <RouteChangeDebugger /> : null}
             <AppRoutes />
           </BrowserRouter>
         </AppProvider>
       </TooltipProvider>
     </QueryClientProvider>
-  </ThemeProvider>
-);
+  );
+};
 
 export default App;

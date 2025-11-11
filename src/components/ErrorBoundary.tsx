@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -19,21 +19,28 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     this.setState({ error, errorInfo });
-    this.logErrorToService(error, errorInfo).catch((loggingError) => {
-      console.error('Failed to log error to service', loggingError);
-    });
-    console.error('ErrorBoundary caught an error', error, errorInfo);
+    void this.logErrorToService(error, errorInfo);
+    console.error("[ErrorBoundary] Rendering error captured", error, errorInfo);
   }
 
   handleReload = () => {
-    window.location.reload();
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
   };
 
   private logErrorToService(error: Error, errorInfo: React.ErrorInfo) {
-    return fetch('/api/logs', {
-      method: 'POST',
+    if (typeof fetch !== "function") {
+      if (import.meta.env.DEV) {
+        console.warn("[ErrorBoundary] Fetch API unavailable – skipping remote error logging.");
+      }
+      return Promise.resolve();
+    }
+
+    return fetch("/api/logs", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         message: error.message,
@@ -41,43 +48,62 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
         componentStack: errorInfo.componentStack,
         timestamp: new Date().toISOString(),
       }),
+    }).catch((loggingError) => {
+      if (import.meta.env.DEV) {
+        console.warn("[ErrorBoundary] Failed to forward error to logging endpoint", loggingError);
+      }
     });
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div role="alert" className="p-4 text-center">
-          <h2 className="text-lg font-semibold">Something went wrong.</h2>
-          <p className="mt-2">
-            An unexpected error occurred. Please try again or let us know about the issue so we
-            can fix it.
-          </p>
-          {process.env.NODE_ENV !== 'production' && this.state.error && (
-            <details className="mt-4 text-left whitespace-pre-wrap">
-              <summary className="cursor-pointer font-medium">Error details (development only)</summary>
-              <div className="mt-2">
+        <div
+          role="alert"
+          className="flex min-h-screen flex-col items-center justify-center gap-4 bg-white p-6 text-center"
+        >
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold text-gray-900">Something went wrong.</h2>
+            <p className="max-w-md text-sm text-gray-600">
+              An unexpected error occurred while rendering WATHACI CONNECT. Try reloading the page or contact support if the
+              problem continues.
+            </p>
+          </div>
+          {import.meta.env.DEV && this.state.error && (
+            <details className="max-w-2xl overflow-x-auto rounded border border-dashed border-gray-300 bg-gray-50 p-4 text-left">
+              <summary className="cursor-pointer text-sm font-medium text-gray-800">
+                Error details (development only)
+              </summary>
+              <div className="mt-2 space-y-2 text-sm text-gray-700">
                 <p className="font-semibold">{this.state.error.message}</p>
-                <pre className="overflow-auto text-sm">
+                <pre className="whitespace-pre-wrap text-xs leading-relaxed">
                   {this.state.error.stack}
-                  {'\n'}
+                  {"\n"}
                   {this.state.errorInfo?.componentStack}
                 </pre>
               </div>
             </details>
           )}
-          <button onClick={this.handleReload}>Reload</button>
-          <p className="mt-4 text-sm">
-            Need help?{' '}
-            <a className="text-blue-600 underline" href="mailto:support@example.com">
-              Contact support
-            </a>{' '}
-            or report the issue via our{' '}
-            <a className="text-blue-600 underline" href="https://example.com/support" target="_blank" rel="noreferrer">
-              help center
-            </a>
-            .
-          </p>
+          <div className="flex flex-col items-center gap-2 text-sm text-gray-600">
+            <button
+              type="button"
+              onClick={this.handleReload}
+              className="rounded-md bg-orange-600 px-4 py-2 font-semibold text-white shadow hover:bg-orange-700"
+            >
+              Reload page
+            </button>
+            <p>
+              Need help?{" "}
+              <a className="text-blue-600 underline" href="mailto:support@wathaci.org">
+                Contact support
+              </a>{" "}
+              or visit our{" "}
+              <a className="text-blue-600 underline" href="https://wathaci.org/help" target="_blank" rel="noreferrer">
+                help center
+              </a>
+              .
+            </p>
+          </div>
         </div>
       );
     }

@@ -1,5 +1,5 @@
 import { FormEvent, useMemo, useState } from "react";
-import { supabaseClient } from "@/lib/supabaseClient";
+import { supabaseClient, supabaseConfigStatus } from "@/lib/supabaseClient";
 
 type PaymentMethod = "mobile_money" | "card";
 
@@ -151,6 +151,14 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
 
     if (amount > maxAmount) {
       setError(`Maximum donation per transaction is ${formatCurrency(maxAmount)}.`);
+      return;
+    }
+
+    if (!supabaseConfigStatus.hasValidConfig) {
+      setError(
+        "Donations are temporarily unavailable while we finalise our Supabase configuration. Please try again shortly.",
+      );
+      console.error("DonateButton: Missing Supabase configuration", supabaseConfigStatus);
       return;
     }
 

@@ -1,6 +1,7 @@
-import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { ReactNode } from "react";
+import { Navigate } from "react-router-dom";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 interface PrivateRouteProps {
   children: ReactNode;
@@ -10,7 +11,7 @@ export const PrivateRoute = ({ children }: PrivateRouteProps) => {
   const { user, loading } = useSupabaseAuth();
 
   if (loading) {
-    return null;
+    return <LoadingScreen />;
   }
 
   if (!user) {
