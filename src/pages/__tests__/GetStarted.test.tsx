@@ -72,7 +72,7 @@ describe('GetStarted navigation flows', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/profile-setup?accountType=investor&mode=edit');
   });
 
-  it('directs users with completed matching profiles to the appropriate assessment route', () => {
+  it('directs users with completed matching profiles to the appropriate onboarding assessment route', () => {
     mockUseAppContext.mockReturnValue({
       user: { id: 'user-2', profile_completed: true },
       profile: { account_type: 'investor', profile_completed: true },
@@ -86,7 +86,7 @@ describe('GetStarted navigation flows', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /start as investor/i }));
 
-    expect(mockNavigate).toHaveBeenCalledWith('/investor-assessment');
+    expect(mockNavigate).toHaveBeenCalledWith('/onboarding/investor/needs-assessment');
   });
 });
 

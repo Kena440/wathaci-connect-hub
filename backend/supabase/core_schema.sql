@@ -20,6 +20,7 @@ create table if not exists public.profiles (
   middle_name text,
   last_name text,
   phone text,
+  msisdn text,
   country text,
   address text,
   coordinates jsonb,
@@ -66,6 +67,7 @@ create index if not exists profiles_account_type_idx on public.profiles (account
 create index if not exists profiles_country_idx on public.profiles (country);
 
 alter table public.profiles
+  add column if not exists msisdn text,
   add column if not exists investment_focus text,
   add column if not exists investment_ticket_min numeric,
   add column if not exists investment_ticket_max numeric,
