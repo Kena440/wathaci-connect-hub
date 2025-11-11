@@ -209,11 +209,29 @@ function normalizeLencoStatus(event: string | null, rawStatus: string | null):
   | null {
   const status = (rawStatus ?? event ?? "").toLowerCase();
 
-  if (["payment.completed", "successful", "completed", "success"].includes(status)) {
+  if (
+    [
+      "payment.completed",
+      "payment.successful",
+      "mobile_money.payment.successful",
+      "successful",
+      "completed",
+      "success",
+    ].includes(status)
+  ) {
     return "completed";
   }
 
-  if (["payment.failed", "failed", "declined", "error"].includes(status)) {
+  if (
+    [
+      "payment.failed",
+      "mobile_money.payment.failed",
+      "failed",
+      "declined",
+      "error",
+      "timeout",
+    ].includes(status)
+  ) {
     return "failed";
   }
 
@@ -221,7 +239,16 @@ function normalizeLencoStatus(event: string | null, rawStatus: string | null):
     return "cancelled";
   }
 
-  if (["payment.pending", "pending", "in_progress"].includes(status)) {
+  if (
+    [
+      "payment.pending",
+      "payment.initiated",
+      "mobile_money.pending",
+      "pending",
+      "in_progress",
+      "processing",
+    ].includes(status)
+  ) {
     return "pending";
   }
 

@@ -11,6 +11,7 @@ create table if not exists public.donations (
   is_anonymous boolean not null default false,
   amount numeric(12,2) not null check (amount > 0),
   currency text not null default 'ZMW',
+  payment_method text not null check (payment_method in ('mobile_money', 'card')),
   status text not null check (status in ('pending', 'completed', 'failed', 'cancelled')) default 'pending',
   lenco_reference text not null unique,
   platform_fee_amount numeric(12,2) not null default 0,
