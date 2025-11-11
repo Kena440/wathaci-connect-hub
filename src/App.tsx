@@ -81,6 +81,34 @@ const GovernmentAssessment = lazy(() =>
   }))
 );
 
+// Onboarding pages
+const SmeNeedsAssessmentPage = lazy(() =>
+  import("./pages/onboarding/SmeNeedsAssessmentPage").then((module) => ({
+    default: module.SmeNeedsAssessmentPage,
+  }))
+);
+const ProfessionalNeedsAssessmentPage = lazy(() =>
+  import("./pages/onboarding/ProfessionalNeedsAssessmentPage").then((module) => ({
+    default: module.ProfessionalNeedsAssessmentPage,
+  }))
+);
+const DonorNeedsAssessmentPage = lazy(() =>
+  import("./pages/onboarding/DonorNeedsAssessmentPage").then((module) => ({
+    default: module.DonorNeedsAssessmentPage,
+  }))
+);
+const InvestorNeedsAssessmentPage = lazy(() =>
+  import("./pages/onboarding/InvestorNeedsAssessmentPage").then((module) => ({
+    default: module.InvestorNeedsAssessmentPage,
+  }))
+);
+const GovernmentNeedsAssessmentPage = lazy(() =>
+  import("./pages/onboarding/GovernmentNeedsAssessmentPage").then((module) => ({
+    default: module.GovernmentNeedsAssessmentPage,
+  }))
+);
+
+
 export const AppRoutes = () => (
   <Suspense fallback={<LoadingScreen />}>
     <Routes>
@@ -157,6 +185,49 @@ export const AppRoutes = () => (
           </PrivateRoute>
         }
       />
+      
+      {/* Onboarding needs assessment routes */}
+      <Route
+        path="/onboarding/sme/needs-assessment"
+        element={
+          <PrivateRoute>
+            <SmeNeedsAssessmentPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/onboarding/professional/needs-assessment"
+        element={
+          <PrivateRoute>
+            <ProfessionalNeedsAssessmentPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/onboarding/donor/needs-assessment"
+        element={
+          <PrivateRoute>
+            <DonorNeedsAssessmentPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/onboarding/investor/needs-assessment"
+        element={
+          <PrivateRoute>
+            <InvestorNeedsAssessmentPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/onboarding/government/needs-assessment"
+        element={
+          <PrivateRoute>
+            <GovernmentNeedsAssessmentPage />
+          </PrivateRoute>
+        }
+      />
+      
       <Route path="*" element={<NotFound />} />
     </Routes>
   </Suspense>
