@@ -1,0 +1,875 @@
+# WATHACI CONNECT Production Launch Blueprint
+
+This runbook details the exact steps, configurations, code snippets, and validation plans required to drive WATHACI CONNECT from "approved for launch" to a fully deployed, tested, and monitored production platform.
+
+---
+
+## Part 1 – Deployment Strategy & Branching
+
+### Branching Model
+- `main` – production branch. Deploys to production hosting (e.g., Vercel) on every merge.
+- `develop` – staging branch. Deploys to staging environment.
+
+### Release Process Checklist
+1. Ensure `develop` is up to date with the latest approved features and fixes.
+2. Execute full staging QA (auth, payments, profile flows, agent widget, E2E checks).
+3. Merge `develop` into `main`.
+4. Tag the release (example: `v1.0.0-launch`).
+5. Monitor automated CI/CD deployment to production hosting.
+6. Run smoke tests in production (auth, donation, profile update, agent chat).
+7. Announce launch readiness to stakeholders and keep monitoring dashboards open for 24h.
+
+### Git Command Reference
+```bash
+# Ensure local branches are current
+git checkout develop
+git pull origin develop
+
+# Merge develop into main for release
+git checkout main
+git pull origin main
+git merge --no-ff develop
+
+# Resolve conflicts, run tests, then push
+npm ci
+npm run lint
+npm run test
+npm run build
+
+# Push the release commit
+git push origin main
+
+# Tag the release after CI success
+git tag -a v1.0.0-launch -m "WATHACI CONNECT production launch"
+git push origin v1.0.0-launch
+```
+
+### CI/CD Configuration
+
+#### GitHub Actions (example `.github/workflows/deploy.yml` excerpt)
+```yaml
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_LENCO_API_URL: ${{ secrets.VITE_LENCO_API_URL }}
+          VITE_LENCO_PUBLIC_KEY: ${{ secrets.VITE_LENCO_PUBLIC_KEY }}
+          VITE_LENCO_SECRET_KEY: ${{ secrets.VITE_LENCO_SECRET_KEY }}
+          VITE_LENCO_WEBHOOK_URL: ${{ secrets.VITE_LENCO_WEBHOOK_URL }}
+          VITE_MIN_PAYMENT_AMOUNT: ${{ secrets.VITE_MIN_PAYMENT_AMOUNT }}
+          VITE_MAX_PAYMENT_AMOUNT: ${{ secrets.VITE_MAX_PAYMENT_AMOUNT }}
+          VITE_PLATFORM_FEE_PERCENTAGE: ${{ secrets.VITE_PLATFORM_FEE_PERCENTAGE }}
+      - name: Deploy to Vercel
+        if: github.ref == 'refs/heads/main'
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./
+          prod: true
+      - name: Deploy to Vercel (staging)
+        if: github.ref == 'refs/heads/develop'
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./
+          scope: staging
+```
+
+### Frontend Build Command
+- Build: `npm run build` (Vite)
+- Output: optimized static assets in `dist/`
+- Production hosting: Vercel (deploys static assets + serverless functions if configured)
+
+### `vercel.json` (example)
+```json
+{
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "outputDirectory": "dist",
+  "env": {
+    "VITE_SUPABASE_URL": "@vite_supabase_url",
+    "VITE_SUPABASE_ANON_KEY": "@vite_supabase_anon_key",
+    "VITE_LENCO_API_URL": "@vite_lenco_api_url",
+    "VITE_LENCO_PUBLIC_KEY": "@vite_lenco_public_key",
+    "VITE_LENCO_SECRET_KEY": "@vite_lenco_secret_key",
+    "VITE_LENCO_WEBHOOK_URL": "@vite_lenco_webhook_url",
+    "VITE_MIN_PAYMENT_AMOUNT": "@vite_min_payment_amount",
+    "VITE_MAX_PAYMENT_AMOUNT": "@vite_max_payment_amount",
+    "VITE_PLATFORM_FEE_PERCENTAGE": "@vite_platform_fee_percentage"
+  }
+}
+```
+
+---
+
+## Part 2 – Supabase Production Setup & Secrets
+
+### Donations Table Schema (confirmation)
+```sql
+create table if not exists public.donations (
+  id uuid primary key default gen_random_uuid(),
+  donor_user_id uuid references auth.users(id),
+  campaign_id uuid,
+  amount numeric not null,
+  currency text not null default 'ZMW',
+  payment_method text not null,
+  platform_fee_amount numeric not null default 0,
+  net_amount numeric not null default 0,
+  lenco_reference text unique not null,
+  msisdn text not null,
+  status text not null default 'pending',
+  message text,
+  source text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.webhook_logs (
+  id bigint generated by default as identity primary key,
+  event_type text not null,
+  payload jsonb not null,
+  received_at timestamptz not null default now(),
+  processed boolean not null default false,
+  processing_error text
+);
+```
+
+### Required Production Secrets
+
+#### `supabase-prod-secrets.env`
+```env
+SUPABASE_URL=https://<project>.supabase.co
+SUPABASE_ANON_KEY=<public-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+
+LENCO_API_SECRET=<lenco-api-secret>
+LENCO_SECRET=<lenco-secret>
+LENCO_WEBHOOK_URL=https://api.wathaci-connect.com/api/lenco/webhook
+LENCO_WEBHOOK_SECRET=<lenco-webhook-secret>
+
+MIN_PAYMENT_AMOUNT=10
+MAX_PAYMENT_AMOUNT=50000
+PLATFORM_FEE_PERCENTAGE=5
+
+VERCEL_AI_GATEWAY_KEY=<vercel-ai-gateway-key>
+WATHACI_CONNECT_OPENAI=<openai-compatible-key>
+```
+
+#### Load secrets into Supabase project
+```bash
+supabase login
+supabase link --project-ref <project-ref>
+
+# Load from env file
+supabase secrets set --env-file supabase-prod-secrets.env
+
+# Or set individually
+supabase secrets set \
+  SUPABASE_URL=https://<project>.supabase.co \
+  SUPABASE_ANON_KEY=<public-anon-key> \
+  SUPABASE_SERVICE_ROLE_KEY=<service-role-key> \
+  LENCO_API_SECRET=<lenco-api-secret> \
+  LENCO_SECRET=<lenco-secret> \
+  LENCO_WEBHOOK_URL=https://api.wathaci-connect.com/api/lenco/webhook \
+  LENCO_WEBHOOK_SECRET=<lenco-webhook-secret> \
+  MIN_PAYMENT_AMOUNT=10 \
+  MAX_PAYMENT_AMOUNT=50000 \
+  PLATFORM_FEE_PERCENTAGE=5 \
+  VERCEL_AI_GATEWAY_KEY=<vercel-ai-gateway-key> \
+  WATHACI_CONNECT_OPENAI=<openai-compatible-key>
+```
+
+### Edge Function Deployment Commands
+```bash
+# Deploy donation creation function
+supabase functions deploy create-donation --project-ref <project-ref>
+
+# Deploy webhook validator
+supabase functions deploy lenco-payments-validator --project-ref <project-ref>
+```
+- `create-donation`: requires Authorization header with Supabase JWT. If public, deploy with `--no-verify-jwt` and implement custom validation.
+- `lenco-payments-validator`: private endpoint; uses `LENCO_WEBHOOK_SECRET` to verify HMAC signature.
+
+---
+
+## Part 3 – Auth: Sign-up, Sign-in & Profile Creation
+
+### `src/lib/supabaseClient.ts`
+```ts
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+});
+```
+
+### Sign-up Component (`src/features/auth/SignUpForm.tsx`)
+```tsx
+import { useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+
+type AccountType = 'sme' | 'donor' | 'admin';
+
+export function SignUpForm() {
+  const [form, setForm] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    fullName: '',
+    msisdn: '',
+    accountType: 'sme' as AccountType,
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (form.password !== form.confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+
+    const { error: signUpError } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: {
+        data: {
+          full_name: form.fullName,
+          msisdn: form.msisdn,
+          account_type: form.accountType,
+        },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (signUpError) {
+      setError(signUpError.message);
+      setLoading(false);
+      return;
+    }
+
+    setSuccessMessage('Check your email to confirm your account.');
+    setLoading(false);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* form fields for email, password, etc. */}
+      <button type="submit" disabled={loading}>
+        {loading ? 'Creating account…' : 'Create account'}
+      </button>
+      {error && <p className="text-red-600">{error}</p>}
+      {successMessage && <p className="text-green-600">{successMessage}</p>}
+    </form>
+  );
+}
+```
+
+### Profile Synchronization
+- `profiles` table schema:
+```sql
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  account_type text not null,
+  full_name text,
+  msisdn text,
+  business_name text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+```
+- After sign-up, call an Edge Function (`create-profile`) to create the profile:
+```ts
+const response = await fetch('/api/profile/create', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${session?.access_token}`,
+  },
+  body: JSON.stringify({
+    accountType: form.accountType,
+    fullName: form.fullName,
+    msisdn: form.msisdn,
+    businessName: form.accountType === 'sme' ? form.businessName : undefined,
+  }),
+});
+```
+- Profile edit page allows updates via Supabase `updateProfile` RPC or direct table update.
+
+### Auth E2E Tests (Playwright Pseudo-code)
+```ts
+import { test, expect } from '@playwright/test';
+
+test.describe('Authentication', () => {
+  test('SME can sign up and see SME dashboard', async ({ page }) => {
+    await page.goto('/auth');
+    await page.click('text=Create an account');
+    await page.fill('input[name="fullName"]', 'Test SME');
+    await page.fill('input[name="msisdn"]', '+260971234567');
+    await page.selectOption('select[name="accountType"]', 'sme');
+    await page.fill('input[name="email"]', 'sme@example.com');
+    await page.fill('input[name="password"]', 'StrongPass123!');
+    await page.fill('input[name="confirmPassword"]', 'StrongPass123!');
+    await page.click('button[type="submit"]');
+    await expect(page.getByText('Check your email')).toBeVisible();
+    // Simulate email confirmation in test env, then login
+  });
+
+  test('Donor can sign in and view donor dashboard', async ({ page }) => {
+    await page.goto('/auth');
+    await page.fill('input[name="email"]', 'donor@example.com');
+    await page.fill('input[name="password"]', 'StrongPass123!');
+    await page.click('button[type="submit"]');
+    await expect(page).toHaveURL('/dashboard');
+    await expect(page.getByTestId('donor-dashboard')).toBeVisible();
+  });
+});
+```
+
+---
+
+## Part 4 – Payments: Mobile Money & Card (MSISDN Required)
+
+### Frontend Donation Component (`src/features/donations/DonationModal.tsx`)
+```tsx
+const minAmount = Number(import.meta.env.VITE_MIN_PAYMENT_AMOUNT ?? 10);
+const maxAmount = Number(import.meta.env.VITE_MAX_PAYMENT_AMOUNT ?? 50000);
+const feePercentage = Number(import.meta.env.VITE_PLATFORM_FEE_PERCENTAGE ?? 5);
+
+function validateMsisdn(msisdn: string) {
+  return /^(\+?260|0)?9\d{8}$/.test(msisdn);
+}
+
+async function handleDonate() {
+  if (amount < minAmount || amount > maxAmount) {
+    setError(`Amount must be between ${minAmount} and ${maxAmount}.`);
+    return;
+  }
+  if (!validateMsisdn(msisdn)) {
+    setError('Enter a valid Zambian mobile number.');
+    return;
+  }
+
+  const platformFee = Math.round(amount * (feePercentage / 100));
+  const response = await fetch('/api/create-donation', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session?.access_token}`,
+    },
+    body: JSON.stringify({
+      amount,
+      msisdn,
+      paymentMethod,
+      message,
+      campaignId,
+    }),
+  });
+
+  const result = await response.json();
+  if (!response.ok) {
+    setError(result.error ?? 'Failed to start payment.');
+    return;
+  }
+
+  if (result.checkoutUrl) {
+    window.location.href = result.checkoutUrl;
+  } else {
+    setSuccess('Follow the instructions sent to your phone.');
+  }
+}
+```
+
+### `create-donation` Edge Function (`supabase/functions/create-donation/index.ts`)
+```ts
+import { serve } from 'https://deno.land/std@0.180.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.33.1';
+
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const lencoApiUrl = Deno.env.get('LENCO_API_URL')!;
+const lencoApiSecret = Deno.env.get('LENCO_API_SECRET')!;
+const minAmount = Number(Deno.env.get('MIN_PAYMENT_AMOUNT') ?? 10);
+const maxAmount = Number(Deno.env.get('MAX_PAYMENT_AMOUNT') ?? 50000);
+const platformFeePercentage = Number(Deno.env.get('PLATFORM_FEE_PERCENTAGE') ?? 5);
+
+serve(async (req) => {
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+  }
+
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData?.user) {
+    return new Response(JSON.stringify({ error: 'Invalid session' }), { status: 401 });
+  }
+
+  const payload = await req.json();
+  const { amount, paymentMethod, msisdn, campaignId, message } = payload;
+
+  if (!amount || amount < minAmount || amount > maxAmount) {
+    return new Response(JSON.stringify({ error: 'Invalid amount' }), { status: 400 });
+  }
+  if (!msisdn || !/^(\+?260|0)?9\d{8}$/.test(msisdn)) {
+    return new Response(JSON.stringify({ error: 'Invalid MSISDN' }), { status: 400 });
+  }
+  if (!['mobile_money', 'card'].includes(paymentMethod)) {
+    return new Response(JSON.stringify({ error: 'Unsupported payment method' }), { status: 400 });
+  }
+
+  const platformFeeAmount = Math.round(amount * (platformFeePercentage / 100));
+  const netAmount = amount - platformFeeAmount;
+
+  const { data: donation, error: insertError } = await supabase
+    .from('donations')
+    .insert({
+      donor_user_id: userData.user.id,
+      campaign_id: campaignId,
+      amount,
+      payment_method: paymentMethod,
+      platform_fee_amount: platformFeeAmount,
+      net_amount: netAmount,
+      msisdn,
+      status: 'pending',
+      message,
+    })
+    .select()
+    .single();
+
+  if (insertError || !donation) {
+    return new Response(JSON.stringify({ error: 'Failed to record donation' }), { status: 500 });
+  }
+
+  const lencoResponse = await fetch(`${lencoApiUrl}/payments`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${lencoApiSecret}`,
+    },
+    body: JSON.stringify({
+      amount,
+      currency: donation.currency ?? 'ZMW',
+      payment_method: paymentMethod,
+      customer: {
+        phone_number: msisdn,
+        email: userData.user.email,
+        name: userData.user.user_metadata?.full_name ?? 'WATHACI Supporter',
+      },
+      metadata: {
+        donation_id: donation.id,
+        user_id: userData.user.id,
+        msisdn,
+      },
+      callback_url: Deno.env.get('LENCO_WEBHOOK_URL'),
+    }),
+  });
+
+  if (!lencoResponse.ok) {
+    await supabase
+      .from('donations')
+      .update({ status: 'failed', updated_at: new Date().toISOString() })
+      .eq('id', donation.id);
+
+    const errorBody = await lencoResponse.text();
+    return new Response(JSON.stringify({ error: 'Payment initiation failed', details: errorBody }), {
+      status: 502,
+    });
+  }
+
+  const paymentData = await lencoResponse.json();
+
+  await supabase
+    .from('donations')
+    .update({ lenco_reference: paymentData.reference })
+    .eq('id', donation.id);
+
+  return new Response(
+    JSON.stringify({ ok: true, reference: paymentData.reference, checkoutUrl: paymentData.checkout_url }),
+    { status: 200 },
+  );
+});
+```
+
+### `lenco-payments-validator` Function (`supabase/functions/lenco-payments-validator/index.ts`)
+```ts
+import { serve } from 'https://deno.land/std@0.180.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.33.1';
+
+const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+const webhookSecret = Deno.env.get('LENCO_WEBHOOK_SECRET')!;
+
+async function verifySignature(signature: string | null, payload: string) {
+  if (!signature) return false;
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', encoder.encode(webhookSecret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const expected = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
+  const signatureBytes = Uint8Array.from(atob(signature), (c) => c.charCodeAt(0));
+  return crypto.timingSafeEqual(new Uint8Array(expected), signatureBytes);
+}
+
+serve(async (req) => {
+  if (req.method !== 'POST') {
+    return new Response('Method Not Allowed', { status: 405 });
+  }
+
+  const body = await req.text();
+  const signature = req.headers.get('X-Lenco-Signature');
+  const valid = await verifySignature(signature, body).catch(() => false);
+  if (!valid) {
+    return new Response('Invalid signature', { status: 401 });
+  }
+
+  const event = JSON.parse(body);
+  const reference = event?.data?.reference;
+  const status = event?.data?.status;
+  const msisdn = event?.data?.customer?.phone_number;
+
+  if (!reference) {
+    return new Response('Missing reference', { status: 400 });
+  }
+
+  const updates = {
+    status: status === 'successful' ? 'completed' : status === 'failed' ? 'failed' : 'pending',
+    updated_at: new Date().toISOString(),
+    msisdn,
+  };
+
+  const { error } = await supabase.from('donations').update(updates).eq('lenco_reference', reference);
+  if (error) {
+    await supabase.from('webhook_logs').insert({
+      event_type: event.type,
+      payload: event,
+      processed: false,
+      processing_error: error.message,
+    });
+    return new Response('Failed to update donation', { status: 500 });
+  }
+
+  await supabase.from('webhook_logs').insert({
+    event_type: event.type,
+    payload: event,
+    processed: true,
+  });
+
+  return new Response('ok', { status: 200 });
+});
+```
+
+### Payment Testing Strategy
+- **Manual staging tests:**
+  1. Mobile money payment using sandbox MSISDN; confirm push notification, donation status `completed`, MSISDN logged.
+  2. Card payment via hosted checkout; confirm redirect back and status `completed`.
+- **Automated Playwright pseudo-tests:**
+```ts
+test('Donor can complete a mobile money donation', async ({ page }) => {
+  await page.goto('/campaigns/seed-fund');
+  await page.click('button[data-testid="donate"]');
+  await page.fill('input[name="amount"]', '250');
+  await page.selectOption('select[name="paymentMethod"]', 'mobile_money');
+  await page.fill('input[name="msisdn"]', '+260971234567');
+  await page.click('button[type="submit"]');
+  await expect(page).toHaveURL(/lenco/); // redirected to hosted checkout or instruction page
+});
+```
+
+---
+
+## Part 5 – Full App Page & Route Verification
+
+### Route Inventory & Validation Checklist
+| Route | Purpose | Validation |
+|-------|---------|------------|
+| `/` | Landing page | Ensure hero, CTA buttons, testimonials render. No console errors. API calls for featured SMEs succeed. |
+| `/auth` | Sign-up/sign-in | Forms render, validation works, redirect after login. |
+| `/dashboard` | User dashboard | Dashboard loads relevant data based on account type. |
+| `/profile` | Profile creation & edit | Form loads existing profile data, updates persist. |
+| `/smes` or `/projects` | Browse campaigns | List of SMEs loads, filters work, donate buttons visible. |
+| `/donate/:campaignId` | Donation detail | Campaign details, donation modal works, MSISDN required. |
+| `/admin` | Admin oversight | Protected route; admin-only components visible. |
+
+### Navigation Test Plan (Playwright Pseudo-code)
+```ts
+test('User journey from landing to donation', async ({ page }) => {
+  await page.goto('/');
+  await page.click('text=Sign up');
+  await expect(page).toHaveURL('/auth');
+  // complete sign-up flow (reuse helper)
+  await loginAs('donor@example.com', 'StrongPass123!');
+  await page.click('text=Browse SMEs');
+  await expect(page).toHaveURL('/smes');
+  await page.click('data-testid=campaign-card >> nth=0');
+  await page.click('text=Donate now');
+  await page.fill('input[name="amount"]', '150');
+  await page.fill('input[name="msisdn"]', '+260971234567');
+  await page.click('button:has-text("Continue")');
+  await expect(page).toHaveURL(/lenco/);
+});
+
+test('Profile update persists across sessions', async ({ page }) => {
+  await loginAs('sme@example.com', 'StrongPass123!');
+  await page.goto('/profile');
+  await page.fill('input[name="businessName"]', 'Updated SME Ltd');
+  await page.click('button:has-text("Save")');
+  await expect(page.getByText('Profile updated')).toBeVisible();
+  await page.click('button:has-text("Sign out")');
+  await loginAs('sme@example.com', 'StrongPass123!');
+  await expect(page.locator('input[name="businessName"]').inputValue()).resolves.toContain('Updated SME Ltd');
+});
+```
+
+---
+
+## Part 6 – In-Platform Agent (AI Assistant)
+
+### Agent Architecture
+- Frontend: floating chat widget accessible on all pages (except auth, optionally). Maintains conversation state, uses SWR/react-query to call backend.
+- Backend: Supabase Edge Function `agent` (or `/api/agent` route hosted alongside frontend) proxies requests to Vercel AI Gateway or OpenAI-compatible endpoint using `VERCEL_AI_GATEWAY_KEY` or `WATHACI_CONNECT_OPENAI`.
+- Security: require authenticated session for personalized support; optionally allow anonymous for general FAQ with rate limiting.
+
+### Frontend Component (`src/components/AgentChatWidget.tsx`)
+```tsx
+import { useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+
+export function AgentChatWidget() {
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
+    {
+      role: 'assistant',
+      content: 'Hi! I am the WATHACI Assistant. Ask me about donations, SMEs, or your account.',
+    },
+  ]);
+  const [pendingMessage, setPendingMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSend = async () => {
+    if (!pendingMessage.trim()) return;
+    const newMessages = [...messages, { role: 'user', content: pendingMessage }];
+    setMessages(newMessages);
+    setPendingMessage('');
+    setLoading(true);
+
+    const session = (await supabase.auth.getSession()).data.session;
+    const response = await fetch('/api/agent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      },
+      body: JSON.stringify({ messages: newMessages }),
+    });
+
+    const data = await response.json();
+    setLoading(false);
+
+    if (!response.ok) {
+      setMessages([...newMessages, { role: 'assistant', content: data.error ?? 'Something went wrong.' }]);
+      return;
+    }
+
+    setMessages([...newMessages, { role: 'assistant', content: data.reply }]);
+  };
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50">
+      {open && (
+        <div className="w-80 h-96 bg-white shadow-xl rounded-lg flex flex-col">
+          <header className="px-4 py-2 border-b flex justify-between items-center">
+            <span className="font-semibold">WATHACI Assistant</span>
+            <button onClick={() => setOpen(false)}>×</button>
+          </header>
+          <div className="flex-1 overflow-y-auto space-y-2 p-4">
+            {messages.map((msg, idx) => (
+              <div key={idx} className={msg.role === 'user' ? 'text-right' : 'text-left'}>
+                <span className={`inline-block rounded px-3 py-2 ${msg.role === 'user' ? 'bg-indigo-100' : 'bg-slate-100'}`}>
+                  {msg.content}
+                </span>
+              </div>
+            ))}
+            {loading && <p className="text-sm text-slate-500">Assistant is typing…</p>}
+          </div>
+          <form
+            className="border-t p-2 flex gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleSend();
+            }}
+          >
+            <input
+              className="flex-1 border rounded px-2 py-1"
+              value={pendingMessage}
+              onChange={(event) => setPendingMessage(event.target.value)}
+              placeholder="Ask how to donate…"
+            />
+            <button type="submit" className="bg-indigo-600 text-white px-3 py-1 rounded" disabled={loading}>
+              Send
+            </button>
+          </form>
+        </div>
+      )}
+      <button
+        className="bg-indigo-600 text-white rounded-full w-14 h-14 shadow-lg"
+        onClick={() => setOpen((current) => !current)}
+      >
+        {open ? '−' : 'AI'}
+      </button>
+    </div>
+  );
+}
+```
+
+### Backend Handler (`supabase/functions/agent/index.ts`)
+```ts
+import { serve } from 'https://deno.land/std@0.180.0/http/server.ts';
+
+const aiGatewayKey = Deno.env.get('VERCEL_AI_GATEWAY_KEY') ?? Deno.env.get('WATHACI_CONNECT_OPENAI');
+const upstreamUrl = Deno.env.get('VERCEL_AI_GATEWAY_URL') ?? 'https://gateway.ai.cloudflare.com/v1/openai';
+
+serve(async (req) => {
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+  }
+
+  const { messages } = await req.json();
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return new Response(JSON.stringify({ error: 'Invalid payload' }), { status: 400 });
+  }
+
+  const systemPrompt = `You are the WATHACI CONNECT assistant. Help users understand how to support SMEs, how donations work, and guide them through sign-up, profile completion, and payment troubleshooting. Always require secure handling of user data and do not reveal secrets.`;
+
+  const response = await fetch(`${upstreamUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${aiGatewayKey}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4.1-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages,
+      ],
+      temperature: 0.4,
+      max_tokens: 600,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    return new Response(JSON.stringify({ error: 'Agent error', details: errorText }), { status: 500 });
+  }
+
+  const data = await response.json();
+  const reply = data.choices?.[0]?.message?.content ?? 'I could not find an answer.';
+  return new Response(JSON.stringify({ reply }), { status: 200 });
+});
+```
+
+### Agent Assistance Scope
+- Explains donation flow, payment methods, and MSISDN requirements.
+- Guides SMEs through profile completion and campaign creation.
+- Helps donors troubleshoot payment issues and find impact reports.
+- Provides safe fallback responses when unsure.
+
+Security considerations:
+- Rate limiting via Vercel Edge middleware or Supabase function logic (track IP/session).
+- Verify user session before providing personalized account support.
+- Log agent usage metrics (timestamp, user ID, question count) in Supabase table `agent_sessions`.
+
+---
+
+## Part 7 – Post-Deployment Monitoring & Metrics
+
+### Key Metrics Dashboard
+- **Auth success rate**: `successful_sign_ins / total_sign_ins` (log `auth_events` table via Edge Functions or Supabase logs).
+- **Donation conversion**: `completed_donations / initiated_donations` (tracked via `donations` status transitions).
+- **Payment failure rate**: `failed_donations / total_donations`, annotated with Lenco error codes.
+- **Agent engagement**: number of sessions, average questions per session.
+
+### Logging & Monitoring
+- Enable Supabase log drains (Logflare, Datadog) for Edge Function console logs.
+- Frontend: capture errors with Sentry (DSN stored in env `VITE_SENTRY_DSN`).
+- Edge Functions log structure:
+  - `console.info('donation.created', { donationId, amount, msisdn });`
+  - `console.error('payment.webhook.error', { reference, error });`
+
+### Operational Runbook
+
+#### Sign-up/sign-in failures
+1. Check Supabase Auth status page.
+2. Validate `SUPABASE_URL` and `SUPABASE_ANON_KEY` in hosting provider.
+3. Review `auth` logs in Supabase dashboard.
+4. Use Supabase CLI: `supabase logs functions --project-ref <project-ref>` for auth-related functions.
+
+#### Payments failing
+1. Inspect `donations` table for recent entries (`status = 'failed'`).
+2. Check Lenco status page or dashboard for incidents.
+3. Review `lenco-payments-validator` logs for signature or HMAC errors.
+4. Re-send webhook events from Lenco dashboard if necessary.
+5. Confirm secrets (`LENCO_API_SECRET`, `LENCO_WEBHOOK_SECRET`) match production values.
+
+#### Agent unresponsive
+1. Check usage limits on Vercel AI Gateway/OpenAI account.
+2. Validate env keys (`VERCEL_AI_GATEWAY_KEY`, `WATHACI_CONNECT_OPENAI`).
+3. Inspect `agent_sessions` logs for errors.
+4. Restart deployment if environment variables changed.
+
+### Alerts & Incident Response
+- Configure alerting (PagerDuty/Slack) for:
+  - Payment failure rate > 5% in 15-min window.
+  - Auth failure rate spikes.
+  - Agent API returning 5xx errors > 10/min.
+- Document on-call rotation and escalation in shared ops playbook.
+
+---
+
+## Final Checklist Before Launch
+- [ ] All env vars configured in staging & production.
+- [ ] Edge functions deployed and tested with live secrets.
+- [ ] Payment flows validated (mobile money + card) with real MSISDN.
+- [ ] Sign-up/sign-in flows verified for SME, donor, admin personas.
+- [ ] Profiles auto-created and editable.
+- [ ] Agent widget operational and helpful responses validated.
+- [ ] Monitoring dashboards live, alerts configured, runbooks shared.
+
+By following this blueprint, WATHACI CONNECT will deliver secure, reliable financial support pathways to SMEs and ready, confident donor experiences on launch day.
