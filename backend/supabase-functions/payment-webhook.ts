@@ -8,7 +8,7 @@ import { logger } from '../../src/lib/logger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-lenco-secret',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-lenco-signature',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const incomingSecret = req.headers.get('x-lenco-secret');
+    const incomingSecret = req.headers.get('x-lenco-signature');
 
     if (!EXPECTED_SECRET || incomingSecret !== EXPECTED_SECRET) {
       return new Response(

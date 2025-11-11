@@ -53,7 +53,7 @@ serve(async (req) => {
       throw new Error('Function secret not configured');
     }
 
-    const providedSecret = req.headers.get('x-lenco-secret');
+    const providedSecret = req.headers.get('x-lenco-signature');
     if (!providedSecret || providedSecret !== expectedSecret) {
       throw new Error('Unauthorized');
     }
