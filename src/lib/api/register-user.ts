@@ -97,57 +97,19 @@ export const registerUser = async (
     clearTimeout(timeoutId);
   }
 
-  const contentType = response.headers.get('content-type') ?? '';
-  const contentLength = response.headers.get('content-length');
-  const isEmptyBody =
-    response.status === 204 ||
-    response.status === 205 ||
-    (contentLength !== null && Number(contentLength) === 0);
-
-  let data: unknown = null;
-
-  if (!isEmptyBody) {
-    const isJson = contentType.includes('application/json');
-    try {
-      if (isJson) {
-        data = await response.json();
-      } else {
-        const raw = await response.text();
-        if (raw) {
-          try {
-            data = JSON.parse(raw);
-          } catch {
-            data = raw;
-          }
-        }
-      }
-    } catch (error) {
-      if (!response.ok) {
-        throw new Error('Failed to register user with backend');
-      }
-
-      console.warn('[register-user] Unable to parse registration response:', error);
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch (error) {
+    if (!response.ok) {
+      throw new Error('Failed to register user with backend');
     }
+    throw error;
   }
 
   if (!response.ok) {
     const errorMessage = extractErrorMessage(data) || 'Failed to register user with backend';
     throw new Error(errorMessage);
-  }
-
-  if (!data || typeof data !== 'object') {
-    return {
-      user: {
-        id: 'pending-registration',
-        firstName: payload.firstName,
-        lastName: payload.lastName,
-        email: payload.email,
-        accountType: payload.accountType,
-        company: payload.company ?? null,
-        mobileNumber: payload.mobileNumber ?? null,
-        registeredAt: new Date().toISOString(),
-      },
-    } satisfies RegisterUserResponse;
   }
 
   return data as RegisterUserResponse;
