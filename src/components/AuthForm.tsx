@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { normalizeMsisdn } from '@/utils/phone';
 
 const baseSchema = z.object({
   email: z
@@ -55,9 +56,8 @@ interface AuthFormProps {
 
 const normalizePhone = (value: string | undefined) => {
   if (!value) return undefined;
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  return trimmed.startsWith('+') ? trimmed : `+${trimmed.replace(/^0+/, '')}`;
+  const normalized = normalizeMsisdn(value);
+  return normalized ?? undefined;
 };
 
 export const AuthForm = ({ mode, redirectTo, onSuccess }: AuthFormProps) => {

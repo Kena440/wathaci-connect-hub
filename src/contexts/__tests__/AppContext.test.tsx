@@ -85,10 +85,28 @@ describe('AppContext auth actions', () => {
     mockCreateProfile.mockResolvedValue({ data: { id: 'profile-1', profile_completed: false }, error: null });
 
     const ctx = await renderContext();
-    await ctx.signUp('new@example.com', 'Password123', { full_name: 'Test User', msisdn: '+260955000000' });
+    await ctx.signUp('new@example.com', 'Password123', {
+      full_name: 'Test User',
+      msisdn: ' +260 955 000 000 ',
+      phone: '+260 955 000 000 ',
+      payment_phone: '+260 955 000 000 ',
+    });
 
-    expect(mockSignUp).toHaveBeenCalledWith('new@example.com', 'Password123', { full_name: 'Test User', msisdn: '+260955000000' });
-    expect(mockCreateProfile).toHaveBeenCalledWith('user-2', expect.any(Object));
+    expect(mockSignUp).toHaveBeenCalledWith('new@example.com', 'Password123', {
+      full_name: 'Test User',
+      msisdn: ' +260 955 000 000 ',
+      phone: '+260 955 000 000 ',
+      payment_phone: '+260 955 000 000 ',
+    });
+
+    expect(mockCreateProfile).toHaveBeenCalledWith(
+      'user-2',
+      expect.objectContaining({
+        msisdn: '+260955000000',
+        phone: '+260955000000',
+        payment_phone: '+260955000000',
+      })
+    );
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Account created!' }));
   });
 

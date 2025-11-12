@@ -1,6 +1,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { supabaseConfigStatus } from "@/config/appConfig";
+import { MSISDN_REGEX, normalizeMsisdn } from "@/utils/phone";
 
 type PaymentMethod = "mobile_money" | "card";
 
@@ -9,20 +10,6 @@ const PRESET_AMOUNTS = [20, 50, 100, 250];
 const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   mobile_money: "Mobile Money",
   card: "Card",
-};
-
-const MSISDN_REGEX = /^\+?[0-9]{9,15}$/;
-
-const normalizeMsisdn = (value: string): string => {
-  const trimmed = value.trim();
-  if (!trimmed) return "";
-  if (trimmed.startsWith("+")) {
-    return trimmed.replace(/\s+/g, "");
-  }
-
-  const digits = trimmed.replace(/\D+/g, "");
-  if (!digits) return "";
-  return `+${digits}`;
 };
 
 const formatCurrency = (amount: number) =>
