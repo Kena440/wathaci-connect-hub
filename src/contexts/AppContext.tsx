@@ -9,6 +9,7 @@ import {
 import { logSupabaseAuthError } from '@/lib/supabaseClient';
 import { toast } from '@/components/ui/use-toast';
 import type { User, Profile } from '@/@types/database';
+import { normalizeMsisdn, normalizePhoneNumber } from '@/utils/phone';
 
 const normalizeString = (value: unknown): string | null | undefined => {
   if (value === null || value === undefined) {
@@ -43,6 +44,31 @@ const prepareProfilePayload = (
 
   const mutableData: Record<string, unknown> = { ...userData };
 
+  const ensurePhoneValue = (value: unknown): string | null => {
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const normalized = normalizePhoneNumber(value);
+    return normalized ?? null;
+  };
+
+  const ensureMsisdnValue = (value: unknown): string | null => {
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const normalized = normalizeMsisdn(value);
+
+    if (!normalized && value.trim().length > 0 && typeof console !== 'undefined') {
+      console.warn('[prepareProfilePayload] Ignoring invalid MSISDN metadata value', {
+        value,
+      });
+    }
+
+    return normalized;
+  };
+
   if ('first_name' in mutableData) {
     const normalized = normalizeString(mutableData.first_name);
     mutableData.first_name = normalized ?? undefined;
@@ -68,17 +94,21 @@ const prepareProfilePayload = (
   }
 
   if ('mobile_number' in mutableData) {
-    const normalizedMobile = normalizeString(mutableData.mobile_number);
+    const normalizedMobile = ensureMsisdnValue(mutableData.mobile_number);
 
     if (normalizedMobile) {
       mutableData.phone = normalizedMobile;
+      mutableData.msisdn = normalizedMobile;
       if (!('payment_phone' in mutableData)) {
         mutableData.payment_phone = normalizedMobile;
       }
-    } else if (normalizedMobile === null) {
+    } else {
       mutableData.phone = null;
       if (!('payment_phone' in mutableData)) {
         mutableData.payment_phone = null;
+      }
+      if (!('msisdn' in mutableData)) {
+        mutableData.msisdn = null;
       }
     }
 
@@ -86,13 +116,21 @@ const prepareProfilePayload = (
   }
 
   if ('phone' in mutableData) {
-    const normalized = normalizeString(mutableData.phone);
-    mutableData.phone = normalized ?? undefined;
+    const normalized = ensurePhoneValue(mutableData.phone);
+    mutableData.phone = normalized ?? null;
   }
 
   if ('payment_phone' in mutableData) {
-    const normalized = normalizeString(mutableData.payment_phone);
+    const normalized = ensureMsisdnValue(mutableData.payment_phone);
     mutableData.payment_phone = normalized ?? null;
+    if (normalized && !('msisdn' in mutableData)) {
+      mutableData.msisdn = normalized;
+    }
+  }
+
+  if ('msisdn' in mutableData) {
+    const normalized = ensureMsisdnValue(mutableData.msisdn);
+    mutableData.msisdn = normalized ?? null;
   }
 
   if (!('payment_method' in mutableData) && typeof mutableData.phone === 'string' && mutableData.phone.length > 0) {

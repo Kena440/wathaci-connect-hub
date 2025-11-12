@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { UserTypeSubscriptions } from '@/components/UserTypeSubscriptions';
 import { accountTypes, type AccountTypeValue } from '@/data/accountTypes';
+import { normalizeMsisdn, normalizePhoneNumber } from '@/utils/phone';
 
 export const ProfileSetup = () => {
   const [selectedAccountType, setSelectedAccountType] = useState<AccountTypeValue | ''>('');
@@ -241,15 +242,31 @@ export const ProfileSetup = () => {
         ...profilePayload
       } = profileData;
 
+      const normalizedPrimaryPhone = normalizePhoneNumber(profilePayload.phone);
+      if (normalizedPrimaryPhone) {
+        profilePayload.phone = normalizedPrimaryPhone;
+      } else if (typeof profilePayload.phone === 'string' && profilePayload.phone.trim().length > 0) {
+        throw new Error('Please enter a valid phone number using digits only.');
+      } else {
+        profilePayload.phone = null;
+      }
+
       let paymentData: Record<string, unknown> = {};
+      let msisdnForProfile: string | null = null;
+
       if (use_same_phone) {
-        const phone = sanitizeValue(profilePayload.phone);
-        if (!phone) {
+        if (!profilePayload.phone) {
           throw new Error('Please provide a phone number for subscription payments.');
         }
 
+        const normalizedMsisdn = normalizeMsisdn(profilePayload.phone);
+        if (!normalizedMsisdn) {
+          throw new Error('Please provide a valid phone number in international format (9-15 digits).');
+        }
+
+        msisdnForProfile = normalizedMsisdn;
         paymentData = {
-          payment_phone: phone,
+          payment_phone: normalizedMsisdn,
           payment_method: 'phone',
         };
       } else if (payment_method === 'card') {
@@ -276,19 +293,25 @@ export const ProfileSetup = () => {
           throw new Error('Card details are required to process subscription payments.');
         }
 
+        const existingMsisdn = normalizeMsisdn(existingProfile?.msisdn);
+        if (existingMsisdn) {
+          msisdnForProfile = existingMsisdn;
+        }
+
         paymentData = {
           payment_method: 'card',
           card_details: cardDetails,
         };
       } else {
-        const paymentPhone = sanitizeValue(payment_phone);
-        if (!paymentPhone) {
-          throw new Error('Please provide the mobile money number to charge.');
+        const normalizedPaymentPhone = normalizeMsisdn(payment_phone);
+        if (!normalizedPaymentPhone) {
+          throw new Error('Please provide the mobile money number to charge in international format (9-15 digits).');
         }
 
+        msisdnForProfile = normalizedPaymentPhone;
         paymentData = {
           payment_method: 'phone',
-          payment_phone: paymentPhone,
+          payment_phone: normalizedPaymentPhone,
         };
       }
 
@@ -367,6 +390,23 @@ export const ProfileSetup = () => {
           }
         } else {
           sanitizedProfile[key] = value ?? null;
+        }
+      }
+
+      if (typeof sanitizedProfile.phone === 'string' && sanitizedProfile.phone) {
+        const normalizedPhone = normalizePhoneNumber(sanitizedProfile.phone as string);
+        sanitizedProfile.phone = normalizedPhone ?? sanitizedProfile.phone;
+      }
+
+      if (msisdnForProfile) {
+        sanitizedProfile.msisdn = msisdnForProfile;
+      } else if (typeof sanitizedProfile.msisdn === 'string' && sanitizedProfile.msisdn) {
+        const normalizedMsisdn = normalizeMsisdn(sanitizedProfile.msisdn as string);
+        sanitizedProfile.msisdn = normalizedMsisdn ?? sanitizedProfile.msisdn;
+      } else if (!('msisdn' in sanitizedProfile) && existingProfile?.msisdn) {
+        const normalizedExisting = normalizeMsisdn(existingProfile.msisdn);
+        if (normalizedExisting) {
+          sanitizedProfile.msisdn = normalizedExisting;
         }
       }
 

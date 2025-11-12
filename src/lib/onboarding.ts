@@ -6,6 +6,7 @@
  */
 
 import { supabaseClient as supabase } from "./supabaseClient";
+import { normalizeMsisdn, normalizePhoneNumber } from "@/utils/phone";
 
 export type AccountType = "sme" | "professional" | "donor" | "investor" | "government" | "sole_proprietor";
 
@@ -179,13 +180,14 @@ export async function upsertProfile(params: ProfileParams) {
   const payload: any = {
     id: user.id,
     account_type: params.account_type,
-    msisdn: sanitize(params.msisdn),
   };
 
-  // Validate msisdn is provided
-  if (!payload.msisdn) {
-    throw new Error("MSISDN (mobile money number) is required for all profiles.");
+  const normalizedMsisdn = normalizeMsisdn(params.msisdn);
+  if (!normalizedMsisdn) {
+    throw new Error("MSISDN (mobile money number) is required for all profiles and must include 9-15 digits.");
   }
+
+  payload.msisdn = normalizedMsisdn;
 
   // Add optional fields
   if (params.full_name) {
@@ -206,9 +208,10 @@ export async function upsertProfile(params: ProfileParams) {
 
   // Also store msisdn in phone field for compatibility
   if (!params.phone) {
-    payload.phone = payload.msisdn;
+    payload.phone = normalizedMsisdn;
   } else {
-    payload.phone = sanitize(params.phone);
+    const normalizedPhone = normalizePhoneNumber(params.phone);
+    payload.phone = normalizedPhone ?? sanitize(params.phone);
   }
 
   if (params.email) {

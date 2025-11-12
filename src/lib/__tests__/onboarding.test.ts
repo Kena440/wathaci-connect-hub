@@ -46,7 +46,7 @@ describe('onboarding helper', () => {
           account_type: 'sme',
           msisdn: '',
         })
-      ).rejects.toThrow('MSISDN (mobile money number) is required');
+      ).rejects.toThrow('MSISDN (mobile money number) is required for all profiles and must include 9-15 digits.');
     });
 
     it('successfully creates profile with required fields', async () => {
@@ -81,7 +81,7 @@ describe('onboarding helper', () => {
 
       const result = await upsertProfile({
         account_type: 'sme',
-        msisdn: '+260123456789',
+        msisdn: ' +260 123 456 789 ',
       });
 
       expect(result).toEqual(mockProfile);
@@ -142,16 +142,16 @@ describe('onboarding helper', () => {
 
       // Valid formats should work
       const validMsisdns = [
-        '+260123456789',
-        '260123456789',
-        '1234567890',
-        '+12345678901234',
+        { input: '+260123456789', expected: '+260123456789' },
+        { input: '260123456789', expected: '+260123456789' },
+        { input: '1234567890', expected: '+1234567890' },
+        { input: '+123 456 789 01234', expected: '+12345678901234' },
       ];
 
-      for (const msisdn of validMsisdns) {
+      for (const { input, expected } of validMsisdns) {
         const mockSelect = jest.fn().mockReturnValue({
           single: jest.fn().mockResolvedValue({
-            data: { msisdn },
+            data: { msisdn: expected },
             error: null,
           }),
         });
@@ -167,10 +167,32 @@ describe('onboarding helper', () => {
         await expect(
           upsertProfile({
             account_type: 'sme',
-            msisdn,
+            msisdn: input,
           })
         ).resolves.toBeDefined();
+
+        expect(mockUpsert).toHaveBeenCalledWith(
+          expect.objectContaining({
+            msisdn: expected,
+            phone: expected,
+          }),
+          { onConflict: 'id' }
+        );
       }
+    });
+
+    it('throws when msisdn length is invalid', async () => {
+      (supabaseClient.auth.getUser as jest.Mock).mockResolvedValue({
+        data: { user: { id: 'user-123', email: 'test@example.com' } },
+        error: null,
+      });
+
+      await expect(
+        upsertProfile({
+          account_type: 'sme',
+          msisdn: '+1234',
+        })
+      ).rejects.toThrow('MSISDN (mobile money number) is required for all profiles and must include 9-15 digits.');
     });
   });
 });
