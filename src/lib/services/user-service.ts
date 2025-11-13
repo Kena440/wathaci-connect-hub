@@ -4,6 +4,7 @@
 
 import { BaseService } from './base-service';
 import { supabase, withErrorHandling, resolveEnvValue } from '@/lib/supabase-enhanced';
+import { normalizeMsisdn } from '@/utils/phone';
 import type {
   User,
   Profile,
@@ -701,6 +702,36 @@ export class ProfileService extends BaseService<Profile> {
     const sanitizedProfileData = this.sanitizeProfileData(profileData);
     const { id: _ignoredId, created_at: _ignoredCreatedAt, updated_at: _ignoredUpdatedAt, ...profileFields } =
       sanitizedProfileData;
+
+    const msisdnCandidate =
+      (typeof profileFields.msisdn === 'string' && profileFields.msisdn) ||
+      (typeof profileFields.phone === 'string' && profileFields.phone) ||
+      (typeof profileData.msisdn === 'string' && profileData.msisdn) ||
+      (typeof profileData.phone === 'string' && profileData.phone) ||
+      undefined;
+
+    const normalizedMsisdn = normalizeMsisdn(msisdnCandidate);
+
+    if (!normalizedMsisdn) {
+      return {
+        data: null,
+        error: new Error('MSISDN (mobile money number) is required to create a profile.'),
+      };
+    }
+
+    profileFields.msisdn = normalizedMsisdn;
+
+    if (typeof profileFields.phone === 'string') {
+      profileFields.phone = normalizeMsisdn(profileFields.phone) ?? profileFields.phone;
+    } else if (!profileFields.phone) {
+      profileFields.phone = normalizedMsisdn;
+    }
+
+    if (typeof profileFields.payment_phone === 'string') {
+      profileFields.payment_phone = normalizeMsisdn(profileFields.payment_phone) ?? profileFields.payment_phone;
+    } else if (!profileFields.payment_phone) {
+      profileFields.payment_phone = normalizedMsisdn;
+    }
 
     const timestamp = new Date().toISOString();
     const profile = {

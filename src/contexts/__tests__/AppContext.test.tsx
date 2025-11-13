@@ -34,6 +34,18 @@ jest.mock('@/components/ui/use-toast', () => ({
   toast: (...args: any[]) => mockToast(...args),
 }));
 
+jest.mock('@/lib/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
+}));
+
+jest.mock('@/lib/supabaseClient', () => ({
+  logSupabaseAuthError: jest.fn(),
+}));
+
 const renderContext = async () => {
   let context: ReturnType<typeof useAppContext> | null = null;
 
@@ -94,9 +106,9 @@ describe('AppContext auth actions', () => {
 
     expect(mockSignUp).toHaveBeenCalledWith('new@example.com', 'Password123', {
       full_name: 'Test User',
-      msisdn: ' +260 955 000 000 ',
-      phone: '+260 955 000 000 ',
-      payment_phone: '+260 955 000 000 ',
+      msisdn: '+260955000000',
+      phone: '+260955000000',
+      payment_phone: '+260955000000',
     });
 
     expect(mockCreateProfile).toHaveBeenCalledWith(
