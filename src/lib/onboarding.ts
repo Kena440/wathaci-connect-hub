@@ -5,7 +5,7 @@
  * saves for all account types during the onboarding flow.
  */
 
-import { supabaseClient as supabase } from "./supabaseClient";
+import { supabaseClient as supabase, logProfileOperation } from "./supabaseClient";
 import { normalizeMsisdn, normalizePhoneNumber } from "@/utils/phone";
 
 export type AccountType = "sme" | "professional" | "donor" | "investor" | "government" | "sole_proprietor";
@@ -164,8 +164,15 @@ export async function upsertProfile(params: ProfileParams) {
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
+    logProfileOperation('upsert-profile-no-auth', { error: userError?.message });
     throw new Error("User not authenticated; cannot create profile.");
   }
+
+  logProfileOperation('upsert-profile-start', { 
+    userId: user.id,
+    accountType: params.account_type,
+    hasMsisdn: !!params.msisdn 
+  });
 
   // Sanitize string values
   const sanitize = (value: any): any => {
@@ -184,6 +191,10 @@ export async function upsertProfile(params: ProfileParams) {
 
   const normalizedMsisdn = normalizeMsisdn(params.msisdn);
   if (!normalizedMsisdn) {
+    logProfileOperation('upsert-profile-invalid-msisdn', { 
+      userId: user.id,
+      msisdn: params.msisdn 
+    });
     throw new Error("MSISDN (mobile money number) is required for all profiles and must include 9-15 digits.");
   }
 
@@ -227,6 +238,11 @@ export async function upsertProfile(params: ProfileParams) {
     }
   }
 
+  logProfileOperation('upsert-profile-executing', { 
+    userId: user.id,
+    fieldCount: Object.keys(payload).length 
+  });
+
   const { data, error } = await supabase
     .from("profiles")
     .upsert(payload, { onConflict: "id" })
@@ -235,8 +251,17 @@ export async function upsertProfile(params: ProfileParams) {
 
   if (error) {
     console.error("Profile upsert error:", error);
+    logProfileOperation('upsert-profile-error', { 
+      userId: user.id,
+      error: error.message 
+    });
     throw new Error(`Failed to save profile: ${error.message}`);
   }
+
+  logProfileOperation('upsert-profile-success', { 
+    userId: user.id,
+    profileCompleted: data.profile_completed 
+  });
 
   return data;
 }
