@@ -130,7 +130,7 @@ jobs:
 ```sql
 create table if not exists public.donations (
   id uuid primary key default gen_random_uuid(),
-  donor_user_id uuid references auth.users(id),
+  donor_user_id uuid references public.profiles(id) on delete cascade,
   campaign_id uuid,
   amount numeric not null,
   currency text not null default 'ZMW',

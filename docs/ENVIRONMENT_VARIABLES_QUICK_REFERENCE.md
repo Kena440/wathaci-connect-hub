@@ -36,6 +36,12 @@ npm run env:check
 | `VITE_MAX_PAYMENT_AMOUNT` | Maximum payment amount | `50000` | All |
 | `VITE_APP_ENV` | Runtime environment | `production` or `development` | All |
 | `VITE_APP_NAME` | Application display name | `WATHACI CONNECT` | All |
+| `VITE_MAINTENANCE_MODE` | When `true`, shows maintenance banner and disables sign-ups by default | `false` | All |
+| `VITE_MAINTENANCE_ALLOW_SIGNIN` | Allow sign-in during maintenance | `true` | All |
+| `VITE_MAINTENANCE_ALLOW_SIGNUP` | Allow sign-up during maintenance | `false` when maintenance active | All |
+| `VITE_MAINTENANCE_BANNER_TITLE` | Custom banner heading during maintenance | `Scheduled maintenance in progress` | All |
+| `VITE_MAINTENANCE_BANNER_MESSAGE` | Custom banner body copy during maintenance | `We are preparing Wathaci Connect for production launch...` | All |
+| `VITE_MAINTENANCE_ALLOWED_EMAIL_DOMAINS` | Comma-separated domain allowlist for temporary access messaging | `wathaci.com` | All |
 
 ### Backend (backend/.env files)
 
