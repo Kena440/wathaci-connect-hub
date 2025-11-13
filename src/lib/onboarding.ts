@@ -7,6 +7,7 @@
 
 import { supabaseClient as supabase } from "./supabaseClient";
 import { normalizeMsisdn, normalizePhoneNumber } from "@/utils/phone";
+import { logger } from "@/lib/logger";
 
 export type AccountType = "sme" | "professional" | "donor" | "investor" | "government" | "sole_proprietor";
 
@@ -158,12 +159,22 @@ export interface InvestorNeedsAssessmentPayload {
  * Create or update a user profile
  */
 export async function upsertProfile(params: ProfileParams) {
+  logger.info("Starting onboarding profile upsert", {
+    component: "onboarding",
+    event: "onboarding:profile:upsert:start",
+    accountType: params.account_type,
+  });
+
   const {
     data: { user },
     error: userError,
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
+    logger.error("Profile upsert aborted: user not authenticated", userError, {
+      component: "onboarding",
+      event: "onboarding:profile:upsert:no-user",
+    });
     throw new Error("User not authenticated; cannot create profile.");
   }
 
@@ -234,9 +245,19 @@ export async function upsertProfile(params: ProfileParams) {
     .single();
 
   if (error) {
-    console.error("Profile upsert error:", error);
+    logger.error("Profile upsert failed", error, {
+      component: "onboarding",
+      event: "onboarding:profile:upsert:error",
+      userId: user.id,
+    });
     throw new Error(`Failed to save profile: ${error.message}`);
   }
+
+  logger.info("Profile upsert completed", {
+    component: "onboarding",
+    event: "onboarding:profile:upsert:success",
+    userId: user.id,
+  });
 
   return data;
 }

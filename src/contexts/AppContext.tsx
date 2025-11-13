@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import {
   userService,
   profileService,
@@ -7,9 +7,32 @@ import {
   OFFLINE_PROFILE_METADATA_KEY,
 } from '@/lib/services';
 import { logSupabaseAuthError } from '@/lib/supabaseClient';
+import { logger, type LogContext } from '@/lib/logger';
 import { toast } from '@/components/ui/use-toast';
 import type { User, Profile } from '@/@types/database';
 import { normalizeMsisdn, normalizePhoneNumber } from '@/utils/phone';
+
+type AuthLogContext = LogContext & {
+  event?: string;
+  phase?: string;
+};
+
+const withAuthContext = (context: AuthLogContext = {}): AuthLogContext => ({
+  component: 'AppContext',
+  ...context,
+});
+
+const logInfo = (message: string, context?: AuthLogContext) => {
+  logger.info(message, withAuthContext(context));
+};
+
+const logWarn = (message: string, context?: AuthLogContext) => {
+  logger.warn(message, withAuthContext(context));
+};
+
+const logError = (message: string, error?: unknown, context?: AuthLogContext) => {
+  logger.error(message, error, withAuthContext(context));
+};
 
 const normalizeString = (value: unknown): string | null | undefined => {
   if (value === null || value === undefined) {
@@ -143,6 +166,10 @@ const prepareProfilePayload = (
     payload[key] = value;
   }
 
+  if (typeof payload.msisdn !== 'string' || !payload.msisdn.trim()) {
+    throw new Error('MSISDN (mobile money number) is required to create a profile.');
+  }
+
   return payload as Partial<Profile>;
 };
 
@@ -227,12 +254,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const refreshPromiseRef = useRef<Promise<AuthState> | null>(null);
 
   const toggleSidebar = () => {
     setSidebarOpen(prev => !prev);
   };
 
-  const resolveOfflineAuthState = (authUser: User | null): AuthState | null => {
+  const resolveOfflineAuthState = useCallback((authUser: User | null): AuthState | null => {
     if (!authUser) {
       return null;
     }
@@ -265,27 +293,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     persistOfflineSession(offlineState);
     setLoading(false);
 
+    logInfo('Resolved offline authentication state', {
+      event: 'auth:offline-session',
+      userId: authUser.id,
+    });
+
     return offlineState;
-  };
+  }, []);
 
-  const refreshUser = async (): Promise<AuthState> => {
-    let currentUser: User | null = null;
-    let currentProfile: Profile | null = null;
-    const offlineSession = loadOfflineSession();
+  const refreshUser = useCallback(async (): Promise<AuthState> => {
+    if (refreshPromiseRef.current) {
+      logInfo('Coalescing refreshUser request while an existing refresh is in progress', {
+        event: 'auth:refresh:coalesced',
+      });
+      return refreshPromiseRef.current;
+    }
 
-    const resolveOfflineSession = (): AuthState => {
-      if (offlineSession?.user) {
-        currentUser = offlineSession.user;
-        currentProfile = offlineSession.profile;
-        setUser(offlineSession.user);
-        setProfile(offlineSession.profile);
-        return { user: offlineSession.user, profile: offlineSession.profile };
-      }
+    const refreshTask = (async (): Promise<AuthState> => {
+      logInfo('Starting refreshUser execution', { event: 'auth:refresh:start' });
 
-      setUser(null);
-      setProfile(null);
-      return { user: null, profile: null };
-    };
+      let currentUser: User | null = null;
+      let currentProfile: Profile | null = null;
+      const offlineSession = loadOfflineSession();
+
+      const resolveOfflineSession = (): AuthState => {
+        if (offlineSession?.user) {
+          currentUser = offlineSession.user;
+          currentProfile = offlineSession.profile;
+          setUser(offlineSession.user);
+          setProfile(offlineSession.profile);
+          logInfo('Returning offline session snapshot', {
+            event: 'auth:refresh:offline',
+            userId: offlineSession.user.id,
+          });
+          return { user: offlineSession.user, profile: offlineSession.profile };
+        }
+
+        setUser(null);
+        setProfile(null);
+        return { user: null, profile: null };
+      };
 
     try {
       setLoading(true);
@@ -299,6 +346,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
 
         clearOfflineSession();
+        logWarn('No authenticated user during refresh; cleared offline session', {
+          event: 'auth:refresh:no-session',
+        });
         return resolveOfflineSession();
       }
 
@@ -306,6 +356,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       currentUser = authUser;
       setUser(authUser);
+
+      logInfo('Authenticated user loaded from Supabase', {
+        event: 'auth:refresh:user-loaded',
+        userId: authUser.id,
+      });
 
       const metadata = authUser.user_metadata || {};
 
@@ -315,7 +370,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (profileError) {
         const profileErrorCode = (profileError as any)?.code;
         const profileErrorMessage = profileError.message?.toLowerCase() || '';
-        const isNotFound = profileErrorCode === 'PGRST116' ||
+        const isNotFound =
+          profileErrorCode === 'PGRST116' ||
           profileErrorMessage.includes('no rows') ||
           profileErrorMessage.includes('not found');
 
@@ -326,6 +382,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               : undefined
           );
 
+          const msisdnFromMetadata = normalizeMsisdn(
+            typeof metadata.msisdn === 'string'
+              ? metadata.msisdn
+              : typeof metadata.payment_phone === 'string'
+              ? metadata.payment_phone
+              : typeof metadata.phone === 'string'
+              ? metadata.phone
+              : typeof metadata.mobile_number === 'string'
+              ? metadata.mobile_number
+              : undefined,
+          );
+
+          if (!msisdnFromMetadata) {
+            logWarn('Profile not found and MSISDN missing in metadata; skipping auto-creation', {
+              event: 'auth:refresh:profile-missing-msisdn',
+              userId: authUser.id,
+            });
+            setProfile(null);
+            return { user: authUser, profile: null };
+          }
+
           const inferredProfilePayload = {
             email: authUser.email,
             account_type: metadata.account_type,
@@ -334,6 +411,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             first_name: metadata.first_name,
             last_name: metadata.last_name,
             company: metadata.company,
+            msisdn: msisdnFromMetadata,
+            phone: msisdnFromMetadata,
           };
 
           const filteredPayload = Object.fromEntries(
@@ -356,12 +435,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
             currentUser = enrichedUser;
             setUser(enrichedUser);
+            logInfo('Reconstructed profile after missing profile detection', {
+              event: 'auth:refresh:profile-recreated',
+              userId: authUser.id,
+            });
           } else if (creationError) {
-            console.error('Error creating inferred profile:', creationError);
+            logError('Error creating inferred profile during refresh', creationError, {
+              event: 'auth:refresh:profile-recreate-error',
+              userId: authUser.id,
+            });
             setProfile(null);
           }
         } else {
-          console.error('Error fetching user profile:', profileError);
+          logError('Unexpected error fetching user profile', profileError, {
+            event: 'auth:refresh:profile-error',
+            userId: authUser.id,
+          });
           setProfile(null);
         }
       } else {
@@ -378,10 +467,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
           currentUser = enrichedUser;
           setUser(enrichedUser);
+          logInfo('Loaded profile for authenticated user', {
+            event: 'auth:refresh:profile-loaded',
+            userId: authUser.id,
+          });
         }
       }
     } catch (error) {
-      console.error('Error refreshing user:', error);
+      logError('Error refreshing authenticated user state', error, {
+        event: 'auth:refresh:exception',
+        userId: user?.id ?? undefined,
+      });
       if (offlineSession?.user) {
         return resolveOfflineSession();
       }
@@ -394,13 +490,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setLoading(false);
     }
 
-    return {
+    const nextState: AuthState = {
       user: currentUser,
       profile: currentProfile,
     };
-  };
+
+    logInfo('Completed refreshUser execution', {
+      event: 'auth:refresh:complete',
+      userId: currentUser?.id,
+      hasProfile: Boolean(currentProfile),
+    });
+
+    return nextState;
+  })()
+      .finally(() => {
+        refreshPromiseRef.current = null;
+      });
+
+    refreshPromiseRef.current = refreshTask;
+
+    return refreshTask;
+  }, [resolveOfflineAuthState, user?.id]);
 
   const signIn = async (email: string, password: string): Promise<AuthState> => {
+    logInfo('Initiating sign-in flow', { event: 'auth:signIn:start' });
     const { data: authUser, error } = await userService.signIn(email, password);
 
     if (error) {
@@ -416,12 +529,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       logSupabaseAuthError('signIn', error);
+      logError('Sign-in failed', error, {
+        event: 'auth:signIn:error',
+      });
       throw new Error(errorMessage);
     }
 
     const offlineState = resolveOfflineAuthState(authUser ?? null);
 
     if (offlineState) {
+      logInfo('Signed in using offline account metadata', {
+        event: 'auth:signIn:offline',
+        userId: offlineState.user?.id,
+      });
       toast({
         title: 'Welcome back!',
         description: 'You have been signed in successfully.',
@@ -433,6 +553,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     clearOfflineSession();
 
     if (!authUser) {
+      logWarn('Supabase did not return an auth user after sign-in', {
+        event: 'auth:signIn:no-user',
+      });
       throw new Error('Sign in failed. Please try again.');
     }
 
@@ -454,11 +577,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         : 'Sign in succeeded. Complete your profile to unlock full access.',
     });
 
+    logInfo('Sign-in flow completed', {
+      event: 'auth:signIn:success',
+      userId: finalState.user?.id ?? authUser.id,
+      hasProfile: Boolean(finalState.profile),
+    });
+
     return finalState;
   };
 
   const signUp = async (email: string, password: string, userData?: any): Promise<AuthState> => {
-    const { data: user, error } = await userService.signUp(email, password, userData);
+    logInfo('Initiating sign-up flow', { event: 'auth:signUp:start' });
+
+    if (!userData || typeof userData.msisdn !== 'string') {
+      logError('Sign-up attempted without MSISDN payload', null, {
+        event: 'auth:signUp:missing-msisdn',
+      });
+      throw new Error('A valid mobile money number (MSISDN) is required to create an account.');
+    }
+
+    const normalizedMsisdn = normalizeMsisdn(userData.msisdn);
+
+    if (!normalizedMsisdn) {
+      logError('Sign-up attempted with invalid MSISDN payload', null, {
+        event: 'auth:signUp:invalid-msisdn',
+      });
+      throw new Error('Please provide a valid mobile money number (including country code).');
+    }
+
+    const sanitizedMetadata = {
+      ...userData,
+      msisdn: normalizedMsisdn,
+      phone: normalizeMsisdn(userData.phone) ?? normalizePhoneNumber(userData.phone) ?? normalizedMsisdn,
+      payment_phone:
+        userData.payment_phone
+          ? normalizeMsisdn(userData.payment_phone) ?? normalizePhoneNumber(userData.payment_phone) ?? normalizedMsisdn
+          : normalizedMsisdn,
+    };
+
+    const { data: user, error } = await userService.signUp(email, password, sanitizedMetadata);
 
     if (error) {
       // Provide user-friendly error messages
@@ -474,40 +631,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       logSupabaseAuthError('signUp', error);
+      logError('Sign-up failed', error, {
+        event: 'auth:signUp:error',
+      });
       throw new Error(errorMessage);
     }
-    
+
     let createdProfile: Profile | null = null;
 
     if (user) {
-      const profilePayload = prepareProfilePayload(user.email, userData);
+      try {
+        const profilePayload = prepareProfilePayload(user.email, sanitizedMetadata);
 
-      const { data: newProfile, error: profileError } = await profileService.createProfile(
-        user.id,
-        profilePayload,
-      );
+        const { data: newProfile, error: profileError } = await profileService.createProfile(
+          user.id,
+          profilePayload,
+        );
 
-      if (profileError) {
-        const message = profileError.message?.toLowerCase() || '';
-        const profileErrorCode = (profileError as any)?.code;
-        const isAuthPending = profileErrorCode === 'PGRST301' ||
-          profileErrorCode === '401' ||
-          profileErrorCode === '42501' ||
-          message.includes('jwt') ||
-          message.includes('unauthorized') ||
-          message.includes('row-level security');
+        if (profileError) {
+          const message = profileError.message?.toLowerCase() || '';
+          const profileErrorCode = (profileError as any)?.code;
+          const isAuthPending =
+            profileErrorCode === 'PGRST301' ||
+            profileErrorCode === '401' ||
+            profileErrorCode === '42501' ||
+            message.includes('jwt') ||
+            message.includes('unauthorized') ||
+            message.includes('row-level security');
 
-        if (!isAuthPending) {
-          let profileErrorMessage = 'Failed to create user profile';
+          if (!isAuthPending) {
+            let profileErrorMessage = 'Failed to create user profile';
 
-          if (message.includes('network') || message.includes('fetch')) {
-            profileErrorMessage = 'Account created but profile setup failed due to network issues. Please try signing in.';
+            if (message.includes('network') || message.includes('fetch')) {
+              profileErrorMessage = 'Account created but profile setup failed due to network issues. Please try signing in.';
+            }
+
+            logError('Profile creation failed during sign-up', profileError, {
+              event: 'auth:signUp:profile-error',
+              userId: user.id,
+            });
+            throw new Error(profileErrorMessage);
           }
 
-          throw new Error(profileErrorMessage);
+          logWarn('Profile creation deferred until email confirmation completes', {
+            event: 'auth:signUp:profile-pending',
+            userId: user.id,
+          });
+        } else {
+          createdProfile = newProfile || null;
+          logInfo('Profile created during sign-up', {
+            event: 'auth:signUp:profile-created',
+            userId: user.id,
+          });
         }
-      } else {
-        createdProfile = newProfile || null;
+      } catch (creationError) {
+        if (creationError instanceof Error) {
+          throw creationError;
+        }
+
+        throw new Error('Failed to create user profile');
       }
     }
 
@@ -518,7 +700,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     
     toast({
       title: "Account created!",
-      description: sessionActive 
+      description: sessionActive
         ? "You're all set! Complete your profile to get started."
         : "Please check your email to verify your account.",
     });
@@ -532,14 +714,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!refreshedState.user) {
       const fallbackUser: User = {
         ...user,
-        profile_completed: createdProfile?.profile_completed ?? userData?.profile_completed ?? false,
-        account_type: createdProfile?.account_type ?? userData?.account_type,
+        profile_completed: createdProfile?.profile_completed ?? sanitizedMetadata?.profile_completed ?? false,
+        account_type: createdProfile?.account_type ?? sanitizedMetadata?.account_type,
       };
       setUser(fallbackUser);
 
       if (createdProfile) {
         setProfile(createdProfile);
       }
+
+      logInfo('Sign-up completed without active session; returning fallback state', {
+        event: 'auth:signUp:fallback-state',
+        userId: fallbackUser.id,
+        hasProfile: Boolean(createdProfile),
+      });
 
       return {
         user: fallbackUser,
@@ -549,11 +737,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (!refreshedState.profile && createdProfile) {
       setProfile(createdProfile);
+      logInfo('Attached eagerly created profile to refreshed state', {
+        event: 'auth:signUp:profile-attached',
+        userId: refreshedState.user?.id ?? user.id,
+      });
       return {
         user: refreshedState.user,
         profile: createdProfile,
       };
     }
+
+    logInfo('Sign-up flow completed', {
+      event: 'auth:signUp:success',
+      userId: refreshedState.user?.id ?? user.id,
+      hasProfile: Boolean(refreshedState.profile ?? createdProfile),
+    });
 
     return refreshedState;
   };
@@ -573,6 +771,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         description: "You have been logged out.",
       });
     } catch (error: any) {
+      logError('Error during sign-out', error, {
+        event: 'auth:signOut:error',
+        userId: user?.id ?? undefined,
+      });
       toast({
         title: "Error signing out",
         description: error.message,
@@ -602,7 +804,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [refreshUser]);
 
   return (
     <AppContext.Provider
