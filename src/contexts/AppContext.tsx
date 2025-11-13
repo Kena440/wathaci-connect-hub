@@ -6,7 +6,7 @@ import {
   OFFLINE_ACCOUNT_METADATA_KEY,
   OFFLINE_PROFILE_METADATA_KEY,
 } from '@/lib/services';
-import { logSupabaseAuthError } from '@/lib/supabaseClient';
+import { logSupabaseAuthError, logAuthStateChange, logProfileOperation } from '@/lib/supabaseClient';
 import { logger, type LogContext } from '@/lib/logger';
 import { toast } from '@/components/ui/use-toast';
 import type { User, Profile } from '@/@types/database';
@@ -164,10 +164,6 @@ const prepareProfilePayload = (
 
   for (const [key, value] of sanitizedEntries) {
     payload[key] = value;
-  }
-
-  if (typeof payload.msisdn !== 'string' || !payload.msisdn.trim()) {
-    throw new Error('MSISDN (mobile money number) is required to create a profile.');
   }
 
   return payload as Partial<Profile>;
@@ -419,10 +415,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             Object.entries(inferredProfilePayload).filter(([, value]) => value !== undefined && value !== null)
           ) as Partial<Profile>;
 
-          const { data: createdProfile, error: creationError } = await profileService.createProfile(
-            authUser.id,
-            filteredPayload,
-          );
+          logProfileOperation('profile-payload-prepared', { 
+            userId: authUser.id,
+            hasPhone: !!filteredPayload.phone,
+            hasMsisdn: !!filteredPayload.msisdn 
+          });
+
+          // Retry logic for profile creation (handles race conditions)
+          let createdProfile: Profile | null = null;
+          let creationError: any = null;
+          const maxRetries = 3;
+          
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            logProfileOperation('profile-creation-attempt', { userId: authUser.id, attempt });
+            
+            const result = await profileService.createProfile(authUser.id, filteredPayload);
+            
+            if (!result.error && result.data) {
+              createdProfile = result.data;
+              logProfileOperation('profile-created-successfully', { userId: authUser.id, attempt });
+              break;
+            }
+            
+            creationError = result.error;
+            const errorCode = (creationError as any)?.code;
+            const errorMsg = creationError?.message?.toLowerCase() || '';
+            
+            // If it's a duplicate error, try to fetch the existing profile
+            if (errorCode === '23505' || errorMsg.includes('duplicate') || errorMsg.includes('already exists')) {
+              logProfileOperation('profile-already-exists-fetching', { userId: authUser.id, attempt });
+              const { data: existingProfile } = await profileService.getByUserId(authUser.id);
+              if (existingProfile) {
+                createdProfile = existingProfile;
+                logProfileOperation('existing-profile-fetched', { userId: authUser.id });
+                break;
+              }
+            }
+            
+            // Wait before retry (exponential backoff)
+            if (attempt < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, attempt * 500));
+            }
+          }
 
           if (!creationError && createdProfile) {
             setProfile(createdProfile);
@@ -439,10 +473,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               event: 'auth:refresh:profile-recreated',
               userId: authUser.id,
             });
+            logProfileOperation('profile-bootstrapped', { 
+              userId: authUser.id,
+              profileCompleted: createdProfile.profile_completed 
+            });
           } else if (creationError) {
             logError('Error creating inferred profile during refresh', creationError, {
               event: 'auth:refresh:profile-recreate-error',
               userId: authUser.id,
+            });
+            logProfileOperation('profile-creation-failed', { 
+              userId: authUser.id, 
+              error: creationError.message 
             });
             setProfile(null);
           }
@@ -589,33 +631,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const signUp = async (email: string, password: string, userData?: any): Promise<AuthState> => {
     logInfo('Initiating sign-up flow', { event: 'auth:signUp:start' });
 
-    if (!userData || typeof userData.msisdn !== 'string') {
-      logError('Sign-up attempted without MSISDN payload', null, {
-        event: 'auth:signUp:missing-msisdn',
-      });
-      throw new Error('A valid mobile money number (MSISDN) is required to create an account.');
-    }
-
-    const normalizedMsisdn = normalizeMsisdn(userData.msisdn);
-
-    if (!normalizedMsisdn) {
-      logError('Sign-up attempted with invalid MSISDN payload', null, {
-        event: 'auth:signUp:invalid-msisdn',
-      });
-      throw new Error('Please provide a valid mobile money number (including country code).');
-    }
-
-    const sanitizedMetadata = {
-      ...userData,
-      msisdn: normalizedMsisdn,
-      phone: normalizeMsisdn(userData.phone) ?? normalizePhoneNumber(userData.phone) ?? normalizedMsisdn,
-      payment_phone:
-        userData.payment_phone
-          ? normalizeMsisdn(userData.payment_phone) ?? normalizePhoneNumber(userData.payment_phone) ?? normalizedMsisdn
-          : normalizedMsisdn,
-    };
-
-    const { data: user, error } = await userService.signUp(email, password, sanitizedMetadata);
+    const { data: user, error } = await userService.signUp(email, password, userData);
 
     if (error) {
       // Provide user-friendly error messages
@@ -640,56 +656,105 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let createdProfile: Profile | null = null;
 
     if (user) {
-      try {
-        const profilePayload = prepareProfilePayload(user.email, sanitizedMetadata);
+      const profilePayload = prepareProfilePayload(user.email, userData);
+      logProfileOperation('creating-profile-for-new-user', { 
+        userId: user.id,
+        hasPhone: !!profilePayload.phone,
+        hasMsisdn: !!profilePayload.msisdn 
+      });
 
-        const { data: newProfile, error: profileError } = await profileService.createProfile(
-          user.id,
-          profilePayload,
-        );
-
-        if (profileError) {
-          const message = profileError.message?.toLowerCase() || '';
-          const profileErrorCode = (profileError as any)?.code;
-          const isAuthPending =
-            profileErrorCode === 'PGRST301' ||
-            profileErrorCode === '401' ||
-            profileErrorCode === '42501' ||
-            message.includes('jwt') ||
-            message.includes('unauthorized') ||
-            message.includes('row-level security');
-
-          if (!isAuthPending) {
-            let profileErrorMessage = 'Failed to create user profile';
-
-            if (message.includes('network') || message.includes('fetch')) {
-              profileErrorMessage = 'Account created but profile setup failed due to network issues. Please try signing in.';
-            }
-
-            logError('Profile creation failed during sign-up', profileError, {
-              event: 'auth:signUp:profile-error',
-              userId: user.id,
-            });
-            throw new Error(profileErrorMessage);
-          }
-
-          logWarn('Profile creation deferred until email confirmation completes', {
-            event: 'auth:signUp:profile-pending',
-            userId: user.id,
-          });
-        } else {
-          createdProfile = newProfile || null;
+      // Retry logic for profile creation (handles race conditions)
+      let profileError: any = null;
+      const maxRetries = 3;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        logProfileOperation('signup-profile-creation-attempt', { userId: user.id, attempt });
+        
+        const result = await profileService.createProfile(user.id, profilePayload);
+        
+        if (!result.error && result.data) {
+          createdProfile = result.data;
           logInfo('Profile created during sign-up', {
             event: 'auth:signUp:profile-created',
             userId: user.id,
           });
+          logProfileOperation('signup-profile-created', { userId: user.id, attempt });
+          break;
         }
-      } catch (creationError) {
-        if (creationError instanceof Error) {
-          throw creationError;
+        
+        profileError = result.error;
+        const message = profileError?.message?.toLowerCase() || '';
+        const profileErrorCode = (profileError as any)?.code;
+        const isAuthPending = profileErrorCode === 'PGRST301' ||
+          profileErrorCode === '401' ||
+          profileErrorCode === '42501' ||
+          message.includes('jwt') ||
+          message.includes('unauthorized') ||
+          message.includes('row-level security');
+
+        // If it's a duplicate error, try to fetch the existing profile
+        const isDuplicate = profileErrorCode === '23505' || 
+          message.includes('duplicate') || 
+          message.includes('already exists');
+          
+        if (isDuplicate) {
+          logProfileOperation('signup-profile-duplicate-fetching', { userId: user.id, attempt });
+          const { data: existingProfile } = await profileService.getByUserId(user.id);
+          if (existingProfile) {
+            createdProfile = existingProfile;
+            logProfileOperation('signup-existing-profile-fetched', { userId: user.id });
+            break;
+          }
         }
 
-        throw new Error('Failed to create user profile');
+        if (!isAuthPending && !isDuplicate) {
+          // For non-auth errors, log and potentially fail
+          let profileErrorMessage = 'Failed to create user profile';
+
+          if (message.includes('network') || message.includes('fetch')) {
+            profileErrorMessage = 'Account created but profile setup failed due to network issues. Please try signing in.';
+          }
+
+          logError('Profile creation failed during sign-up', profileError, {
+            event: 'auth:signUp:profile-error',
+            userId: user.id,
+          });
+          logProfileOperation('signup-profile-error', { 
+            userId: user.id,
+            errorCode: profileErrorCode,
+            message: profileErrorMessage 
+          });
+          
+          // Don't throw - allow signup to complete even if profile creation initially fails
+          // The profile will be created on next login via refreshUser
+          break;
+        }
+
+        if (isAuthPending) {
+          logWarn('Profile creation deferred until email confirmation completes', {
+            event: 'auth:signUp:profile-pending',
+            userId: user.id,
+          });
+          break;
+        }
+        
+        // Wait before retry (exponential backoff)
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, attempt * 500));
+        }
+      }
+      
+      if (createdProfile) {
+        logProfileOperation('signup-profile-ready', { 
+          userId: user.id,
+          profileCompleted: createdProfile.profile_completed 
+        });
+      } else if (profileError) {
+        logProfileOperation('signup-profile-creation-skipped', { 
+          userId: user.id,
+          error: profileError.message,
+          note: 'Profile will be created on first login' 
+        });
       }
     }
 
@@ -714,8 +779,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!refreshedState.user) {
       const fallbackUser: User = {
         ...user,
-        profile_completed: createdProfile?.profile_completed ?? sanitizedMetadata?.profile_completed ?? false,
-        account_type: createdProfile?.account_type ?? sanitizedMetadata?.account_type,
+        profile_completed: createdProfile?.profile_completed ?? userData?.profile_completed ?? false,
+        account_type: createdProfile?.account_type ?? userData?.account_type,
       };
       setUser(fallbackUser);
 
