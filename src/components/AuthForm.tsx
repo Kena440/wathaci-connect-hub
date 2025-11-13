@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -52,6 +52,8 @@ interface AuthFormProps {
   mode: AuthMode;
   redirectTo?: string;
   onSuccess?: () => void;
+  disabled?: boolean;
+  disabledReason?: string;
 }
 
 const normalizePhone = (value: string | undefined) => {
@@ -60,10 +62,11 @@ const normalizePhone = (value: string | undefined) => {
   return normalized ?? undefined;
 };
 
-export const AuthForm = ({ mode, redirectTo, onSuccess }: AuthFormProps) => {
+export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabledReason }: AuthFormProps) => {
   const navigate = useNavigate();
   const { signIn, signUp } = useAppContext();
   const [formError, setFormError] = useState<string | null>(null);
+  const [maintenanceNotice, setMaintenanceNotice] = useState<string | null>(disabled ? disabledReason ?? null : null);
 
   const {
     register,
@@ -86,8 +89,24 @@ export const AuthForm = ({ mode, redirectTo, onSuccess }: AuthFormProps) => {
     }
   };
 
+  useEffect(() => {
+    if (disabled) {
+      setMaintenanceNotice(disabledReason ?? null);
+    } else {
+      setMaintenanceNotice(null);
+    }
+  }, [disabled, disabledReason]);
+
+  const isFormDisabled = disabled || isSubmitting;
+
   const onSubmit = async (values: SignInValues | SignUpValues) => {
+    if (disabled) {
+      setMaintenanceNotice(disabledReason ?? 'Authentication is temporarily unavailable.');
+      return;
+    }
+
     setFormError(null);
+    setMaintenanceNotice(null);
 
     try {
       if (mode === 'signin') {
@@ -119,9 +138,15 @@ export const AuthForm = ({ mode, redirectTo, onSuccess }: AuthFormProps) => {
         </Alert>
       )}
 
+      {maintenanceNotice && (
+        <Alert>
+          <AlertDescription>{maintenanceNotice}</AlertDescription>
+        </Alert>
+      )}
+
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email" autoComplete="email" {...register('email')} />
+        <Input id="email" type="email" autoComplete="email" disabled={isFormDisabled} {...register('email')} />
         {errors.email?.message && (
           <p className="text-sm text-red-600">{errors.email.message}</p>
         )}
@@ -129,7 +154,13 @@ export const AuthForm = ({ mode, redirectTo, onSuccess }: AuthFormProps) => {
 
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
-        <Input id="password" type="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} {...register('password')} />
+        <Input
+          id="password"
+          type="password"
+          autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+          disabled={isFormDisabled}
+          {...register('password')}
+        />
         {errors.password?.message && (
           <p className="text-sm text-red-600">{errors.password.message}</p>
         )}
@@ -139,7 +170,13 @@ export const AuthForm = ({ mode, redirectTo, onSuccess }: AuthFormProps) => {
         <>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm password</Label>
-            <Input id="confirmPassword" type="password" autoComplete="new-password" {...register('confirmPassword')} />
+            <Input
+              id="confirmPassword"
+              type="password"
+              autoComplete="new-password"
+              disabled={isFormDisabled}
+              {...register('confirmPassword')}
+            />
             {errors.confirmPassword?.message && (
               <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>
             )}
@@ -147,7 +184,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess }: AuthFormProps) => {
 
           <div className="space-y-2">
             <Label htmlFor="fullName">Full name (optional)</Label>
-            <Input id="fullName" type="text" autoComplete="name" {...register('fullName')} />
+            <Input id="fullName" type="text" autoComplete="name" disabled={isFormDisabled} {...register('fullName')} />
             {errors.fullName?.message && (
               <p className="text-sm text-red-600">{errors.fullName.message}</p>
             )}
@@ -155,7 +192,14 @@ export const AuthForm = ({ mode, redirectTo, onSuccess }: AuthFormProps) => {
 
           <div className="space-y-2">
             <Label htmlFor="phone">Phone (used for MSISDN)</Label>
-            <Input id="phone" type="tel" placeholder="e.g. +26097XXXXXXX" autoComplete="tel" {...register('phone')} />
+            <Input
+              id="phone"
+              type="tel"
+              placeholder="e.g. +26097XXXXXXX"
+              autoComplete="tel"
+              disabled={isFormDisabled}
+              {...register('phone')}
+            />
             {errors.phone?.message && (
               <p className="text-sm text-red-600">{errors.phone.message}</p>
             )}
@@ -163,8 +207,14 @@ export const AuthForm = ({ mode, redirectTo, onSuccess }: AuthFormProps) => {
         </>
       )}
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? 'Processing…' : mode === 'signin' ? 'Sign in' : 'Create account'}
+      <Button type="submit" className="w-full" disabled={isFormDisabled}>
+        {isSubmitting
+          ? 'Processing…'
+          : disabled
+          ? 'Temporarily unavailable'
+          : mode === 'signin'
+          ? 'Sign in'
+          : 'Create account'}
       </Button>
     </form>
   );

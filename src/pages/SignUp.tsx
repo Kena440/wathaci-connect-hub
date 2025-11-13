@@ -1,10 +1,23 @@
 import { Link } from 'react-router-dom';
 import AuthForm from '@/components/AuthForm';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { getMaintenanceConfig } from '@/config/featureFlags';
 
 export const SignUp = () => {
+  const maintenance = getMaintenanceConfig();
+  const maintenanceActive = maintenance.enabled;
+  const signUpDisabled = maintenanceActive && !maintenance.allowSignUp;
+  const signInAvailable = !maintenanceActive || maintenance.allowSignIn;
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-white via-orange-50 to-green-100 p-6">
       <div className="w-full max-w-xl rounded-2xl bg-white/90 p-8 shadow-xl ring-1 ring-orange-100/60 backdrop-blur">
+        {maintenanceActive && (
+          <Alert variant="warning" className="mb-6">
+            <AlertTitle>{maintenance.bannerTitle}</AlertTitle>
+            <AlertDescription>{maintenance.bannerMessage}</AlertDescription>
+          </Alert>
+        )}
         <div className="mb-6 text-center">
           <img
             src="https://d64gsuwffb70l.cloudfront.net/686a39ec793daf0c658a746a_1753699300137_a4fb9790.png"
@@ -19,14 +32,25 @@ export const SignUp = () => {
           </p>
         </div>
 
-        <AuthForm mode="signup" redirectTo="/" />
+        <AuthForm
+          mode="signup"
+          redirectTo="/"
+          disabled={signUpDisabled}
+          disabledReason={maintenance.bannerMessage}
+        />
 
-        <p className="mt-6 text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link to="/signin" className="font-semibold text-red-600 hover:text-red-700">
-            Sign in instead
-          </Link>
-        </p>
+        {signInAvailable ? (
+          <p className="mt-6 text-center text-sm text-gray-600">
+            Already have an account?{' '}
+            <Link to="/signin" className="font-semibold text-red-600 hover:text-red-700">
+              Sign in instead
+            </Link>
+          </p>
+        ) : (
+          <p className="mt-6 text-center text-sm text-gray-600">
+            Sign-in is temporarily disabled while we finalize our production migration.
+          </p>
+        )}
       </div>
     </div>
   );
