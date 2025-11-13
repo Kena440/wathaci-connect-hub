@@ -5,8 +5,8 @@ import { getSupabaseClientConfiguration, supabaseConfigStatus } from "@/config/a
 
 const clientOptions: SupabaseClientOptions<"public"> = {
   auth: {
-    autoRefreshToken: true,
     persistSession: true,
+    autoRefreshToken: true,
     detectSessionInUrl: true,
   },
 };
@@ -24,7 +24,7 @@ const sanitizeEnvValue = (value: unknown): string | undefined => {
   return trimmed.replace(/^['"`]+|['"`]+$/g, "").trim();
 };
 
-const resolveCanonicalEnv = (key: "VITE_SUPABASE_URL" | "VITE_SUPABASE_ANON_KEY"): string | undefined => {
+const readRuntimeEnv = (key: "VITE_SUPABASE_URL" | "VITE_SUPABASE_ANON_KEY"): string | undefined => {
   const metaEnv = typeof import.meta !== "undefined" ? (import.meta as any)?.env : undefined;
   const direct = sanitizeEnvValue(metaEnv?.[key]);
   if (direct) {
@@ -48,21 +48,32 @@ const resolveCanonicalEnv = (key: "VITE_SUPABASE_URL" | "VITE_SUPABASE_ANON_KEY"
   return undefined;
 };
 
-const supabaseUrl = resolveCanonicalEnv("VITE_SUPABASE_URL");
-const supabaseAnonKey = resolveCanonicalEnv("VITE_SUPABASE_ANON_KEY");
+const fallbackUrl = readRuntimeEnv("VITE_SUPABASE_URL");
+const fallbackAnonKey = readRuntimeEnv("VITE_SUPABASE_ANON_KEY");
+
+const resolvedConfig = getSupabaseClientConfiguration(clientOptions);
+const supabaseUrl = resolvedConfig?.url ?? fallbackUrl;
+const supabaseAnonKey = resolvedConfig?.anonKey ?? fallbackAnonKey;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   const errorMessage =
-    supabaseConfigStatus.errorMessage ||
-    `Supabase configuration missing. Set ${supabaseConfigStatus.canonicalUrlKey} and ${supabaseConfigStatus.canonicalAnonKey}.`;
+    supabaseConfigStatus.errorMessage?.trim() ||
+    "Missing Supabase environment configuration: VITE_SUPABASE_URL | VITE_SUPABASE_ANON_KEY";
 
-  if (typeof console !== "undefined" && !import.meta.env.SSR) {
-    console.error("Supabase config missing: check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY", {
-      resolvedUrlKey: supabaseConfigStatus.resolvedUrlKey,
-      resolvedAnonKeyKey: supabaseConfigStatus.resolvedAnonKeyKey,
-      missingUrlKeys: supabaseConfigStatus.missingUrlKeys,
-      missingAnonKeys: supabaseConfigStatus.missingAnonKeys,
-    });
+  const debugSnapshot = {
+    resolvedUrlKey: supabaseConfigStatus.resolvedUrlKey,
+    resolvedAnonKeyKey: supabaseConfigStatus.resolvedAnonKeyKey,
+    missingUrlKeys: supabaseConfigStatus.missingUrlKeys,
+    missingAnonKeys: supabaseConfigStatus.missingAnonKeys,
+    fallbackUrlPresent: Boolean(fallbackUrl),
+    fallbackAnonKeyPresent: Boolean(fallbackAnonKey),
+  };
+
+  if (typeof console !== "undefined") {
+    console.error(
+      "[CONFIG ERROR] Missing Supabase environment variables. Ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.",
+      debugSnapshot,
+    );
   }
 
   supabaseConfigStatus.hasValidConfig = false;
@@ -80,14 +91,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
   ];
   supabaseConfigStatus.errorMessage = errorMessage;
 
-  throw new Error("Missing Supabase environment configuration");
+  throw new Error("Missing Supabase environment configuration: VITE_SUPABASE_URL | VITE_SUPABASE_ANON_KEY");
 }
 
-const resolvedConfig = getSupabaseClientConfiguration(clientOptions);
-
 const internalClient = createClient<Database>(
-  resolvedConfig?.url ?? supabaseUrl,
-  resolvedConfig?.anonKey ?? supabaseAnonKey,
+  supabaseUrl,
+  supabaseAnonKey,
   resolvedConfig?.options ?? clientOptions,
 );
 
@@ -96,17 +105,26 @@ export type SupabaseClient = typeof internalClient;
 export { supabaseConfigStatus } from "@/config/appConfig";
 
 export const supabaseClient = internalClient;
+export const supabase = internalClient;
 
 export const getSupabaseClient = (): SupabaseClient => supabaseClient;
 
 export const logSupabaseAuthError = (context: string, error: unknown) => {
-  if (!import.meta.env.DEV) {
+  const payload = error instanceof Error ? { message: error.message, stack: error.stack } : error;
+
+  if (typeof console === "undefined") {
     return;
   }
 
-  const payload = error instanceof Error ? { message: error.message, stack: error.stack } : error;
-  console.groupCollapsed(`[supabase-auth] ${context}`);
-  console.error(payload);
-  console.groupEnd();
-};
+  const shouldLog =
+    (typeof import.meta !== "undefined" && Boolean((import.meta as any)?.env?.DEV)) ||
+    (typeof process !== "undefined" && process.env?.NODE_ENV !== "production");
 
+  if (!shouldLog) {
+    return;
+  }
+
+  console.groupCollapsed?.(`[supabase-auth] ${context}`);
+  console.error(payload);
+  console.groupEnd?.();
+};
