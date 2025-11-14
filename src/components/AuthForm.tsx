@@ -28,7 +28,11 @@ const signInSchema = baseSchema;
 
 const signUpSchema = baseSchema
   .extend({
-    fullName: z.string().trim().max(120, 'Name is too long').optional(),
+    fullName: z
+      .string()
+      .trim()
+      .min(1, 'Full name is required')
+      .max(120, 'Name is too long'),
     phone: z
       .string()
       .trim()
@@ -115,7 +119,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
         const typed = values as SignUpValues;
         const phone = normalizePhone(typed.phone);
         await signUp(typed.email, typed.password, {
-          full_name: typed.fullName?.trim() || undefined,
+          full_name: typed.fullName.trim(),
           phone,
           msisdn: phone,
         });
@@ -183,7 +187,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="fullName">Full name (optional)</Label>
+            <Label htmlFor="fullName">Full name</Label>
             <Input id="fullName" type="text" autoComplete="name" disabled={isFormDisabled} {...register('fullName')} />
             {errors.fullName?.message && (
               <p className="text-sm text-red-600">{errors.fullName.message}</p>

@@ -663,14 +663,31 @@ export const ProfileForm = ({ accountType, onSubmit, onPrevious, loading, initia
           />
 
           {/* Common Fields */}
+          <div>
+            <Label htmlFor="full_name">Full Name</Label>
+            <Input 
+              id="full_name"
+              value={formData.full_name || ''}
+              onChange={(e) => handleInputChange('full_name', e.target.value)} 
+              placeholder="Enter your full name"
+            />
+            <p className="text-sm text-muted-foreground mt-1">
+              Your name as you want it displayed on your profile
+            </p>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Phone Number</Label>
+              <Label htmlFor="phone">Phone Number / Mobile Money Number</Label>
               <Input 
+                id="phone"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)} 
                 placeholder="Country code will be auto-filled"
               />
+              <p className="text-sm text-muted-foreground mt-1">
+                Used for mobile money payments and as your contact number
+              </p>
             </div>
             <div>
               <Label>Sector/Industry</Label>

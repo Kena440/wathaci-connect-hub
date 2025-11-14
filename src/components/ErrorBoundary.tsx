@@ -19,8 +19,58 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     this.setState({ error, errorInfo });
-    void this.logErrorToService(error, errorInfo);
-    console.error("[ErrorBoundary] Rendering error captured", error, errorInfo);
+    
+    // Gather diagnostic context
+    const context = this.gatherErrorContext();
+    
+    // Log to console in development with full context
+    if (import.meta.env.DEV) {
+      console.error("[ErrorBoundary] Caught error:", error);
+      console.error("[ErrorBoundary] Component stack:", errorInfo.componentStack);
+      console.error("[ErrorBoundary] Context:", context);
+    }
+    
+    void this.logErrorToService(error, errorInfo, context);
+  }
+  
+  private gatherErrorContext() {
+    const context: Record<string, any> = {
+      timestamp: new Date().toISOString(),
+      mode: import.meta.env.MODE,
+    };
+    
+    // Capture current route
+    if (typeof window !== "undefined") {
+      context.url = window.location.href;
+      context.pathname = window.location.pathname;
+      context.search = window.location.search;
+    }
+    
+    // Try to get authenticated user ID from localStorage (best effort)
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        const supabaseAuthKey = Object.keys(window.localStorage).find(
+          key => key.startsWith("sb-") && key.endsWith("-auth-token")
+        );
+        
+        if (supabaseAuthKey) {
+          const authData = window.localStorage.getItem(supabaseAuthKey);
+          if (authData) {
+            const parsed = JSON.parse(authData);
+            if (parsed?.user?.id) {
+              context.userId = parsed.user.id;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      // Silently fail if we can't get user context
+      if (import.meta.env.DEV) {
+        console.warn("[ErrorBoundary] Failed to extract user context", e);
+      }
+    }
+    
+    return context;
   }
 
   handleReload = () => {
@@ -29,7 +79,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     }
   };
 
-  private logErrorToService(error: Error, errorInfo: React.ErrorInfo) {
+  private logErrorToService(error: Error, errorInfo: React.ErrorInfo, context: Record<string, any>) {
     if (typeof fetch !== "function") {
       if (import.meta.env.DEV) {
         console.warn("[ErrorBoundary] Fetch API unavailable – skipping remote error logging.");
@@ -46,7 +96,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
         message: error.message,
         stack: error.stack,
         componentStack: errorInfo.componentStack,
-        timestamp: new Date().toISOString(),
+        ...context,
       }),
     }).catch((loggingError) => {
       if (import.meta.env.DEV) {
