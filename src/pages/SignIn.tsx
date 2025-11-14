@@ -1,10 +1,23 @@
 import { Link } from 'react-router-dom';
 import AuthForm from '@/components/AuthForm';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { getMaintenanceConfig } from '@/config/featureFlags';
 
 export const SignIn = () => {
+  const maintenance = getMaintenanceConfig();
+  const maintenanceActive = maintenance.enabled;
+  const signInDisabled = maintenanceActive && !maintenance.allowSignIn;
+  const signUpAvailable = !maintenanceActive || maintenance.allowSignUp;
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-orange-50 via-white to-green-50 p-6">
       <div className="w-full max-w-md rounded-2xl bg-white/90 p-8 shadow-xl ring-1 ring-orange-100/60 backdrop-blur">
+        {maintenanceActive && (
+          <Alert variant="warning" className="mb-6">
+            <AlertTitle>{maintenance.bannerTitle}</AlertTitle>
+            <AlertDescription>{maintenance.bannerMessage}</AlertDescription>
+          </Alert>
+        )}
         <div className="mb-6 text-center">
           <img
             src="https://d64gsuwffb70l.cloudfront.net/686a39ec793daf0c658a746a_1753699300137_a4fb9790.png"
@@ -19,14 +32,25 @@ export const SignIn = () => {
           </p>
         </div>
 
-        <AuthForm mode="signin" redirectTo="/" />
+        <AuthForm
+          mode="signin"
+          redirectTo="/"
+          disabled={signInDisabled}
+          disabledReason={maintenance.bannerMessage}
+        />
 
-        <p className="mt-6 text-center text-sm text-gray-600">
-          Don&apos;t have an account?{' '}
-          <Link to="/signup" className="font-semibold text-red-600 hover:text-red-700">
-            Create one now
-          </Link>
-        </p>
+        {signUpAvailable ? (
+          <p className="mt-6 text-center text-sm text-gray-600">
+            Don&apos;t have an account?{' '}
+            <Link to="/signup" className="font-semibold text-red-600 hover:text-red-700">
+              Create one now
+            </Link>
+          </p>
+        ) : (
+          <p className="mt-6 text-center text-sm text-gray-600">
+            New registrations are temporarily paused while we complete scheduled maintenance.
+          </p>
+        )}
       </div>
     </div>
   );
