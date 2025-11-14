@@ -128,3 +128,25 @@ export const logSupabaseAuthError = (context: string, error: unknown) => {
   console.error(payload);
   console.groupEnd?.();
 };
+
+/**
+ * Log authentication state changes for debugging
+ */
+export const logAuthStateChange = (event: string, details?: Record<string, unknown>) => {
+  if (!import.meta.env.DEV) {
+    return;
+  }
+
+  console.log(`[auth-state] ${event}`, details || '');
+};
+
+/**
+ * Log profile operations for debugging
+ */
+export const logProfileOperation = (operation: string, details?: Record<string, unknown>) => {
+  if (!import.meta.env.DEV) {
+    return;
+  }
+
+  console.log(`[profile] ${operation}`, details || '');
+};
