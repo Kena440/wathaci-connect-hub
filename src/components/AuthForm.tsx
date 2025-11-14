@@ -28,7 +28,11 @@ const signInSchema = baseSchema;
 
 const signUpSchema = baseSchema
   .extend({
-    fullName: z.string().trim().min(1, 'Full name is required').max(120, 'Name is too long'),
+    fullName: z
+      .string()
+      .trim()
+      .min(1, 'Full name is required')
+      .max(120, 'Name is too long'),
     phone: z
       .string()
       .trim()
