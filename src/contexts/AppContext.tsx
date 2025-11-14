@@ -138,9 +138,23 @@ const prepareProfilePayload = (
     delete mutableData.mobile_number;
   }
 
+  if (!('payment_phone' in mutableData) && typeof mutableData.msisdn === 'string' && mutableData.msisdn) {
+    const normalizedMsisdn = ensureMsisdnValue(mutableData.msisdn);
+    if (normalizedMsisdn) {
+      mutableData.payment_phone = normalizedMsisdn;
+    }
+  }
+
   if ('phone' in mutableData) {
     const normalized = ensurePhoneValue(mutableData.phone);
     mutableData.phone = normalized ?? null;
+  }
+
+  if (!('payment_phone' in mutableData) && typeof mutableData.phone === 'string' && mutableData.phone) {
+    const normalizedPayment = ensureMsisdnValue(mutableData.phone);
+    if (normalizedPayment) {
+      mutableData.payment_phone = normalizedPayment;
+    }
   }
 
   if ('payment_phone' in mutableData) {
@@ -156,8 +170,24 @@ const prepareProfilePayload = (
     mutableData.msisdn = normalized ?? null;
   }
 
-  if (!('payment_method' in mutableData) && typeof mutableData.phone === 'string' && mutableData.phone.length > 0) {
-    mutableData.payment_method = 'phone';
+  if (!('use_same_phone' in mutableData) && typeof mutableData.payment_phone === 'string') {
+    const normalizedPayment = ensureMsisdnValue(mutableData.payment_phone);
+    const comparisonSources = [mutableData.phone, mutableData.msisdn]
+      .filter((value): value is string => typeof value === 'string' && value.length > 0)
+      .map((value) => ensureMsisdnValue(value) ?? value);
+
+    if (comparisonSources.length > 0) {
+      mutableData.use_same_phone = comparisonSources.some((value) => value === normalizedPayment);
+    }
+  }
+
+  if (!('payment_method' in mutableData)) {
+    const hasPaymentPhone = typeof mutableData.payment_phone === 'string' && mutableData.payment_phone.length > 0;
+    const hasPrimaryPhone = typeof mutableData.phone === 'string' && mutableData.phone.length > 0;
+
+    if (hasPaymentPhone || hasPrimaryPhone) {
+      mutableData.payment_method = 'phone';
+    }
   }
 
   const sanitizedEntries = Object.entries(mutableData).filter(([, value]) => value !== undefined);
@@ -409,6 +439,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             company: metadata.company,
             msisdn: msisdnFromMetadata,
             phone: msisdnFromMetadata,
+            payment_phone: msisdnFromMetadata,
+            payment_method: 'phone' as const,
+            use_same_phone: true,
           };
 
           const filteredPayload = Object.fromEntries(

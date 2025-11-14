@@ -36,11 +36,30 @@ const Header = () => {
 
   // Helper function to get display name for profile button
   const getDisplayName = () => {
-    if (profile?.first_name) {
-      return profile.first_name;
+    const primaryName = [profile?.first_name, profile?.last_name]
+      .map((part) => (typeof part === 'string' ? part.trim() : ''))
+      .filter(Boolean)
+      .join(' ');
+
+    if (primaryName) {
+      return primaryName.split(' ')[0];
     }
-    // Fallback to email prefix if profile not loaded or first_name not available
-    return user?.email?.split('@')[0] || 'Profile';
+
+    const fallbackFullName = typeof profile?.full_name === 'string' ? profile.full_name.trim() : '';
+    if (fallbackFullName) {
+      return fallbackFullName.split(' ')[0];
+    }
+
+    const email = typeof user?.email === 'string' ? user.email.trim() : '';
+    if (email) {
+      const atIndex = email.indexOf('@');
+      if (atIndex > 0) {
+        return email.slice(0, atIndex);
+      }
+      return email;
+    }
+
+    return 'Profile';
   };
 
   const showSignUpCta = !user;
