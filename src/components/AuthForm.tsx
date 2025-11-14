@@ -28,7 +28,7 @@ const signInSchema = baseSchema;
 
 const signUpSchema = baseSchema
   .extend({
-    fullName: z.string().trim().max(120, 'Name is too long').optional(),
+    fullName: z.string().trim().min(1, 'Full name is required').max(120, 'Name is too long'),
     phone: z
       .string()
       .trim()
@@ -113,11 +113,16 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
         await signIn(values.email, values.password);
       } else {
         const typed = values as SignUpValues;
-        const phone = normalizePhone(typed.phone);
+        const phone = normalizePhone(typed.phone) ?? typed.phone.trim();
+        const fullName = typed.fullName.trim();
         await signUp(typed.email, typed.password, {
-          full_name: typed.fullName?.trim() || undefined,
+          full_name: fullName,
           phone,
           msisdn: phone,
+          mobile_number: phone,
+          payment_phone: phone,
+          payment_method: phone ? 'phone' : undefined,
+          use_same_phone: phone ? true : undefined,
         });
       }
 
@@ -183,21 +188,29 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="fullName">Full name (optional)</Label>
-            <Input id="fullName" type="text" autoComplete="name" disabled={isFormDisabled} {...register('fullName')} />
+            <Label htmlFor="fullName">Full name</Label>
+            <Input
+              id="fullName"
+              type="text"
+              autoComplete="name"
+              disabled={isFormDisabled}
+              required
+              {...register('fullName')}
+            />
             {errors.fullName?.message && (
               <p className="text-sm text-red-600">{errors.fullName.message}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone (used for MSISDN)</Label>
+            <Label htmlFor="phone">Mobile money number</Label>
             <Input
               id="phone"
               type="tel"
-              placeholder="e.g. +26097XXXXXXX"
+              placeholder="e.g. +260971234567"
               autoComplete="tel"
               disabled={isFormDisabled}
+              required
               {...register('phone')}
             />
             {errors.phone?.message && (
