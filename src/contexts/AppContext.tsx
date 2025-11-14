@@ -358,10 +358,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         userId: authUser.id,
       });
 
-      const metadata = authUser.user_metadata || {};
+      // Safely access user metadata with defensive checks
+      const metadata = authUser?.user_metadata ?? {};
+      
+      // Defensive check: ensure metadata is an object
+      if (typeof metadata !== 'object' || metadata === null) {
+        logWarn('User metadata is not an object, using empty metadata', {
+          event: 'auth:refresh:invalid-metadata',
+          userId: authUser.id,
+          metadataType: typeof metadata,
+        });
+      }
 
-      // Get the user's profile
-      const { data: userProfile, error: profileError } = await profileService.getByUserId(authUser.id);
+      // Get the user's profile with defensive error handling
+      let userProfile: any = null;
+      let profileError: any = null;
+      
+      try {
+        const result = await profileService.getByUserId(authUser.id);
+        userProfile = result.data;
+        profileError = result.error;
+      } catch (err) {
+        profileError = err;
+        logError('Exception thrown while fetching profile', err, {
+          event: 'auth:refresh:profile-fetch-exception',
+          userId: authUser.id,
+        });
+      }
 
       if (profileError) {
         const profileErrorCode = (profileError as any)?.code;
@@ -496,20 +519,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setProfile(null);
         }
       } else {
-        setProfile(userProfile);
-
-        // Update user with profile completion info
+        // Successfully loaded profile
         if (userProfile) {
-          currentProfile = userProfile;
-          const enrichedUser: User = {
-            ...authUser,
-            profile_completed: userProfile.profile_completed,
-            account_type: userProfile.account_type,
-          };
+          try {
+            setProfile(userProfile);
+            currentProfile = userProfile;
+            
+            // Safely enrich user with profile data
+            const enrichedUser: User = {
+              ...authUser,
+              profile_completed: userProfile.profile_completed ?? false,
+              account_type: userProfile.account_type ?? authUser.account_type,
+            };
 
-          currentUser = enrichedUser;
-          setUser(enrichedUser);
-          logInfo('Loaded profile for authenticated user', {
+            currentUser = enrichedUser;
+            setUser(enrichedUser);
+            logInfo('Loaded profile for authenticated user', {
+              event: 'auth:refresh:profile-loaded',
+              userId: authUser.id,
+            });
+          } catch (enrichError) {
+            // If enrichment fails, still set the profile but log the error
+            logError('Error enriching user with profile data', enrichError, {
+              event: 'auth:refresh:profile-enrich-error',
+              userId: authUser.id,
+            });
+            setProfile(userProfile);
+            currentProfile = userProfile;
+          }
+        } else {
+          // No profile but no error - set null profile
+          setProfile(null);
+          logInfo('No profile found for authenticated user', {
             event: 'auth:refresh:profile-loaded',
             userId: authUser.id,
           });
