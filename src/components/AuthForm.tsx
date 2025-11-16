@@ -130,7 +130,9 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
       handleSuccess();
     } catch (error: any) {
       logSupabaseAuthError(`auth-${mode}`, error);
-      const message = error?.message || 'Something went wrong. Please try again.';
+      const message = error && typeof error === 'object' && 'message' in error && error.message
+        ? String(error.message)
+        : 'Something went wrong. Please try again.';
       setFormError(message);
     }
   };

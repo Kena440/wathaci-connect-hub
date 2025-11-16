@@ -932,28 +932,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         event: 'auth:signOut:error',
         userId: user?.id ?? undefined,
       });
+      const errorMessage = error && typeof error === 'object' && 'message' in error
+        ? String(error.message)
+        : 'An unexpected error occurred during sign out';
       toast({
         title: "Error signing out",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     }
   };
 
   useEffect(() => {
-    // Initial user fetch
-    refreshUser();
+    // Initial user fetch - wrapped in promise catch for safety
+    refreshUser().catch((err) => {
+      logError('Error during initial refreshUser', err, {
+        event: 'auth:init:error',
+      });
+      // Don't rethrow - let the component render with loading=false
+      setLoading(false);
+    });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          await refreshUser();
-        } else if (event === 'SIGNED_OUT') {
-          clearOfflineSession();
-          setUser(null);
-          setProfile(null);
-          setLoading(false);
+        try {
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            await refreshUser();
+          } else if (event === 'SIGNED_OUT') {
+            clearOfflineSession();
+            setUser(null);
+            setProfile(null);
+            setLoading(false);
+          }
+        } catch (error) {
+          logError('Error in auth state change handler', error, {
+            event: `auth:onAuthStateChange:${event}`,
+          });
+          // Don't rethrow - prevent crashes in auth listener
         }
       }
     );
