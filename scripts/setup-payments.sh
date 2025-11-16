@@ -245,7 +245,7 @@ echo -e "${BLUE}🆘 Need Help?${NC}"
 echo "- Check the documentation"
 echo "- Run payment tests: npm run test:jest"
 echo "- Review application logs"
-echo "- Contact support: support@wathaci.org"
+echo "- Contact support: support@wathaci.com"
 
 echo ""
 echo -e "${GREEN}Happy coding! 🚀${NC}"

@@ -46,7 +46,7 @@ export const LencoPayment = ({ amount, description, transactionType = 'marketpla
     const newErrors: Record<string, string> = {};
 
     if (!isConfigured) {
-      newErrors.config = 'Payment system is not properly configured. Please contact support.';
+      newErrors.config = 'Payment system is not properly configured. Please contact support@wathaci.com.';
     }
 
     if (totalAmount < paymentConfig.minAmount) {
@@ -176,7 +176,7 @@ export const LencoPayment = ({ amount, description, transactionType = 'marketpla
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Payment system is currently unavailable. Please contact support.
+              Payment system is currently unavailable. Please contact support@wathaci.com.
             </AlertDescription>
           </Alert>
         </CardContent>

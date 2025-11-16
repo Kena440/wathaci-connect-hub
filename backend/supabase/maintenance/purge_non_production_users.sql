@@ -15,8 +15,7 @@ begin;
 create temp table purge_allowed_domains(domain text);
 insert into purge_allowed_domains(domain)
 values
-  ('wathaci.com'),
-  ('wathaci.org');
+  ('wathaci.com');
 
 create temp table purge_allowed_emails(email text);
 insert into purge_allowed_emails(email)

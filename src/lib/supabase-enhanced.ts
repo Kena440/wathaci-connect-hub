@@ -812,9 +812,9 @@ export const withErrorHandling = async <T>(
       
       if (errorMessage.includes('Invalid API key') || 
           errorMessage.includes('Invalid Supabase URL')) {
-        return { 
-          data: null, 
-          error: new Error('Configuration error. Please contact support.') 
+        return {
+          data: null,
+          error: new Error('Configuration error. Please contact support@wathaci.com.')
         };
       }
       

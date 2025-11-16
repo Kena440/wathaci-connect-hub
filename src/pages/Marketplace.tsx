@@ -128,7 +128,7 @@ const Marketplace = () => {
       console.error('Error saving order:', error);
       toast({
         title: 'Order save failed',
-        description: 'Please contact support if payment was deducted.',
+        description: 'Please contact support@wathaci.com if payment was deducted.',
         variant: 'destructive'
       });
     }

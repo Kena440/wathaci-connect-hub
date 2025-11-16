@@ -146,8 +146,8 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
           <div className="space-y-2">
             <h2 className="text-xl font-semibold text-gray-900">Something went wrong.</h2>
             <p className="max-w-md text-sm text-gray-600">
-              An unexpected error occurred while rendering WATHACI CONNECT. Try reloading the page or contact support if the
-              problem continues.
+              An unexpected error occurred while rendering WATHACI CONNECT. Try reloading the page or contact
+              support@wathaci.com if the problem continues.
             </p>
           </div>
           {import.meta.env.DEV && this.state.error && (
@@ -176,11 +176,11 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
             </button>
             <p>
               Need help?{" "}
-              <a className="text-blue-600 underline" href="mailto:support@wathaci.org">
+              <a className="text-blue-600 underline" href="mailto:support@wathaci.com">
                 Contact support
               </a>{" "}
               or visit our{" "}
-              <a className="text-blue-600 underline" href="https://wathaci.org/help" target="_blank" rel="noreferrer">
+              <a className="text-blue-600 underline" href="https://wathaci.com/help" target="_blank" rel="noreferrer">
                 help center
               </a>
               .

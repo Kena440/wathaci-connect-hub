@@ -147,7 +147,7 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
       console.error('Payment verification error:', error);
       toast({
         title: "Payment Verification Failed",
-        description: "Please contact support if payment was deducted",
+        description: "Please contact support@wathaci.com if payment was deducted",
         variant: "destructive",
       });
     }

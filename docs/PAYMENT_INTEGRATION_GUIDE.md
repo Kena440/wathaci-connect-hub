@@ -784,8 +784,8 @@ All webhook events are logged to `webhook_logs` table with:
 
 For technical support and questions:
 
-- Email: support@wathaci.org
-- Documentation: https://docs.wathaci.org
+- Email: support@wathaci.com
+- Documentation: https://docs.wathaci.com
 - GitHub Issues: https://github.com/Kena440/WATHACI-CONNECT.-V1/issues
 
 ## License

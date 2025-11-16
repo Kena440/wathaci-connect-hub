@@ -115,7 +115,7 @@ npm run preview`}
         </section>
 
         <footer className="text-xs text-gray-500">
-          Need help? Email <a className="text-blue-600 underline" href="mailto:support@wathaci.org">support@wathaci.org</a> or
+          Need help? Email <a className="text-blue-600 underline" href="mailto:support@wathaci.com">support@wathaci.com</a> or
           check the deployment runbook.
         </footer>
       </div>

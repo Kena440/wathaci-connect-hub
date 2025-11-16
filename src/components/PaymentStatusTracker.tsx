@@ -336,8 +336,8 @@ export const PaymentStatusTracker = ({
           <Alert variant="destructive">
             <XCircle className="h-4 w-4" />
             <AlertDescription>
-              Payment {paymentStatus?.status}. 
-              {paymentStatus?.status === 'failed' && ' Please try again or contact support.'}
+              Payment {paymentStatus?.status}.
+              {paymentStatus?.status === 'failed' && ' Please try again or contact support@wathaci.com.'}
             </AlertDescription>
           </Alert>
         )}
@@ -357,7 +357,7 @@ export const PaymentStatusTracker = ({
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              Payment tracking will timeout soon. Please contact support if your payment was deducted.
+              Payment tracking will timeout soon. Please contact support@wathaci.com if your payment was deducted.
             </AlertDescription>
           </Alert>
         )}
