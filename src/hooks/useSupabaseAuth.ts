@@ -43,7 +43,18 @@ export const useSupabaseAuth = (): UseSupabaseAuthResult => {
     };
   }, []);
 
-  const user = useMemo(() => contextUser ?? session?.user ?? null, [contextUser, session]);
+  const user = useMemo(() => {
+    // Safely resolve user from context or session
+    if (contextUser) {
+      return contextUser;
+    }
+    
+    if (session?.user) {
+      return session.user;
+    }
+    
+    return null;
+  }, [contextUser, session]);
 
   return {
     session,
