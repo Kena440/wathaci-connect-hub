@@ -64,9 +64,10 @@ const normalizePhone = (value: string | undefined) => {
 
 export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabledReason }: AuthFormProps) => {
   const navigate = useNavigate();
-  const { signIn, signUp } = useAppContext();
+  const { signIn, signUp, user, profile, loading } = useAppContext();
   const [formError, setFormError] = useState<string | null>(null);
   const [maintenanceNotice, setMaintenanceNotice] = useState<string | null>(disabled ? disabledReason ?? null : null);
+  const [authCompleted, setAuthCompleted] = useState(false);
 
   const {
     register,
@@ -88,6 +89,46 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
       navigate(redirectTo);
     }
   };
+
+  // Smart redirect after auth completes and profile is loaded
+  useEffect(() => {
+    // Only run if auth was completed in this session
+    if (!authCompleted) {
+      return;
+    }
+
+    // Wait for loading to complete
+    if (loading) {
+      return;
+    }
+
+    // If user is not authenticated after loading completes, don't redirect
+    if (!user) {
+      return;
+    }
+
+    // If onSuccess callback is provided, use it instead of automatic redirect
+    if (onSuccess) {
+      onSuccess();
+      setAuthCompleted(false);
+      return;
+    }
+
+    // Smart redirect based on profile completion status
+    if (!profile || !user.profile_completed) {
+      // User needs to complete profile setup
+      navigate('/profile-setup', { replace: true });
+    } else if (redirectTo) {
+      // Use provided redirect destination
+      navigate(redirectTo, { replace: true });
+    } else {
+      // Default: go to home page
+      navigate('/', { replace: true });
+    }
+
+    // Reset the flag
+    setAuthCompleted(false);
+  }, [authCompleted, loading, user, profile, navigate, redirectTo, onSuccess]);
 
   useEffect(() => {
     if (disabled) {
@@ -127,7 +168,8 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
       }
 
       reset();
-      handleSuccess();
+      // Set flag to trigger smart redirect after profile loads
+      setAuthCompleted(true);
     } catch (error: any) {
       logSupabaseAuthError(`auth-${mode}`, error);
       const message = error && typeof error === 'object' && 'message' in error && error.message
@@ -222,8 +264,10 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
         </>
       )}
 
-      <Button type="submit" className="w-full" disabled={isFormDisabled}>
-        {isSubmitting
+      <Button type="submit" className="w-full" disabled={isFormDisabled || authCompleted}>
+        {authCompleted
+          ? 'Redirecting…'
+          : isSubmitting
           ? 'Processing…'
           : disabled
           ? 'Temporarily unavailable'
