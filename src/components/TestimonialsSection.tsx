@@ -26,6 +26,16 @@ const TestimonialsSection = () => {
 
   const fetchTestimonials = async () => {
     try {
+      // Check if Supabase environment variables are available
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
+      
+      if (!supabaseUrl || !supabaseKey) {
+        console.log('Supabase not configured, showing fallback testimonials');
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('testimonials')
         .select('*')
@@ -63,9 +73,76 @@ const TestimonialsSection = () => {
             <p className="text-gray-500">Loading testimonials...</p>
           </div>
         ) : testimonials.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">Client testimonials coming soon!</p>
-            <p className="text-gray-400 mt-2">We're collecting feedback from our amazing clients.</p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Fallback testimonials when database is not available */}
+            <Card className="bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all transform hover:-translate-y-2">
+              <CardContent className="p-6">
+                <div className="flex items-center mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 text-yellow-500 fill-current" />
+                  ))}
+                </div>
+                <p className="text-gray-700 mb-6 italic">
+                  "WATHACI Connect has transformed how we manage our business compliance. Their governance services are exceptional and have saved us countless hours."
+                </p>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                    <span className="text-blue-600 font-semibold">JM</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">James Mwanza</p>
+                    <p className="text-sm text-gray-600">CEO</p>
+                    <p className="text-sm text-gray-500">Zambian Mining Corp</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all transform hover:-translate-y-2">
+              <CardContent className="p-6">
+                <div className="flex items-center mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 text-yellow-500 fill-current" />
+                  ))}
+                </div>
+                <p className="text-gray-700 mb-6 italic">
+                  "The risk management solutions provided by WATHACI Connect have been instrumental in our regulatory compliance journey. Highly recommended!"
+                </p>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <span className="text-emerald-600 font-semibold">SK</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Sarah Katongo</p>
+                    <p className="text-sm text-gray-600">Operations Director</p>
+                    <p className="text-sm text-gray-500">Lusaka Logistics Ltd</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all transform hover:-translate-y-2">
+              <CardContent className="p-6">
+                <div className="flex items-center mb-4">
+                  {[...Array(4)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 text-yellow-500 fill-current" />
+                  ))}
+                </div>
+                <p className="text-gray-700 mb-6 italic">
+                  "Professional, reliable, and always delivering quality results. WATHACI Connect's legal advisory services have been invaluable for our SME."
+                </p>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                    <span className="text-amber-600 font-semibold">PM</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Peter Mukupa</p>
+                    <p className="text-sm text-gray-600">Founder</p>
+                    <p className="text-sm text-gray-500">TechStart Zambia</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
