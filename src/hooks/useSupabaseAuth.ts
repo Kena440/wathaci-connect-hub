@@ -20,9 +20,17 @@ export const useSupabaseAuth = (): UseSupabaseAuthResult => {
 
     const loadSession = async () => {
       try {
-        const { data } = await supabaseClient.auth.getSession();
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) {
+          console.warn('[useSupabaseAuth] Failed to load session', error);
+        }
         if (isMounted) {
-          setSession(data.session ?? null);
+          setSession(data?.session ?? null);
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error('[useSupabaseAuth] Unexpected error while loading session', error);
+          setSession(null);
         }
       } finally {
         if (isMounted) {
@@ -33,13 +41,24 @@ export const useSupabaseAuth = (): UseSupabaseAuthResult => {
 
     loadSession();
 
-    const { data: listener } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => {
+    const auth = supabaseClient?.auth;
+    if (!auth || typeof auth.onAuthStateChange !== 'function') {
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    const { data: listener, error } = auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
     });
 
+    if (error) {
+      console.warn('[useSupabaseAuth] Failed to register auth state listener', error);
+    }
+
     return () => {
       isMounted = false;
-      listener.subscription.unsubscribe();
+      listener?.subscription?.unsubscribe?.();
     };
   }, []);
 
