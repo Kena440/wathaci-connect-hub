@@ -2,6 +2,7 @@ import { createClient, type SupabaseClientOptions } from "@supabase/supabase-js"
 
 import type { Database } from "@/@types/database";
 import { getSupabaseClientConfiguration, supabaseConfigStatus } from "@/config/appConfig";
+import { supabase as fallbackSupabase } from "./supabase-enhanced";
 
 const clientOptions: SupabaseClientOptions<"public"> = {
   auth: {
@@ -55,11 +56,10 @@ const resolvedConfig = getSupabaseClientConfiguration(clientOptions);
 const supabaseUrl = resolvedConfig?.url ?? fallbackUrl;
 const supabaseAnonKey = resolvedConfig?.anonKey ?? fallbackAnonKey;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  const errorMessage =
-    supabaseConfigStatus.errorMessage?.trim() ||
-    "Missing Supabase environment configuration: VITE_SUPABASE_URL | VITE_SUPABASE_ANON_KEY";
+const buildClientFromConfig = () =>
+  createClient<Database>(supabaseUrl as string, supabaseAnonKey as string, resolvedConfig?.options ?? clientOptions);
 
+const markInvalidConfig = (errorMessage: string) => {
   const debugSnapshot = {
     resolvedUrlKey: supabaseConfigStatus.resolvedUrlKey,
     resolvedAnonKeyKey: supabaseConfigStatus.resolvedAnonKeyKey,
@@ -90,15 +90,21 @@ if (!supabaseUrl || !supabaseAnonKey) {
     ...supabaseConfigStatus.aliasAnonKeys,
   ];
   supabaseConfigStatus.errorMessage = errorMessage;
+};
 
-  throw new Error("Missing Supabase environment configuration: VITE_SUPABASE_URL | VITE_SUPABASE_ANON_KEY");
-}
+const buildFallbackClient = () => {
+  const errorMessage =
+    supabaseConfigStatus.errorMessage?.trim() ||
+    "Missing Supabase environment configuration: VITE_SUPABASE_URL | VITE_SUPABASE_ANON_KEY";
 
-const internalClient = createClient<Database>(
-  supabaseUrl,
-  supabaseAnonKey,
-  resolvedConfig?.options ?? clientOptions,
-);
+  markInvalidConfig(errorMessage);
+  return fallbackSupabase;
+};
+
+const internalClient =
+  !supabaseUrl || !supabaseAnonKey
+    ? buildFallbackClient()
+    : buildClientFromConfig();
 
 export type SupabaseClient = typeof internalClient;
 
