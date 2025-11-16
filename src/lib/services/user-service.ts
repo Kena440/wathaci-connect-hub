@@ -727,6 +727,46 @@ export class ProfileService extends BaseService<Profile> {
 
     const errorCode = (creationResult.error as any)?.code;
     const errorMessage = creationResult.error.message?.toLowerCase?.() ?? '';
+    const isRlsOrPermissionIssue =
+      errorCode === '42501' ||
+      errorCode === 'PGRST301' ||
+      errorCode === 'PGRST302' ||
+      errorMessage.includes('row-level security') ||
+      errorMessage.includes('permission denied') ||
+      errorMessage.includes('authorization failed');
+
+    if (isRlsOrPermissionIssue) {
+      const msisdn = profile.msisdn ?? profile.phone ?? profile.payment_phone ?? null;
+
+      if (msisdn) {
+        const ensureResult = await withErrorHandling(
+          async () =>
+            supabase.rpc('ensure_profile_exists', {
+              p_user_id: userId,
+              p_email: profile.email ?? null,
+              p_full_name: profile.full_name ?? profile.company ?? null,
+              p_msisdn: msisdn,
+              p_profile_type: (profile.account_type as string) ?? 'customer',
+            }),
+          'ProfileService.ensureProfileExists'
+        );
+
+        if (!ensureResult.error) {
+          return withErrorHandling(
+            async () =>
+              supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .single(),
+            'ProfileService.ensureProfileExists.fetchProfile'
+          ) as Promise<DatabaseResponse<Profile>>;
+        }
+
+        return ensureResult as DatabaseResponse<Profile>;
+      }
+    }
+
     const isDuplicateError =
       errorCode === '23505' ||
       errorMessage.includes('duplicate key') ||
