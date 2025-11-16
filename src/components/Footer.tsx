@@ -49,7 +49,16 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-4 text-orange-400">Support</h3>
             <ul className="space-y-2">
               <li><Link to="/get-started" className="text-gray-300 hover:text-white transition-colors">Get Started</Link></li>
-              <li><Link to="/resources" className="text-gray-300 hover:text-white transition-colors">Help Center</Link></li>
+              <li>
+                <a
+                  href="https://wathaci.com/help"
+                  className="text-gray-300 hover:text-white transition-colors"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Help Center
+                </a>
+              </li>
               <li><Link to="/privacy-policy" className="text-gray-300 hover:text-white transition-colors">Privacy Policy</Link></li>
               <li><Link to="/terms-of-service" className="text-gray-300 hover:text-white transition-colors">Terms of Service</Link></li>
             </ul>

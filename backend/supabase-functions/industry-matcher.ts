@@ -277,7 +277,7 @@ serve(async (req) => {
         matches: { freelancers: [], funding: [], partnerships: [] },
         recommendations: {
           priority: 'Unable to generate recommendations at this time.',
-          nextSteps: 'Please retry the request or contact support if the issue persists.',
+          nextSteps: 'Please retry the request or contact support@wathaci.com if the issue persists.',
           timeline: 'Pending resolution.'
         },
         error: message

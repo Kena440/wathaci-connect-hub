@@ -294,7 +294,7 @@ If you're still experiencing issues:
 1. Check the browser console for error messages
 2. Verify environment variables are being read: check the Network tab for API calls
 3. Review the [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) file
-4. Contact support@wathaci.org
+4. Contact support@wathaci.com
 
 ## Summary Checklist
 
