@@ -103,7 +103,7 @@ export const SignupForm = ({
       {
         id: userId,
         email: values.email,
-        first_name: values.fullName,
+        full_name: values.fullName,
         account_type: selectedAccountType,
         accepted_terms: true,
         newsletter_opt_in: Boolean(values.newsletterOptIn),
