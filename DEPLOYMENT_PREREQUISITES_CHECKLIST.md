@@ -318,7 +318,7 @@ Configure and customize all transactional email templates in Supabase for produc
 
 **Settings Verified**:
 - SMTP provider configured in Supabase
-- Sender email verified: `noreply@wathaci.com`
+- Sender email verified: `support@wathaci.com`
 - SPF and DKIM records configured
 - Email deliverability tested
 - Spam filter bypass confirmed
