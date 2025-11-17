@@ -12,6 +12,8 @@ export const SignupForm: React.FC<SignupFormProps> = ({ accountType, onSuccess }
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [newsletterOptIn, setNewsletterOptIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -25,6 +27,11 @@ export const SignupForm: React.FC<SignupFormProps> = ({ accountType, onSuccess }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
+      return;
+    }
+
+    if (!acceptedTerms) {
+      setError("You must accept the Terms & Conditions to continue.");
       return;
     }
 
@@ -52,6 +59,8 @@ export const SignupForm: React.FC<SignupFormProps> = ({ accountType, onSuccess }
         full_name: fullName || null,
         account_type: accountType,
         company_name: companyName || null,
+        accepted_terms: acceptedTerms,
+        newsletter_opt_in: newsletterOptIn,
       });
 
       if (profileError) {
@@ -139,6 +148,38 @@ export const SignupForm: React.FC<SignupFormProps> = ({ accountType, onSuccess }
           className="mt-1 w-full rounded border p-2"
           placeholder="Optional"
         />
+      </div>
+
+      <div className="space-y-3 border-t pt-4">
+        <div className="flex items-start gap-2">
+          <input
+            type="checkbox"
+            id="acceptedTerms"
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-gray-300"
+            required
+          />
+          <label htmlFor="acceptedTerms" className="text-sm text-gray-700">
+            I read and accept the{" "}
+            <a href="/terms" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
+              Terms & Conditions
+            </a>
+            . <span className="text-red-600">*</span>
+          </label>
+        </div>
+        <div className="flex items-start gap-2">
+          <input
+            type="checkbox"
+            id="newsletterOptIn"
+            checked={newsletterOptIn}
+            onChange={(e) => setNewsletterOptIn(e.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-gray-300"
+          />
+          <label htmlFor="newsletterOptIn" className="text-sm text-gray-700">
+            Send me a monthly Newsletter.
+          </label>
+        </div>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

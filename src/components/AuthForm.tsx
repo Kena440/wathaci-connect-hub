@@ -37,6 +37,10 @@ const signUpSchema = baseSchema
         message: 'Enter a valid phone number with country code',
       }),
     confirmPassword: z.string().min(8, 'Please confirm your password'),
+    acceptedTerms: z.boolean().refine((value) => value === true, {
+      message: 'You must accept the Terms & Conditions',
+    }),
+    newsletterOptIn: z.boolean().optional().default(false),
   })
   .refine((values) => values.password === values.confirmPassword, {
     message: 'Passwords do not match',
@@ -164,6 +168,8 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
           payment_phone: phone,
           payment_method: phone ? 'phone' : undefined,
           use_same_phone: phone ? true : undefined,
+          accepted_terms: typed.acceptedTerms,
+          newsletter_opt_in: typed.newsletterOptIn ?? false,
         });
       }
 
@@ -260,6 +266,41 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
             {errors.phone?.message && (
               <p className="text-sm text-red-600">{errors.phone.message}</p>
             )}
+          </div>
+
+          <div className="space-y-3 border-t pt-4">
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                id="acceptedTerms"
+                disabled={isFormDisabled}
+                className="mt-1 h-4 w-4 rounded border-gray-300"
+                {...register('acceptedTerms')}
+              />
+              <Label htmlFor="acceptedTerms" className="cursor-pointer text-sm font-normal">
+                I read and accept the{' '}
+                <a href="/terms" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
+                  Terms & Conditions
+                </a>
+                . <span className="text-red-600">*</span>
+              </Label>
+            </div>
+            {errors.acceptedTerms?.message && (
+              <p className="text-sm text-red-600">{errors.acceptedTerms.message}</p>
+            )}
+
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                id="newsletterOptIn"
+                disabled={isFormDisabled}
+                className="mt-1 h-4 w-4 rounded border-gray-300"
+                {...register('newsletterOptIn')}
+              />
+              <Label htmlFor="newsletterOptIn" className="cursor-pointer text-sm font-normal">
+                Send me a monthly Newsletter.
+              </Label>
+            </div>
           </div>
         </>
       )}

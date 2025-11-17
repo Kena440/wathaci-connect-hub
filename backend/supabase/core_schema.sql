@@ -59,6 +59,8 @@ create table if not exists public.profiles (
   experience_years integer,
   specialization text,
   gaps_identified text[],
+  accepted_terms boolean not null default false,
+  newsletter_opt_in boolean not null default false,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
@@ -84,7 +86,9 @@ alter table public.profiles
   add column if not exists department text,
   add column if not exists government_focus text,
   add column if not exists programs text,
-  add column if not exists partnership_needs text;
+  add column if not exists partnership_needs text,
+  add column if not exists accepted_terms boolean not null default false,
+  add column if not exists newsletter_opt_in boolean not null default false;
 
 -- Automatically maintain updated_at
 create or replace function public.set_updated_at()

@@ -37,6 +37,8 @@ export interface BaseProfile {
   email: string;
   account_type: AccountType;
   profile_completed: boolean;
+  accepted_terms?: boolean;
+  newsletter_opt_in?: boolean;
   created_at: string;
   updated_at: string;
 }
