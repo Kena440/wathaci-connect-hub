@@ -78,7 +78,6 @@ export const SignupForm = ({
   const handleProfileUpsert = async (
     userId: string,
     values: SignupFormValues,
-    newsletterOptIn: boolean,
     selectedAccountType: AccountTypeValue
   ) => {
     const { error: profileErrorResponse } = await supabase.from("profiles").upsert(
@@ -88,7 +87,7 @@ export const SignupForm = ({
         first_name: values.fullName,
         account_type: selectedAccountType,
         accepted_terms: true,
-        newsletter_opt_in: newsletterOptIn,
+        newsletter_opt_in: Boolean(values.newsletterOptIn),
         profile_completed: false,
       },
       {
@@ -139,7 +138,6 @@ export const SignupForm = ({
       await handleProfileUpsert(
         data.user.id,
         values,
-        Boolean(values.newsletterOptIn),
         normalizedAccountType
       );
     }
@@ -215,7 +213,7 @@ export const SignupForm = ({
             className="mt-1"
           />
           <span className="text-sm text-gray-700">
-            I have read and accept the {" "}
+            I have read and accept the{" "}
             <Link to="/terms-of-service" className="text-orange-700 underline">
               Terms & Conditions
             </Link>
