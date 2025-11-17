@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { usePaymentStatus } from '@/hooks/use-payment-status';
 import { formatAmount } from '@/lib/payment-config';
+import { SUPPORT_EMAIL } from '@/lib/supportEmail';
 
 interface PaymentStatusTrackerProps {
   reference: string;
@@ -337,7 +338,7 @@ export const PaymentStatusTracker = ({
             <XCircle className="h-4 w-4" />
             <AlertDescription>
               Payment {paymentStatus?.status}.
-              {paymentStatus?.status === 'failed' && ' Please try again or contact support@wathaci.com.'}
+              {paymentStatus?.status === 'failed' && ` Please try again or contact ${SUPPORT_EMAIL}.`}
             </AlertDescription>
           </Alert>
         )}
@@ -357,7 +358,7 @@ export const PaymentStatusTracker = ({
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              Payment tracking will timeout soon. Please contact support@wathaci.com if your payment was deducted.
+              Payment tracking will timeout soon. Please contact {SUPPORT_EMAIL} if your payment was deducted.
             </AlertDescription>
           </Alert>
         )}
