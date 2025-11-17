@@ -215,7 +215,7 @@ export const SignupForm = ({
             className="mt-1"
           />
           <span className="text-sm text-gray-700">
-            I have read and accept the {" "}
+            I have read and accept the{" "}
             <Link to="/terms-of-service" className="text-orange-700 underline">
               Terms & Conditions
             </Link>

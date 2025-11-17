@@ -86,9 +86,7 @@ alter table public.profiles
   add column if not exists department text,
   add column if not exists government_focus text,
   add column if not exists programs text,
-  add column if not exists partnership_needs text,
-  add column if not exists accepted_terms boolean not null default false,
-  add column if not exists newsletter_opt_in boolean not null default false;
+  add column if not exists partnership_needs text;
 
 -- Automatically maintain updated_at
 create or replace function public.set_updated_at()
