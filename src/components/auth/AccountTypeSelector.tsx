@@ -1,49 +1,75 @@
-import React from "react";
-import type { AccountType } from "@/lib/wathaciSupabaseClient";
+import { accountTypes, type AccountTypeValue } from "@/data/accountTypes";
+import { cn } from "@/lib/utils";
 
-const accountTypeDetails: { value: AccountType; label: string; description: string }[] = [
-  { value: "SME", label: "SME", description: "Operate and grow your business." },
-  { value: "INVESTOR", label: "Investor", description: "Discover and fund opportunities." },
-  { value: "SERVICE_PROVIDER", label: "Service Provider", description: "Offer services to SMEs and partners." },
-  { value: "PARTNER", label: "Partner", description: "Collaborate as an ecosystem partner." },
-];
-
-export interface AccountTypeSelectorProps {
-  onSelect: (accountType: AccountType) => void;
-  selected?: AccountType;
+interface AccountTypeSelectorProps {
+  value: AccountTypeValue | "";
+  onChange: (value: AccountTypeValue) => void;
+  disabled?: boolean;
+  error?: string | null;
 }
 
-export const AccountTypeSelector: React.FC<AccountTypeSelectorProps> = ({
-  onSelect,
-  selected,
-}) => {
+export const AccountTypeSelector = ({ value, onChange, disabled = false, error }: AccountTypeSelectorProps) => {
   return (
-    <div className="flex flex-col gap-4">
-      <h2 className="text-2xl font-semibold">Choose your account type</h2>
-      <p className="text-sm text-gray-600">
-        Select how you want to use Wathaci. You can request changes later from support.
-      </p>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {accountTypeDetails.map((type) => {
-          const isSelected = selected === type.value;
+    <div className="space-y-3">
+      <div className="flex items-baseline justify-between">
+        <div>
+          <p className="text-sm font-semibold text-gray-900">Select Account Type</p>
+          <p className="text-sm text-gray-600">Choose the option that best describes how you will use Wathaci.</p>
+        </div>
+        <span className="text-xs font-medium uppercase tracking-wide text-orange-600">Required</span>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        {accountTypes.map((type) => {
+          const isSelected = value === type.value;
           return (
             <button
               key={type.value}
               type="button"
-              onClick={() => onSelect(type.value)}
-              className={`rounded-lg border p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-                isSelected ? "border-blue-600 ring-2 ring-blue-200" : "border-gray-200"
-              }`}
+              disabled={disabled}
+              onClick={() => onChange(type.value)}
+              className={cn(
+                "flex h-full flex-col rounded-xl border bg-white p-4 text-left shadow-sm transition focus:outline-none",
+                isSelected
+                  ? "border-orange-500 ring-2 ring-orange-200"
+                  : "border-gray-200 hover:border-orange-400 hover:shadow",
+                disabled && "cursor-not-allowed opacity-60"
+              )}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-lg font-medium">{type.label}</span>
-                {isSelected && <span className="text-sm font-semibold text-blue-600">Selected</span>}
+              <div className="flex items-center gap-3">
+                <div
+                  className={cn(
+                    "flex h-10 w-10 items-center justify-center rounded-lg",
+                    isSelected ? "bg-orange-100 text-orange-700" : "bg-gray-100 text-gray-600"
+                  )}
+                >
+                  <type.icon className="h-6 w-6" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-gray-900">{type.label}</p>
+                    <span
+                      className={cn(
+                        "h-2 w-2 rounded-full",
+                        isSelected ? "bg-orange-500" : "bg-gray-300"
+                      )}
+                      aria-hidden
+                    />
+                  </div>
+                  <p className="text-sm text-gray-600">{type.description}</p>
+                </div>
               </div>
-              <p className="mt-2 text-sm text-gray-600">{type.description}</p>
+              {type.idealFor?.length ? (
+                <ul className="mt-3 list-disc space-y-1 pl-9 text-xs text-gray-600">
+                  {type.idealFor.slice(0, 2).map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              ) : null}
             </button>
           );
         })}
       </div>
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
     </div>
   );
 };

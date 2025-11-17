@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { subscriptionService } from '@/lib/services/subscription-service';
 import { LencoPayment } from '@/components/LencoPayment';
+import { SUPPORT_EMAIL } from '@/lib/supportEmail';
 
 interface SubscriptionPlan {
   id: string;
@@ -147,7 +148,7 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
       console.error('Payment verification error:', error);
       toast({
         title: "Payment Verification Failed",
-        description: "Please contact support@wathaci.com if payment was deducted",
+        description: `Please contact ${SUPPORT_EMAIL} if payment was deducted`,
         variant: "destructive",
       });
     }

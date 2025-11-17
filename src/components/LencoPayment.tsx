@@ -12,6 +12,7 @@ import { lencoPaymentService } from '@/lib/services/lenco-payment-service';
 import { validatePhoneNumber, formatAmount, TransactionType } from '@/lib/payment-config';
 import { useAppContext } from '@/contexts/AppContext';
 import { PaymentStatusTracker } from '@/components/PaymentStatusTracker';
+import { SUPPORT_EMAIL } from '@/lib/supportEmail';
 
 interface LencoPaymentProps {
   amount: string | number;
@@ -46,7 +47,7 @@ export const LencoPayment = ({ amount, description, transactionType = 'marketpla
     const newErrors: Record<string, string> = {};
 
     if (!isConfigured) {
-      newErrors.config = 'Payment system is not properly configured. Please contact support@wathaci.com.';
+      newErrors.config = `Payment system is not properly configured. Please contact ${SUPPORT_EMAIL}.`;
     }
 
     if (totalAmount < paymentConfig.minAmount) {
@@ -176,7 +177,7 @@ export const LencoPayment = ({ amount, description, transactionType = 'marketpla
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Payment system is currently unavailable. Please contact support@wathaci.com.
+              Payment system is currently unavailable. Please contact {SUPPORT_EMAIL}.
             </AlertDescription>
           </Alert>
         </CardContent>

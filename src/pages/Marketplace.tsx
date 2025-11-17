@@ -18,6 +18,7 @@ import { PaymentStatusTracker } from '@/components/PaymentStatusTracker';
 import { supabase } from '@/lib/supabase-enhanced';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
+import { SUPPORT_EMAIL } from '@/lib/supportEmail';
 import { PaymentWithNegotiation } from '@/components/PaymentWithNegotiation';
 import {
   marketplaceProducts as fallbackProducts,
@@ -128,7 +129,7 @@ const Marketplace = () => {
       console.error('Error saving order:', error);
       toast({
         title: 'Order save failed',
-        description: 'Please contact support@wathaci.com if payment was deducted.',
+        description: `Please contact ${SUPPORT_EMAIL} if payment was deducted.`,
         variant: 'destructive'
       });
     }

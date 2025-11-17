@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { normalizeMsisdn } from '@/utils/phone';
+
+const CREDENTIALS_STORAGE_KEY = 'wathaci-auth-credentials';
 
 const baseSchema = z.object({
   email: z
@@ -24,7 +26,9 @@ const baseSchema = z.object({
     .max(72, 'Password must be 72 characters or fewer'),
 });
 
-const signInSchema = baseSchema;
+const signInSchema = baseSchema.extend({
+  rememberPassword: z.boolean().optional().default(false),
+});
 
 const signUpSchema = baseSchema
   .extend({
@@ -66,12 +70,46 @@ const normalizePhone = (value: string | undefined) => {
   return normalized ?? undefined;
 };
 
+const getStoredCredentials = () => {
+  if (typeof window === 'undefined') return null;
+
+  const stored = window.localStorage.getItem(CREDENTIALS_STORAGE_KEY);
+  if (!stored) return null;
+
+  try {
+    const parsed = JSON.parse(stored);
+    if (!parsed.email || !parsed.password) return null;
+    return {
+      email: String(parsed.email),
+      password: String(parsed.password),
+    };
+  } catch (error) {
+    console.error('Failed to parse stored credentials', error);
+    window.localStorage.removeItem(CREDENTIALS_STORAGE_KEY);
+    return null;
+  }
+};
+
+const saveCredentials = (email: string, password: string) => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(CREDENTIALS_STORAGE_KEY, JSON.stringify({ email, password }));
+};
+
+const clearStoredCredentials = () => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(CREDENTIALS_STORAGE_KEY);
+};
+
 export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabledReason }: AuthFormProps) => {
   const navigate = useNavigate();
   const { signIn, signUp, user, profile, loading } = useAppContext();
   const [formError, setFormError] = useState<string | null>(null);
   const [maintenanceNotice, setMaintenanceNotice] = useState<string | null>(disabled ? disabledReason ?? null : null);
   const [authCompleted, setAuthCompleted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const storedCredentials = useMemo(() => (mode === 'signin' ? getStoredCredentials() : null), [mode]);
 
   const {
     register,
@@ -81,6 +119,14 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
   } = useForm<SignInValues | SignUpValues>({
     resolver: zodResolver(mode === 'signup' ? signUpSchema : signInSchema),
     mode: 'onBlur',
+    defaultValues:
+      mode === 'signin' && storedCredentials
+        ? {
+            email: storedCredentials.email,
+            password: storedCredentials.password,
+            rememberPassword: true,
+          }
+        : undefined,
   });
 
   const handleSuccess = () => {
@@ -155,7 +201,14 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
 
     try {
       if (mode === 'signin') {
-        await signIn(values.email, values.password);
+        const signInValues = values as SignInValues;
+        await signIn(signInValues.email, signInValues.password);
+
+        if (signInValues.rememberPassword) {
+          saveCredentials(signInValues.email, signInValues.password);
+        } else {
+          clearStoredCredentials();
+        }
       } else {
         const typed = values as SignUpValues;
         const phone = normalizePhone(typed.phone) ?? typed.phone.trim();
@@ -209,13 +262,23 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
 
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          type="password"
-          autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-          disabled={isFormDisabled}
-          {...register('password')}
-        />
+        <div className="relative">
+          <Input
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+            disabled={isFormDisabled}
+            {...register('password')}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute inset-y-0 right-3 text-sm font-semibold text-gray-600 hover:text-gray-900 disabled:cursor-not-allowed"
+            disabled={isFormDisabled}
+          >
+            {showPassword ? 'Hide' : 'Show'}
+          </button>
+        </div>
         {errors.password?.message && (
           <p className="text-sm text-red-600">{errors.password.message}</p>
         )}
@@ -225,13 +288,23 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
         <>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              autoComplete="new-password"
-              disabled={isFormDisabled}
-              {...register('confirmPassword')}
-            />
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                disabled={isFormDisabled}
+                {...register('confirmPassword')}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                className="absolute inset-y-0 right-3 text-sm font-semibold text-gray-600 hover:text-gray-900 disabled:cursor-not-allowed"
+                disabled={isFormDisabled}
+              >
+                {showConfirmPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
             {errors.confirmPassword?.message && (
               <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>
             )}
@@ -278,7 +351,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
                 {...register('acceptedTerms')}
               />
               <Label htmlFor="acceptedTerms" className="cursor-pointer text-sm font-normal">
-                I read and accept the{' '}
+                I have read and accept the{' '}
                 <a href="/terms-of-service" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
                   Terms & Conditions
                 </a>
@@ -303,6 +376,21 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
             </div>
           </div>
         </>
+      )}
+
+      {mode === 'signin' && (
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="rememberPassword"
+            disabled={isFormDisabled}
+            className="h-4 w-4 rounded border-gray-300"
+            {...register('rememberPassword')}
+          />
+          <Label htmlFor="rememberPassword" className="cursor-pointer text-sm font-normal">
+            Remember password on this device
+          </Label>
+        </div>
       )}
 
       <Button type="submit" className="w-full" disabled={isFormDisabled || authCompleted}>
