@@ -162,7 +162,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ accountType, onSuccess }
           />
           <label htmlFor="acceptedTerms" className="text-sm text-gray-700">
             I read and accept the{" "}
-            <a href="/terms" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
+            <a href="/terms-of-service" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
               Terms & Conditions
             </a>
             . <span className="text-red-600">*</span>

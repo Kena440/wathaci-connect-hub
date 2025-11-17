@@ -279,7 +279,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
               />
               <Label htmlFor="acceptedTerms" className="cursor-pointer text-sm font-normal">
                 I read and accept the{' '}
-                <a href="/terms" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
+                <a href="/terms-of-service" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
                   Terms & Conditions
                 </a>
                 . <span className="text-red-600">*</span>
