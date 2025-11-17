@@ -1,7 +1,11 @@
-import { Link } from 'react-router-dom';
-import AuthForm from '@/components/AuthForm';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { getMaintenanceConfig } from '@/config/featureFlags';
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+
+import AccountTypeSelector from "@/components/auth/AccountTypeSelector";
+import SignupForm from "@/components/auth/SignupForm";
+import { type AccountTypeValue } from "@/data/accountTypes";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { getMaintenanceConfig } from "@/config/featureFlags";
 
 export const SignUp = () => {
   const maintenance = getMaintenanceConfig();
@@ -9,48 +13,94 @@ export const SignUp = () => {
   const signUpDisabled = maintenanceActive && !maintenance.allowSignUp;
   const signInAvailable = !maintenanceActive || maintenance.allowSignIn;
 
+  const [selectedAccountType, setSelectedAccountType] = useState<AccountTypeValue | "">("");
+  const [accountTypeError, setAccountTypeError] = useState<string | null>(null);
+  const [emailForConfirmation, setEmailForConfirmation] = useState<string | null>(null);
+  const [confirmationRequired, setConfirmationRequired] = useState(false);
+
+  const handleAccountTypeChange = (value: AccountTypeValue) => {
+    setSelectedAccountType(value);
+    setAccountTypeError(null);
+  };
+
+  const handleSignupSuccess = (email: string, requiresEmailConfirmation: boolean) => {
+    setEmailForConfirmation(email);
+    setConfirmationRequired(requiresEmailConfirmation);
+  };
+
+  const headline = useMemo(() => "Sign up. It is fast and easy.", []);
+
+  const showSuccessState = Boolean(emailForConfirmation);
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-white via-orange-50 to-green-100 p-6">
-      <div className="w-full max-w-xl rounded-2xl bg-white/90 p-8 shadow-xl ring-1 ring-orange-100/60 backdrop-blur">
+      <div className="w-full max-w-5xl rounded-2xl bg-white/95 p-8 shadow-xl ring-1 ring-orange-100/60 backdrop-blur">
         {maintenanceActive && (
           <Alert variant="warning" className="mb-6">
             <AlertTitle>{maintenance.bannerTitle}</AlertTitle>
             <AlertDescription>{maintenance.bannerMessage}</AlertDescription>
           </Alert>
         )}
-        <div className="mb-6 text-center">
-          <img
-            src="https://d64gsuwffb70l.cloudfront.net/686a39ec793daf0c658a746a_1753699300137_a4fb9790.png"
-            alt="Wathaci Connect"
-            className="mx-auto h-16 w-auto"
-            loading="lazy"
-            decoding="async"
-          />
-          <h1 className="mt-4 text-2xl font-bold text-gray-900">Join Wathaci Connect</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Create an account to start donating, supporting SMEs, and tracking your contributions.
-          </p>
+
+        <div className="grid gap-8 lg:grid-cols-5 lg:items-start">
+          <div className="lg:col-span-2">
+            <img
+              src="https://d64gsuwffb70l.cloudfront.net/686a39ec793daf0c658a746a_1753699300137_a4fb9790.png"
+              alt="Wathaci Connect"
+              className="h-14 w-auto"
+              loading="lazy"
+              decoding="async"
+            />
+            <h1 className="mt-6 text-3xl font-bold text-gray-900">{headline}</h1>
+            <p className="mt-3 max-w-xl text-base text-gray-700">
+              Choose your account type, accept the Terms & Conditions, and create your secure login to start using Wathaci.
+            </p>
+            <div className="mt-6 rounded-xl bg-orange-50 p-4 text-sm text-orange-900">
+              <p className="font-semibold">Remember</p>
+              <p>
+                Your account type controls your onboarding journey. We only support the existing Wathaci account types; no changes or
+                new roles are introduced here.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-6 lg:col-span-3">
+            {!showSuccessState ? (
+              <>
+                <AccountTypeSelector
+                  value={selectedAccountType}
+                  onChange={handleAccountTypeChange}
+                  disabled={signUpDisabled}
+                  error={accountTypeError}
+                />
+
+                <SignupForm
+                  accountType={selectedAccountType}
+                  onAccountTypeMissing={setAccountTypeError}
+                  onSuccess={handleSignupSuccess}
+                  disabled={signUpDisabled}
+                />
+              </>
+            ) : (
+              <div className="space-y-4 rounded-2xl border border-green-100 bg-green-50 p-6">
+                <h2 className="text-2xl font-semibold text-green-900">Account created</h2>
+                <p className="text-base text-green-900">
+                  {confirmationRequired
+                    ? "Please check your email to confirm your address before logging in."
+                    : "You can now sign in and complete your profile setup."}
+                </p>
+                {emailForConfirmation ? (
+                  <p className="text-sm text-green-900">Confirmation sent to: {emailForConfirmation}</p>
+                ) : null}
+                {signInAvailable ? (
+                  <Link to="/signin" className="font-semibold text-green-900 underline">
+                    Already have an account? Login
+                  </Link>
+                ) : null}
+              </div>
+            )}
+          </div>
         </div>
-
-        <AuthForm
-          mode="signup"
-          redirectTo="/"
-          disabled={signUpDisabled}
-          disabledReason={maintenance.bannerMessage}
-        />
-
-        {signInAvailable ? (
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link to="/signin" className="font-semibold text-red-600 hover:text-red-700">
-              Sign in instead
-            </Link>
-          </p>
-        ) : (
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Sign-in is temporarily disabled while we finalize our production migration.
-          </p>
-        )}
       </div>
     </div>
   );

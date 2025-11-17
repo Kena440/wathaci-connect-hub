@@ -26,9 +26,6 @@ const SignIn = lazy(() =>
 const SignUp = lazy(() =>
   import("./pages/SignUp").then((module) => ({ default: module.SignUp }))
 );
-const ZaqaSignup = lazy(() =>
-  import("./pages/ZaqaSignup").then((module) => ({ default: module.default }))
-);
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const GetStartedPage = lazy(() =>
@@ -120,7 +117,6 @@ export const AppRoutes = () => (
       <Route path="/resources" element={<Resources />} />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
-      <Route path="/signup-zaqa" element={<ZaqaSignup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/get-started" element={<GetStartedPage />} />
