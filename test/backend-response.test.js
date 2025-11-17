@@ -3,6 +3,7 @@ import assert from 'node:assert';
 import crypto from 'node:crypto';
 
 process.env.ALLOW_IN_MEMORY_REGISTRATION = 'true';
+process.env.ALLOW_IN_MEMORY_OTP = 'true';
 
 import app from '../backend/index.js';
 

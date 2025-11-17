@@ -141,6 +141,30 @@ After creating the files, update them with your actual credentials:
 - `SMTP_PASSWORD` – SMTP password for email delivery (see [Email Configuration Guide](EMAIL_CONFIGURATION_GUIDE.md)).
 - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_MESSAGE_SERVICE_SID` – Twilio credentials for SMS OTP (see [SMS OTP Setup Guide](SMS_OTP_SETUP_GUIDE.md)).
 
+## SMS & WhatsApp OTP (Twilio)
+
+The backend now exposes OTP endpoints backed by Twilio. Configure the following environment variables at runtime:
+
+```
+TWILIO_ACCOUNT_SID=<twilio-account-sid>
+TWILIO_AUTH_TOKEN=<twilio-auth-token>
+TWILIO_MESSAGE_SERVICE_SID=<preferred messaging service>
+# Optional fallbacks
+TWILIO_PHONE_NUMBER=+1234567890
+TWILIO_WHATSAPP_FROM=whatsapp:+1234567890
+
+# Enable Supabase-backed persistence (recommended)
+SUPABASE_URL=https://<project>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+```
+
+API contracts (JSON):
+
+- `POST /api/auth/otp/send` with `{ "phone": "+260...", "channel": "sms" | "whatsapp" }` → `200 { ok: true }` when dispatched.
+- `POST /api/auth/otp/verify` with `{ "phone": "+260...", "channel": "sms" | "whatsapp", "code": "123456" }` → `200 { ok: true, result: { phone_verified: boolean } }` when valid.
+
+Codes are 6 digits, expire after 10 minutes, and allow up to 5 attempts. When Supabase credentials are present, OTPs are stored in `public.otp_challenges` and successful verifications stamp `profiles.phone_verified_at`.
+
 **Validate your configuration:**
 
 ```bash
