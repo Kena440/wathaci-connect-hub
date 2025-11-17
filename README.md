@@ -35,6 +35,32 @@ npm run supabase:deploy     # Deploy edge functions
 
 For CI/CD integration, see [docs/SUPABASE_CLI_CICD.md](./docs/SUPABASE_CLI_CICD.md).
 
+## Authentication & Email/SMS
+
+### Email Confirmations
+
+Email confirmations are now **enabled** for new user signups. Users will receive a confirmation email after registration.
+
+Configuration details:
+- **[Email Configuration Guide](EMAIL_CONFIGURATION_GUIDE.md)** - Complete SMTP setup and email configuration
+- SMTP provider: PrivateEmail (Namecheap) via `mail.privateemail.com`
+- Templates located in: `supabase/templates/`
+
+### SMS OTP Support
+
+Users can now choose to receive verification codes via SMS during signup:
+
+- **[SMS OTP Setup Guide](SMS_OTP_SETUP_GUIDE.md)** - Complete SMS configuration and Twilio setup
+- SMS provider: Twilio
+- Optional mobile number field in signup form
+- Users can select email or SMS verification
+
+Key features:
+- Flexible authentication (email or SMS)
+- International phone number support
+- OTP expiry: 60 minutes
+- Rate limiting: 60 seconds between SMS sends
+
 ## Payments
 
 Integration steps and deployment details for Lenco payments are covered in the [Payment Integration Guide](docs/PAYMENT_INTEGRATION_GUIDE.md).
@@ -112,6 +138,8 @@ After creating the files, update them with your actual credentials:
 - `VITE_MAX_PAYMENT_AMOUNT` – Maximum allowed payment amount (e.g. `50000`).
 - `VITE_APP_ENV` – Set to `production` for live deployments.
 - `VITE_APP_NAME` – Application display name.
+- `SMTP_PASSWORD` – SMTP password for email delivery (see [Email Configuration Guide](EMAIL_CONFIGURATION_GUIDE.md)).
+- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_MESSAGE_SERVICE_SID` – Twilio credentials for SMS OTP (see [SMS OTP Setup Guide](SMS_OTP_SETUP_GUIDE.md)).
 
 **Validate your configuration:**
 

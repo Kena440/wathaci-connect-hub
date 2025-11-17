@@ -12,7 +12,7 @@ export const SignupFlow: React.FC = () => {
     setStep("form");
   };
 
-  const handleSuccess = () => {
+  const handleSuccess = (email: string, requiresConfirmation: boolean, phone?: string) => {
     setStep("success");
   };
 
@@ -29,7 +29,11 @@ export const SignupFlow: React.FC = () => {
       )}
 
       {step === "form" && accountType && (
-        <SignupForm accountType={accountType} onSuccess={handleSuccess} />
+        <SignupForm 
+          accountType={accountType} 
+          onSuccess={handleSuccess}
+          onAccountTypeMissing={(msg) => console.error(msg)}
+        />
       )}
 
       {step === "success" && (
