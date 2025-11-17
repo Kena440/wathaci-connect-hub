@@ -6,6 +6,7 @@ const {
   DuplicateRegistrationError,
   RegistrationStoreError,
 } = require('../services/registration-store');
+const { SUPPORT_EMAIL } = require('../lib/support-email');
 
 const router = express.Router();
 
@@ -43,7 +44,7 @@ router.post('/', validate(userSchema), async (req, res) => {
       const status = error.status ?? 500;
       const message =
         status === 503
-          ? 'Registrations are temporarily unavailable. Please contact support@wathaci.com.'
+          ? `Registrations are temporarily unavailable. Please contact ${SUPPORT_EMAIL}.`
           : 'Unable to save registration. Please try again later.';
       return res.status(status).json({ error: message });
     }

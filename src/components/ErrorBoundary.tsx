@@ -1,4 +1,5 @@
 import React from "react";
+import { SUPPORT_EMAIL } from '@/lib/supportEmail';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -146,8 +147,8 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
           <div className="space-y-2">
             <h2 className="text-xl font-semibold text-gray-900">Something went wrong.</h2>
             <p className="max-w-md text-sm text-gray-600">
-              An unexpected error occurred while rendering WATHACI CONNECT. Try reloading the page or contact
-              support@wathaci.com if the problem continues.
+              An unexpected error occurred while rendering WATHACI CONNECT. Try reloading the page or contact{' '}
+              {SUPPORT_EMAIL} if the problem continues.
             </p>
           </div>
           {import.meta.env.DEV && this.state.error && (
@@ -176,7 +177,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
             </button>
             <p>
               Need help?{" "}
-              <a className="text-blue-600 underline" href="mailto:support@wathaci.com">
+              <a className="text-blue-600 underline" href={`mailto:${SUPPORT_EMAIL}`}>
                 Contact support
               </a>{" "}
               or visit our{" "}

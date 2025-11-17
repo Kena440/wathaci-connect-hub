@@ -1,5 +1,6 @@
 import type { SupabaseConfigStatus } from "@/config/appConfig";
 import type { PaymentConfig } from "@/lib/payment-config";
+import { SUPPORT_EMAIL } from "@/lib/supportEmail";
 
 interface ConfigurationErrorProps {
   supabaseStatus: SupabaseConfigStatus;
@@ -115,7 +116,7 @@ npm run preview`}
         </section>
 
         <footer className="text-xs text-gray-500">
-          Need help? Email <a className="text-blue-600 underline" href="mailto:support@wathaci.com">support@wathaci.com</a> or
+          Need help? Email <a className="text-blue-600 underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> or
           check the deployment runbook.
         </footer>
       </div>

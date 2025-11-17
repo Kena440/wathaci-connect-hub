@@ -1,5 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
+const SUPPORT_EMAIL = Deno.env.get('SUPPORT_EMAIL')?.trim() || 'support@wathaci.com';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -277,7 +279,7 @@ serve(async (req) => {
         matches: { freelancers: [], funding: [], partnerships: [] },
         recommendations: {
           priority: 'Unable to generate recommendations at this time.',
-          nextSteps: 'Please retry the request or contact support@wathaci.com if the issue persists.',
+          nextSteps: `Please retry the request or contact ${SUPPORT_EMAIL} if the issue persists.`,
           timeline: 'Pending resolution.'
         },
         error: message

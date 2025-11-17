@@ -14,6 +14,7 @@ import {
   generateProfessionalMatches,
   getMarketplaceCatalog
 } from '@/data/marketplace';
+import { SUPPORT_EMAIL } from './supportEmail';
 
 type SupabaseClientLike = ReturnType<typeof createClient> | ReturnType<typeof createMockSupabaseClient>;
 
@@ -810,11 +811,11 @@ export const withErrorHandling = async <T>(
         };
       }
       
-      if (errorMessage.includes('Invalid API key') || 
+      if (errorMessage.includes('Invalid API key') ||
           errorMessage.includes('Invalid Supabase URL')) {
         return {
           data: null,
-          error: new Error('Configuration error. Please contact support@wathaci.com.')
+          error: new Error(`Configuration error. Please contact ${SUPPORT_EMAIL}.`)
         };
       }
       

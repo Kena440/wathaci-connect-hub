@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Linkedin, Instagram, Mail, Phone, MapPin } from 'lucide-react';
+import { SUPPORT_EMAIL } from '@/lib/supportEmail';
 
 const Footer = () => {
   return (
@@ -69,9 +70,9 @@ const Footer = () => {
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <Mail className="w-4 h-4 text-orange-400" />
-                <a href="mailto:support@wathaci.com" className="text-gray-300 text-sm hover:text-white transition-colors">
-                  support@wathaci.com
-                </a>
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="text-gray-300 text-sm hover:text-white transition-colors">
+                {SUPPORT_EMAIL}
+              </a>
               </div>
               <div className="flex items-center space-x-2">
                 <Phone className="w-4 h-4 text-orange-400" />
