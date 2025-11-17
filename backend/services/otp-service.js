@@ -1,142 +1,337 @@
 /**
- * OTP delivery and verification via Twilio SMS & WhatsApp.
- *
- * API contracts (Express routes):
- *  • POST /api/auth/otp/send
- *      Body: { phone: string, channel: 'sms' | 'whatsapp' }
- *      Response: { ok: true, message: string }
- *  • POST /api/auth/otp/verify
- *      Body: { phone: string, channel?: 'sms' | 'whatsapp', code: string }
- *      Response: { ok: true, message: string, result: { phone_verified: boolean } }
- *
- * Behaviour:
- *  • Generates a 6-digit OTP, stores a hashed copy with 10-minute expiry and a
- *    5-attempt limit (Supabase-backed with in-memory fallback for tests).
- *  • Sends OTP via Twilio using TWILIO_MESSAGE_SERVICE_SID (or TWILIO_PHONE_NUMBER / TWILIO_WHATSAPP_FROM).
- *  • Verifies codes, increments attempt counters, and marks the phone as verified in Supabase profiles when available.
- *
- * Required environment variables:
- *  - TWILIO_ACCOUNT_SID
- *  - TWILIO_AUTH_TOKEN
- *  - TWILIO_MESSAGE_SERVICE_SID (preferred) or TWILIO_MESSAGING_SERVICE_SID
- *  - TWILIO_PHONE_NUMBER (fallback for SMS)
- *  - TWILIO_WHATSAPP_FROM (fallback for WhatsApp)
- *  - SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (optional; enables persistence)
+ * OTP Service - SMS and WhatsApp Verification
+ * 
+ * This service handles One-Time Password (OTP) generation, delivery, and verification
+ * via SMS and WhatsApp using Twilio.
+ * 
+ * Features:
+ * - Generate secure 6-digit OTP codes
+ * - Send OTP via SMS or WhatsApp
+ * - Verify OTP codes with attempt limiting
+ * - Automatic expiration (10 minutes)
+ * - Secure hashing (SHA-256) for storage
+ * 
+ * Security Measures:
+ * - OTP codes are hashed before storage
+ * - Maximum 5 verification attempts per OTP
+ * - 10-minute expiration window
+ * - Rate limiting should be applied at the route level
  */
 
-const { randomInt } = require('crypto');
-const twilioClient = require('../lib/twilioClient');
-const {
-  persistOtp,
-  loadActiveOtp,
-  incrementAttempt,
-  markOtpUsed,
-  hashOtpCode,
-  OTP_EXPIRY_MS,
-  MAX_ATTEMPTS,
-} = require('./otp-store');
-const { markPhoneVerified, normalizePhone } = require('./phone-verification');
+const crypto = require('crypto');
+const { getTwilioClient, getTwilioPhoneNumber, getTwilioWhatsAppFrom } = require('../lib/twilioClient');
+const { getSupabaseClient } = require('../lib/supabaseAdmin');
 
-const generateOtp = () => String(randomInt(0, 1_000_000)).padStart(6, '0');
+const OTP_LENGTH = 6;
+const OTP_EXPIRY_MINUTES = 10;
+const MAX_ATTEMPTS = 5;
 
-const normalizeChannel = (channel = 'sms') => (channel || 'sms').toLowerCase();
+/**
+ * Generate a secure random 6-digit OTP code
+ * @returns {string} 6-digit OTP code
+ */
+function generateOTP() {
+  // Generate random bytes and convert to 6-digit number
+  const randomNum = crypto.randomInt(0, 1000000);
+  return randomNum.toString().padStart(OTP_LENGTH, '0');
+}
 
-const formatDestination = (phone, channel) => {
-  if (channel === 'whatsapp') {
-    return phone.startsWith('whatsapp:') ? phone : `whatsapp:${phone}`;
+/**
+ * Hash an OTP code using SHA-256
+ * @param {string} code - The OTP code to hash
+ * @returns {string} Hexadecimal hash of the code
+ */
+function hashOTP(code) {
+  return crypto.createHash('sha256').update(code).digest('hex');
+}
+
+/**
+ * Normalize phone number to E.164 format
+ * @param {string} phone - Phone number to normalize
+ * @returns {string} Normalized phone number
+ */
+function normalizePhoneNumber(phone) {
+  // Remove all non-digit characters except leading +
+  let normalized = phone.replace(/[^\d+]/g, '');
+  
+  // If already starts with +, return as-is (already has country code)
+  if (normalized.startsWith('+')) {
+    return normalized;
   }
-  return phone;
-};
-
-const resolveMessagingConfig = (channel) => {
-  const messagingServiceSid = twilioClient.twilioConfig.messagingServiceSid;
-  const whatsappFrom = twilioClient.twilioConfig.whatsappFrom;
-  const phoneNumber = twilioClient.twilioConfig.phoneNumber;
-
-  if (!messagingServiceSid && channel === 'sms' && !phoneNumber) {
-    throw new Error('Missing Twilio SMS sender configuration');
+  
+  // If starts with country code 260 (Zambia), add +
+  if (normalized.startsWith('260')) {
+    return '+' + normalized;
   }
+  
+  // Otherwise, assume it's a local number and add Zambia country code
+  return '+260' + normalized;
+}
 
-  if (channel === 'whatsapp' && !messagingServiceSid && !whatsappFrom && !phoneNumber) {
-    throw new Error('Missing Twilio WhatsApp sender configuration');
-  }
+/**
+ * Format phone number for WhatsApp (whatsapp:+1234567890)
+ * @param {string} phone - Phone number in E.164 format
+ * @returns {string} WhatsApp-formatted number
+ */
+function formatWhatsAppNumber(phone) {
+  const normalized = normalizePhoneNumber(phone);
+  return normalized.startsWith('whatsapp:') ? normalized : `whatsapp:${normalized}`;
+}
 
-  if (channel === 'whatsapp') {
+/**
+ * Send OTP via SMS or WhatsApp using Twilio
+ * 
+ * @param {Object} params - Send OTP parameters
+ * @param {string} params.phone - Phone number in E.164 format
+ * @param {string} params.channel - Channel: 'sms' or 'whatsapp'
+ * @param {string} [params.userId] - Optional user ID to associate with OTP
+ * @returns {Promise<{ok: boolean, message: string, expiresAt?: Date}>}
+ */
+async function sendOTP({ phone, channel, userId = null }) {
+  const twilioClient = getTwilioClient();
+  
+  if (!twilioClient) {
+    console.error('[OTPService] Twilio not configured');
     return {
-      messagingServiceSid,
-      from: whatsappFrom || phoneNumber || undefined,
+      ok: false,
+      message: 'SMS/WhatsApp service is not configured',
     };
   }
 
-  return {
-    messagingServiceSid,
-    from: phoneNumber || undefined,
-  };
-};
-
-const sendOtp = async ({ phone, channel = 'sms' }) => {
-  const normalizedChannel = normalizeChannel(channel);
-  const normalizedPhone = normalizePhone(phone);
-  const destination = formatDestination(normalizedPhone, normalizedChannel);
-
-  const code = generateOtp();
-  const { expiresAt } = await persistOtp({ phone: normalizedPhone, channel: normalizedChannel, code });
-
-  const senderConfig = resolveMessagingConfig(normalizedChannel);
-  const messageBody = `Your Wathaci verification code is ${code}. It expires in ${Math.floor(
-    OTP_EXPIRY_MS / 60000,
-  )} minutes.`;
-
-  await twilioClient.sendTwilioMessage({
-    to: destination,
-    body: messageBody,
-    messagingServiceSid: senderConfig.messagingServiceSid,
-    from: senderConfig.from,
-  });
-
-  const maskedCode = `${code.slice(0, 2)}****`;
-  console.info('[otp-service] OTP dispatched', {
-    channel: normalizedChannel,
-    phone: normalizedPhone ? `${normalizedPhone.slice(0, 4)}***` : 'unknown',
-    code_hint: maskedCode,
-    expires_at: expiresAt,
-  });
-
-  return { expiresAt };
-};
-
-const verifyOtp = async ({ phone, channel = 'sms', code }) => {
-  const normalizedChannel = normalizeChannel(channel);
-  const normalizedPhone = normalizePhone(phone);
-  const challenge = await loadActiveOtp(normalizedPhone, normalizedChannel);
-
-  if (!challenge) {
-    return { ok: false, reason: 'not_found' };
+  // Validate channel
+  if (!['sms', 'whatsapp'].includes(channel)) {
+    return {
+      ok: false,
+      message: 'Invalid channel. Must be "sms" or "whatsapp"',
+    };
   }
 
-  if (new Date(challenge.expires_at).getTime() < Date.now()) {
-    await markOtpUsed(challenge);
-    return { ok: false, reason: 'expired' };
+  // Normalize phone number
+  const normalizedPhone = normalizePhoneNumber(phone);
+
+  // Generate OTP
+  const otpCode = generateOTP();
+  const hashedCode = hashOTP(otpCode);
+
+  // Calculate expiration time
+  const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
+  try {
+    // Store OTP in database
+    const supabase = getSupabaseClient();
+    const { error: dbError } = await supabase
+      .from('otp_verifications')
+      .insert({
+        phone: normalizedPhone,
+        channel,
+        hashed_code: hashedCode,
+        expires_at: expiresAt.toISOString(),
+        user_id: userId,
+      });
+
+    if (dbError) {
+      console.error('[OTPService] Database error:', dbError);
+      return {
+        ok: false,
+        message: 'Failed to store OTP. Please try again.',
+      };
+    }
+
+    // Prepare message
+    const messageBody = `Your Wathaci verification code is ${otpCode}. It expires in ${OTP_EXPIRY_MINUTES} minutes. Do not share this code with anyone.`;
+
+    // Determine sender and recipient
+    let fromNumber;
+    let toNumber;
+
+    if (channel === 'whatsapp') {
+      fromNumber = getTwilioWhatsAppFrom();
+      toNumber = formatWhatsAppNumber(normalizedPhone);
+      
+      if (!fromNumber) {
+        console.error('[OTPService] WhatsApp sender not configured');
+        return {
+          ok: false,
+          message: 'WhatsApp service is not configured',
+        };
+      }
+    } else {
+      // SMS
+      fromNumber = getTwilioPhoneNumber();
+      toNumber = normalizedPhone;
+      
+      if (!fromNumber) {
+        console.error('[OTPService] SMS phone number not configured');
+        return {
+          ok: false,
+          message: 'SMS service is not configured',
+        };
+      }
+    }
+
+    // Send message via Twilio
+    const message = await twilioClient.messages.create({
+      body: messageBody,
+      from: fromNumber,
+      to: toNumber,
+    });
+
+    console.log(`[OTPService] OTP sent successfully via ${channel} to ${normalizedPhone.slice(-4)} (SID: ${message.sid})`);
+
+    return {
+      ok: true,
+      message: 'OTP sent successfully',
+      expiresAt,
+    };
+  } catch (error) {
+    console.error('[OTPService] Error sending OTP:', error.message);
+    
+    // Don't expose internal Twilio errors to clients
+    return {
+      ok: false,
+      message: 'Failed to send OTP. Please check your phone number and try again.',
+    };
+  }
+}
+
+/**
+ * Verify OTP code
+ * 
+ * @param {Object} params - Verify OTP parameters
+ * @param {string} params.phone - Phone number in E.164 format
+ * @param {string} params.channel - Channel: 'sms' or 'whatsapp'
+ * @param {string} params.code - 6-digit OTP code entered by user
+ * @returns {Promise<{ok: boolean, message: string, phoneVerified?: boolean}>}
+ */
+async function verifyOTP({ phone, channel, code }) {
+  // Validate inputs
+  if (!phone || !channel || !code) {
+    return {
+      ok: false,
+      message: 'Missing required fields',
+    };
   }
 
-  if ((challenge.attempt_count || 0) >= (challenge.max_attempts || MAX_ATTEMPTS)) {
-    return { ok: false, reason: 'locked' };
+  if (!/^\d{6}$/.test(code)) {
+    return {
+      ok: false,
+      message: 'Invalid code format. Must be 6 digits.',
+    };
   }
 
-  await incrementAttempt(challenge);
+  const normalizedPhone = normalizePhoneNumber(phone);
+  const hashedCode = hashOTP(code);
 
-  const submittedHash = hashOtpCode(code);
-  if (submittedHash !== challenge.hashed_code) {
-    return { ok: false, reason: 'mismatch' };
+  try {
+    const supabase = getSupabaseClient();
+
+    // Find the most recent OTP for this phone/channel combination
+    const { data: otpRecords, error: fetchError } = await supabase
+      .from('otp_verifications')
+      .select('*')
+      .eq('phone', normalizedPhone)
+      .eq('channel', channel)
+      .is('verified_at', null)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (fetchError) {
+      console.error('[OTPService] Database error:', fetchError);
+      return {
+        ok: false,
+        message: 'Verification failed. Please try again.',
+      };
+    }
+
+    if (!otpRecords || otpRecords.length === 0) {
+      return {
+        ok: false,
+        message: 'No OTP found. Please request a new code.',
+      };
+    }
+
+    const otpRecord = otpRecords[0];
+
+    // Check if expired
+    if (new Date(otpRecord.expires_at) < new Date()) {
+      return {
+        ok: false,
+        message: 'OTP has expired. Please request a new code.',
+      };
+    }
+
+    // Check attempt count
+    if (otpRecord.attempt_count >= MAX_ATTEMPTS) {
+      return {
+        ok: false,
+        message: 'Maximum verification attempts exceeded. Please request a new code.',
+      };
+    }
+
+    // Increment attempt count
+    const { error: updateError } = await supabase
+      .from('otp_verifications')
+      .update({ attempt_count: otpRecord.attempt_count + 1 })
+      .eq('id', otpRecord.id);
+
+    if (updateError) {
+      console.error('[OTPService] Failed to update attempt count:', updateError);
+    }
+
+    // Verify the code
+    if (otpRecord.hashed_code !== hashedCode) {
+      return {
+        ok: false,
+        message: 'Invalid verification code.',
+      };
+    }
+
+    // Mark OTP as verified
+    const { error: verifyError } = await supabase
+      .from('otp_verifications')
+      .update({ verified_at: new Date().toISOString() })
+      .eq('id', otpRecord.id);
+
+    if (verifyError) {
+      console.error('[OTPService] Failed to mark OTP as verified:', verifyError);
+    }
+
+    // Update user profile if user_id is present
+    if (otpRecord.user_id) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ 
+          phone: normalizedPhone,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', otpRecord.user_id);
+
+      if (profileError) {
+        console.error('[OTPService] Failed to update profile:', profileError);
+      }
+    }
+
+    console.log(`[OTPService] OTP verified successfully for ${normalizedPhone.slice(-4)}`);
+
+    return {
+      ok: true,
+      message: 'OTP verified successfully',
+      phoneVerified: true,
+    };
+  } catch (error) {
+    console.error('[OTPService] Error verifying OTP:', error.message);
+    return {
+      ok: false,
+      message: 'Verification failed. Please try again.',
+    };
   }
-
-  await markOtpUsed(challenge);
-  const verification = await markPhoneVerified(normalizedPhone);
-
-  return { ok: true, reason: 'approved', verification };
-};
+}
 
 module.exports = {
-  sendOtp,
-  verifyOtp,
+  sendOTP,
+  verifyOTP,
+  generateOTP,
+  hashOTP,
+  normalizePhoneNumber,
+  formatWhatsAppNumber,
 };
