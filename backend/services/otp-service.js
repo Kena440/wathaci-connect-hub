@@ -54,13 +54,18 @@ function normalizePhoneNumber(phone) {
   // Remove all non-digit characters except leading +
   let normalized = phone.replace(/[^\d+]/g, '');
   
-  // Ensure it starts with +
-  if (!normalized.startsWith('+')) {
-    // Default to Zambia (+260) if no country code provided
-    normalized = '+260' + normalized;
+  // If already starts with +, return as-is (already has country code)
+  if (normalized.startsWith('+')) {
+    return normalized;
   }
   
-  return normalized;
+  // If starts with country code 260 (Zambia), add +
+  if (normalized.startsWith('260')) {
+    return '+' + normalized;
+  }
+  
+  // Otherwise, assume it's a local number and add Zambia country code
+  return '+260' + normalized;
 }
 
 /**
