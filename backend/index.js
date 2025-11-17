@@ -70,11 +70,13 @@ const userRoutes = require('./routes/users');
 const logRoutes = require('./routes/logs');
 const paymentRoutes = require('./routes/payment');
 const resolveRoutes = require('./routes/resolve');
+const otpRoutes = require('./routes/otp');
 
 app.use(['/users', '/api/users'], userRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/resolve', resolveRoutes);
+app.use(['/api/auth/otp', '/auth/otp'], otpRoutes);
 
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
