@@ -59,6 +59,8 @@ create table if not exists public.profiles (
   experience_years integer,
   specialization text,
   gaps_identified text[],
+  accepted_terms boolean not null default false,
+  newsletter_opt_in boolean not null default false,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
