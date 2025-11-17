@@ -163,5 +163,3 @@ test('OTP codes should have sufficient entropy', () => {
   // Allow for some collisions due to randomness
   assert.ok(otps.size > 950, 'Should have high uniqueness (>95%) in 1000 generated codes');
 });
-
-console.log('✓ All OTP service unit tests passed');
