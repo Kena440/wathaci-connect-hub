@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router-dom";
@@ -50,6 +50,7 @@ export const SignupForm = ({
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<SignupFormValues>({
     resolver: zodResolver(formSchema),
@@ -206,11 +207,18 @@ export const SignupForm = ({
 
       <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
         <label className="flex items-start gap-3">
-          <Checkbox
-            id="acceptedTerms"
-            disabled={isDisabled}
-            {...register("acceptedTerms")}
-            className="mt-1"
+          <Controller
+            name="acceptedTerms"
+            control={control}
+            render={({ field }) => (
+              <Checkbox
+                id="acceptedTerms"
+                disabled={isDisabled}
+                checked={field.value}
+                onCheckedChange={field.onChange}
+                className="mt-1"
+              />
+            )}
           />
           <span className="text-sm text-gray-700">
             I have read and accept the{" "}
@@ -225,11 +233,18 @@ export const SignupForm = ({
         ) : null}
 
         <label className="flex items-start gap-3">
-          <Checkbox
-            id="newsletterOptIn"
-            disabled={isDisabled}
-            {...register("newsletterOptIn")}
-            className="mt-1"
+          <Controller
+            name="newsletterOptIn"
+            control={control}
+            render={({ field }) => (
+              <Checkbox
+                id="newsletterOptIn"
+                disabled={isDisabled}
+                checked={field.value}
+                onCheckedChange={field.onChange}
+                className="mt-1"
+              />
+            )}
           />
           <span className="text-sm text-gray-700">Send me the Wathaci newsletter monthly.</span>
         </label>
