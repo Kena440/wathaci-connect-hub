@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "node --test ../test/backend-response.test.js ../test/otp.test.js"
+    "test": "node --test ../test/backend-response.test.js ../test/otp-service.test.js"
   },
   "keywords": [],
   "author": "",
