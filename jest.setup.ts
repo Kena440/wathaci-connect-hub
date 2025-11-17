@@ -13,3 +13,10 @@ global.fetch = jest.fn(() =>
     text: async () => '',
   } as Response)
 );
+
+// Mock ResizeObserver for Radix UI components
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
