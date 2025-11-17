@@ -161,7 +161,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ accountType, onSuccess }
             required
           />
           <label htmlFor="acceptedTerms" className="text-sm text-gray-700">
-            I read and accept the{" "}
+            I read and accept the{' '}
             <a href="/terms-of-service" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
               Terms & Conditions
             </a>
@@ -177,7 +177,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ accountType, onSuccess }
             className="mt-1 h-4 w-4 rounded border-gray-300"
           />
           <label htmlFor="newsletterOptIn" className="text-sm text-gray-700">
-            Send me a monthly Newsletter.
+            Send me a monthly newsletter.
           </label>
         </div>
       </div>

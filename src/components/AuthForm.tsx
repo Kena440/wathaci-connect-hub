@@ -298,7 +298,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
                 {...register('newsletterOptIn')}
               />
               <Label htmlFor="newsletterOptIn" className="cursor-pointer text-sm font-normal">
-                Send me a monthly Newsletter.
+                Send me a monthly newsletter.
               </Label>
             </div>
           </div>
