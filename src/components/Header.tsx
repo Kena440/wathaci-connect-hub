@@ -101,6 +101,13 @@ const Header = () => {
                 </Button>
               </Link>
             )}
+            {user && (
+              <Link to="/readiness">
+                <Button variant="ghost" size="sm" className="text-gray-700 hover:bg-orange-100">
+                  SME Readiness
+                </Button>
+              </Link>
+            )}
             <DonateButton />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -196,6 +203,13 @@ const Header = () => {
                     <Button variant="outline" size="sm" className="w-full border-orange-300">
                       <MessageCircle className="w-4 h-4 mr-2" />
                       {t('messages')}
+                    </Button>
+                  </Link>
+                )}
+                {user && (
+                  <Link to="/readiness">
+                    <Button variant="outline" size="sm" className="w-full border-orange-300">
+                      SME Readiness
                     </Button>
                   </Link>
                 )}
