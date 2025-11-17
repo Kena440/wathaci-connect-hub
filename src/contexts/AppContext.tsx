@@ -190,6 +190,16 @@ const prepareProfilePayload = (
     }
   }
 
+  // Handle accepted_terms field - ensure it's a boolean
+  if ('accepted_terms' in mutableData) {
+    mutableData.accepted_terms = Boolean(mutableData.accepted_terms);
+  }
+
+  // Handle newsletter_opt_in field - ensure it's a boolean with default false
+  if ('newsletter_opt_in' in mutableData) {
+    mutableData.newsletter_opt_in = Boolean(mutableData.newsletter_opt_in);
+  }
+
   const sanitizedEntries = Object.entries(mutableData).filter(([, value]) => value !== undefined);
 
   for (const [key, value] of sanitizedEntries) {
