@@ -169,7 +169,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
           payment_method: phone ? 'phone' : undefined,
           use_same_phone: phone ? true : undefined,
           accepted_terms: typed.acceptedTerms,
-          newsletter_opt_in: typed.newsletterOptIn,
+          newsletter_opt_in: typed.newsletterOptIn ?? false,
         });
       }
 
