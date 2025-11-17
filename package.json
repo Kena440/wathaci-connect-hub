@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "env:setup": "bash ./scripts/setup-env.sh",
     "env:check": "node scripts/env-check.mjs",
+    "config:validate": "node scripts/validate-config.mjs",
     "keys:rotate": "bash ./scripts/rotate-lenco-keys.sh",
     "test": "node scripts/run-tests.mjs",
     "test:jest": "jest",
