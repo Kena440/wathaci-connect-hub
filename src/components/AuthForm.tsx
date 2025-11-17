@@ -169,7 +169,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
           payment_method: phone ? 'phone' : undefined,
           use_same_phone: phone ? true : undefined,
           accepted_terms: typed.acceptedTerms,
-          newsletter_opt_in: typed.newsletterOptIn ?? false,
+          newsletter_opt_in: typed.newsletterOptIn,
         });
       }
 
@@ -278,7 +278,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
                 {...register('acceptedTerms')}
               />
               <Label htmlFor="acceptedTerms" className="cursor-pointer text-sm font-normal">
-                I read and accept the{' '}
+                I have read and accept the{' '}
                 <a href="/terms-of-service" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
                   Terms & Conditions
                 </a>
@@ -298,7 +298,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
                 {...register('newsletterOptIn')}
               />
               <Label htmlFor="newsletterOptIn" className="cursor-pointer text-sm font-normal">
-                Send me a monthly Newsletter.
+                Send me a monthly newsletter.
               </Label>
             </div>
           </div>
