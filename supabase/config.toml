@@ -184,19 +184,36 @@ otp_length = 6
 otp_expiry = 3600
 
 # Use a production-ready SMTP server
+# For production, configure PrivateEmail SMTP settings
 # [auth.email.smtp]
 # enabled = true
-# host = "smtp.sendgrid.net"
-# port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# host = "mail.privateemail.com"
+# port = 465
+# user = "support@wathaci.com"
+# pass = "env(SMTP_PASSWORD)"
+# admin_email = "support@wathaci.com"
+# sender_name = "Wathaci"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# subject = "You have been invited to Wathaci"
+# content_path = "./supabase/templates/signup-confirmation.html"
+
+# [auth.email.template.confirmation]
+# subject = "Confirm your email"
+# content_path = "./supabase/templates/signup-confirmation.html"
+
+# [auth.email.template.recovery]
+# subject = "Reset your password"
+# content_path = "./supabase/templates/password-reset.html"
+
+# [auth.email.template.magic_link]
+# subject = "Your login code"
+# content_path = "./supabase/templates/magic-link.html"
+
+# [auth.email.template.email_change]
+# subject = "Confirm email change"
+# content_path = "./supabase/templates/email-change.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
