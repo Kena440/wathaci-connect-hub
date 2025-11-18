@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { getApiEndpoint } from '@/config/api';
 
 interface OTPVerificationProps {
   onVerified?: (phone: string) => void;
@@ -43,15 +44,13 @@ export default function OTPVerification({
   const [success, setSuccess] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
 
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-
   const handleSendOTP = async () => {
     setError(null);
     setSuccess(null);
     setLoading(true);
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/auth/otp/send`, {
+      const response = await fetch(getApiEndpoint('/api/auth/otp/send'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -84,7 +83,7 @@ export default function OTPVerification({
     setLoading(true);
 
     try {
-      const response = await fetch(`${apiBaseUrl}/api/auth/otp/verify`, {
+      const response = await fetch(getApiEndpoint('/api/auth/otp/verify'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
