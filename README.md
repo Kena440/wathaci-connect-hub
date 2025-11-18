@@ -169,6 +169,53 @@ After creating the files, update them with your actual credentials:
 - `SMTP_PASSWORD` – SMTP password for email delivery (see [Email Configuration Guide](EMAIL_CONFIGURATION_GUIDE.md)).
 - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_MESSAGE_SERVICE_SID` – Twilio credentials for SMS OTP (see [SMS OTP Setup Guide](SMS_OTP_SETUP_GUIDE.md)).
 
+## Local Development
+
+To run WATHACI CONNECT locally, you need to start both the frontend and backend servers:
+
+### Prerequisites
+1. Install dependencies:
+   ```bash
+   npm install
+   cd backend && npm install && cd ..
+   ```
+
+2. Configure environment variables:
+   ```bash
+   # Ensure .env.local exists with required configuration
+   # Backend API URL should be set to:
+   VITE_API_BASE_URL="http://localhost:3000"
+   ```
+
+### Starting the Servers
+
+**Terminal 1 - Backend API (runs on port 3000):**
+```bash
+cd backend
+npm start
+```
+The backend Express server will start at `http://localhost:3000`
+
+**Terminal 2 - Frontend (runs on port 8080):**
+```bash
+npm run dev
+```
+The frontend Vite dev server will start at `http://localhost:8080`
+
+### Port Configuration
+- **Frontend**: `http://localhost:8080` (configured in `vite.config.js`)
+- **Backend API**: `http://localhost:3000` (configured in `backend/index.js`)
+- **API Base URL**: Set `VITE_API_BASE_URL="http://localhost:3000"` in `.env.local`
+
+### Accessing the Application
+Open your browser and navigate to: `http://localhost:8080`
+
+The frontend will automatically communicate with the backend API at `http://localhost:3000` for:
+- User registration
+- OTP verification
+- Payment processing
+- Logging and analytics
+
 ## SMS & WhatsApp OTP (Twilio)
 
 The backend now exposes OTP endpoints backed by Twilio. Configure the following environment variables at runtime:
