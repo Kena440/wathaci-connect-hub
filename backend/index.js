@@ -72,6 +72,32 @@ const paymentRoutes = require('./routes/payment');
 const resolveRoutes = require('./routes/resolve');
 const otpRoutes = require('./routes/otp');
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+  });
+});
+
+// API info endpoint
+app.get('/api', (req, res) => {
+  res.status(200).json({
+    name: 'WATHACI CONNECT API',
+    version: '1.0.0',
+    endpoints: {
+      health: 'GET /health',
+      users: 'POST /users, POST /api/users',
+      logs: 'POST /api/logs, GET /api/logs',
+      payment: 'GET /api/payment/readiness, POST /api/payment/webhook',
+      resolve: 'POST /resolve/lenco-merchant',
+      otp: 'POST /api/auth/otp/send, POST /api/auth/otp/verify',
+    },
+  });
+});
+
 app.use(['/users', '/api/users'], userRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/payment', paymentRoutes);
