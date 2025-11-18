@@ -108,6 +108,8 @@ export const SignupForm = ({
         accepted_terms: true,
         newsletter_opt_in: Boolean(values.newsletterOptIn),
         profile_completed: false,
+        phone: values.mobileNumber || null,
+        msisdn: values.mobileNumber || null,
       },
       {
         onConflict: "id",
@@ -141,15 +143,18 @@ export const SignupForm = ({
     if (values.useSmsOtp && values.mobileNumber) {
       // SMS-based signup with phone number
       const { data, error } = await supabase.auth.signUp({
+        email: values.email,
         phone: values.mobileNumber,
         password: values.password,
         options: {
+          channel: "sms",
           data: {
             full_name: values.fullName,
             email: values.email,
             account_type: normalizedAccountType,
             accepted_terms: true,
             newsletter_opt_in: Boolean(values.newsletterOptIn),
+            mobile_number: values.mobileNumber,
           },
         },
       });
