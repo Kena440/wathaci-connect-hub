@@ -506,3 +506,44 @@ export interface ServiceFilters extends PaginationParams {
   skills?: string[];
   search?: string;
 }
+// ================================
+// SME Readiness Score Types
+// ================================
+
+export interface SMEReadinessScore {
+  id: string;
+  user_id: string;
+  score: number;
+  answers: Record<string, string>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SMEReadinessAnswers {
+  q1?: 'yes' | 'no'; // Registered with PACRA
+  q2?: 'yes' | 'no'; // Issue receipts/invoices
+  q3?: 'yes' | 'no'; // Track expenses
+  q4?: 'yes' | 'no'; // Store customer details
+  q5?: 'yes' | 'no'; // Business bank/mobile money account
+}
+
+// ================================
+// Supabase Database Type
+// ================================
+
+export interface Database {
+  public: {
+    Tables: {
+      profiles: {
+        Row: Profile;
+        Insert: Partial<Profile>;
+        Update: Partial<Profile>;
+      };
+      sme_readiness_scores: {
+        Row: SMEReadinessScore;
+        Insert: Omit<SMEReadinessScore, 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<SMEReadinessScore, 'id' | 'user_id'>>;
+      };
+    };
+  };
+}

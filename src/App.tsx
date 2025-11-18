@@ -110,6 +110,18 @@ const GovernmentNeedsAssessmentPage = lazy(() =>
   }))
 );
 
+// SME Readiness feature pages
+const ReadinessCheck = lazy(() =>
+  import("./features/readiness/ReadinessCheck").then((module) => ({
+    default: module.ReadinessCheck,
+  }))
+);
+const ReadinessResult = lazy(() =>
+  import("./features/readiness/ReadinessResult").then((module) => ({
+    default: module.ReadinessResult,
+  }))
+);
+
 
 export const AppRoutes = () => (
   <Suspense fallback={<LoadingScreen />}>
@@ -227,6 +239,24 @@ export const AppRoutes = () => (
         element={
           <PrivateRoute>
             <GovernmentNeedsAssessmentPage />
+          </PrivateRoute>
+        }
+      />
+      
+      {/* SME Readiness feature routes */}
+      <Route
+        path="/readiness"
+        element={
+          <PrivateRoute>
+            <ReadinessCheck />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/readiness/result"
+        element={
+          <PrivateRoute>
+            <ReadinessResult />
           </PrivateRoute>
         }
       />
