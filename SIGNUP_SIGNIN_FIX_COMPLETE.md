@@ -247,7 +247,7 @@ curl -X POST http://localhost:3000/users \
 # 1. Start frontend development server
 npm run dev
 
-# 2. Navigate to http://localhost:5173/signup
+# 2. Navigate to http://localhost:8080/signup
 
 # 3. Test each account type:
 - sole_proprietor
@@ -265,7 +265,7 @@ npm run dev
 ### 4. Test Sign-In Flow
 
 ```bash
-# 1. Navigate to http://localhost:5173/signin
+# 1. Navigate to http://localhost:8080/signin
 # 2. Enter credentials from sign-up
 # 3. Verify successful login
 # 4. Check redirect to appropriate dashboard

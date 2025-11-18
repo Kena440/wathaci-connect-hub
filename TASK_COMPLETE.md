@@ -182,8 +182,8 @@ useEffect(() => {
 # Start dev server
 npm run dev
 
-# Test sign up: http://localhost:5173/signup
-# Test sign in: http://localhost:5173/signin
+# Test sign up: http://localhost:8080/signup
+# Test sign in: http://localhost:8080/signin
 # Test error case: wrong password
 ```
 

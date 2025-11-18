@@ -82,7 +82,7 @@ To enable Lighthouse in CI (GitHub Actions), add these steps to your workflow:
     VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
 
 - name: Wait for server
-  run: npx wait-on http://localhost:5173 --timeout 30000
+  run: npx wait-on http://localhost:8080 --timeout 30000
 
 - name: Run Lighthouse
   run: npm run test:lighthouse
@@ -130,7 +130,7 @@ You can use the official Lighthouse CI GitHub Action:
   uses: treosh/lighthouse-ci-action@v10
   with:
     urls: |
-      http://localhost:5173
+      http://localhost:8080
     uploadArtifacts: true
     temporaryPublicStorage: true
   env:

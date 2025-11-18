@@ -34,13 +34,13 @@ This has been **completely fixed** with comprehensive error handling throughout 
    ```
 
 2. **Test Sign Up:**
-   - Go to http://localhost:5173/signup
+   - Go to http://localhost:8080/signup
    - Fill form with valid data
    - Submit
    - ✅ Should succeed without crash
 
 3. **Test Sign In:**
-   - Go to http://localhost:5173/signin
+   - Go to http://localhost:8080/signin
    - Enter valid credentials
    - Submit
    - ✅ Should succeed without crash

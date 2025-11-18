@@ -150,7 +150,7 @@ WHERE trigger_name = 'on_auth_user_created';
    ```
 
 2. **Navigate to sign-up page:**
-   - Open http://localhost:5173/signup
+   - Open http://localhost:8080/signup
 
 3. **Fill out the form:**
    - Enter valid email and password
@@ -175,7 +175,7 @@ WHERE trigger_name = 'on_auth_user_created';
 
 1. **After signing up/in:**
    - Close browser tab
-   - Reopen http://localhost:5173
+   - Reopen http://localhost:8080
    - User should still be signed in
 
 2. **Verify session data:**
@@ -195,7 +195,7 @@ WHERE trigger_name = 'on_auth_user_created';
    - Verify redirect to home page
 
 2. **Navigate to sign-in page:**
-   - Open http://localhost:5173/signin
+   - Open http://localhost:8080/signin
 
 3. **Enter credentials:**
    - Email: your registered email

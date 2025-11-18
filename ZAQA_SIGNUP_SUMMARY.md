@@ -95,7 +95,7 @@ supabase db query < backend/supabase/add_signup_fields.sql
 ### 2. Test the Flow
 ```bash
 npm run dev
-# Navigate to http://localhost:5173/signup-zaqa
+# Navigate to http://localhost:8080/signup-zaqa
 ```
 
 ### 3. Run Tests
