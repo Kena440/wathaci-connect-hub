@@ -122,6 +122,13 @@ const ReadinessResult = lazy(() =>
   }))
 );
 
+// Compliance Hub feature
+const ComplianceDashboard = lazy(() =>
+  import("./features/compliance/ComplianceDashboard").then((module) => ({
+    default: module.ComplianceDashboard,
+  }))
+);
+
 
 export const AppRoutes = () => (
   <Suspense fallback={<LoadingScreen />}>
@@ -257,6 +264,16 @@ export const AppRoutes = () => (
         element={
           <PrivateRoute>
             <ReadinessResult />
+          </PrivateRoute>
+        }
+      />
+      
+      {/* Compliance Hub route */}
+      <Route
+        path="/compliance"
+        element={
+          <PrivateRoute>
+            <ComplianceDashboard />
           </PrivateRoute>
         }
       />
