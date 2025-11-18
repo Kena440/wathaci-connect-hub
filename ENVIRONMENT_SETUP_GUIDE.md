@@ -13,6 +13,9 @@ Create or update `.env.local` with:
 VITE_SUPABASE_URL="https://your-project.supabase.co"
 VITE_SUPABASE_ANON_KEY="your-anon-key-here"
 
+# --- Backend API Configuration (REQUIRED for local development) ---
+VITE_API_BASE_URL="http://localhost:3000"
+
 # --- Lenco Payment Configuration (REQUIRED for payments) ---
 VITE_LENCO_PUBLIC_KEY="your-lenco-public-key"
 VITE_LENCO_API_URL="https://api.lenco.co/access/v2"
@@ -38,6 +41,9 @@ Create or update `.env.production` with:
 # --- Supabase Configuration (REQUIRED) ---
 VITE_SUPABASE_URL="https://your-project.supabase.co"
 VITE_SUPABASE_ANON_KEY="your-anon-key-here"
+
+# --- Backend API Configuration (REQUIRED) ---
+VITE_API_BASE_URL="https://api.your-domain.com"
 
 # --- Lenco Payment Configuration (REQUIRED for payments) ---
 VITE_LENCO_PUBLIC_KEY="your-live-lenco-public-key"
@@ -72,6 +78,20 @@ The app requires **both** of these Supabase variables:
    - **Aliases supported:** `VITE_SUPABASE_KEY`, `SUPABASE_ANON_KEY`, `SUPABASE_KEY`
 
 > **⚠️ IMPORTANT:** If these are missing, you'll see a "Configuration required before launch" blocking screen.
+
+### Backend API Configuration (Required for Local Development)
+
+The frontend communicates with a separate Express backend for user registration, OTP verification, and logging.
+
+1. **VITE_API_BASE_URL** - Backend API base URL
+   - **Local Development:** `http://localhost:3000` (default port for backend server)
+   - **Production:** `https://api.your-domain.com` (your deployed backend API)
+   - This value is embedded at build time
+
+> **📝 Note:** 
+> - The backend Express server runs on port 3000 by default (configured in `backend/index.js`)
+> - The frontend Vite dev server runs on port 8080 (configured in `vite.config.js`)
+> - For local development, start both servers separately (see Local Development section in README.md)
 
 ### Lenco Payment Configuration (Required for Payment Features)
 
@@ -263,11 +283,27 @@ Open http://localhost:4173 and verify:
 
 ### 3. Test Development Mode
 
+To run the full application in development mode, you need to start both servers:
+
+**Terminal 1 - Backend API:**
 ```bash
-npm run dev
+cd backend
+npm install  # First time only
+npm start    # Runs on http://localhost:3000
 ```
 
-Open http://localhost:8080 and verify the app loads correctly.
+**Terminal 2 - Frontend:**
+```bash
+npm install  # First time only (in project root)
+npm run dev  # Runs on http://localhost:8080
+```
+
+Open http://localhost:8080 and verify:
+- The app loads correctly
+- Frontend can communicate with backend at http://localhost:3000
+- No CORS errors in the browser console
+
+> **💡 Tip:** Keep both terminal windows open while developing. The backend must be running for features like user registration and OTP verification to work.
 
 ## Security Best Practices
 
