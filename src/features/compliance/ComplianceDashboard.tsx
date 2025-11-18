@@ -1,3 +1,7 @@
+/**
+ * ComplianceDashboard - Main view for the Compliance Hub feature
+ * Displays user's compliance tasks organized by status (Overdue, Upcoming, Completed)
+ */
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAppContext } from '@/contexts/AppContext';
