@@ -200,12 +200,14 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
     setMaintenanceNotice(null);
 
     try {
+      const normalizedEmail = values.email.trim().toLowerCase();
+
       if (mode === 'signin') {
         const signInValues = values as SignInValues;
-        await signIn(signInValues.email, signInValues.password);
+        await signIn(normalizedEmail, signInValues.password);
 
         if (signInValues.rememberPassword) {
-          saveCredentials(signInValues.email, signInValues.password);
+          saveCredentials(normalizedEmail, signInValues.password);
         } else {
           clearStoredCredentials();
         }
@@ -213,7 +215,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
         const typed = values as SignUpValues;
         const phone = normalizePhone(typed.phone) ?? typed.phone.trim();
         const fullName = typed.fullName.trim();
-        await signUp(typed.email, typed.password, {
+        await signUp(normalizedEmail, typed.password, {
           full_name: fullName,
           phone,
           msisdn: phone,

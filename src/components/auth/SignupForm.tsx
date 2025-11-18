@@ -99,17 +99,20 @@ export const SignupForm = ({
     values: SignupFormValues,
     selectedAccountType: AccountTypeValue
   ) => {
+    const normalizedEmail = values.email.trim().toLowerCase();
+    const normalizedMobile = values.mobileNumber?.trim() || null;
+
     const { error: profileErrorResponse } = await supabase.from("profiles").upsert(
       {
         id: userId,
-        email: values.email,
+        email: normalizedEmail,
         full_name: values.fullName,
         account_type: selectedAccountType,
         accepted_terms: true,
         newsletter_opt_in: Boolean(values.newsletterOptIn),
         profile_completed: false,
-        phone: values.mobileNumber || null,
-        msisdn: values.mobileNumber || null,
+        phone: normalizedMobile,
+        msisdn: normalizedMobile,
       },
       {
         onConflict: "id",
@@ -131,6 +134,8 @@ export const SignupForm = ({
       return;
     }
 
+    const normalizedEmail = values.email.trim().toLowerCase();
+    const normalizedMobileNumber = values.mobileNumber?.trim() || '';
     const normalizedAccountType = accountType;
 
     // Validate SMS OTP option
@@ -143,18 +148,18 @@ export const SignupForm = ({
     if (values.useSmsOtp && values.mobileNumber) {
       // SMS-based signup with phone number
       const { data, error } = await supabase.auth.signUp({
-        email: values.email,
-        phone: values.mobileNumber,
+        email: normalizedEmail,
+        phone: normalizedMobileNumber || undefined,
         password: values.password,
         options: {
           channel: "sms",
           data: {
             full_name: values.fullName,
-            email: values.email,
+            email: normalizedEmail,
             account_type: normalizedAccountType,
             accepted_terms: true,
             newsletter_opt_in: Boolean(values.newsletterOptIn),
-            mobile_number: values.mobileNumber,
+            mobile_number: normalizedMobileNumber || undefined,
           },
         },
       });
@@ -176,11 +181,11 @@ export const SignupForm = ({
         );
       }
 
-      onSuccess(values.email, requiresConfirmation, values.mobileNumber);
+      onSuccess(normalizedEmail, requiresConfirmation, normalizedMobileNumber || undefined);
     } else {
       // Email-based signup (default)
       const { data, error } = await supabase.auth.signUp({
-        email: values.email,
+        email: normalizedEmail,
         password: values.password,
         options: {
           data: {
@@ -188,7 +193,7 @@ export const SignupForm = ({
             account_type: normalizedAccountType,
             accepted_terms: true,
             newsletter_opt_in: Boolean(values.newsletterOptIn),
-            mobile_number: values.mobileNumber || null,
+            mobile_number: normalizedMobileNumber || null,
           },
         },
       });
@@ -210,7 +215,7 @@ export const SignupForm = ({
         );
       }
 
-      onSuccess(values.email, requiresEmailConfirmation, values.mobileNumber);
+      onSuccess(normalizedEmail, requiresEmailConfirmation, normalizedMobileNumber || undefined);
     }
   };
 
