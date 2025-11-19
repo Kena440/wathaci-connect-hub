@@ -13,9 +13,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useTranslation } from 'react-i18next';
-// TEMPORARY BYPASS MODE: remove after auth errors are fixed
-import { isBypassUser } from '@/lib/authBypass';
-import { BypassUserBadge } from './BypassModeBanner';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -137,8 +134,6 @@ const Header = () => {
                   <Button variant="outline" size="sm" className="flex items-center gap-2 border-orange-300 hover:bg-orange-50">
                     <User className="w-4 h-4" />
                     {getDisplayName()}
-                    {/* TEMPORARY BYPASS MODE: remove after auth errors are fixed */}
-                    <BypassUserBadge isVisible={isBypassUser(user)} className="ml-1" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
