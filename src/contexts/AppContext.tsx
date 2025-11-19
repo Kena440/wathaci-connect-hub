@@ -11,6 +11,17 @@ import { logger, type LogContext } from '@/lib/logger';
 import { toast } from '@/components/ui/use-toast';
 import type { User, Profile } from '@/@types/database';
 import { normalizeMsisdn, normalizePhoneNumber } from '@/utils/phone';
+import {
+  createBypassUser,
+  clearBypassUser,
+  isAuthBypassEnabled,
+  loadBypassProfile,
+  loadBypassUser,
+  saveBypassProfile,
+  saveBypassUser,
+  type BypassProfile,
+  type BypassUser,
+} from '@/lib/auth-bypass';
 
 type AuthLogContext = LogContext & {
   event?: string;
@@ -292,6 +303,92 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [loading, setLoading] = useState(true);
   const refreshPromiseRef = useRef<Promise<AuthState> | null>(null);
 
+  const loadStoredBypassState = useCallback((reason?: string): AuthState | null => {
+    // TEMPORARY BYPASS MODE: remove after auth errors are fixed
+    if (!isAuthBypassEnabled()) {
+      return null;
+    }
+
+    const bypassUser = loadBypassUser();
+    if (!bypassUser) {
+      return null;
+    }
+
+    const storedProfile = loadBypassProfile(bypassUser.id) as unknown as Profile | null;
+    const normalizedProfile = storedProfile
+      ? {
+        id: storedProfile.id ?? bypassUser.id,
+        email: storedProfile.email ?? bypassUser.email,
+        account_type: (storedProfile.account_type as any) ?? bypassUser.account_type ?? 'sme',
+        profile_completed: storedProfile.profile_completed ?? false,
+        accepted_terms: (storedProfile as any).accepted_terms ?? false,
+        newsletter_opt_in: (storedProfile as any).newsletter_opt_in ?? false,
+        created_at: (storedProfile as any).created_at ?? new Date().toISOString(),
+        updated_at: storedProfile.updated_at ?? new Date().toISOString(),
+        ...storedProfile,
+      } as Profile
+      : null;
+
+    setUser(bypassUser as unknown as User);
+    setProfile(normalizedProfile);
+    setLoading(false);
+
+    logWarn('[AUTH_BYPASS_FALLBACK] Restored bypass session from local storage', {
+      event: 'auth:bypass:restore',
+      userId: bypassUser.id,
+      reason,
+    });
+
+    return { user: bypassUser as unknown as User, profile: normalizedProfile };
+  }, []);
+
+  const establishBypassSession = useCallback(
+    (email: string, profileData?: Partial<Profile>): AuthState => {
+      // TEMPORARY BYPASS MODE: remove after auth errors are fixed
+      const existingUser = loadBypassUser(email);
+      const bypassUser: BypassUser = existingUser ?? createBypassUser(email);
+
+      const normalizedProfile: Profile | null = profileData
+        ? ({
+          id: bypassUser.id,
+          email: profileData.email ?? bypassUser.email,
+          account_type: (profileData.account_type as any) ?? bypassUser.account_type ?? 'sme',
+          profile_completed: profileData.profile_completed ?? false,
+          accepted_terms: (profileData as any)?.accepted_terms ?? false,
+          newsletter_opt_in: (profileData as any)?.newsletter_opt_in ?? false,
+          created_at: (profileData as any)?.created_at ?? new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          ...profileData,
+        } as Profile)
+        : (loadBypassProfile(bypassUser.id) as unknown as Profile | null);
+
+      saveBypassUser(bypassUser);
+      if (normalizedProfile) {
+        saveBypassProfile(bypassUser.id, normalizedProfile as BypassProfile);
+      }
+
+      setUser(bypassUser as unknown as User);
+      setProfile(normalizedProfile ?? null);
+      setLoading(false);
+
+      logWarn('[AUTH_BYPASS_FALLBACK] Established bypass session', {
+        event: 'auth:bypass:established',
+        userId: bypassUser.id,
+      });
+
+      toast({
+        title: 'Temporary onboarding mode active',
+        description: 'We could not reach our auth systems. You are logged in with a temporary session.',
+      });
+
+      return {
+        user: bypassUser as unknown as User,
+        profile: normalizedProfile ?? null,
+      };
+    },
+    []
+  );
+
   const toggleSidebar = () => {
     setSidebarOpen(prev => !prev);
   };
@@ -381,6 +478,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (userError || !authUser) {
         if (offlineSession?.user) {
           return resolveOfflineSession();
+        }
+
+        const bypassState = loadStoredBypassState(userError ? 'user-error' : 'no-auth-user');
+        if (bypassState) {
+          return bypassState;
         }
 
         clearOfflineSession();
@@ -606,6 +708,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return resolveOfflineSession();
       }
 
+      const bypassState = loadStoredBypassState('refresh-exception');
+      if (bypassState) {
+        return bypassState;
+      }
+
       clearOfflineSession();
       setUser(null);
       setProfile(null);
@@ -638,289 +745,321 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const signIn = async (email: string, password: string): Promise<AuthState> => {
     logInfo('Initiating sign-in flow', { event: 'auth:signIn:start' });
-    const { data: authUser, error } = await userService.signIn(email, password);
+    try {
+      const { data: authUser, error } = await userService.signIn(email, password);
 
-    if (error) {
-      let errorMessage = error.message || 'Failed to sign in';
-      const normalized = errorMessage.toLowerCase();
+      if (error) {
+        let errorMessage = error.message || 'Failed to sign in';
+        const normalized = errorMessage.toLowerCase();
 
-      if (normalized.includes('network') || normalized.includes('fetch')) {
-        errorMessage = 'We couldn\'t reach WATHACI servers right now. Please try again shortly.';
-      } else if (normalized.includes('invalid login credentials')) {
-        errorMessage = 'Invalid email or password. Please check your credentials and try again.';
-      } else if (normalized.includes('email not confirmed')) {
-        errorMessage = 'Please verify your email address before signing in. Check your inbox for the verification link.';
+        if (normalized.includes('network') || normalized.includes('fetch')) {
+          errorMessage = 'We couldn\'t reach WATHACI servers right now. Please try again shortly.';
+        } else if (normalized.includes('invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+        } else if (normalized.includes('email not confirmed')) {
+          errorMessage = 'Please verify your email address before signing in. Check your inbox for the verification link.';
+        }
+
+        logSupabaseAuthError('signIn', error);
+        logError('Sign-in failed', error, {
+          event: 'auth:signIn:error',
+        });
+        throw new Error(errorMessage);
       }
 
-      logSupabaseAuthError('signIn', error);
-      logError('Sign-in failed', error, {
-        event: 'auth:signIn:error',
-      });
-      throw new Error(errorMessage);
-    }
+      const offlineState = resolveOfflineAuthState(authUser ?? null);
 
-    const offlineState = resolveOfflineAuthState(authUser ?? null);
+      if (offlineState) {
+        logInfo('Signed in using offline account metadata', {
+          event: 'auth:signIn:offline',
+          userId: offlineState.user?.id,
+        });
+        toast({
+          title: 'Welcome back!',
+          description: 'You have been signed in successfully.',
+        });
 
-    if (offlineState) {
-      logInfo('Signed in using offline account metadata', {
-        event: 'auth:signIn:offline',
-        userId: offlineState.user?.id,
-      });
+        return offlineState;
+      }
+
+      clearOfflineSession();
+
+      if (!authUser) {
+        logWarn('Supabase did not return an auth user after sign-in', {
+          event: 'auth:signIn:no-user',
+        });
+        throw new Error('Sign in failed. Please try again.');
+      }
+
+      const refreshedState = await refreshUser();
+
+      const finalState: AuthState = {
+        user: refreshedState.user ?? authUser,
+        profile: refreshedState.profile ?? null,
+      };
+
+      if (!refreshedState.user) {
+        setUser(authUser);
+      }
+
       toast({
         title: 'Welcome back!',
-        description: 'You have been signed in successfully.',
+        description: refreshedState.user
+          ? 'You have been signed in successfully.'
+          : 'Sign in succeeded. Complete your profile to unlock full access.',
       });
 
-      return offlineState;
-    }
-
-    clearOfflineSession();
-
-    if (!authUser) {
-      logWarn('Supabase did not return an auth user after sign-in', {
-        event: 'auth:signIn:no-user',
+      logInfo('Sign-in flow completed', {
+        event: 'auth:signIn:success',
+        userId: finalState.user?.id ?? authUser.id,
+        hasProfile: Boolean(finalState.profile),
       });
-      throw new Error('Sign in failed. Please try again.');
+
+      return finalState;
+    } catch (error) {
+      // TEMPORARY BYPASS MODE: remove after auth errors are fixed
+      if (isAuthBypassEnabled()) {
+        console.error('[AUTH_BYPASS_SIGNIN_ERROR]', error);
+        logWarn('Bypassing sign-in failure and issuing local session', {
+          event: 'auth:signIn:bypass',
+          email,
+        });
+        return establishBypassSession(email);
+      }
+
+      throw error;
     }
-
-    const refreshedState = await refreshUser();
-
-    const finalState: AuthState = {
-      user: refreshedState.user ?? authUser,
-      profile: refreshedState.profile ?? null,
-    };
-
-    if (!refreshedState.user) {
-      setUser(authUser);
-    }
-
-    toast({
-      title: 'Welcome back!',
-      description: refreshedState.user
-        ? 'You have been signed in successfully.'
-        : 'Sign in succeeded. Complete your profile to unlock full access.',
-    });
-
-    logInfo('Sign-in flow completed', {
-      event: 'auth:signIn:success',
-      userId: finalState.user?.id ?? authUser.id,
-      hasProfile: Boolean(finalState.profile),
-    });
-
-    return finalState;
   };
 
   const signUp = async (email: string, password: string, userData?: any): Promise<AuthState> => {
     logInfo('Initiating sign-up flow', { event: 'auth:signUp:start' });
+    try {
+      const { data: user, error } = await userService.signUp(email, password, userData);
 
-    const { data: user, error } = await userService.signUp(email, password, userData);
+      if (error) {
+        // Provide user-friendly error messages
+        let errorMessage = error.message || 'Failed to create account';
 
-    if (error) {
-      // Provide user-friendly error messages
-      let errorMessage = error.message || 'Failed to create account';
+        // Check for common error patterns and provide helpful messages
+        if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+          errorMessage = 'We couldn\'t reach WATHACI servers right now. Please try again shortly.';
+        } else if (errorMessage.includes('already exists') || errorMessage.includes('already registered')) {
+          errorMessage = 'An account with this email already exists. Please sign in instead or use a different email.';
+        } else if (errorMessage.includes('password')) {
+          errorMessage = 'Password does not meet requirements. Please use a stronger password.';
+        }
 
-      // Check for common error patterns and provide helpful messages
-      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-        errorMessage = 'We couldn\'t reach WATHACI servers right now. Please try again shortly.';
-      } else if (errorMessage.includes('already exists') || errorMessage.includes('already registered')) {
-        errorMessage = 'An account with this email already exists. Please sign in instead or use a different email.';
-      } else if (errorMessage.includes('password')) {
-        errorMessage = 'Password does not meet requirements. Please use a stronger password.';
+        logSupabaseAuthError('signUp', error);
+        logError('Sign-up failed', error, {
+          event: 'auth:signUp:error',
+        });
+        throw new Error(errorMessage);
       }
 
-      logSupabaseAuthError('signUp', error);
-      logError('Sign-up failed', error, {
-        event: 'auth:signUp:error',
-      });
-      throw new Error(errorMessage);
-    }
+      let createdProfile: Profile | null = null;
 
-    let createdProfile: Profile | null = null;
+      if (user) {
+        const profilePayload = prepareProfilePayload(user.email, userData);
+        logProfileOperation('creating-profile-for-new-user', {
+          userId: user.id,
+          hasPhone: !!profilePayload.phone,
+          hasMsisdn: !!profilePayload.msisdn
+        });
 
-    if (user) {
-      const profilePayload = prepareProfilePayload(user.email, userData);
-      logProfileOperation('creating-profile-for-new-user', { 
-        userId: user.id,
-        hasPhone: !!profilePayload.phone,
-        hasMsisdn: !!profilePayload.msisdn 
-      });
+        // Retry logic for profile creation (handles race conditions)
+        let profileError: any = null;
+        const maxRetries = 3;
 
-      // Retry logic for profile creation (handles race conditions)
-      let profileError: any = null;
-      const maxRetries = 3;
-      
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        logProfileOperation('signup-profile-creation-attempt', { userId: user.id, attempt });
-        
-        try {
-          const result = await profileService.createProfile(user.id, profilePayload);
-          
-          if (!result.error && result.data) {
-            createdProfile = result.data;
-            logInfo('Profile created during sign-up', {
-              event: 'auth:signUp:profile-created',
-              userId: user.id,
-            });
-            logProfileOperation('signup-profile-created', { userId: user.id, attempt });
-            break;
-          }
-          
-          profileError = result.error;
-          const message = profileError && typeof profileError === 'object' && 'message' in profileError
-            ? String((profileError as any).message).toLowerCase()
-            : '';
-          const profileErrorCode = profileError && typeof profileError === 'object' && 'code' in profileError
-            ? (profileError as any).code
-            : undefined;
-          const isAuthPending = profileErrorCode === 'PGRST301' ||
-            profileErrorCode === '401' ||
-            profileErrorCode === '42501' ||
-            message.includes('jwt') ||
-            message.includes('unauthorized') ||
-            message.includes('row-level security');
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          logProfileOperation('signup-profile-creation-attempt', { userId: user.id, attempt });
 
-          // If it's a duplicate error, try to fetch the existing profile
-          const isDuplicate = profileErrorCode === '23505' || 
-            message.includes('duplicate') || 
-            message.includes('already exists');
-            
-          if (isDuplicate) {
-            logProfileOperation('signup-profile-duplicate-fetching', { userId: user.id, attempt });
-            const { data: existingProfile } = await profileService.getByUserId(user.id);
-            if (existingProfile) {
-              createdProfile = existingProfile;
-              logProfileOperation('signup-existing-profile-fetched', { userId: user.id });
+          try {
+            const result = await profileService.createProfile(user.id, profilePayload);
+
+            if (!result.error && result.data) {
+              createdProfile = result.data;
+              logInfo('Profile created during sign-up', {
+                event: 'auth:signUp:profile-created',
+                userId: user.id,
+              });
+              logProfileOperation('signup-profile-created', { userId: user.id, attempt });
               break;
             }
-          }
 
-          if (!isAuthPending && !isDuplicate) {
-            // For non-auth errors, log and potentially fail
-            let profileErrorMessage = 'Failed to create user profile';
+            profileError = result.error;
+            const message = profileError && typeof profileError === 'object' && 'message' in profileError
+              ? String((profileError as any).message).toLowerCase()
+              : '';
+            const profileErrorCode = profileError && typeof profileError === 'object' && 'code' in profileError
+              ? (profileError as any).code
+              : undefined;
+            const isAuthPending = profileErrorCode === 'PGRST301' ||
+              profileErrorCode === '401' ||
+              profileErrorCode === '42501' ||
+              message.includes('jwt') ||
+              message.includes('unauthorized') ||
+              message.includes('row-level security');
 
-            if (message.includes('network') || message.includes('fetch')) {
-              profileErrorMessage = 'Account created but profile setup failed due to network issues. Please try signing in.';
+            // If it's a duplicate error, try to fetch the existing profile
+            const isDuplicate = profileErrorCode === '23505' ||
+              message.includes('duplicate') ||
+              message.includes('already exists');
+
+            if (isDuplicate) {
+              logProfileOperation('signup-profile-duplicate-fetching', { userId: user.id, attempt });
+              const { data: existingProfile } = await profileService.getByUserId(user.id);
+              if (existingProfile) {
+                createdProfile = existingProfile;
+                logProfileOperation('signup-existing-profile-fetched', { userId: user.id });
+                break;
+              }
             }
 
-            logError('Profile creation failed during sign-up', profileError, {
-              event: 'auth:signUp:profile-error',
-              userId: user.id,
-            });
-            logProfileOperation('signup-profile-error', { 
-              userId: user.id,
-              errorCode: profileErrorCode,
-              message: profileErrorMessage 
-            });
-            
-            // Don't throw - allow signup to complete even if profile creation initially fails
-            // The profile will be created on next login via refreshUser
-            break;
-          }
+            if (!isAuthPending && !isDuplicate) {
+              // For non-auth errors, log and potentially fail
+              let profileErrorMessage = 'Failed to create user profile';
 
-          if (isAuthPending) {
-            logWarn('Profile creation deferred until email confirmation completes', {
-              event: 'auth:signUp:profile-pending',
+              if (message.includes('network') || message.includes('fetch')) {
+                profileErrorMessage = 'Account created but profile setup failed due to network issues. Please try signing in.';
+              }
+
+              logError('Profile creation failed during sign-up', profileError, {
+                event: 'auth:signUp:profile-error',
+                userId: user.id,
+              });
+              logProfileOperation('signup-profile-error', {
+                userId: user.id,
+                errorCode: profileErrorCode,
+                message: profileErrorMessage
+              });
+
+              // Don't throw - allow signup to complete even if profile creation initially fails
+              // The profile will be created on next login via refreshUser
+              break;
+            }
+
+            if (isAuthPending) {
+              logWarn('Profile creation deferred until email confirmation completes', {
+                event: 'auth:signUp:profile-pending',
+                userId: user.id,
+              });
+              break;
+            }
+
+            // Wait before retry (exponential backoff)
+            if (attempt < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, attempt * 500));
+            }
+          } catch (err) {
+            logError('Exception during signup profile creation', err, {
+              event: 'auth:signUp:profile-create-exception',
               userId: user.id,
+              attempt,
             });
-            break;
-          }
-          
-          // Wait before retry (exponential backoff)
-          if (attempt < maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, attempt * 500));
-          }
-        } catch (err) {
-          logError('Exception during signup profile creation', err, {
-            event: 'auth:signUp:profile-create-exception',
-            userId: user.id,
-            attempt,
-          });
-          profileError = err;
-          // Continue to next attempt if available
-          if (attempt < maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, attempt * 500));
+            profileError = err;
+            // Continue to next attempt if available
+            if (attempt < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, attempt * 500));
+            }
           }
         }
+
+        if (createdProfile) {
+          logProfileOperation('signup-profile-ready', {
+            userId: user.id,
+            profileCompleted: createdProfile.profile_completed ?? false
+          });
+        } else if (profileError) {
+          const errorMessage = profileError && typeof profileError === 'object' && 'message' in profileError
+            ? String((profileError as any).message)
+            : 'Unknown error';
+          logProfileOperation('signup-profile-creation-skipped', {
+            userId: user.id,
+            error: errorMessage,
+            note: 'Profile will be created on first login'
+          });
+        }
       }
-      
-      if (createdProfile) {
-        logProfileOperation('signup-profile-ready', { 
-          userId: user.id,
-          profileCompleted: createdProfile.profile_completed ?? false
-        });
-      } else if (profileError) {
-        const errorMessage = profileError && typeof profileError === 'object' && 'message' in profileError
-          ? String((profileError as any).message)
-          : 'Unknown error';
-        logProfileOperation('signup-profile-creation-skipped', { 
-          userId: user.id,
-          error: errorMessage,
-          note: 'Profile will be created on first login' 
-        });
+
+      // Show success message
+      // Note: If email confirmation is enabled in Supabase, the session won't be active yet
+      const refreshedState = await refreshUser();
+      const sessionActive = !!refreshedState.user;
+
+      toast({
+        title: "Account created!",
+        description: sessionActive
+          ? "You're all set! Complete your profile to get started."
+          : "Please check your email to verify your account.",
+      });
+
+      if (!user) {
+        return { user: null, profile: null };
       }
-    }
 
-    // Show success message
-    // Note: If email confirmation is enabled in Supabase, the session won't be active yet
-    const refreshedState = await refreshUser();
-    const sessionActive = !!refreshedState.user;
-    
-    toast({
-      title: "Account created!",
-      description: sessionActive
-        ? "You're all set! Complete your profile to get started."
-        : "Please check your email to verify your account.",
-    });
+      // If Supabase hasn't started a session yet (email confirmation flow),
+      // fall back to the newly created entities so the UI can continue gracefully.
+      if (!refreshedState.user) {
+        const fallbackUser: User = {
+          ...user,
+          profile_completed: createdProfile?.profile_completed ?? userData?.profile_completed ?? false,
+          account_type: createdProfile?.account_type ?? userData?.account_type,
+        };
+        setUser(fallbackUser);
 
-    if (!user) {
-      return { user: null, profile: null };
-    }
+        if (createdProfile) {
+          setProfile(createdProfile);
+        }
 
-    // If Supabase hasn't started a session yet (email confirmation flow),
-    // fall back to the newly created entities so the UI can continue gracefully.
-    if (!refreshedState.user) {
-      const fallbackUser: User = {
-        ...user,
-        profile_completed: createdProfile?.profile_completed ?? userData?.profile_completed ?? false,
-        account_type: createdProfile?.account_type ?? userData?.account_type,
-      };
-      setUser(fallbackUser);
+        logInfo('Sign-up completed without active session; returning fallback state', {
+          event: 'auth:signUp:fallback-state',
+          userId: fallbackUser.id,
+          hasProfile: Boolean(createdProfile),
+        });
 
-      if (createdProfile) {
+        return {
+          user: fallbackUser,
+          profile: createdProfile,
+        };
+      }
+
+      if (!refreshedState.profile && createdProfile) {
         setProfile(createdProfile);
+        logInfo('Attached eagerly created profile to refreshed state', {
+          event: 'auth:signUp:profile-attached',
+          userId: refreshedState.user?.id ?? user.id,
+        });
+        return {
+          user: refreshedState.user,
+          profile: createdProfile,
+        };
       }
 
-      logInfo('Sign-up completed without active session; returning fallback state', {
-        event: 'auth:signUp:fallback-state',
-        userId: fallbackUser.id,
-        hasProfile: Boolean(createdProfile),
-      });
-
-      return {
-        user: fallbackUser,
-        profile: createdProfile,
-      };
-    }
-
-    if (!refreshedState.profile && createdProfile) {
-      setProfile(createdProfile);
-      logInfo('Attached eagerly created profile to refreshed state', {
-        event: 'auth:signUp:profile-attached',
+      logInfo('Sign-up flow completed', {
+        event: 'auth:signUp:success',
         userId: refreshedState.user?.id ?? user.id,
+        hasProfile: Boolean(refreshedState.profile ?? createdProfile),
       });
-      return {
-        user: refreshedState.user,
-        profile: createdProfile,
-      };
+
+      return refreshedState;
+    } catch (error) {
+      // TEMPORARY BYPASS MODE: remove after auth errors are fixed
+      if (isAuthBypassEnabled()) {
+        console.error('[AUTH_BYPASS_SIGNUP_ERROR]', error);
+        logWarn('Bypassing sign-up failure and issuing local session', {
+          event: 'auth:signUp:bypass',
+          email,
+        });
+
+        const fallbackProfile = prepareProfilePayload(email, userData);
+        return establishBypassSession(email, {
+          ...fallbackProfile,
+          profile_completed: fallbackProfile.profile_completed ?? false,
+        });
+      }
+
+      throw error;
     }
-
-    logInfo('Sign-up flow completed', {
-      event: 'auth:signUp:success',
-      userId: refreshedState.user?.id ?? user.id,
-      hasProfile: Boolean(refreshedState.profile ?? createdProfile),
-    });
-
-    return refreshedState;
   };
 
   const signOut = async () => {
@@ -930,6 +1069,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (error) throw error;
 
       clearOfflineSession();
+      clearBypassUser();
       setUser(null);
       setProfile(null);
 
