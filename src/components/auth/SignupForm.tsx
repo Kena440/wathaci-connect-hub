@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { type AccountTypeValue } from "@/data/accountTypes";
 import { supabaseClient as supabase } from "@/lib/supabaseClient";
 import { logSupabaseAuthError } from "@/lib/supabaseClient";
+import { getEmailConfirmationRedirectUrl } from "@/lib/emailRedirect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -153,6 +154,7 @@ export const SignupForm = ({
         password: values.password,
         options: {
           channel: "sms",
+          emailRedirectTo: getEmailConfirmationRedirectUrl(),
           data: {
             full_name: values.fullName,
             email: normalizedEmail,
@@ -188,6 +190,7 @@ export const SignupForm = ({
         email: normalizedEmail,
         password: values.password,
         options: {
+          emailRedirectTo: getEmailConfirmationRedirectUrl(),
           data: {
             full_name: values.fullName,
             account_type: normalizedAccountType,
