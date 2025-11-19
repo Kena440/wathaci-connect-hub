@@ -342,7 +342,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { user: bypassUser as unknown as User, profile: normalizedProfile };
   }, []);
 
-  const establishBypassSession = useCallback(
+  // Pure function that creates bypass session data without side effects
+  const createBypassSessionData = useCallback(
     (email: string, profileData?: Partial<Profile>): AuthState => {
       // TEMPORARY BYPASS MODE: remove after auth errors are fixed
       const existingUser = loadBypassUser(email);
@@ -367,13 +368,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         saveBypassProfile(bypassUser.id, normalizedProfile as BypassProfile);
       }
 
-      setUser(bypassUser as unknown as User);
-      setProfile(normalizedProfile ?? null);
+      return {
+        user: bypassUser as unknown as User,
+        profile: normalizedProfile ?? null,
+      };
+    },
+    []
+  );
+
+  const establishBypassSession = useCallback(
+    (email: string, profileData?: Partial<Profile>): AuthState => {
+      const sessionData = createBypassSessionData(email, profileData);
+
+      // Apply state updates
+      setUser(sessionData.user);
+      setProfile(sessionData.profile);
       setLoading(false);
 
       logWarn('[AUTH_BYPASS_FALLBACK] Established bypass session', {
         event: 'auth:bypass:established',
-        userId: bypassUser.id,
+        userId: sessionData.user?.id,
       });
 
       toast({
@@ -381,12 +395,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         description: 'We could not reach our auth systems. You are logged in with a temporary session.',
       });
 
-      return {
-        user: bypassUser as unknown as User,
-        profile: normalizedProfile ?? null,
-      };
+      return sessionData;
     },
-    []
+    [createBypassSessionData]
   );
 
   const toggleSidebar = () => {
