@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle2 } from 'lucide-react';
 import { accountTypes, type AccountTypeValue } from '@/data/accountTypes';
 import { supabaseClient } from '@/lib/wathaciSupabaseClient';
+import { getEmailConfirmationRedirectUrl } from '@/lib/emailRedirect';
 
 /**
  * ZAQA-style Sign-Up Page for Wathaci
@@ -117,6 +118,7 @@ export const ZaqaSignup = () => {
         email: email.trim(),
         password,
         options: {
+          emailRedirectTo: getEmailConfirmationRedirectUrl(),
           data: {
             account_type: selectedAccountType,
             full_name: fullName.trim(),
