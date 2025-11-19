@@ -4,6 +4,7 @@
 
 import { BaseService } from './base-service';
 import { supabase, withErrorHandling, resolveEnvValue } from '@/lib/supabase-enhanced';
+import { toast } from '@/components/ui/use-toast';
 import type {
   User,
   Profile,
@@ -11,6 +12,7 @@ import type {
   ProfileFilters,
   DatabaseResponse
 } from '@/@types/database';
+import { isAuthBypassEnabled, loadBypassProfile, saveBypassProfile } from '@/lib/auth-bypass';
 
 export const OFFLINE_ACCOUNT_METADATA_KEY = '__offline_account';
 export const OFFLINE_PROFILE_METADATA_KEY = '__offline_profile';
@@ -683,7 +685,7 @@ export class ProfileService extends BaseService<Profile> {
    * Get profile by user ID with full details
    */
   async getByUserId(userId: string): Promise<DatabaseResponse<Profile>> {
-    return withErrorHandling(
+    const result = await withErrorHandling(
       async () =>
         supabase
           .from('profiles')
@@ -692,6 +694,17 @@ export class ProfileService extends BaseService<Profile> {
           .single(),
       'ProfileService.getByUserId'
     );
+
+    if (result.error && isAuthBypassEnabled()) {
+      // TEMPORARY BYPASS MODE: remove after auth errors are fixed
+      const bypassProfile = loadBypassProfile(userId);
+      if (bypassProfile) {
+        console.error('[AUTH_BYPASS_PROFILE_SAVE_ERROR] Falling back to local profile data', result.error);
+        return { data: bypassProfile as Profile, error: null };
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -773,6 +786,18 @@ export class ProfileService extends BaseService<Profile> {
       errorMessage.includes('already exists');
 
     if (!isDuplicateError) {
+      if (isAuthBypassEnabled()) {
+        // TEMPORARY BYPASS MODE: remove after auth errors are fixed
+        console.error('[AUTH_BYPASS_PROFILE_SAVE_ERROR] Profile creation failed; persisting locally', creationResult.error);
+        saveBypassProfile(userId, profile);
+        if (typeof window !== 'undefined') {
+          toast({
+            title: 'Profile saved in temporary mode',
+            description: 'Your profile will sync when our systems are stable.',
+          });
+        }
+        return { data: profile as Profile, error: null };
+      }
       return creationResult as DatabaseResponse<Profile>;
     }
 
@@ -787,7 +812,28 @@ export class ProfileService extends BaseService<Profile> {
     const { id: _ignoredId, created_at: _ignoredCreatedAt, updated_at: _ignoredUpdatedAt, ...profileFields } =
       sanitizedProfileData;
 
-    return this.update(userId, profileFields);
+    const result = await this.update(userId, profileFields);
+
+    if (result.error && isAuthBypassEnabled()) {
+      // TEMPORARY BYPASS MODE: remove after auth errors are fixed
+      console.error('[AUTH_BYPASS_PROFILE_SAVE_ERROR] Profile update failed; persisting locally', result.error);
+      const fallbackProfile = {
+        id: userId,
+        created_at: (profileFields as any)?.created_at ?? new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...profileFields,
+      } as Profile;
+      saveBypassProfile(userId, fallbackProfile);
+      if (typeof window !== 'undefined') {
+        toast({
+          title: 'Profile saved in temporary mode',
+          description: 'Your profile will sync when our systems are stable.',
+        });
+      }
+      return { data: fallbackProfile, error: null };
+    }
+
+    return result;
   }
 
   /**

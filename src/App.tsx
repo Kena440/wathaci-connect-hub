@@ -13,6 +13,7 @@ import { RouteChangeDebugger } from "@/components/RouteChangeDebugger";
 import { supabaseConfigStatus } from "@/config/appConfig";
 import { getPaymentConfig } from "@/lib/payment-config";
 import "./i18n";
+import { AuthBypassNotice } from "@/components/auth/AuthBypassNotice";
 
 const queryClient = new QueryClient();
 
@@ -365,6 +366,7 @@ const InnerApp = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <AuthBypassNotice />
             {import.meta.env.DEV ? <RouteChangeDebugger /> : null}
             <AppRoutes />
           </BrowserRouter>

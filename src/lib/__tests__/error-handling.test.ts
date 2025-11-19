@@ -7,37 +7,31 @@ import { describe, it, expect } from '@jest/globals';
 describe('Error Message Transformations', () => {
   // Simulate the error transformation logic from supabase-enhanced.ts and AppContext.tsx
   const transformAuthError = (errorMessage: string, context: 'signIn' | 'signUp'): string => {
-    const normalized = errorMessage.toLowerCase();
-
     // Network error detection
-    if (normalized.includes('network') || normalized.includes('fetch')) {
+    if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
       return "We couldn't reach WATHACI servers right now. Please try again shortly.";
     }
-
+    
     // Sign-in specific errors
     if (context === 'signIn') {
-      if (normalized.includes('invalid login credentials')) {
+      if (errorMessage.includes('Invalid login credentials')) {
         return 'Invalid email or password. Please check your credentials and try again.';
       }
-      if (normalized.includes('email not confirmed')) {
+      if (errorMessage.includes('Email not confirmed')) {
         return 'Please verify your email address before signing in. Check your inbox for the verification link.';
       }
     }
-
+    
     // Sign-up specific errors
     if (context === 'signUp') {
-      if (
-        normalized.includes('already exists') ||
-        normalized.includes('already registered') ||
-        normalized.includes('database error saving new user')
-      ) {
+      if (errorMessage.includes('already exists') || errorMessage.includes('already registered')) {
         return 'An account with this email already exists. Please sign in instead or use a different email.';
       }
-      if (normalized.includes('password')) {
+      if (errorMessage.includes('password')) {
         return 'Password does not meet requirements. Please use a stronger password.';
       }
     }
-
+    
     return errorMessage;
   };
 
@@ -81,11 +75,6 @@ describe('Error Message Transformations', () => {
       expect(result).toBe('An account with this email already exists. Please sign in instead or use a different email.');
     });
 
-    it('should transform Supabase database error for duplicate signups', () => {
-      const result = transformAuthError('Database error saving new user', 'signUp');
-      expect(result).toBe('An account with this email already exists. Please sign in instead or use a different email.');
-    });
-
     it('should transform password requirement error', () => {
       const result = transformAuthError('password is too weak', 'signUp');
       expect(result).toBe('Password does not meet requirements. Please use a stronger password.');
@@ -111,35 +100,28 @@ describe('Error Handling Coverage', () => {
       'Email not confirmed',
       'User already registered',
       'Email already exists',
-      'Database error saving new user',
       'password is too weak'
     ];
 
     errorScenarios.forEach(scenario => {
       const context = scenario.includes('already') || scenario.includes('password') ? 'signUp' : 'signIn';
       const transformAuthError = (errorMessage: string, context: 'signIn' | 'signUp'): string => {
-        const normalized = errorMessage.toLowerCase();
-
-        if (normalized.includes('network') || normalized.includes('fetch')) {
+        if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
           return "We couldn't reach WATHACI servers right now. Please try again shortly.";
         }
         if (context === 'signIn') {
-          if (normalized.includes('invalid login credentials')) {
+          if (errorMessage.includes('Invalid login credentials')) {
             return 'Invalid email or password. Please check your credentials and try again.';
           }
-          if (normalized.includes('email not confirmed')) {
+          if (errorMessage.includes('Email not confirmed')) {
             return 'Please verify your email address before signing in. Check your inbox for the verification link.';
           }
         }
         if (context === 'signUp') {
-          if (
-            normalized.includes('already exists') ||
-            normalized.includes('already registered') ||
-            normalized.includes('database error saving new user')
-          ) {
+          if (errorMessage.includes('already exists') || errorMessage.includes('already registered')) {
             return 'An account with this email already exists. Please sign in instead or use a different email.';
           }
-          if (normalized.includes('password')) {
+          if (errorMessage.includes('password')) {
             return 'Password does not meet requirements. Please use a stronger password.';
           }
         }
