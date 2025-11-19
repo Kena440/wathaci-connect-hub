@@ -74,29 +74,33 @@ export const AddStandardTasksDrawer = ({
     const currentMonth = today.getMonth();
 
     switch (frequency) {
-      case 'MONTHLY':
+      case 'MONTHLY': {
         // Default to last day of current month
         const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
         return lastDayOfMonth.toISOString().split('T')[0];
+      }
 
-      case 'ANNUAL':
+      case 'ANNUAL': {
         // Default to March 31st of next year
         const nextYear = currentYear + 1;
         return `${nextYear}-03-31`;
+      }
 
-      case 'QUARTERLY':
+      case 'QUARTERLY': {
         // Default to end of next quarter
         const nextQuarter = Math.floor(currentMonth / 3) + 1;
         const quarterEndMonth = (nextQuarter * 3) % 12;
         const quarterYear = nextQuarter >= 4 ? currentYear + 1 : currentYear;
         const lastDayOfQuarter = new Date(quarterYear, quarterEndMonth, 0);
         return lastDayOfQuarter.toISOString().split('T')[0];
+      }
 
-      default:
+      default: {
         // Default to 30 days from today
         const defaultDate = new Date(today);
         defaultDate.setDate(defaultDate.getDate() + 30);
         return defaultDate.toISOString().split('T')[0];
+      }
     }
   };
 
