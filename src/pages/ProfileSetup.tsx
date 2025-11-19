@@ -13,6 +13,16 @@ import { Button } from '@/components/ui/button';
 import { UserTypeSubscriptions } from '@/components/UserTypeSubscriptions';
 import { accountTypes, type AccountTypeValue } from '@/data/accountTypes';
 import { normalizeMsisdn, normalizePhoneNumber } from '@/utils/phone';
+// TEMPORARY BYPASS MODE: remove after auth errors are fixed
+import {
+  isAuthBypassEnabled,
+  isBypassUser,
+  saveBypassProfile,
+  createBypassProfile,
+  logBypassError,
+  logBypassOperation,
+} from '@/lib/authBypass';
+import { BypassModeBanner } from '@/components/BypassModeBanner';
 
 export const ProfileSetup = () => {
   const [selectedAccountType, setSelectedAccountType] = useState<AccountTypeValue | ''>('');
@@ -410,6 +420,8 @@ export const ProfileSetup = () => {
         }
       }
 
+      // TEMPORARY BYPASS MODE: remove after auth errors are fixed
+      // Try to save profile to database
       const { error } = await supabase
         .from('profiles')
         .upsert({
@@ -423,14 +435,48 @@ export const ProfileSetup = () => {
           updated_at: new Date().toISOString()
         });
 
-      if (error) throw error;
+      if (error) {
+        // If bypass mode is enabled, save to localStorage and continue
+        if (isAuthBypassEnabled()) {
+          logBypassError('PROFILE_SAVE_ERROR', error, {
+            userId: user.id,
+            email: user.email,
+          });
+          
+          // Create bypass profile with all the data
+          const bypassProfileData = createBypassProfile(user.id, user.email || '', {
+            ...sanitizedProfile,
+            coordinates: normalizedCoordinates,
+            qualifications: normalizedQualifications,
+            ...paymentData,
+            profile_completed: true,
+          });
+          
+          saveBypassProfile(bypassProfileData);
+          
+          logBypassOperation('PROFILE_SAVE', 'Saved profile to localStorage after DB error', {
+            userId: user.id,
+            email: user.email,
+          });
+          
+          toast({
+            title: "Profile saved (Temporary Mode)",
+            description: "Your profile has been saved in temporary mode; we'll sync it fully once our systems are stable.",
+            variant: 'default',
+          });
+        } else {
+          // Bypass mode is off, throw the error
+          throw error;
+        }
+      } else {
+        // Success - profile saved to database
+        toast({
+          title: "Profile completed!",
+          description: "Your profile has been successfully saved.",
+        });
+      }
 
       await refreshUser();
-
-      toast({
-        title: "Profile completed!",
-        description: "Your profile has been successfully saved.",
-      });
 
       // Navigate users to appropriate needs assessment based on account type
       if (selectedAccountType === 'sme' || selectedAccountType === 'sole_proprietor') {
@@ -504,6 +550,9 @@ export const ProfileSetup = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-emerald-50 py-8 px-4">
       <div className="max-w-6xl mx-auto">
+        {/* TEMPORARY BYPASS MODE: remove after auth errors are fixed */}
+        <BypassModeBanner className="mb-6" />
+        
         <Card>
           <CardHeader>
             <CardTitle>Complete Your Profile & Verification</CardTitle>
