@@ -800,42 +800,51 @@ export const withErrorHandling = async <T>(
       
       // Check for common network/connection errors
       const errorMessage = result.error.message || '';
-      
-      if (errorMessage.includes('Failed to fetch') ||
-          errorMessage.includes('fetch failed') ||
-          errorMessage.includes('NetworkError') ||
-          errorMessage.includes('ECONNREFUSED')) {
+      const normalizedMessage = errorMessage.toLowerCase();
+
+      if (normalizedMessage.includes('failed to fetch') ||
+          normalizedMessage.includes('fetch failed') ||
+          normalizedMessage.includes('networkerror') ||
+          normalizedMessage.includes('econnrefused')) {
         return {
           data: null,
           error: new Error('Unable to connect to the server right now. Please try again shortly.')
         };
       }
-      
-      if (errorMessage.includes('Invalid API key') ||
-          errorMessage.includes('Invalid Supabase URL')) {
+
+      if (normalizedMessage.includes('invalid api key') ||
+          normalizedMessage.includes('invalid supabase url')) {
         return {
           data: null,
           error: new Error(`Configuration error. Please contact ${SUPPORT_EMAIL}.`)
         };
       }
-      
+
       // For authentication-specific errors, provide better messages
       if (context.includes('signIn') || context.includes('signUp')) {
-        if (errorMessage.includes('Invalid login credentials') || 
-            errorMessage.includes('invalid_grant')) {
+        if (normalizedMessage.includes('invalid login credentials') ||
+            normalizedMessage.includes('invalid_grant')) {
           return { data: null, error: new Error('Invalid email or password. Please try again.') };
         }
-        
-        if (errorMessage.includes('User already registered') || 
-            errorMessage.includes('already exists')) {
+
+        const duplicateSignupError =
+          normalizedMessage.includes('user already registered') ||
+          normalizedMessage.includes('already exists') ||
+          normalizedMessage.includes('database error saving new user');
+
+        if (duplicateSignupError) {
           return { data: null, error: new Error('An account with this email already exists. Please sign in instead.') };
         }
-        
-        if (errorMessage.includes('Email not confirmed')) {
+
+        if (normalizedMessage.includes('email not confirmed')) {
           return { data: null, error: new Error('Please verify your email address before signing in.') };
         }
+
+        if (context.includes('signUp') && normalizedMessage.includes('password')) {
+          return { data: null, error: new Error('Password does not meet requirements. Please use a stronger password.') };
+        }
       }
-      
+
       return { data: null, error: new Error(result.error.message) };
     }
 
