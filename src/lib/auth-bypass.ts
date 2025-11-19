@@ -106,7 +106,11 @@ export const loadBypassUser = (email?: string): BypassUser | null => {
 export const clearBypassUser = () => {
   const lastEmail = storageSafeGet<string>(BYPASS_USER_KEY);
   if (lastEmail) {
+    const user = storageSafeGet<BypassUser>(buildUserKey(lastEmail));
     storageSafeRemove(buildUserKey(lastEmail));
+    if (user && user.id) {
+      storageSafeRemove(buildProfileKey(user.id));
+    }
   }
   storageSafeRemove(BYPASS_USER_KEY);
 };
