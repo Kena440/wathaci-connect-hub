@@ -1,5 +1,35 @@
 import type { Profile, User } from '@/@types/database';
 
+/**
+ * ⚠️ SECURITY WARNING - TEMPORARY AUTH BYPASS MODE ⚠️
+ * 
+ * This module implements a TEMPORARY authentication bypass mechanism for onboarding/testing purposes.
+ * It stores sensitive user data (emails, user IDs) in browser localStorage WITHOUT ENCRYPTION.
+ * 
+ * CRITICAL SECURITY IMPLICATIONS:
+ * - localStorage is accessible to ALL scripts running on the same origin (XSS vulnerability)
+ * - Data persists across browser sessions, increasing exposure window
+ * - No encryption means data is stored in plain text
+ * - localStorage data can be accessed via browser DevTools
+ * - Data survives page refreshes and browser restarts
+ * - Cross-site scripting (XSS) attacks can steal all stored data
+ * 
+ * THIS SHOULD ONLY BE USED IN:
+ * - Development environments
+ * - Controlled testing scenarios
+ * - Onboarding flows where users understand the risks
+ * 
+ * DO NOT USE IN PRODUCTION WITH REAL USER DATA.
+ * Remove this code before production deployment or implement proper encryption.
+ * 
+ * For production use, consider:
+ * - Implementing encryption for localStorage data
+ * - Using secure HTTP-only cookies
+ * - Using sessionStorage for shorter-lived data
+ * - Implementing Content Security Policy (CSP)
+ * - Regular security audits and XSS prevention measures
+ */
+
 const BYPASS_USER_KEY = 'auth_bypass_current_user';
 const BYPASS_USER_BY_EMAIL_PREFIX = 'auth_bypass_user_';
 const BYPASS_PROFILE_PREFIX = 'auth_bypass_profile_';
@@ -45,6 +75,11 @@ export type BypassProfile = Partial<Profile> & {
 
 const isBrowser = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
 
+/**
+ * ⚠️ SECURITY WARNING: Stores data in UNENCRYPTED localStorage.
+ * Data is accessible to any script on the same origin and persists across sessions.
+ * Only use in development/testing environments.
+ */
 const storageSafeSet = (key: string, value: unknown) => {
   if (!isBrowser) return;
   try {
@@ -92,6 +127,19 @@ export const createBypassUser = (email: string): BypassUser => {
   };
 };
 
+/**
+ * ⚠️ SECURITY WARNING: Stores user data including email and user ID in UNENCRYPTED localStorage.
+ * 
+ * RISKS:
+ * - Email addresses stored in plain text
+ * - User IDs stored in plain text
+ * - Vulnerable to XSS attacks
+ * - Data persists across sessions
+ * - Accessible via browser DevTools
+ * 
+ * This is acceptable ONLY for temporary development/testing purposes.
+ * DO NOT use with real user data in production.
+ */
 export const saveBypassUser = (user: BypassUser) => {
   const normalizedEmail = user.email.toLowerCase();
   storageSafeSet(BYPASS_USER_KEY, normalizedEmail);
@@ -116,6 +164,13 @@ export const clearBypassUser = () => {
   storageSafeRemove(BYPASS_USER_KEY);
 };
 
+/**
+ * ⚠️ SECURITY WARNING: Stores profile data in UNENCRYPTED localStorage.
+ * 
+ * Profile data may contain sensitive personal information.
+ * This storage method is vulnerable to XSS attacks and data exposure.
+ * Only use in development/testing environments.
+ */
 export const saveBypassProfile = (userId: string, profile: BypassProfile) => {
   const payload: BypassProfile = {
     ...profile,
