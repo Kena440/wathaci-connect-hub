@@ -976,7 +976,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             profileCompleted: createdProfile.profile_completed ?? false
           });
         } else if (profileError) {
-          const errorMessage = profileError && typeof profileError === 'object' && 'message' in profileError
+          const errorMessage = typeof profileError === 'object' && 'message' in profileError
             ? String((profileError as any).message)
             : 'Unknown error';
           logProfileOperation('signup-profile-creation-skipped', {
