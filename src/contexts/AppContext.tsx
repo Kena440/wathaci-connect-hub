@@ -11,6 +11,21 @@ import { logger, type LogContext } from '@/lib/logger';
 import { toast } from '@/components/ui/use-toast';
 import type { User, Profile } from '@/@types/database';
 import { normalizeMsisdn, normalizePhoneNumber } from '@/utils/phone';
+// TEMPORARY BYPASS MODE: remove after auth errors are fixed
+import {
+  isAuthBypassEnabled,
+  createBypassUser,
+  createBypassProfile,
+  saveBypassUser,
+  saveBypassProfile,
+  findBypassUserByEmail,
+  loadBypassProfile,
+  logBypassError,
+  logBypassOperation,
+  isBypassUser,
+  type BypassUser,
+  type BypassProfile,
+} from '@/lib/authBypass';
 
 type AuthLogContext = LogContext & {
   event?: string;
@@ -640,6 +655,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     logInfo('Initiating sign-in flow', { event: 'auth:signIn:start' });
     const { data: authUser, error } = await userService.signIn(email, password);
 
+    // TEMPORARY BYPASS MODE: remove after auth errors are fixed
+    if (error && isAuthBypassEnabled()) {
+      logBypassError('SIGNIN_ERROR', error, { email });
+      
+      // Check if we have a previously created bypass user for this email
+      const existingBypassUser = findBypassUserByEmail(email);
+      
+      if (existingBypassUser) {
+        // Use existing bypass user
+        logBypassOperation('SIGNIN', 'Using existing bypass user', {
+          userId: existingBypassUser.id,
+          email: existingBypassUser.email,
+        });
+        
+        const bypassProfile = loadBypassProfile(existingBypassUser.id);
+        
+        setUser(existingBypassUser);
+        setProfile(bypassProfile);
+        setLoading(false);
+        
+        toast({
+          title: 'Signed in (Temporary Mode)',
+          description: 'You are currently logged in via temporary onboarding mode. Once our systems are fully restored, you may be asked to verify your account.',
+          variant: 'default',
+        });
+        
+        return {
+          user: existingBypassUser,
+          profile: bypassProfile,
+        };
+      } else {
+        // Create new bypass user
+        const bypassUser = createBypassUser(email, {
+          email,
+        });
+        
+        logBypassOperation('SIGNIN', 'Created new bypass user for failed sign-in', {
+          userId: bypassUser.id,
+          email: bypassUser.email,
+        });
+        
+        saveBypassUser(bypassUser);
+        setUser(bypassUser);
+        setProfile(null);
+        setLoading(false);
+        
+        toast({
+          title: 'Signed in (Temporary Mode)',
+          description: 'You are currently logged in via temporary onboarding mode. Once our systems are fully restored, you may be asked to verify your account.',
+          variant: 'default',
+        });
+        
+        return {
+          user: bypassUser,
+          profile: null,
+        };
+      }
+    }
+
     if (error) {
       let errorMessage = error.message || 'Failed to sign in';
       const normalized = errorMessage.toLowerCase();
@@ -714,6 +788,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     logInfo('Initiating sign-up flow', { event: 'auth:signUp:start' });
 
     const { data: user, error } = await userService.signUp(email, password, userData);
+
+    // TEMPORARY BYPASS MODE: remove after auth errors are fixed
+    if (error && isAuthBypassEnabled()) {
+      logBypassError('SIGNUP_ERROR', error, { email, userData });
+      
+      // Create a bypass user even though sign-up failed
+      const bypassUser = createBypassUser(email, {
+        email,
+        account_type: userData?.account_type,
+        ...userData,
+      });
+      
+      logBypassOperation('SIGNUP', 'Created bypass user for failed sign-up', {
+        userId: bypassUser.id,
+        email: bypassUser.email,
+        accountType: userData?.account_type,
+      });
+      
+      // Create a minimal bypass profile
+      const bypassProfile = createBypassProfile(bypassUser.id, email, {
+        full_name: userData?.full_name,
+        account_type: userData?.account_type,
+        phone: userData?.phone,
+        msisdn: userData?.msisdn,
+        payment_phone: userData?.payment_phone,
+        accepted_terms: userData?.accepted_terms,
+        newsletter_opt_in: userData?.newsletter_opt_in,
+      });
+      
+      saveBypassUser(bypassUser);
+      saveBypassProfile(bypassProfile);
+      
+      setUser(bypassUser);
+      setProfile(bypassProfile);
+      setLoading(false);
+      
+      toast({
+        title: 'Account created (Temporary Mode)',
+        description: 'Your account has been created in temporary mode while we finalize our systems. You can continue to set up your profile.',
+        variant: 'default',
+      });
+      
+      return {
+        user: bypassUser,
+        profile: bypassProfile,
+      };
+    }
 
     if (error) {
       // Provide user-friendly error messages
