@@ -9,7 +9,7 @@ const getRuntimeEnvValue = (key: string): string | undefined => {
     return String((import.meta as any).env[key]);
   }
 
-  if (typeof process !== 'undefined' && typeof process.env === 'object' && key in process.env) {
+  if (typeof process !== 'undefined' && typeof process.env === 'object') {
     return process.env[key];
   }
 
