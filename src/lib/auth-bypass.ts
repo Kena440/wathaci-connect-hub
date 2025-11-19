@@ -93,8 +93,9 @@ export const createBypassUser = (email: string): BypassUser => {
 };
 
 export const saveBypassUser = (user: BypassUser) => {
-  storageSafeSet(BYPASS_USER_KEY, user.email.toLowerCase());
-  storageSafeSet(buildUserKey(user.email), user);
+  const normalizedEmail = user.email.toLowerCase();
+  storageSafeSet(BYPASS_USER_KEY, normalizedEmail);
+  storageSafeSet(buildUserKey(normalizedEmail), { ...user, email: normalizedEmail });
 };
 
 export const loadBypassUser = (email?: string): BypassUser | null => {
