@@ -8,6 +8,7 @@ import { type AccountTypeValue } from "@/data/accountTypes";
 import { supabaseClient as supabase } from "@/lib/supabaseClient";
 import { logSupabaseAuthError } from "@/lib/supabaseClient";
 import { getEmailConfirmationRedirectUrl } from "@/lib/emailRedirect";
+import { logAuthError, getUserFriendlyMessage, shouldReportError } from "@/lib/authErrorHandler";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -84,17 +85,6 @@ export const SignupForm = ({
 
   const isDisabled = disabled || isSubmitting;
 
-  const buildFriendlyError = (message?: string | null) => {
-    if (!message) return "Something went wrong while creating your account.";
-    if (message.toLowerCase().includes("duplicate") || message.includes("already exists")) {
-      return "An account with this email already exists. Please sign in instead.";
-    }
-    if (message.toLowerCase().includes("password")) {
-      return "Password does not meet requirements. Please use a stronger password.";
-    }
-    return message;
-  };
-
   const handleProfileUpsert = async (
     userId: string,
     values: SignupFormValues,
@@ -121,7 +111,18 @@ export const SignupForm = ({
     );
 
     if (profileErrorResponse) {
-      setProfileError(buildFriendlyError(profileErrorResponse.message));
+      // Enhanced error logging with detailed context
+      logAuthError("signup-profile-upsert", profileErrorResponse, {
+        userId,
+        email: normalizedEmail,
+        accountType: selectedAccountType,
+      });
+      
+      // Set user-friendly error message
+      const friendlyMessage = getUserFriendlyMessage(profileErrorResponse);
+      setProfileError(friendlyMessage);
+      
+      // Log to legacy system for compatibility
       logSupabaseAuthError("signup-profile", profileErrorResponse);
     }
   };
@@ -167,8 +168,18 @@ export const SignupForm = ({
       });
 
       if (error) {
-        const friendly = buildFriendlyError(error.message);
-        setFormError(friendly);
+        // Enhanced error logging with detailed context
+        logAuthError("signup-sms", error, {
+          email: normalizedEmail,
+          accountType: normalizedAccountType,
+          hasPhone: Boolean(normalizedMobileNumber),
+        });
+        
+        // Set user-friendly error message
+        const friendlyMessage = getUserFriendlyMessage(error);
+        setFormError(friendlyMessage);
+        
+        // Log to legacy system for compatibility
         logSupabaseAuthError("signup-sms", error);
         return;
       }
@@ -202,8 +213,17 @@ export const SignupForm = ({
       });
 
       if (error) {
-        const friendly = buildFriendlyError(error.message);
-        setFormError(friendly);
+        // Enhanced error logging with detailed context
+        logAuthError("signup-email", error, {
+          email: normalizedEmail,
+          accountType: normalizedAccountType,
+        });
+        
+        // Set user-friendly error message
+        const friendlyMessage = getUserFriendlyMessage(error);
+        setFormError(friendlyMessage);
+        
+        // Log to legacy system for compatibility
         logSupabaseAuthError("signup", error);
         return;
       }
