@@ -329,19 +329,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } as Profile
       : null;
 
-    setUser(bypassUser as unknown as User);
-    setProfile(normalizedProfile);
-    setLoading(false);
-
-    logWarn('[AUTH_BYPASS_FALLBACK] Restored bypass session from local storage', {
-      event: 'auth:bypass:restore',
-      userId: bypassUser.id,
-      reason,
-    });
-
     return { user: bypassUser as unknown as User, profile: normalizedProfile };
   }, []);
 
+  // New function to restore bypass state and update React state
+  const restoreStoredBypassState = useCallback((reason?: string): AuthState | null => {
+    const state = loadStoredBypassState(reason);
+    if (!state) {
+      return null;
+    }
+    setUser(state.user);
+    setProfile(state.profile);
+    setLoading(false);
+    logWarn('[AUTH_BYPASS_FALLBACK] Restored bypass session from local storage', {
+      event: 'auth:bypass:restore',
+      userId: state.user.id,
+      reason,
+    });
+    return state;
+  }, [loadStoredBypassState]);
   const establishBypassSession = useCallback(
     (email: string, profileData?: Partial<Profile>): AuthState => {
       // TEMPORARY BYPASS MODE: remove after auth errors are fixed
