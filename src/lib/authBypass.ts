@@ -24,18 +24,24 @@ import type { User, Profile } from '@/@types/database';
  * - Server: AUTH_BYPASS_MODE_ENABLED
  */
 export const isAuthBypassEnabled = (): boolean => {
-  // Check browser/client environment (Vite)
-  if (typeof import.meta !== 'undefined') {
-    const metaEnv = (import.meta as any)?.env;
-    if (metaEnv?.VITE_AUTH_BYPASS_MODE_ENABLED === 'true') {
+  // Check Node.js/server environment first
+  if (typeof process !== 'undefined' && process.env) {
+    const serverValue = process.env.AUTH_BYPASS_MODE_ENABLED || process.env.VITE_AUTH_BYPASS_MODE_ENABLED;
+    if (serverValue === 'true') {
       return true;
     }
   }
 
-  // Check Node.js/server environment
-  if (typeof process !== 'undefined' && process.env) {
-    if (process.env.AUTH_BYPASS_MODE_ENABLED === 'true') {
-      return true;
+  // Check browser environment via globalThis
+  if (typeof globalThis !== 'undefined') {
+    try {
+      // @ts-ignore - may not exist
+      const viteEnv = globalThis.__VITE_ENV__ || {};
+      if (viteEnv.VITE_AUTH_BYPASS_MODE_ENABLED === 'true') {
+        return true;
+      }
+    } catch (e) {
+      // Ignore
     }
   }
 
@@ -133,14 +139,20 @@ export const createBypassProfile = (
  * Check if a user is a bypass user
  */
 export const isBypassUser = (user: any): user is BypassUser => {
-  return user && typeof user === 'object' && user.isBypassUser === true;
+  if (!user || typeof user !== 'object') {
+    return false;
+  }
+  return user.isBypassUser === true;
 };
 
 /**
  * Check if a profile is a bypass profile
  */
 export const isBypassProfile = (profile: any): profile is BypassProfile => {
-  return profile && typeof profile === 'object' && profile.isBypassProfile === true;
+  if (!profile || typeof profile !== 'object') {
+    return false;
+  }
+  return profile.isBypassProfile === true;
 };
 
 // ============================================================================
@@ -289,7 +301,16 @@ export const clearAllBypassData = (): void => {
   
   // Clear all profile keys
   try {
-    const keys = Object.keys(window.localStorage);
+    // Get all keys by iterating through localStorage
+    const keys: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (key) {
+        keys.push(key);
+      }
+    }
+    
+    // Remove profile keys
     keys.forEach(key => {
       if (key.startsWith(BYPASS_PROFILE_KEY_PREFIX)) {
         window.localStorage.removeItem(key);
