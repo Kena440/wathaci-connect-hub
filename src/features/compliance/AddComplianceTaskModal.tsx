@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { withSupportContact } from '@/lib/supportEmail';
 
 interface AddComplianceTaskModalProps {
   open: boolean;
@@ -50,12 +51,12 @@ export const AddComplianceTaskModal = ({
     e.preventDefault();
 
     if (!formData.title.trim()) {
-      toast.error('Please enter a task title');
+      toast.error(withSupportContact('Please enter a task title'));
       return;
     }
 
     if (!formData.dueDate) {
-      toast.error('Please select a due date');
+      toast.error(withSupportContact('Please select a due date'));
       return;
     }
 
@@ -97,7 +98,7 @@ export const AddComplianceTaskModal = ({
       onTaskAdded();
     } catch (error) {
       console.error('Error adding task:', error);
-      toast.error('Failed to add compliance task');
+      toast.error(withSupportContact('Failed to add compliance task'));
     } finally {
       setLoading(false);
     }

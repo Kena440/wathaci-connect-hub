@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabaseClient } from "@/lib/wathaciSupabaseClient";
 import { Navigate } from "react-router-dom";
+import { withSupportContact } from "@/lib/supportEmail";
 
 interface AuthContextValue {
   session: Session | null;
@@ -25,7 +26,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data, error: sessionError } = await supabaseClient.auth.getSession();
       if (!isMounted) return;
       if (sessionError) {
-        setError(sessionError.message);
+        setError(withSupportContact(sessionError.message));
       }
       setSession(data.session ?? null);
       setUser(data.session?.user ?? null);

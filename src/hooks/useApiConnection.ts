@@ -21,6 +21,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { checkApiHealth, type HealthStatus } from '@/lib/api/health-check';
+import { withSupportContact } from '@/lib/supportEmail';
 
 interface UseApiConnectionResult {
   isConnected: boolean | null;
@@ -72,11 +73,13 @@ export const useApiConnection = (
       setLastCheck(new Date());
       
       if (!status.isHealthy) {
-        setError(status.error || 'Backend is not healthy');
+        setError(withSupportContact(status.error || 'Backend is not healthy'));
       }
     } catch (err) {
       setIsConnected(false);
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(
+        withSupportContact(err instanceof Error ? err.message : 'Unknown error')
+      );
       setLastCheck(new Date());
     } finally {
       setIsChecking(false);

@@ -2,6 +2,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { supabaseConfigStatus } from "@/config/appConfig";
 import { MSISDN_REGEX, normalizeMsisdn } from "@/utils/phone";
+import { withSupportContact } from "@/lib/supportEmail";
 
 type PaymentMethod = "mobile_money" | "card";
 
@@ -128,23 +129,29 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
     setPaymentInstructions(null);
 
     if (typeof amount !== "number") {
-      setError("Please select or enter a donation amount.");
+      setError(withSupportContact("Please select or enter a donation amount"));
       return;
     }
 
     if (amount < minAmount) {
-      setError(`Minimum donation is ${formatCurrency(minAmount)}.`);
+      setError(withSupportContact(`Minimum donation is ${formatCurrency(minAmount)}`));
       return;
     }
 
     if (amount > maxAmount) {
-      setError(`Maximum donation per transaction is ${formatCurrency(maxAmount)}.`);
+      setError(
+        withSupportContact(
+          `Maximum donation per transaction is ${formatCurrency(maxAmount)}`
+        )
+      );
       return;
     }
 
     if (!supabaseConfigStatus.hasValidConfig) {
       setError(
-        "Donations are temporarily unavailable while we finalise our Supabase configuration. Please try again shortly.",
+        withSupportContact(
+          "Donations are temporarily unavailable while we finalise our Supabase configuration. Please try again shortly"
+        ),
       );
       console.error("DonateButton: Missing Supabase configuration", supabaseConfigStatus);
       return;
@@ -152,7 +159,7 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
 
     const functionsUrl = getSupabaseFunctionsUrl();
     if (!functionsUrl) {
-      setError("Supabase configuration missing. Please try again later.");
+      setError(withSupportContact("Supabase configuration missing. Please try again later"));
       return;
     }
 
@@ -161,7 +168,11 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
 
     const normalizedMsisdn = normalizeMsisdn(msisdn);
     if (!normalizedMsisdn || !MSISDN_REGEX.test(normalizedMsisdn)) {
-      setError("Enter a valid mobile number including the country code (e.g. +2609XXXXXXX).");
+      setError(
+        withSupportContact(
+          "Enter a valid mobile number including the country code (e.g. +2609XXXXXXX)"
+        )
+      );
       return;
     }
 
@@ -228,9 +239,11 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
     } catch (submitError) {
       console.error("DonateButton: Failed to create donation", submitError);
       setError(
-        submitError instanceof Error
-          ? submitError.message
-          : "Unable to start donation. Please try again."
+        withSupportContact(
+          submitError instanceof Error
+            ? submitError.message
+            : "Unable to start donation. Please try again"
+        )
       );
     } finally {
       setSubmitting(false);

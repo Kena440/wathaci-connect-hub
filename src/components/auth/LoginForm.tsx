@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { supabaseClient, accountTypePaths, type AccountType } from "@/lib/wathaciSupabaseClient";
+import { withSupportContact } from "@/lib/supportEmail";
 
 export interface LoginFormProps {
   onLogin?: (accountType: AccountType) => void;
@@ -23,13 +24,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
       });
 
       if (signInError) {
-        setError(signInError.message);
+        setError(withSupportContact(signInError.message));
         return;
       }
 
       const userId = data.user?.id;
       if (!userId) {
-        setError("Login succeeded but no user data was returned.");
+        setError(withSupportContact("Login succeeded but no user data was returned"));
         return;
       }
 
@@ -41,7 +42,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
 
       if (profileError) {
         console.error(profileError);
-        setError(profileError.message);
+        setError(withSupportContact(profileError.message));
         return;
       }
 
@@ -51,7 +52,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
       window.location.href = destination;
     } catch (unknownError) {
       console.error(unknownError);
-      setError("Unable to login. Please try again.");
+      setError(withSupportContact("Unable to login. Please try again"));
     } finally {
       setLoading(false);
     }

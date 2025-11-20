@@ -20,6 +20,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { getApiEndpoint } from '@/config/api';
+import { withSupportContact } from '@/lib/supportEmail';
 
 interface OTPVerificationProps {
   onVerified?: (phone: string) => void;
@@ -67,10 +68,14 @@ export default function OTPVerification({
         setExpiresAt(new Date(data.expiresAt));
         setStep('code');
       } else {
-        setError(data.error || 'Failed to send verification code');
+        setError(
+          withSupportContact(data.error || 'Failed to send verification code')
+        );
       }
     } catch (err) {
-      setError('Network error. Please check your connection and try again.');
+      setError(
+        withSupportContact('Network error. Please check your connection and try again')
+      );
       console.error('[OTPVerification] Send error:', err);
     } finally {
       setLoading(false);
@@ -99,10 +104,10 @@ export default function OTPVerification({
         setSuccess('Phone number verified successfully!');
         onVerified?.(phone);
       } else {
-        setError(data.error || 'Verification failed');
+        setError(withSupportContact(data.error || 'Verification failed'));
       }
     } catch (err) {
-      setError('Network error. Please try again.');
+      setError(withSupportContact('Network error. Please try again'));
       console.error('[OTPVerification] Verify error:', err);
     } finally {
       setLoading(false);
