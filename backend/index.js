@@ -71,6 +71,7 @@ const logRoutes = require('./routes/logs');
 const paymentRoutes = require('./routes/payment');
 const resolveRoutes = require('./routes/resolve');
 const otpRoutes = require('./routes/otp');
+const emailRoutes = require('./routes/email');
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -94,6 +95,7 @@ app.get('/api', (req, res) => {
       payment: 'GET /api/payment/readiness, POST /api/payment/webhook',
       resolve: 'POST /resolve/lenco-merchant',
       otp: 'POST /api/auth/otp/send, POST /api/auth/otp/verify',
+      email: 'GET /api/email/test, GET /api/email/status, POST /api/email/send, POST /api/email/send-otp, POST /api/email/send-verification, POST /api/email/send-password-reset',
     },
   });
 });
@@ -103,6 +105,7 @@ app.use('/api/logs', logRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/resolve', resolveRoutes);
 app.use('/api/auth/otp', otpRoutes);
+app.use('/api/email', emailRoutes);
 
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
