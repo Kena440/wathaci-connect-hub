@@ -9,6 +9,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { AppLayout } from '@/components/AppLayout';
+import { withSupportContact } from '@/lib/supportEmail';
 
 interface Question {
   id: string;
@@ -72,12 +73,12 @@ export const ReadinessCheck = () => {
     );
 
     if (unansweredQuestions.length > 0) {
-      toast.error('Please answer all questions before submitting.');
+      toast.error(withSupportContact('Please answer all questions before submitting'));
       return;
     }
 
     if (!user?.id) {
-      toast.error('You must be logged in to submit the readiness check.');
+      toast.error(withSupportContact('You must be logged in to submit the readiness check'));
       return;
     }
 
@@ -132,7 +133,9 @@ export const ReadinessCheck = () => {
       logger.error('Failed to submit readiness check', error, {
         userId: user?.id,
       });
-      toast.error('Failed to submit readiness check. Please try again.');
+      toast.error(
+        withSupportContact('Failed to submit readiness check. Please try again')
+      );
     } finally {
       setIsSubmitting(false);
     }

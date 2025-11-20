@@ -12,6 +12,7 @@ import { Calendar, CheckCircle, AlertCircle, Mail, MessageSquare, Phone } from '
 import { toast } from 'sonner';
 import { AddComplianceTaskModal } from './AddComplianceTaskModal';
 import { AddStandardTasksDrawer } from './AddStandardTasksDrawer';
+import { withSupportContact } from '@/lib/supportEmail';
 
 interface ComplianceTask {
   id: string;
@@ -72,7 +73,7 @@ export const ComplianceDashboard = () => {
       setTasks(updatedTasks);
     } catch (error) {
       console.error('Error fetching compliance tasks:', error);
-      toast.error('Failed to load compliance tasks');
+      toast.error(withSupportContact('Failed to load compliance tasks'));
     } finally {
       setLoading(false);
     }
@@ -91,7 +92,7 @@ export const ComplianceDashboard = () => {
       fetchTasks();
     } catch (error) {
       console.error('Error updating task:', error);
-      toast.error('Failed to update task');
+      toast.error(withSupportContact('Failed to update task'));
     }
   };
 

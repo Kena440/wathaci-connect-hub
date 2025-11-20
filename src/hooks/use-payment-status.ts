@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase-enhanced';
 import { useToast } from '@/hooks/use-toast';
+import { withSupportContact } from '@/lib/supportEmail';
 
 export interface PaymentStatus {
   reference: string;
@@ -94,7 +95,9 @@ export const usePaymentStatus = (
         case 'failed':
           toast({
             title: "Payment Failed",
-            description: `Your payment of ${amount} failed. Please try again.`,
+            description: withSupportContact(
+              `Your payment of ${amount} failed. Please try again`
+            ),
             variant: "destructive",
           });
           break;
@@ -201,11 +204,11 @@ export const usePaymentStatus = (
           startPolling(reference);
         }
       } else {
-        setError('Payment not found');
+        setError(withSupportContact('Payment not found'));
       }
       setLoading(false);
     }).catch((err) => {
-      setError(err.message || 'Failed to fetch payment status');
+      setError(withSupportContact(err.message || 'Failed to fetch payment status'));
       setLoading(false);
     });
   }, [currentReference, fetchPaymentStatus, setupRealtimeSubscription, startPolling, stopTracking, updateStatus]);
@@ -221,7 +224,7 @@ export const usePaymentStatus = (
         setLastUpdated(Date.now());
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to refresh payment status');
+      setError(withSupportContact(err.message || 'Failed to refresh payment status'));
     } finally {
       setLoading(false);
     }

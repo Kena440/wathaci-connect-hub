@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
+import { withSupportContact } from '@/lib/supportEmail';
 
 interface ComplianceTemplate {
   id: string;
@@ -62,7 +63,7 @@ export const AddStandardTasksDrawer = ({
       setTemplates(data || []);
     } catch (error) {
       console.error('Error fetching templates:', error);
-      toast.error('Failed to load compliance templates');
+      toast.error(withSupportContact('Failed to load compliance templates'));
     } finally {
       setLoading(false);
     }
@@ -148,7 +149,7 @@ export const AddStandardTasksDrawer = ({
       onTasksAdded();
     } catch (error) {
       console.error('Error adding task from template:', error);
-      toast.error('Failed to add task');
+      toast.error(withSupportContact('Failed to add task'));
     } finally {
       setAddingTaskId(null);
     }

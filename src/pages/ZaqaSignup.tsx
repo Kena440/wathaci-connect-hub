@@ -12,6 +12,7 @@ import { CheckCircle2 } from 'lucide-react';
 import { accountTypes, type AccountTypeValue } from '@/data/accountTypes';
 import { supabaseClient } from '@/lib/wathaciSupabaseClient';
 import { getEmailConfirmationRedirectUrl } from '@/lib/emailRedirect';
+import { withSupportContact } from '@/lib/supportEmail';
 
 /**
  * ZAQA-style Sign-Up Page for Wathaci
@@ -54,7 +55,9 @@ export const ZaqaSignup = () => {
    */
   const handleAccountTypeNext = () => {
     if (!selectedAccountType) {
-      setAccountTypeError('Please select an account type to continue.');
+      setAccountTypeError(
+        withSupportContact('Please select an account type to continue')
+      );
       return;
     }
     setAccountTypeError(null);
@@ -71,42 +74,44 @@ export const ZaqaSignup = () => {
 
     // Validation
     if (!selectedAccountType) {
-      setError('Account type is required.');
+      setError(withSupportContact('Account type is required'));
       return;
     }
 
     if (!email.trim()) {
-      setError('Email is required.');
+      setError(withSupportContact('Email is required'));
       return;
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('Please enter a valid email address.');
+      setError(withSupportContact('Please enter a valid email address'));
       return;
     }
 
     if (!password) {
-      setError('Password is required.');
+      setError(withSupportContact('Password is required'));
       return;
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters long.');
+      setError(withSupportContact('Password must be at least 8 characters long'));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError(withSupportContact('Passwords do not match'));
       return;
     }
 
     if (!fullName.trim()) {
-      setError('Full name is required.');
+      setError(withSupportContact('Full name is required'));
       return;
     }
 
     if (!acceptedTerms) {
-      setError('You must accept the Terms & Conditions to sign up.');
+      setError(
+        withSupportContact('You must accept the Terms & Conditions to sign up')
+      );
       return;
     }
 
@@ -128,12 +133,16 @@ export const ZaqaSignup = () => {
 
       if (signUpError) {
         console.error('Sign-up error:', signUpError);
-        setError(signUpError.message);
+        setError(withSupportContact(signUpError.message));
         return;
       }
 
       if (!authData.user) {
-        setError('Sign-up succeeded but user data is missing. Please try logging in.');
+        setError(
+          withSupportContact(
+            'Sign-up succeeded but user data is missing. Please try logging in'
+          )
+        );
         return;
       }
 
@@ -172,7 +181,7 @@ export const ZaqaSignup = () => {
       setStep('success');
     } catch (err) {
       console.error('Unexpected error during signup:', err);
-      setError('An unexpected error occurred. Please try again.');
+      setError(withSupportContact('An unexpected error occurred. Please try again'));
     } finally {
       setLoading(false);
     }
