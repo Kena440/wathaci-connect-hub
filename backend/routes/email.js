@@ -12,7 +12,6 @@ const {
   defaultFromEmail,
   defaultReplyTo,
   emailProvider,
-  smtpSecure,
 } = require('../services/email-service');
 
 const router = express.Router();
@@ -90,6 +89,8 @@ router.get('/verify', async (_req, res) => {
     });
   }
 
+  const configStatus = getConfigStatus();
+
   return res.status(200).json({
     ok: true,
     message: result.message,
@@ -98,7 +99,7 @@ router.get('/verify', async (_req, res) => {
       provider: emailProvider,
       from: defaultFromEmail,
       replyTo: defaultReplyTo,
-      secure: smtpSecure,
+      secure: configStatus.secure,
     },
   });
 });
@@ -111,7 +112,7 @@ router.post('/send', validate(sendEmailSchema), async (req, res) => {
     to,
     subject,
     html: html || text,
-    text: text || (html ? undefined : text), // Keep text separate if html exists
+    text: text,
     cc,
     bcc,
     template: template || 'custom',
@@ -141,7 +142,7 @@ router.post('/send-test', validate(sendEmailSchema), async (req, res) => {
     to,
     subject,
     html: html || text,
-    text: text || (html ? undefined : text), // Keep text separate if html exists
+    text: text,
     cc,
     bcc,
     template: template || 'manual-test',
