@@ -1,316 +1,152 @@
+const { transporter, verifyTransporterConnection } = require('../lib/email-transporter');
+const { getSupabaseClient, isSupabaseConfigured } = require('../lib/supabaseAdmin');
+
+const defaultFromEmail =
+  process.env.FROM_EMAIL ||
+  process.env.SMTP_FROM_EMAIL ||
+  process.env.SMTP_USER ||
+  process.env.SMTP_USERNAME ||
+  'support@wathaci.com';
+
+const defaultFromName = process.env.SMTP_FROM_NAME || 'Wathaci';
+
+const defaultReplyTo =
+  process.env.REPLY_TO_EMAIL ||
+  process.env.SMTP_REPLY_TO ||
+  defaultFromEmail;
+
 /**
- * Email Service - SMTP Email Delivery
- * 
- * This service provides centralized email sending functionality using Nodemailer.
- * It supports transactional emails including:
- * - Email verification
- * - OTP delivery
- * - Password reset
- * - System notifications
- * - Admin alerts
- * 
- * Features:
- * - Secure SMTP connection (SSL/TLS)
- * - HTML and plain text email support
- * - Email logging and tracking
- * - Connection verification
- * - Debug logging support
- * - Retry handling
- * 
- * Environment Variables Required:
- * - SMTP_HOST: SMTP server hostname
- * - SMTP_PORT: SMTP server port (465 or 587)
- * - SMTP_SECURE: true for port 465, false for port 587
- * - SMTP_USERNAME: SMTP authentication username
- * - SMTP_PASSWORD: SMTP authentication password
- * - FROM_EMAIL: Default sender email address
- * - FROM_NAME: Default sender name (optional)
- * - REPLY_TO_EMAIL: Reply-to email address (optional)
+ * Persist email delivery attempt to the email_logs table if configured.
  */
+async function persistLog({ email, template, status, error, messageId, envelope, metadata }) {
+  if (!isSupabaseConfigured()) {
+    return;
+  }
 
-const nodemailer = require('nodemailer');
-const { getSupabaseClient } = require('../lib/supabaseAdmin');
-
-// Email configuration from environment variables
-const SMTP_HOST = process.env.SMTP_HOST || '';
-const SMTP_PORT = parseInt(process.env.SMTP_PORT || '465', 10);
-const SMTP_SECURE = process.env.SMTP_SECURE === 'true' || SMTP_PORT === 465;
-const SMTP_USERNAME = process.env.SMTP_USERNAME || '';
-const SMTP_PASSWORD = process.env.SMTP_PASSWORD || '';
-const FROM_EMAIL = process.env.FROM_EMAIL || process.env.SUPPORT_EMAIL || 'support@wathaci.com';
-const FROM_NAME = process.env.FROM_NAME || 'Wathaci';
-const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || FROM_EMAIL;
-const EMAIL_DEBUG = process.env.EMAIL_DEBUG === 'true';
-
-// Validate configuration
-let configurationValid = true;
-let configurationErrors = [];
-
-if (!SMTP_HOST) {
-  configurationErrors.push('SMTP_HOST is not configured');
-  configurationValid = false;
-}
-
-if (!SMTP_USERNAME) {
-  configurationErrors.push('SMTP_USERNAME is not configured');
-  configurationValid = false;
-}
-
-if (!SMTP_PASSWORD) {
-  configurationErrors.push('SMTP_PASSWORD is not configured');
-  configurationValid = false;
-}
-
-if (!configurationValid) {
-  console.warn('[EmailService] SMTP configuration incomplete:');
-  configurationErrors.forEach(error => console.warn(`  - ${error}`));
-  console.warn('[EmailService] Email functionality will be disabled until configuration is complete.');
-}
-
-// Create transporter (null if not configured)
-let transporter = null;
-
-if (configurationValid) {
+  const supabase = getSupabaseClient();
   try {
-    transporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: SMTP_PORT,
-      secure: SMTP_SECURE,
-      auth: {
-        user: SMTP_USERNAME,
-        pass: SMTP_PASSWORD,
-      },
-      tls: {
-        // Allow self-signed certificates in development
-        rejectUnauthorized: process.env.NODE_ENV === 'production',
-      },
-      debug: EMAIL_DEBUG,
-      logger: EMAIL_DEBUG,
+    const { error: dbError } = await supabase.from('email_logs').insert({
+      email,
+      template,
+      status,
+      error,
+      message_id: messageId,
+      envelope,
+      metadata,
+      created_at: new Date().toISOString(),
     });
 
-    console.log('[EmailService] SMTP transporter created successfully');
-    console.log(`[EmailService] Host: ${SMTP_HOST}:${SMTP_PORT} (secure: ${SMTP_SECURE})`);
-  } catch (error) {
-    console.error('[EmailService] Failed to create transporter:', error.message);
-    transporter = null;
+    if (dbError) {
+      console.warn('[EmailService] Failed to persist email log:', dbError.message);
+    }
+  } catch (dbError) {
+    console.warn('[EmailService] Unexpected error persisting email log:', dbError.message);
   }
 }
 
 /**
- * Verify SMTP connection
- * 
- * @returns {Promise<{ok: boolean, message: string, details?: object}>}
+ * Send an email using the shared SMTP transporter.
  */
-async function verifyConnection() {
+async function sendEmail({ to, subject, html, text, cc, bcc, template = 'custom', metadata = {} }) {
   if (!transporter) {
-    return {
-      ok: false,
-      message: 'Email service is not configured',
-      details: {
-        errors: configurationErrors,
-      },
-    };
+    const message = 'SMTP transporter is not configured. Set SMTP_* variables to enable email sending.';
+    console.error('[EmailService] ' + message);
+    return { ok: false, message };
   }
 
-  try {
-    await transporter.verify();
-    console.log('[EmailService] SMTP connection verified successfully');
-    return {
-      ok: true,
-      message: 'SMTP connection verified successfully',
-      details: {
-        host: SMTP_HOST,
-        port: SMTP_PORT,
-        secure: SMTP_SECURE,
-        from: FROM_EMAIL,
-      },
-    };
-  } catch (error) {
-    console.error('[EmailService] SMTP verification failed:', error.message);
-    return {
-      ok: false,
-      message: 'SMTP connection verification failed',
-      details: {
-        error: error.message,
-        host: SMTP_HOST,
-        port: SMTP_PORT,
-      },
-    };
-  }
-}
+  const from = `${defaultFromName} <${defaultFromEmail}>`;
+  const replyTo = metadata.replyTo || defaultReplyTo;
 
-/**
- * Log email send attempt to database
- * 
- * @param {Object} logData - Email log data
- * @param {string} logData.email - Recipient email address
- * @param {string} logData.template - Email template/type identifier
- * @param {string} logData.status - Status: 'sent', 'failed', 'pending'
- * @param {string} [logData.error] - Error message if failed
- * @param {string} [logData.messageId] - SMTP message ID if sent
- * @param {object} [logData.metadata] - Additional metadata
- * @returns {Promise<void>}
- */
-async function logEmail(logData) {
-  try {
-    const supabase = getSupabaseClient();
-    if (!supabase) {
-      console.warn('[EmailService] Cannot log email: Supabase not configured');
-      return;
-    }
-
-    const { error } = await supabase
-      .from('email_logs')
-      .insert({
-        recipient_email: logData.email,
-        template_type: logData.template,
-        status: logData.status,
-        error_message: logData.error || null,
-        message_id: logData.messageId || null,
-        metadata: logData.metadata || {},
-        sent_at: logData.status === 'sent' ? new Date().toISOString() : null,
-      });
-
-    if (error) {
-      console.error('[EmailService] Failed to log email:', error.message);
-    }
-  } catch (error) {
-    console.error('[EmailService] Error logging email:', error.message);
-  }
-}
-
-/**
- * Send email using SMTP
- * 
- * @param {Object} options - Email options
- * @param {string} options.to - Recipient email address(es)
- * @param {string} options.subject - Email subject
- * @param {string} [options.text] - Plain text content
- * @param {string} [options.html] - HTML content
- * @param {string} [options.from] - Sender email (defaults to FROM_EMAIL)
- * @param {string} [options.fromName] - Sender name (defaults to FROM_NAME)
- * @param {string} [options.replyTo] - Reply-to address (defaults to REPLY_TO_EMAIL)
- * @param {string} [options.template] - Template identifier for logging
- * @param {object} [options.metadata] - Additional metadata for logging
- * @returns {Promise<{ok: boolean, message: string, messageId?: string, error?: string}>}
- */
-async function sendEmail(options) {
-  const {
+  const mailOptions = {
+    from,
     to,
     subject,
-    text,
     html,
-    from = FROM_EMAIL,
-    fromName = FROM_NAME,
-    replyTo = REPLY_TO_EMAIL,
-    template = 'generic',
-    metadata = {},
-  } = options;
-
-  // Validate inputs
-  if (!to) {
-    return {
-      ok: false,
-      message: 'Recipient email address is required',
-    };
-  }
-
-  if (!subject) {
-    return {
-      ok: false,
-      message: 'Email subject is required',
-    };
-  }
-
-  if (!text && !html) {
-    return {
-      ok: false,
-      message: 'Email content (text or html) is required',
-    };
-  }
-
-  if (!transporter) {
-    await logEmail({
-      email: to,
-      template,
-      status: 'failed',
-      error: 'Email service not configured',
-      metadata,
-    });
-
-    return {
-      ok: false,
-      message: 'Email service is not configured',
-      error: 'SMTP transporter not initialized',
-    };
-  }
+    text,
+    cc,
+    bcc,
+    replyTo,
+    envelope: {
+      from: defaultFromEmail,
+      to,
+    },
+  };
 
   try {
-    // Prepare mail options
-    const mailOptions = {
-      from: fromName ? `"${fromName}" <${from}>` : from,
-      to,
-      subject,
-      text,
-      html,
-      replyTo,
-    };
-
-    // Send email
-    console.log(`[EmailService] Sending email to ${to} (template: ${template})`);
     const info = await transporter.sendMail(mailOptions);
 
-    console.log(`[EmailService] Email sent successfully. Message ID: ${info.messageId}`);
-
-    // Log success
-    await logEmail({
+    await persistLog({
       email: to,
       template,
       status: 'sent',
       messageId: info.messageId,
-      metadata: {
-        ...metadata,
-        response: info.response,
-        accepted: info.accepted,
-        rejected: info.rejected,
-      },
+      envelope: info.envelope,
+      metadata,
+    });
+
+    console.log('[EmailService] Email sent', {
+      to,
+      messageId: info.messageId,
+      response: info.response,
+      envelope: info.envelope,
     });
 
     return {
       ok: true,
       message: 'Email sent successfully',
       messageId: info.messageId,
-      envelope: info.envelope,
       response: info.response,
+      envelope: info.envelope,
     };
   } catch (error) {
-    console.error('[EmailService] Failed to send email:', error.message);
+    console.error('[EmailService] Failed to send email', {
+      to,
+      subject,
+      error: error?.message,
+    });
 
-    // Log failure
-    await logEmail({
+    await persistLog({
       email: to,
       template,
       status: 'failed',
-      error: error.message,
+      error: error?.message,
       metadata,
     });
 
     return {
       ok: false,
-      message: 'Failed to send email',
-      error: error.message,
+      message: error?.message || 'Failed to send email',
     };
   }
 }
 
 /**
- * Send OTP email
- * 
- * @param {Object} options - OTP email options
- * @param {string} options.to - Recipient email address
- * @param {string} options.otpCode - The OTP code to send
- * @param {number} [options.expiryMinutes=10] - OTP expiry time in minutes
- * @returns {Promise<{ok: boolean, message: string, messageId?: string}>}
+ * Verify the SMTP transporter connection, exposing a normalized response.
+ */
+async function verifyEmailTransport() {
+  const result = await verifyTransporterConnection();
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      message: result.message,
+      error: result.error,
+    };
+  }
+
+  return {
+    ok: true,
+    message: result.message,
+    details: result.details,
+  };
+}
+
+/**
+ * Send OTP verification email
+ * @param {Object} params
+ * @param {string} params.to - Recipient email
+ * @param {string} params.otpCode - OTP code to send
+ * @param {number} [params.expiryMinutes=10] - OTP expiry time in minutes
  */
 async function sendOTPEmail({ to, otpCode, expiryMinutes = 10 }) {
   const subject = 'Your Wathaci Verification Code';
@@ -319,7 +155,7 @@ async function sendOTPEmail({ to, otpCode, expiryMinutes = 10 }) {
 
 If you did not request this code, please ignore this email.
 
-Need help? Contact us at ${REPLY_TO_EMAIL}`;
+Need help? Contact us at ${defaultReplyTo}`;
 
   const html = `
 <!DOCTYPE html>
@@ -347,7 +183,7 @@ Need help? Contact us at ${REPLY_TO_EMAIL}`;
   </div>
   
   <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; text-align: center;">
-    <p>Need help? Contact us at <a href="mailto:${REPLY_TO_EMAIL}" style="color: #0066cc;">${REPLY_TO_EMAIL}</a></p>
+    <p>Need help? Contact us at <a href="mailto:${defaultReplyTo}" style="color: #0066cc;">${defaultReplyTo}</a></p>
     <p>&copy; ${new Date().getFullYear()} Wathaci. All rights reserved.</p>
   </div>
 </body>
@@ -368,31 +204,26 @@ Need help? Contact us at ${REPLY_TO_EMAIL}`;
 
 /**
  * Send email verification email
- * 
- * @param {Object} options - Verification email options
- * @param {string} options.to - Recipient email address
- * @param {string} options.verificationUrl - URL for email verification
- * @param {string} [options.userName] - User's name (optional)
- * @returns {Promise<{ok: boolean, message: string, messageId?: string}>}
+ * @param {Object} params
+ * @param {string} params.to - Recipient email
+ * @param {string} params.verificationUrl - Verification URL
+ * @param {string} [params.userName=''] - User's name
  */
 async function sendVerificationEmail({ to, verificationUrl, userName = '' }) {
   const subject = 'Verify Your Wathaci Email Address';
+  const greeting = userName ? `Hi ${userName}` : 'Hello';
   
-  const greeting = userName ? `Hello ${userName},` : 'Hello,';
-  
-  const text = `${greeting}
+  const text = `${greeting},
 
-Thank you for signing up with Wathaci!
-
-Please verify your email address by clicking the link below:
+Thank you for signing up with Wathaci! Please verify your email address by clicking the link below:
 
 ${verificationUrl}
 
 This link will expire in 24 hours.
 
-If you did not create an account, please ignore this email.
+If you did not create a Wathaci account, please ignore this email.
 
-Need help? Contact us at ${REPLY_TO_EMAIL}`;
+Need help? Contact us at ${defaultReplyTo}`;
 
   const html = `
 <!DOCTYPE html>
@@ -404,28 +235,28 @@ Need help? Contact us at ${REPLY_TO_EMAIL}`;
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
-    <h1 style="color: #2c3e50; margin: 0 0 10px 0;">Welcome to Wathaci!</h1>
+    <h1 style="color: #2c3e50; margin: 0 0 10px 0;">Verify Your Email</h1>
   </div>
   
   <div style="background-color: #ffffff; padding: 30px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-    <p>${greeting}</p>
+    <p>${greeting},</p>
     
-    <p>Thank you for signing up with Wathaci! To complete your registration, please verify your email address.</p>
+    <p>Thank you for signing up with Wathaci! To complete your registration, please verify your email address by clicking the button below:</p>
     
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${verificationUrl}" style="display: inline-block; background-color: #0066cc; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 5px; font-weight: bold;">Verify Email Address</a>
+      <a href="${verificationUrl}" style="display: inline-block; padding: 15px 30px; background-color: #0066cc; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold;">Verify Email Address</a>
     </div>
     
-    <p style="color: #666; font-size: 14px;">Or copy and paste this URL into your browser:</p>
-    <p style="color: #0066cc; font-size: 12px; word-break: break-all;">${verificationUrl}</p>
+    <p style="color: #666; font-size: 14px;">Or copy and paste this link into your browser:</p>
+    <p style="word-break: break-all; color: #0066cc; font-size: 14px;">${verificationUrl}</p>
     
     <p style="color: #666; font-size: 14px; margin-top: 20px;">This link will expire in 24 hours.</p>
     
-    <p style="color: #666; font-size: 14px;">If you did not create an account, please ignore this email.</p>
+    <p style="color: #666; font-size: 14px;">If you did not create a Wathaci account, please ignore this email.</p>
   </div>
   
   <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; text-align: center;">
-    <p>Need help? Contact us at <a href="mailto:${REPLY_TO_EMAIL}" style="color: #0066cc;">${REPLY_TO_EMAIL}</a></p>
+    <p>Need help? Contact us at <a href="mailto:${defaultReplyTo}" style="color: #0066cc;">${defaultReplyTo}</a></p>
     <p>&copy; ${new Date().getFullYear()} Wathaci. All rights reserved.</p>
   </div>
 </body>
@@ -436,40 +267,36 @@ Need help? Contact us at ${REPLY_TO_EMAIL}`;
     subject,
     text,
     html,
-    template: 'email_verification',
+    template: 'verification',
     metadata: {
-      userName: userName || 'unknown',
+      userName,
+      verificationUrl,
     },
   });
 }
 
 /**
  * Send password reset email
- * 
- * @param {Object} options - Password reset email options
- * @param {string} options.to - Recipient email address
- * @param {string} options.resetUrl - URL for password reset
- * @param {string} [options.userName] - User's name (optional)
- * @returns {Promise<{ok: boolean, message: string, messageId?: string}>}
+ * @param {Object} params
+ * @param {string} params.to - Recipient email
+ * @param {string} params.resetUrl - Password reset URL
+ * @param {string} [params.userName=''] - User's name
  */
 async function sendPasswordResetEmail({ to, resetUrl, userName = '' }) {
   const subject = 'Reset Your Wathaci Password';
+  const greeting = userName ? `Hi ${userName}` : 'Hello';
   
-  const greeting = userName ? `Hello ${userName},` : 'Hello,';
-  
-  const text = `${greeting}
+  const text = `${greeting},
 
-We received a request to reset your Wathaci password.
-
-Click the link below to create a new password:
+We received a request to reset your Wathaci password. Click the link below to create a new password:
 
 ${resetUrl}
 
 This link will expire in 1 hour.
 
-If you did not request a password reset, please ignore this email or contact us if you have concerns.
+If you did not request a password reset, please ignore this email and your password will remain unchanged.
 
-Need help? Contact us at ${REPLY_TO_EMAIL}`;
+Need help? Contact us at ${defaultReplyTo}`;
 
   const html = `
 <!DOCTYPE html>
@@ -485,24 +312,24 @@ Need help? Contact us at ${REPLY_TO_EMAIL}`;
   </div>
   
   <div style="background-color: #ffffff; padding: 30px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-    <p>${greeting}</p>
+    <p>${greeting},</p>
     
-    <p>We received a request to reset your Wathaci password.</p>
+    <p>We received a request to reset your Wathaci password. Click the button below to create a new password:</p>
     
     <div style="text-align: center; margin: 30px 0;">
-      <a href="${resetUrl}" style="display: inline-block; background-color: #0066cc; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 5px; font-weight: bold;">Reset Password</a>
+      <a href="${resetUrl}" style="display: inline-block; padding: 15px 30px; background-color: #dc3545; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Password</a>
     </div>
     
-    <p style="color: #666; font-size: 14px;">Or copy and paste this URL into your browser:</p>
-    <p style="color: #0066cc; font-size: 12px; word-break: break-all;">${resetUrl}</p>
+    <p style="color: #666; font-size: 14px;">Or copy and paste this link into your browser:</p>
+    <p style="word-break: break-all; color: #0066cc; font-size: 14px;">${resetUrl}</p>
     
     <p style="color: #666; font-size: 14px; margin-top: 20px;">This link will expire in 1 hour.</p>
     
-    <p style="color: #666; font-size: 14px;">If you did not request a password reset, please ignore this email or contact us if you have concerns.</p>
+    <p style="color: #666; font-size: 14px;">If you did not request a password reset, please ignore this email and your password will remain unchanged.</p>
   </div>
   
   <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; text-align: center;">
-    <p>Need help? Contact us at <a href="mailto:${REPLY_TO_EMAIL}" style="color: #0066cc;">${REPLY_TO_EMAIL}</a></p>
+    <p>Need help? Contact us at <a href="mailto:${defaultReplyTo}" style="color: #0066cc;">${defaultReplyTo}</a></p>
     <p>&copy; ${new Date().getFullYear()} Wathaci. All rights reserved.</p>
   </div>
 </body>
@@ -513,35 +340,34 @@ Need help? Contact us at ${REPLY_TO_EMAIL}`;
     subject,
     text,
     html,
-    template: 'password_reset',
+    template: 'password-reset',
     metadata: {
-      userName: userName || 'unknown',
+      userName,
+      resetUrl,
     },
   });
 }
 
 /**
- * Check if email service is configured and ready
- * 
- * @returns {boolean}
+ * Check if email is configured
  */
 function isEmailConfigured() {
-  return configurationValid && transporter !== null;
+  return transporter !== null;
 }
 
 /**
- * Get email service configuration status
- * 
- * @returns {Object} Configuration status
+ * Get email configuration status
  */
 function getConfigStatus() {
+  const smtpPort = process.env.SMTP_PORT;
+  const smtpSecure = process.env.SMTP_SECURE === 'true' || smtpPort === '465';
+  
   return {
-    configured: configurationValid,
-    host: SMTP_HOST || 'not set',
-    port: SMTP_PORT || 'not set',
-    secure: SMTP_SECURE,
-    from: FROM_EMAIL || 'not set',
-    errors: configurationErrors,
+    configured: transporter !== null,
+    host: process.env.SMTP_HOST || null,
+    port: smtpPort || null,
+    secure: smtpSecure,
+    from: defaultFromEmail,
   };
 }
 
@@ -550,8 +376,11 @@ module.exports = {
   sendOTPEmail,
   sendVerificationEmail,
   sendPasswordResetEmail,
-  verifyConnection,
+  verifyEmailTransport,
+  verifyConnection: verifyEmailTransport, // Alias for backward compatibility
   isEmailConfigured,
   getConfigStatus,
-  logEmail,
+  defaultFromEmail,
+  defaultReplyTo,
+  emailProvider: process.env.EMAIL_PROVIDER || 'SMTP',
 };
