@@ -70,7 +70,43 @@ const getImportMetaEnv = (): any => {
 };
 
 export const resolveEnvValue = (key: string): string | undefined => {
-  // Check process.env first for test/Node.js environments
+  // CRITICAL: Use explicit if/else for each key so Vite can replace import.meta.env.VITE_* at build time
+  // Dynamic property access like import.meta.env[key] prevents Vite's static replacement
+  let viteValue: string | undefined;
+  
+  // Check import.meta first with static property access for Vite replacement
+  if (key === 'VITE_SUPABASE_URL') {
+    viteValue = import.meta.env.VITE_SUPABASE_URL;
+  } else if (key === 'VITE_SUPABASE_PROJECT_URL') {
+    viteValue = import.meta.env.VITE_SUPABASE_PROJECT_URL;
+  } else if (key === 'NEXT_PUBLIC_SUPABASE_URL') {
+    viteValue = import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
+  } else if (key === 'PUBLIC_SUPABASE_URL') {
+    viteValue = import.meta.env.PUBLIC_SUPABASE_URL;
+  } else if (key === 'SUPABASE_URL') {
+    viteValue = import.meta.env.SUPABASE_URL;
+  } else if (key === 'VITE_SUPABASE_KEY') {
+    viteValue = import.meta.env.VITE_SUPABASE_KEY;
+  } else if (key === 'VITE_SUPABASE_ANON_KEY') {
+    viteValue = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  } else if (key === 'NEXT_PUBLIC_SUPABASE_ANON_KEY') {
+    viteValue = import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  } else if (key === 'PUBLIC_SUPABASE_ANON_KEY') {
+    viteValue = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+  } else if (key === 'SUPABASE_KEY') {
+    viteValue = import.meta.env.SUPABASE_KEY;
+  } else if (key === 'SUPABASE_ANON_KEY') {
+    viteValue = import.meta.env.SUPABASE_ANON_KEY;
+  } else if (key === 'ALLOW_SUPABASE_MOCK') {
+    viteValue = import.meta.env.ALLOW_SUPABASE_MOCK;
+  }
+  
+  const sanitizedVite = sanitizeEnvValue(viteValue);
+  if (sanitizedVite) {
+    return sanitizedVite;
+  }
+
+  // Check process.env for test/Node.js environments
   if (typeof process !== 'undefined') {
     const processValue = sanitizeEnvValue(process.env?.[key]);
     if (processValue) {
@@ -84,19 +120,6 @@ export const resolveEnvValue = (key: string): string | undefined => {
     if (runtimeValue) {
       return runtimeValue;
     }
-  }
-
-  // Check import.meta for Vite environments (browser/dev)
-  try {
-    const importMeta = getImportMetaEnv();
-    if (importMeta?.env) {
-      const viteValue = sanitizeEnvValue(importMeta.env[key]);
-      if (viteValue) {
-        return viteValue;
-      }
-    }
-  } catch (error) {
-    // import.meta may not be available in test environments
   }
 
   return undefined;
