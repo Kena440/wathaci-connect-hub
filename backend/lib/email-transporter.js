@@ -40,8 +40,8 @@ if (missingRequiredFields) {
     },
     logger: enableLogging,
     debug: enableDebug,
-    connectionTimeout: 15_000,
-    greetingTimeout: 10_000,
+    connectionTimeout: 15000,
+    greetingTimeout: 10000,
     tls: {
       rejectUnauthorized: !allowSelfSigned,
     },
