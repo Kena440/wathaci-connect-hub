@@ -49,13 +49,72 @@ const sanitizeEnvValue = (value: unknown): string | undefined => {
 
 /**
  * Read environment variable directly from import.meta.env.
- * This must access import.meta.env directly (not via Function()) because
+ * This must access import.meta.env with STATIC property access (not bracket notation) because
  * Vite replaces import.meta.env.VITE_* with literal values at build time.
+ * Dynamic bracket notation like import.meta.env[key] prevents Vite's static replacement.
  */
 const readEnv = (key: EnvKey): string | undefined => {
-  // CRITICAL: Access import.meta.env directly, not via Function()
-  // Vite replaces these at build time with the actual values
-  const candidate = sanitizeEnvValue(import.meta.env[key]);
+  // CRITICAL: Use explicit if/else checks for each key so Vite can replace them at build time
+  // We cannot use an object/map with bracket notation as the minifier may not preserve it correctly
+  let rawValue: string | undefined;
+  
+  if (key === "VITE_SUPABASE_URL") {
+    rawValue = import.meta.env.VITE_SUPABASE_URL;
+  } else if (key === "VITE_SUPABASE_PROJECT_URL") {
+    rawValue = import.meta.env.VITE_SUPABASE_PROJECT_URL;
+  } else if (key === "SUPABASE_URL") {
+    rawValue = import.meta.env.SUPABASE_URL;
+  } else if (key === "SUPABASE_PROJECT_URL") {
+    rawValue = import.meta.env.SUPABASE_PROJECT_URL;
+  } else if (key === "VITE_SUPABASE_ANON_KEY") {
+    rawValue = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  } else if (key === "VITE_SUPABASE_KEY") {
+    rawValue = import.meta.env.VITE_SUPABASE_KEY;
+  } else if (key === "SUPABASE_ANON_KEY") {
+    rawValue = import.meta.env.SUPABASE_ANON_KEY;
+  } else if (key === "SUPABASE_KEY") {
+    rawValue = import.meta.env.SUPABASE_KEY;
+  } else if (key === "VITE_LENCO_API_URL") {
+    rawValue = import.meta.env.VITE_LENCO_API_URL;
+  } else if (key === "LENCO_API_URL") {
+    rawValue = import.meta.env.LENCO_API_URL;
+  } else if (key === "VITE_LENCO_PUBLIC_KEY") {
+    rawValue = import.meta.env.VITE_LENCO_PUBLIC_KEY;
+  } else if (key === "LENCO_PUBLIC_KEY") {
+    rawValue = import.meta.env.LENCO_PUBLIC_KEY;
+  } else if (key === "VITE_LENCO_SECRET_KEY") {
+    rawValue = import.meta.env.VITE_LENCO_SECRET_KEY;
+  } else if (key === "LENCO_SECRET_KEY") {
+    rawValue = import.meta.env.LENCO_SECRET_KEY;
+  } else if (key === "VITE_LENCO_WEBHOOK_URL") {
+    rawValue = import.meta.env.VITE_LENCO_WEBHOOK_URL;
+  } else if (key === "LENCO_WEBHOOK_URL") {
+    rawValue = import.meta.env.LENCO_WEBHOOK_URL;
+  } else if (key === "VITE_MIN_PAYMENT_AMOUNT") {
+    rawValue = import.meta.env.VITE_MIN_PAYMENT_AMOUNT;
+  } else if (key === "MIN_PAYMENT_AMOUNT") {
+    rawValue = import.meta.env.MIN_PAYMENT_AMOUNT;
+  } else if (key === "VITE_MAX_PAYMENT_AMOUNT") {
+    rawValue = import.meta.env.VITE_MAX_PAYMENT_AMOUNT;
+  } else if (key === "MAX_PAYMENT_AMOUNT") {
+    rawValue = import.meta.env.MAX_PAYMENT_AMOUNT;
+  } else if (key === "VITE_PLATFORM_FEE_PERCENTAGE") {
+    rawValue = import.meta.env.VITE_PLATFORM_FEE_PERCENTAGE;
+  } else if (key === "PLATFORM_FEE_PERCENTAGE") {
+    rawValue = import.meta.env.PLATFORM_FEE_PERCENTAGE;
+  } else if (key === "VITE_PAYMENT_CURRENCY") {
+    rawValue = import.meta.env.VITE_PAYMENT_CURRENCY;
+  } else if (key === "PAYMENT_CURRENCY") {
+    rawValue = import.meta.env.PAYMENT_CURRENCY;
+  } else if (key === "VITE_PAYMENT_COUNTRY") {
+    rawValue = import.meta.env.VITE_PAYMENT_COUNTRY;
+  } else if (key === "PAYMENT_COUNTRY") {
+    rawValue = import.meta.env.PAYMENT_COUNTRY;
+  } else if (key === "VITE_APP_ENV") {
+    rawValue = import.meta.env.VITE_APP_ENV;
+  }
+
+  const candidate = sanitizeEnvValue(rawValue);
   if (candidate) {
     return candidate;
   }
