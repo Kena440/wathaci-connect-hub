@@ -135,30 +135,52 @@ class ConfigValidator {
 
   validateEmail(env) {
     log('\n📧 Email Configuration (SMTP)', colors.bold);
-    
-    const hasHost = this.checkOptional(
-      'SMTP_HOST',
-      env.SMTP_HOST,
-      'SMTP host for sending emails'
-    );
+
+    const hasHost = this.checkOptional('SMTP_HOST', env.SMTP_HOST, 'SMTP host for sending emails');
+
+    const hasPort = this.checkOptional('SMTP_PORT', env.SMTP_PORT, 'SMTP port (465 for TLS, 587 for STARTTLS)');
 
     const hasUser = this.checkOptional(
-      'SMTP_USER',
-      env.SMTP_USER,
-      'SMTP username'
+      'SMTP_USERNAME',
+      env.SMTP_USERNAME || env.SMTP_USER,
+      'SMTP username (supports SMTP_USER for backward compatibility)'
     );
 
-    const hasPassword = this.checkOptional(
-      'SMTP_PASSWORD',
-      env.SMTP_PASSWORD,
-      'SMTP password'
-    );
+    const hasPassword = this.checkOptional('SMTP_PASSWORD', env.SMTP_PASSWORD, 'SMTP password');
 
     const hasFrom = this.checkOptional(
-      'SMTP_FROM_EMAIL',
-      env.SMTP_FROM_EMAIL,
-      'From email address'
+      'FROM_EMAIL',
+      env.FROM_EMAIL || env.SMTP_FROM_EMAIL,
+      'From email address (FROM_EMAIL or SMTP_FROM_EMAIL)'
     );
+
+    const hasReplyTo = this.checkOptional(
+      'REPLY_TO_EMAIL',
+      env.REPLY_TO_EMAIL || env.SMTP_REPLY_TO || env.SMTP_FROM_EMAIL,
+      'Reply-to email address'
+    );
+
+    const secureFlag = env.SMTP_SECURE;
+    if (secureFlag) {
+      const secureBool = ['true', '1', 'yes', 'on'].includes(String(secureFlag).toLowerCase());
+      if (secureBool && env.SMTP_PORT && env.SMTP_PORT !== '465') {
+        this.warnings.push('⚠️  SMTP_SECURE=true but SMTP_PORT is not 465 (expected TLS on port 465)');
+      }
+      if (!secureBool && env.SMTP_PORT === '465') {
+        this.warnings.push('⚠️  SMTP_PORT=465 but SMTP_SECURE is false (TLS should be enabled)');
+      }
+    }
+
+    if (env.SMTP_PORT && env.SMTP_PORT === '587' && secureFlag === undefined) {
+      this.info.push('ℹ️  SMTP_PORT=587 detected; connection should upgrade via STARTTLS (secure=false).');
+    }
+
+    this.checkOptional('SMTP_AUTH_METHOD', env.SMTP_AUTH_METHOD, 'Authentication method (LOGIN/PLAIN)');
+    this.checkOptional('EMAIL_PROVIDER', env.EMAIL_PROVIDER, 'Email provider label (e.g., SMTP)');
+
+    if (env.SMTP_PORT && env.SMTP_PORT !== '465' && env.SMTP_PORT !== '587') {
+      this.warnings.push('⚠️  SMTP_PORT is not 465 or 587. Verify your provider supports the configured port.');
+    }
 
     if (!hasHost || !hasUser || !hasPassword || !hasFrom) {
       this.warnings.push('⚠️  Email features (confirmations, password resets) will not work');
