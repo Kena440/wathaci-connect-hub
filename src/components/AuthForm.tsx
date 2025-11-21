@@ -10,7 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { normalizeMsisdn } from '@/utils/phone';
+<<<<<<< HEAD
 import { isStrongPassword, PASSWORD_MIN_LENGTH, passwordStrengthMessage } from '@/utils/password';
+=======
+>>>>>>> codex/verify-and-test-smtp-email-functionality
 
 const CREDENTIALS_STORAGE_KEY = 'wathaci-auth-credentials';
 
@@ -23,7 +26,11 @@ const baseSchema = z.object({
   password: z
     .string()
     .min(1, 'Password is required')
+<<<<<<< HEAD
     .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters long`)
+=======
+    .min(8, 'Password must be at least 8 characters long')
+>>>>>>> codex/verify-and-test-smtp-email-functionality
     .max(72, 'Password must be 72 characters or fewer'),
 });
 
@@ -50,6 +57,7 @@ const signUpSchema = baseSchema
   .refine((values) => values.password === values.confirmPassword, {
     message: 'Passwords do not match',
     path: ['confirmPassword'],
+<<<<<<< HEAD
   })
   .superRefine(({ password }, ctx) => {
     if (!isStrongPassword(password)) {
@@ -59,6 +67,8 @@ const signUpSchema = baseSchema
         path: ['password'],
       });
     }
+=======
+>>>>>>> codex/verify-and-test-smtp-email-functionality
   });
 
 type SignInValues = z.infer<typeof signInSchema>;
@@ -80,9 +90,13 @@ const normalizePhone = (value: string | undefined) => {
   return normalized ?? undefined;
 };
 
+<<<<<<< HEAD
 type StoredSigninPreference = { email: string };
 
 const getStoredCredentials = (): StoredSigninPreference | null => {
+=======
+const getStoredCredentials = () => {
+>>>>>>> codex/verify-and-test-smtp-email-functionality
   if (typeof window === 'undefined') return null;
 
   const stored = window.localStorage.getItem(CREDENTIALS_STORAGE_KEY);
@@ -90,9 +104,16 @@ const getStoredCredentials = (): StoredSigninPreference | null => {
 
   try {
     const parsed = JSON.parse(stored);
+<<<<<<< HEAD
     if (!parsed.email) return null;
     return {
       email: String(parsed.email),
+=======
+    if (!parsed.email || !parsed.password) return null;
+    return {
+      email: String(parsed.email),
+      password: String(parsed.password),
+>>>>>>> codex/verify-and-test-smtp-email-functionality
     };
   } catch (error) {
     console.error('Failed to parse stored credentials', error);
@@ -101,9 +122,15 @@ const getStoredCredentials = (): StoredSigninPreference | null => {
   }
 };
 
+<<<<<<< HEAD
 const saveCredentials = (email: string) => {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(CREDENTIALS_STORAGE_KEY, JSON.stringify({ email }));
+=======
+const saveCredentials = (email: string, password: string) => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(CREDENTIALS_STORAGE_KEY, JSON.stringify({ email, password }));
+>>>>>>> codex/verify-and-test-smtp-email-functionality
 };
 
 const clearStoredCredentials = () => {
@@ -134,7 +161,11 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
       mode === 'signin' && storedCredentials
         ? {
             email: storedCredentials.email,
+<<<<<<< HEAD
             password: '',
+=======
+            password: storedCredentials.password,
+>>>>>>> codex/verify-and-test-smtp-email-functionality
             rememberPassword: true,
           }
         : undefined,
@@ -218,7 +249,11 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
         await signIn(normalizedEmail, signInValues.password);
 
         if (signInValues.rememberPassword) {
+<<<<<<< HEAD
           saveCredentials(normalizedEmail);
+=======
+          saveCredentials(normalizedEmail, signInValues.password);
+>>>>>>> codex/verify-and-test-smtp-email-functionality
         } else {
           clearStoredCredentials();
         }
@@ -295,9 +330,12 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
         {errors.password?.message && (
           <p className="text-sm text-red-600">{errors.password.message}</p>
         )}
+<<<<<<< HEAD
         {mode === 'signup' && (
           <p className="text-xs text-gray-500">{passwordStrengthMessage}</p>
         )}
+=======
+>>>>>>> codex/verify-and-test-smtp-email-functionality
       </div>
 
       {mode === 'signup' && (
@@ -404,7 +442,11 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
             {...register('rememberPassword')}
           />
           <Label htmlFor="rememberPassword" className="cursor-pointer text-sm font-normal">
+<<<<<<< HEAD
             Remember my email on this device
+=======
+            Remember password on this device
+>>>>>>> codex/verify-and-test-smtp-email-functionality
           </Label>
         </div>
       )}
