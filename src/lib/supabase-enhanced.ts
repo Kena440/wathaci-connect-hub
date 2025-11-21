@@ -113,11 +113,36 @@ const resolveFirstEnvValue = (keys: string[]): string | undefined => {
 };
 
 const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+const isProductionEnvironment =
+  (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production') ||
+  (typeof import.meta !== 'undefined' && Boolean((import.meta as any)?.env?.PROD));
 
 const supabaseUrl = resolveFirstEnvValue(SUPABASE_URL_ENV_KEYS);
 const supabaseKey = resolveFirstEnvValue(SUPABASE_KEY_ENV_KEYS);
 
-if ((!supabaseUrl || !supabaseKey) && !isTestEnvironment) {
+const allowMockSupabaseClient =
+  isTestEnvironment ||
+  !isProductionEnvironment ||
+  resolveEnvValue('ALLOW_SUPABASE_MOCK') === 'true';
+
+const missingSupabaseConfig = !supabaseUrl || !supabaseKey;
+
+if (missingSupabaseConfig && !allowMockSupabaseClient) {
+  const errorMessage = [
+    'Missing Supabase configuration for authentication.',
+    `Set ${SUPABASE_URL_ENV_KEYS[0]} and ${SUPABASE_KEY_ENV_KEYS[0]} (or aliases) to enable sign-in and sign-up flows.`,
+  ].join(' ');
+
+  console.error(errorMessage, {
+    missingUrlKeys: SUPABASE_URL_ENV_KEYS,
+    missingKeyKeys: SUPABASE_KEY_ENV_KEYS,
+    environment: isProductionEnvironment ? 'production' : 'development',
+  });
+
+  throw new Error(errorMessage);
+}
+
+if (missingSupabaseConfig && !isTestEnvironment) {
   console.warn(
     [
       'Missing Supabase configuration detected. Falling back to the mock Supabase client so the UI can still render.',
@@ -694,6 +719,17 @@ const supabaseClient: SupabaseClientLike =
         }
       })
     : createMockSupabaseClient();
+
+export const supabaseAuthConfigStatus = {
+  hasValidConfig: !missingSupabaseConfig,
+  supabaseUrl,
+  supabaseAnonKey: supabaseKey,
+  usingMockClient: missingSupabaseConfig,
+  allowMockSupabaseClient,
+  missingUrlKeys: SUPABASE_URL_ENV_KEYS,
+  missingKeyKeys: SUPABASE_KEY_ENV_KEYS,
+  isProductionEnvironment,
+};
 
 export const supabase = supabaseClient;
 

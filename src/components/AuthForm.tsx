@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { normalizeMsisdn } from '@/utils/phone';
+import { isStrongPassword, PASSWORD_MIN_LENGTH, passwordStrengthMessage } from '@/utils/password';
 
 const CREDENTIALS_STORAGE_KEY = 'wathaci-auth-credentials';
 
@@ -22,7 +23,7 @@ const baseSchema = z.object({
   password: z
     .string()
     .min(1, 'Password is required')
-    .min(8, 'Password must be at least 8 characters long')
+    .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters long`)
     .max(72, 'Password must be 72 characters or fewer'),
 });
 
@@ -49,6 +50,15 @@ const signUpSchema = baseSchema
   .refine((values) => values.password === values.confirmPassword, {
     message: 'Passwords do not match',
     path: ['confirmPassword'],
+  })
+  .superRefine(({ password }, ctx) => {
+    if (!isStrongPassword(password)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: passwordStrengthMessage,
+        path: ['password'],
+      });
+    }
   });
 
 type SignInValues = z.infer<typeof signInSchema>;
@@ -70,7 +80,9 @@ const normalizePhone = (value: string | undefined) => {
   return normalized ?? undefined;
 };
 
-const getStoredCredentials = () => {
+type StoredSigninPreference = { email: string };
+
+const getStoredCredentials = (): StoredSigninPreference | null => {
   if (typeof window === 'undefined') return null;
 
   const stored = window.localStorage.getItem(CREDENTIALS_STORAGE_KEY);
@@ -78,10 +90,9 @@ const getStoredCredentials = () => {
 
   try {
     const parsed = JSON.parse(stored);
-    if (!parsed.email || !parsed.password) return null;
+    if (!parsed.email) return null;
     return {
       email: String(parsed.email),
-      password: String(parsed.password),
     };
   } catch (error) {
     console.error('Failed to parse stored credentials', error);
@@ -90,9 +101,9 @@ const getStoredCredentials = () => {
   }
 };
 
-const saveCredentials = (email: string, password: string) => {
+const saveCredentials = (email: string) => {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(CREDENTIALS_STORAGE_KEY, JSON.stringify({ email, password }));
+  window.localStorage.setItem(CREDENTIALS_STORAGE_KEY, JSON.stringify({ email }));
 };
 
 const clearStoredCredentials = () => {
@@ -123,7 +134,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
       mode === 'signin' && storedCredentials
         ? {
             email: storedCredentials.email,
-            password: storedCredentials.password,
+            password: '',
             rememberPassword: true,
           }
         : undefined,
@@ -207,7 +218,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
         await signIn(normalizedEmail, signInValues.password);
 
         if (signInValues.rememberPassword) {
-          saveCredentials(normalizedEmail, signInValues.password);
+          saveCredentials(normalizedEmail);
         } else {
           clearStoredCredentials();
         }
@@ -283,6 +294,9 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
         </div>
         {errors.password?.message && (
           <p className="text-sm text-red-600">{errors.password.message}</p>
+        )}
+        {mode === 'signup' && (
+          <p className="text-xs text-gray-500">{passwordStrengthMessage}</p>
         )}
       </div>
 
@@ -390,7 +404,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
             {...register('rememberPassword')}
           />
           <Label htmlFor="rememberPassword" className="cursor-pointer text-sm font-normal">
-            Remember password on this device
+            Remember my email on this device
           </Label>
         </div>
       )}
