@@ -3,7 +3,7 @@
  */
 
 import { BaseService } from './base-service';
-import { supabase, withErrorHandling, resolveEnvValue } from '@/lib/supabase-enhanced';
+import { supabase, withErrorHandling, resolveEnvValue, supabaseAuthConfigStatus } from '@/lib/supabase-enhanced';
 import type {
   User,
   Profile,
@@ -11,6 +11,7 @@ import type {
   ProfileFilters,
   DatabaseResponse
 } from '@/@types/database';
+import { isStrongPassword, passwordStrengthMessage } from '@/utils/password';
 
 export const OFFLINE_ACCOUNT_METADATA_KEY = '__offline_account';
 export const OFFLINE_PROFILE_METADATA_KEY = '__offline_profile';
@@ -258,6 +259,18 @@ const getEmailRedirectTo = (
 
 const normaliseEmail = (value: string) => (value || '').trim().toLowerCase();
 
+const validateSupabaseAuthConfig = (): Error | null => {
+  if (!supabaseAuthConfigStatus.hasValidConfig && supabaseAuthConfigStatus.isProductionEnvironment) {
+    return new Error('Authentication service is not configured. Please try again later.');
+  }
+
+  if (supabaseAuthConfigStatus.usingMockClient && supabaseAuthConfigStatus.isProductionEnvironment) {
+    return new Error('Authentication service is temporarily unavailable. Please contact support.');
+  }
+
+  return null;
+};
+
 const getOfflineAccount = (email: string, password: string): OfflineAccount | null => {
   const normalizedEmail = normaliseEmail(email);
   const account = offlineAccounts.find(item => normaliseEmail(item.email) === normalizedEmail);
@@ -337,6 +350,11 @@ export class UserService extends BaseService<User> {
   async signIn(email: string, password: string): Promise<DatabaseResponse<User>> {
     return withErrorHandling(
       async () => {
+        const configError = validateSupabaseAuthConfig();
+        if (configError) {
+          return { data: null, error: configError };
+        }
+
         try {
           const offlineAccount = getOfflineAccount(email, password);
 
@@ -490,6 +508,15 @@ export class UserService extends BaseService<User> {
   ): Promise<DatabaseResponse<User>> {
     return withErrorHandling(
       async () => {
+        const configError = validateSupabaseAuthConfig();
+        if (configError) {
+          return { data: null, error: configError };
+        }
+
+        if (!isStrongPassword(password)) {
+          return { data: null, error: new Error(passwordStrengthMessage) };
+        }
+
         try {
           const emailRedirectTo = getEmailRedirectTo();
 

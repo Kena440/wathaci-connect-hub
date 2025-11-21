@@ -9,6 +9,7 @@ import { supabaseClient as supabase } from "@/lib/supabaseClient";
 import { logSupabaseAuthError } from "@/lib/supabaseClient";
 import { getEmailConfirmationRedirectUrl } from "@/lib/emailRedirect";
 import { logAuthError, getUserFriendlyMessage, shouldReportError } from "@/lib/authErrorHandler";
+import { isStrongPassword, PASSWORD_MIN_LENGTH, passwordStrengthMessage } from "@/utils/password";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,12 +41,21 @@ const formSchema = z.object({
     ),
   password: z
     .string()
-    .min(8, "Password must be at least 8 characters")
+    .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters`)
     .max(72, "Password must be at most 72 characters"),
   useSmsOtp: z.boolean().optional().default(false),
   acceptedTerms: z.boolean().refine((value) => value, "You must accept the Terms & Conditions."),
   newsletterOptIn: z.boolean().optional().default(false),
-});
+})
+  .superRefine(({ password }, ctx) => {
+    if (!isStrongPassword(password)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: passwordStrengthMessage,
+        path: ["password"],
+      });
+    }
+  });
 
 export type SignupFormValues = z.infer<typeof formSchema>;
 
@@ -298,7 +308,7 @@ export const SignupForm = ({
           {...register("password")}
         />
         {errors.password?.message ? <p className="text-sm text-red-600">{errors.password.message}</p> : null}
-        <p className="text-xs text-gray-500">Use at least 8 characters for a secure password.</p>
+        <p className="text-xs text-gray-500">{passwordStrengthMessage}</p>
       </div>
 
       <div className="space-y-2">
