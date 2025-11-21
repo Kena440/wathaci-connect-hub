@@ -1,12 +1,6 @@
 const { transporter, verifyTransporterConnection } = require('../lib/email-transporter');
 const { getSupabaseClient, isSupabaseConfigured } = require('../lib/supabaseAdmin');
 
-const parseBoolean = (value, fallback = false) => {
-  if (value === undefined || value === null) return fallback;
-  const normalized = String(value).trim().toLowerCase();
-  return ['1', 'true', 'yes', 'on'].includes(normalized);
-};
-
 const defaultFromEmail =
   process.env.FROM_EMAIL ||
   process.env.SMTP_FROM_EMAIL ||
@@ -365,11 +359,14 @@ function isEmailConfigured() {
  * Get email configuration status
  */
 function getConfigStatus() {
+  const smtpPort = process.env.SMTP_PORT;
+  const smtpSecure = process.env.SMTP_SECURE === 'true' || smtpPort === '465';
+  
   return {
     configured: transporter !== null,
     host: process.env.SMTP_HOST || null,
-    port: process.env.SMTP_PORT || null,
-    secure: parseBoolean(process.env.SMTP_SECURE, process.env.SMTP_PORT === '465'),
+    port: smtpPort || null,
+    secure: smtpSecure,
     from: defaultFromEmail,
   };
 }
@@ -386,5 +383,4 @@ module.exports = {
   defaultFromEmail,
   defaultReplyTo,
   emailProvider: process.env.EMAIL_PROVIDER || 'SMTP',
-  smtpSecure: parseBoolean(process.env.SMTP_SECURE, process.env.SMTP_PORT === '465'),
 };

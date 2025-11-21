@@ -26,6 +26,14 @@ const sendEmailSchema = Joi.object({
   cc: Joi.string().email().optional(),
   bcc: Joi.string().email().optional(),
   template: Joi.string().optional(),
+}).custom((value, helpers) => {
+  // Require at least one of html or text
+  if (!value.html && !value.text) {
+    return helpers.error('any.custom', {
+      message: 'Either html or text content is required',
+    });
+  }
+  return value;
 });
 
 const sendOTPEmailSchema = Joi.object({
@@ -103,7 +111,7 @@ router.post('/send', validate(sendEmailSchema), async (req, res) => {
     to,
     subject,
     html: html || text,
-    text: text || html,
+    text: text || (html ? undefined : text), // Keep text separate if html exists
     cc,
     bcc,
     template: template || 'custom',
@@ -133,7 +141,7 @@ router.post('/send-test', validate(sendEmailSchema), async (req, res) => {
     to,
     subject,
     html: html || text,
-    text: text || html,
+    text: text || (html ? undefined : text), // Keep text separate if html exists
     cc,
     bcc,
     template: template || 'manual-test',
