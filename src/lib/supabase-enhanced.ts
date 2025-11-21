@@ -113,17 +113,13 @@ const resolveFirstEnvValue = (keys: string[]): string | undefined => {
 };
 
 const isTestEnvironment = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
-<<<<<<< HEAD
 const isProductionEnvironment =
   (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production') ||
   (typeof import.meta !== 'undefined' && Boolean((import.meta as any)?.env?.PROD));
-=======
->>>>>>> codex/verify-and-test-smtp-email-functionality
 
 const supabaseUrl = resolveFirstEnvValue(SUPABASE_URL_ENV_KEYS);
 const supabaseKey = resolveFirstEnvValue(SUPABASE_KEY_ENV_KEYS);
 
-<<<<<<< HEAD
 const allowMockSupabaseClient =
   isTestEnvironment ||
   !isProductionEnvironment ||
@@ -147,9 +143,6 @@ if (missingSupabaseConfig && !allowMockSupabaseClient) {
 }
 
 if (missingSupabaseConfig && !isTestEnvironment) {
-=======
-if ((!supabaseUrl || !supabaseKey) && !isTestEnvironment) {
->>>>>>> codex/verify-and-test-smtp-email-functionality
   console.warn(
     [
       'Missing Supabase configuration detected. Falling back to the mock Supabase client so the UI can still render.',
@@ -727,7 +720,6 @@ const supabaseClient: SupabaseClientLike =
       })
     : createMockSupabaseClient();
 
-<<<<<<< HEAD
 export const supabaseAuthConfigStatus = {
   hasValidConfig: !missingSupabaseConfig,
   supabaseUrl,
@@ -739,8 +731,6 @@ export const supabaseAuthConfigStatus = {
   isProductionEnvironment,
 };
 
-=======
->>>>>>> codex/verify-and-test-smtp-email-functionality
 export const supabase = supabaseClient;
 
 /**

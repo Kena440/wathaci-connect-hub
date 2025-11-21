@@ -9,10 +9,7 @@ import { supabaseClient as supabase } from "@/lib/supabaseClient";
 import { logSupabaseAuthError } from "@/lib/supabaseClient";
 import { getEmailConfirmationRedirectUrl } from "@/lib/emailRedirect";
 import { logAuthError, getUserFriendlyMessage, shouldReportError } from "@/lib/authErrorHandler";
-<<<<<<< HEAD
 import { isStrongPassword, PASSWORD_MIN_LENGTH, passwordStrengthMessage } from "@/utils/password";
-=======
->>>>>>> codex/verify-and-test-smtp-email-functionality
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,16 +41,11 @@ const formSchema = z.object({
     ),
   password: z
     .string()
-<<<<<<< HEAD
     .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters`)
-=======
-    .min(8, "Password must be at least 8 characters")
->>>>>>> codex/verify-and-test-smtp-email-functionality
     .max(72, "Password must be at most 72 characters"),
   useSmsOtp: z.boolean().optional().default(false),
   acceptedTerms: z.boolean().refine((value) => value, "You must accept the Terms & Conditions."),
   newsletterOptIn: z.boolean().optional().default(false),
-<<<<<<< HEAD
 })
   .superRefine(({ password }, ctx) => {
     if (!isStrongPassword(password)) {
@@ -64,9 +56,6 @@ const formSchema = z.object({
       });
     }
   });
-=======
-});
->>>>>>> codex/verify-and-test-smtp-email-functionality
 
 export type SignupFormValues = z.infer<typeof formSchema>;
 
@@ -319,11 +308,7 @@ export const SignupForm = ({
           {...register("password")}
         />
         {errors.password?.message ? <p className="text-sm text-red-600">{errors.password.message}</p> : null}
-<<<<<<< HEAD
         <p className="text-xs text-gray-500">{passwordStrengthMessage}</p>
-=======
-        <p className="text-xs text-gray-500">Use at least 8 characters for a secure password.</p>
->>>>>>> codex/verify-and-test-smtp-email-functionality
       </div>
 
       <div className="space-y-2">

@@ -3,11 +3,7 @@
  */
 
 import { BaseService } from './base-service';
-<<<<<<< HEAD
 import { supabase, withErrorHandling, resolveEnvValue, supabaseAuthConfigStatus } from '@/lib/supabase-enhanced';
-=======
-import { supabase, withErrorHandling, resolveEnvValue } from '@/lib/supabase-enhanced';
->>>>>>> codex/verify-and-test-smtp-email-functionality
 import type {
   User,
   Profile,
@@ -15,10 +11,7 @@ import type {
   ProfileFilters,
   DatabaseResponse
 } from '@/@types/database';
-<<<<<<< HEAD
 import { isStrongPassword, passwordStrengthMessage } from '@/utils/password';
-=======
->>>>>>> codex/verify-and-test-smtp-email-functionality
 
 export const OFFLINE_ACCOUNT_METADATA_KEY = '__offline_account';
 export const OFFLINE_PROFILE_METADATA_KEY = '__offline_profile';
@@ -266,7 +259,6 @@ const getEmailRedirectTo = (
 
 const normaliseEmail = (value: string) => (value || '').trim().toLowerCase();
 
-<<<<<<< HEAD
 const validateSupabaseAuthConfig = (): Error | null => {
   if (!supabaseAuthConfigStatus.hasValidConfig && supabaseAuthConfigStatus.isProductionEnvironment) {
     return new Error('Authentication service is not configured. Please try again later.');
@@ -279,8 +271,6 @@ const validateSupabaseAuthConfig = (): Error | null => {
   return null;
 };
 
-=======
->>>>>>> codex/verify-and-test-smtp-email-functionality
 const getOfflineAccount = (email: string, password: string): OfflineAccount | null => {
   const normalizedEmail = normaliseEmail(email);
   const account = offlineAccounts.find(item => normaliseEmail(item.email) === normalizedEmail);
@@ -360,14 +350,11 @@ export class UserService extends BaseService<User> {
   async signIn(email: string, password: string): Promise<DatabaseResponse<User>> {
     return withErrorHandling(
       async () => {
-<<<<<<< HEAD
         const configError = validateSupabaseAuthConfig();
         if (configError) {
           return { data: null, error: configError };
         }
 
-=======
->>>>>>> codex/verify-and-test-smtp-email-functionality
         try {
           const offlineAccount = getOfflineAccount(email, password);
 
@@ -521,7 +508,6 @@ export class UserService extends BaseService<User> {
   ): Promise<DatabaseResponse<User>> {
     return withErrorHandling(
       async () => {
-<<<<<<< HEAD
         const configError = validateSupabaseAuthConfig();
         if (configError) {
           return { data: null, error: configError };
@@ -531,8 +517,6 @@ export class UserService extends BaseService<User> {
           return { data: null, error: new Error(passwordStrengthMessage) };
         }
 
-=======
->>>>>>> codex/verify-and-test-smtp-email-functionality
         try {
           const emailRedirectTo = getEmailRedirectTo();
 
