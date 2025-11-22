@@ -72,16 +72,10 @@ const paymentRoutes = require('./routes/payment');
 const resolveRoutes = require('./routes/resolve');
 const otpRoutes = require('./routes/otp');
 const emailRoutes = require('./routes/email');
+const healthRoutes = require('./routes/health');
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development',
-  });
-});
+app.use(['/health', '/api/health'], healthRoutes);
 
 // API info endpoint
 app.get('/api', (req, res) => {
@@ -89,7 +83,7 @@ app.get('/api', (req, res) => {
     name: 'WATHACI CONNECT API',
     version: '1.0.0',
     endpoints: {
-      health: 'GET /health',
+      health: 'GET /health, GET /api/health',
       users: 'POST /users, POST /api/users',
       logs: 'POST /api/logs, GET /api/logs',
       payment: 'GET /api/payment/readiness, POST /api/payment/webhook',
