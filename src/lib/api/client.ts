@@ -30,7 +30,18 @@ export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptio
 
   const contentType = response.headers.get('content-type') ?? '';
   const shouldParseJson = parseJson ?? contentType.includes('application/json');
-  const data = shouldParseJson ? await response.json().catch(() => null) : await response.text();
+  
+  let data: unknown;
+  if (shouldParseJson) {
+    try {
+      data = await response.json();
+    } catch {
+      // If JSON parsing fails, treat as text
+      data = await response.text();
+    }
+  } else {
+    data = await response.text();
+  }
 
   if (!response.ok) {
     const errorMessage =
@@ -38,7 +49,7 @@ export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptio
         ? (data as { error: string }).error
         : response.statusText || 'Request failed';
 
-    const error = new Error(errorMessage || 'Request failed');
+    const error = new Error(errorMessage);
     (error as Error & { status?: number; data?: unknown }).status = response.status;
     (error as Error & { status?: number; data?: unknown }).data = data;
     throw error;
