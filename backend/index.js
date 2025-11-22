@@ -49,14 +49,17 @@ const parseAllowedOrigins = (value = '') =>
 const configuredOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS);
 const allowAllOrigins = configuredOrigins.length === 0 || configuredOrigins.includes('*');
 
-// Allowed origins for CORS
-const allowedOrigins = [
-  'https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app',
+// Default allowed origins for local development
+const defaultOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:8080',
-  ...configuredOrigins,
 ];
+
+// Combine configured origins with defaults
+// If CORS_ALLOWED_ORIGINS is set and doesn't include *, use configured origins + defaults
+// Otherwise, if CORS_ALLOWED_ORIGINS is empty or *, allow all origins
+const allowedOrigins = allowAllOrigins ? [] : [...configuredOrigins, ...defaultOrigins];
 
 app.use(
   cors({
@@ -64,8 +67,11 @@ app.use(
       // Allow non-browser tools like curl/Postman (no origin header)
       if (!origin) return callback(null, true);
       
-      // Allow configured origins or all origins if wildcard is set
-      if (allowAllOrigins || allowedOrigins.includes(origin)) {
+      // Allow all origins if wildcard is set or no configuration
+      if (allowAllOrigins) return callback(null, true);
+      
+      // Allow if origin is in the allowed list
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
       
@@ -119,21 +125,22 @@ app.use('/resolve', resolveRoutes);
 app.use('/api/auth/otp', otpRoutes);
 app.use('/api/email', emailRoutes);
 
+// Helper function to determine if we're in production mode
+const isProduction = () => process.env.NODE_ENV === 'production';
+
 // Global error handler
 app.use((err, req, res, next) => {
   // Log error details (excluding sensitive information)
   console.error('Unhandled error:', {
     message: err.message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    stack: isProduction() ? undefined : err.stack,
     url: req.url,
     method: req.method,
   });
 
   // Send JSON error response
   res.status(err.status || 500).json({
-    error: process.env.NODE_ENV === 'production' 
-      ? 'Internal server error' 
-      : err.message,
+    error: isProduction() ? 'Internal server error' : err.message,
   });
 });
 

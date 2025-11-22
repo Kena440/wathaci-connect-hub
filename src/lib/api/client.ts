@@ -58,7 +58,7 @@ export async function apiFetch<T = any>(
     });
 
     // Parse response as JSON
-    let data: any;
+    let data: unknown;
     try {
       data = await response.json();
     } catch (parseError) {
@@ -72,7 +72,8 @@ export async function apiFetch<T = any>(
 
     // Handle non-2xx responses
     if (!response.ok) {
-      const errorMessage = data?.error || data?.message || `Request failed: ${response.status}`;
+      const errorData = data as { error?: string; message?: string };
+      const errorMessage = errorData?.error || errorData?.message || `Request failed: ${response.status}`;
       throw new Error(errorMessage);
     }
 
