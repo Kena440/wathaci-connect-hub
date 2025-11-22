@@ -19,8 +19,13 @@ export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptio
   // Only set 'Content-Type' if a body is present and the header is not already set
   const normalizedHeaders = { ...(headers || {}) };
   const hasBody = 'body' in options && options.body !== undefined && options.body !== null;
-  const hasContentType = Object.keys(normalizedHeaders)
-    .some(h => h.toLowerCase() === 'content-type');
+  let hasContentType = false;
+  for (const key in normalizedHeaders) {
+    if (key.toLowerCase() === 'content-type') {
+      hasContentType = true;
+      break;
+    }
+  }
   if (hasBody && !hasContentType) {
     normalizedHeaders['Content-Type'] = 'application/json';
   }

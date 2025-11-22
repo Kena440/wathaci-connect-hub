@@ -61,8 +61,8 @@ const defaultAllowedOrigins = [
 ];
 
 const configuredOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS);
-const allowAllOrigins = (defaultAllowedOrigins.length === 0 && configuredOrigins.length === 0) || configuredOrigins.includes('*');
 const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...configuredOrigins]));
+const allowAllOrigins = allowedOrigins.length === 0 || allowedOrigins.includes('*');
 
 // Allow requests without Origin header in development/test environments (e.g., server-to-server, testing tools)
 // In production, consider setting CORS_REQUIRE_ORIGIN=true for stricter security
