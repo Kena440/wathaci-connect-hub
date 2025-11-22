@@ -21,7 +21,7 @@ export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptio
   const hasBody = 'body' in options && options.body !== undefined && options.body !== null;
   let hasContentType = false;
   for (const key in normalizedHeaders) {
-    if (key.toLowerCase() === 'content-type') {
+    if (Object.prototype.hasOwnProperty.call(normalizedHeaders, key) && key.toLowerCase() === 'content-type') {
       hasContentType = true;
       break;
     }
