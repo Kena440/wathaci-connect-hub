@@ -10,7 +10,7 @@ const createCorsMiddleware = ({ allowedOrigins = [], allowCredentials = false, a
       return next(new Error('Not allowed by CORS'));
     }
 
-    if (origin && isAllowed) {
+    if (origin) {
       res.header('Access-Control-Allow-Origin', allowAll ? '*' : origin);
       res.header('Vary', 'Origin');
     }
