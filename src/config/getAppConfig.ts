@@ -91,11 +91,11 @@ export function getAppEnvStatus(): AppEnvStatus {
   // API CONFIGURATION
   // ============================================================
 
-  const apiBaseUrl = env.VITE_API_BASE_URL;
-  
+  const apiBaseUrl = env.VITE_API_BASE_URL ?? env.REACT_APP_API_BASE_URL;
+
   if (!apiBaseUrl) {
     blockingErrors.push(
-      'Missing VITE_API_BASE_URL. Set this to your backend API base URL (e.g., https://api.wathaci.com).'
+      'Missing API base URL. Set VITE_API_BASE_URL or REACT_APP_API_BASE_URL to your backend API base URL (e.g., https://api.wathaci.com).'
     );
   } else {
     // Check for common development values in production
