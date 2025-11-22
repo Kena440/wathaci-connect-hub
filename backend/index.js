@@ -1,6 +1,6 @@
 const express = require('express');
-const cors = require('cors');
 const { logPaymentReadiness } = require('./lib/payment-readiness');
+const { createCorsMiddleware } = require('./middleware/cors');
 
 let helmet;
 try {
@@ -14,6 +14,14 @@ try {
   rateLimit = require('express-rate-limit');
 } catch (err) {
   rateLimit = () => (req, res, next) => next();
+}
+
+let cors;
+try {
+  // Prefer the official cors package when available
+  cors = require('cors');
+} catch (err) {
+  cors = null;
 }
 
 const app = express();
@@ -39,54 +47,40 @@ const limiter = rateLimit({
 });
 app.use(limiter); // Basic rate limiting
 
-// CORS Configuration
+// CORS configuration
 const parseAllowedOrigins = (value = '') =>
   value
     .split(',')
     .map(origin => origin.trim())
     .filter(Boolean);
 
-const configuredOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS);
-const allowAllOrigins = configuredOrigins.length === 0 || configuredOrigins.includes('*');
-
-// Default allowed origins for local development
-const defaultOrigins = [
+const defaultAllowedOrigins = [
+  'https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app',
   'http://localhost:3000',
   'http://localhost:5173',
-  'http://localhost:8080',
 ];
 
-// Combine configured origins with defaults
-// If CORS_ALLOWED_ORIGINS is set and doesn't include *, use configured origins + defaults
-// Otherwise, if CORS_ALLOWED_ORIGINS is empty or *, allow all origins
-const allowedOrigins = allowAllOrigins ? [] : [...configuredOrigins, ...defaultOrigins];
+const configuredOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS);
+const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...configuredOrigins]));
+const allowAllOrigins = (defaultAllowedOrigins.length === 0 && configuredOrigins.length === 0) || allowedOrigins.includes('*');
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow non-browser tools like curl/Postman (no origin header)
-      if (!origin) return callback(null, true);
-      
-      // Allow all origins if wildcard is set or no configuration
-      if (allowAllOrigins) return callback(null, true);
-      
-      // Allow if origin is in the allowed list
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      
-      return callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true, // Allow cookies/sessions
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  })
-);
+const corsMiddleware = cors
+  ? cors({
+      origin(origin, callback) {
+        // Allow requests without Origin header (e.g., server-to-server, health checks, CLI tools)
+        if (!origin) return callback(null, true);
+        if (allowAllOrigins || allowedOrigins.includes(origin)) return callback(null, true);
+        return callback(new Error('Not allowed by CORS'));
+      },
+      credentials: true,
+    })
+  : createCorsMiddleware({ allowedOrigins, allowCredentials: true, allowNoOrigin: true });
 
-// Request logging middleware
+app.use(corsMiddleware);
+
+// Request logging
 app.use((req, res, next) => {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] ${req.method} ${req.url} - Origin: ${req.headers.origin || 'none'}`);
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   next();
 });
 
@@ -125,22 +119,16 @@ app.use('/resolve', resolveRoutes);
 app.use('/api/auth/otp', otpRoutes);
 app.use('/api/email', emailRoutes);
 
-// Helper function to determine if we're in production mode
-const isProduction = () => process.env.NODE_ENV === 'production';
-
 // Global error handler
 app.use((err, req, res, next) => {
-  // Log error details (excluding sensitive information)
-  console.error('Unhandled error:', {
-    message: err.message,
-    stack: isProduction() ? undefined : err.stack,
-    url: req.url,
-    method: req.method,
-  });
+  console.error('Unhandled error:', err);
 
-  // Send JSON error response
+  if (res.headersSent) {
+    return next(err);
+  }
+
   res.status(err.status || 500).json({
-    error: isProduction() ? 'Internal server error' : err.message,
+    error: err.message || 'Internal server error',
   });
 });
 
