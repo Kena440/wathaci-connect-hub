@@ -62,7 +62,7 @@ const defaultAllowedOrigins = [
 
 const configuredOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS);
 const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...configuredOrigins]));
-const allowAllOrigins = (defaultAllowedOrigins.length === 0 && configuredOrigins.length === 0) || allowedOrigins.includes('*');
+const allowAllOrigins = allowedOrigins.includes('*');
 
 const corsMiddleware = cors
   ? cors({
