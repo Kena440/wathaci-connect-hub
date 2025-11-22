@@ -6,6 +6,10 @@ const createCorsMiddleware = ({ allowedOrigins = [], allowCredentials = false, a
     const origin = req.headers.origin;
     const isAllowed = (allowNoOrigin && !origin) || allowAll || normalizedOrigins.includes(origin);
 
+    if (!isAllowed) {
+      return next(new Error('Not allowed by CORS'));
+    }
+
     if (origin && isAllowed) {
       res.header('Access-Control-Allow-Origin', allowAll ? '*' : origin);
       res.header('Vary', 'Origin');
@@ -16,10 +20,6 @@ const createCorsMiddleware = ({ allowedOrigins = [], allowCredentials = false, a
 
     if (allowCredentials) {
       res.header('Access-Control-Allow-Credentials', 'true');
-    }
-
-    if (!isAllowed) {
-      return next(new Error('Not allowed by CORS'));
     }
 
     if (req.method === 'OPTIONS') {
