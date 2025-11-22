@@ -1,6 +1,7 @@
 const express = require('express');
 const Joi = require('joi');
 const validate = require('../middleware/validate');
+const { asyncHandler } = require('../middleware/errorHandler');
 const {
   registerUser,
   DuplicateRegistrationError,
@@ -30,13 +31,16 @@ const userSchema = Joi.object({
   mobileNumber: Joi.string().trim().allow('', null).optional(),
 });
 
-router.post('/', validate(userSchema), async (req, res) => {
+router.post('/', validate(userSchema), asyncHandler(async (req, res) => {
   try {
     const user = await registerUser(req.body);
-    return res.status(201).json({ user });
+    return res.status(201).json({ success: true, user });
   } catch (error) {
     if (error instanceof DuplicateRegistrationError) {
-      return res.status(409).json({ error: 'User already registered' });
+      return res.status(409).json({ 
+        success: false, 
+        error: 'User already registered' 
+      });
     }
 
     if (error instanceof RegistrationStoreError) {
@@ -46,12 +50,18 @@ router.post('/', validate(userSchema), async (req, res) => {
         status === 503
           ? `Registrations are temporarily unavailable. Please contact ${SUPPORT_EMAIL}.`
           : 'Unable to save registration. Please try again later.';
-      return res.status(status).json({ error: message });
+      return res.status(status).json({ 
+        success: false, 
+        error: message 
+      });
     }
 
     console.error('[routes/users] Unexpected error:', error);
-    return res.status(500).json({ error: 'Failed to register user' });
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Failed to register user' 
+    });
   }
-});
+}));
 
 module.exports = router;

@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const { logPaymentReadiness } = require('./lib/payment-readiness');
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { requestLogger } = require('./middleware/requestLogger');
 
 let helmet;
 try {
@@ -33,11 +35,26 @@ app.use(express.json({
 
 // Security middlewares
 app.use(helmet()); // Sets various HTTP headers for security
+
+// Rate limiting for all requests
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many requests, please try again later.' },
 });
-app.use(limiter); // Basic rate limiting
+app.use(limiter);
+
+// Stricter rate limiting for auth-related routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many authentication attempts, please try again later.' },
+  skipSuccessfulRequests: true, // Don't count successful requests
+});
 
 // CORS Configuration
 const parseAllowedOrigins = (value = '') =>
@@ -83,12 +100,8 @@ app.use(
   })
 );
 
-// Request logging middleware
-app.use((req, res, next) => {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] ${req.method} ${req.url} - Origin: ${req.headers.origin || 'none'}`);
-  next();
-});
+// Request logging middleware (replaces the simple console.log)
+app.use(requestLogger);
 
 const userRoutes = require('./routes/users');
 const logRoutes = require('./routes/logs');
@@ -118,31 +131,18 @@ app.get('/api', (req, res) => {
   });
 });
 
-app.use(['/users', '/api/users'], userRoutes);
+app.use(['/users', '/api/users'], authLimiter, userRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/resolve', resolveRoutes);
-app.use('/api/auth/otp', otpRoutes);
+app.use('/api/auth/otp', authLimiter, otpRoutes);
 app.use('/api/email', emailRoutes);
 
-// Helper function to determine if we're in production mode
-const isProduction = () => process.env.NODE_ENV === 'production';
+// 404 handler - must be after all routes
+app.use(notFoundHandler);
 
-// Global error handler
-app.use((err, req, res, next) => {
-  // Log error details (excluding sensitive information)
-  console.error('Unhandled error:', {
-    message: err.message,
-    stack: isProduction() ? undefined : err.stack,
-    url: req.url,
-    method: req.method,
-  });
-
-  // Send JSON error response
-  res.status(err.status || 500).json({
-    error: isProduction() ? 'Internal server error' : err.message,
-  });
-});
+// Global error handler - must be last
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
