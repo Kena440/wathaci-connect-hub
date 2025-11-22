@@ -5,7 +5,18 @@
  * Provides helpful error messages when configuration is missing.
  */
 
-const chalk = require('chalk') || { red: (s) => s, yellow: (s) => s, green: (s) => s };
+// Try to load chalk for colored output, but make it optional
+let chalk;
+try {
+  chalk = require('chalk');
+} catch (err) {
+  // Chalk not available, use plain text
+  chalk = {
+    red: (s) => s,
+    yellow: (s) => s,
+    green: (s) => s,
+  };
+}
 
 /**
  * Required environment variables for auth functionality
