@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { logPaymentReadiness } = require('./lib/payment-readiness');
+const { validateEnv, logEnvStatus } = require('./lib/env-validator');
 
 let helmet;
 try {
@@ -17,6 +18,14 @@ try {
 }
 
 const app = express();
+
+// Validate environment configuration on startup
+try {
+  validateEnv({ strict: false, logWarnings: true });
+  logEnvStatus();
+} catch (error) {
+  console.error('Environment validation failed:', error.message);
+}
 
 logPaymentReadiness();
 
@@ -49,11 +58,13 @@ const parseAllowedOrigins = (value = '') =>
 const configuredOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS);
 const allowAllOrigins = configuredOrigins.length === 0 || configuredOrigins.includes('*');
 
-// Default allowed origins for local development
+// Default allowed origins for local development and production
 const defaultOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:8080',
+  'https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app', // Production frontend
+  'https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app', // Production backend (for testing)
 ];
 
 // Combine configured origins with defaults
@@ -91,6 +102,7 @@ app.use((req, res, next) => {
 });
 
 const userRoutes = require('./routes/users');
+const authRoutes = require('./routes/auth');
 const logRoutes = require('./routes/logs');
 const paymentRoutes = require('./routes/payment');
 const resolveRoutes = require('./routes/resolve');
@@ -108,6 +120,7 @@ app.get('/api', (req, res) => {
     version: '1.0.0',
     endpoints: {
       health: 'GET /health, GET /api/health',
+      auth: 'GET /api/auth/me, GET /api/auth/session, POST /api/auth/refresh, POST /api/auth/verify-email, GET /api/auth/status',
       users: 'POST /users, POST /api/users',
       logs: 'POST /api/logs, GET /api/logs',
       payment: 'GET /api/payment/readiness, POST /api/payment/webhook',
@@ -119,6 +132,7 @@ app.get('/api', (req, res) => {
 });
 
 app.use(['/users', '/api/users'], userRoutes);
+app.use(['/auth', '/api/auth'], authRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/resolve', resolveRoutes);
