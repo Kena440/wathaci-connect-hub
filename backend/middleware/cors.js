@@ -10,6 +10,7 @@ const createCorsMiddleware = ({ allowedOrigins = [], allowCredentials = false, a
       return next(new Error('Not allowed by CORS'));
     }
 
+    // Only set CORS headers if an Origin header is present (CORS only applies to browser requests with Origin)
     if (origin && isAllowed) {
       res.header('Access-Control-Allow-Origin', allowAll ? '*' : origin);
       res.header('Vary', 'Origin');
