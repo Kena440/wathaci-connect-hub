@@ -11,7 +11,9 @@ const createCorsMiddleware = ({ allowedOrigins = [], allowCredentials = false, a
     }
 
     if (origin) {
-      res.header('Access-Control-Allow-Origin', allowAll ? '*' : origin);
+      // When credentials are allowed, we cannot use wildcard '*'
+      // We must echo back the specific origin
+      res.header('Access-Control-Allow-Origin', (allowAll && !allowCredentials) ? '*' : origin);
       res.header('Vary', 'Origin');
     }
 
