@@ -72,9 +72,17 @@ export async function apiFetch<T = any>(
 
     // Handle non-2xx responses
     if (!response.ok) {
-      const errorData = data as { error?: string; message?: string };
-      const errorMessage = errorData?.error || errorData?.message || `Request failed: ${response.status}`;
-      throw new Error(errorMessage);
+      const errorData = data as { error?: string; message?: string; success?: boolean };
+      
+      // Extract error message from standardized backend response
+      const errorMessage = errorData?.error || errorData?.message || `Request failed with status ${response.status}`;
+      
+      // Create error with status code for better error handling
+      const error = new Error(errorMessage);
+      (error as any).status = response.status;
+      (error as any).response = response;
+      
+      throw error;
     }
 
     return data as T;
@@ -83,7 +91,7 @@ export async function apiFetch<T = any>(
     if (error instanceof Error) {
       throw error;
     }
-    throw new Error('An unexpected error occurred');
+    throw new Error('An unexpected error occurred while making the request');
   }
 }
 
