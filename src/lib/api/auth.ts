@@ -222,13 +222,22 @@ export async function checkAuthStatus() {
  * @returns Response data
  * @throws AuthApiError if request fails
  */
-export async function authenticatedFetch<T = any>(
+export async function authenticatedFetch<T = unknown>(
   endpoint: string,
   accessToken: string,
   options: RequestInit = {}
 ): Promise<T> {
   try {
-    const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+    // Construct URL properly, handling both absolute and relative paths
+    let url: string;
+    if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+      url = endpoint;
+    } else {
+      // Ensure no double slashes
+      const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+      const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+      url = `${baseUrl}${normalizedEndpoint}`;
+    }
     
     const response = await fetch(url, {
       ...options,

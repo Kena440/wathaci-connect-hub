@@ -109,33 +109,33 @@ const validateEnv = (options = {}) => {
   
   // Log results
   if (missing.required.length > 0) {
-    console.error(chalk?.red?.('\n❌ MISSING REQUIRED ENVIRONMENT VARIABLES:') || '\n❌ MISSING REQUIRED ENVIRONMENT VARIABLES:');
+    console.error(chalk.red('\n❌ MISSING REQUIRED ENVIRONMENT VARIABLES:'));
     missing.required.forEach((varName) => {
-      console.error(chalk?.red?.(`  - ${varName}`) || `  - ${varName}`);
+      console.error(chalk.red(`  - ${varName}`));
     });
     console.error('\nAuthentication will not work without these variables.');
     console.error('Please set them in your Vercel project settings or .env file.\n');
   }
   
   if (missing.cors.length > 0 && logWarnings) {
-    console.warn(chalk?.yellow?.('\n⚠️  MISSING CORS CONFIGURATION:') || '\n⚠️  MISSING CORS CONFIGURATION:');
+    console.warn(chalk.yellow('\n⚠️  MISSING CORS CONFIGURATION:'));
     missing.cors.forEach((varName) => {
-      console.warn(chalk?.yellow?.(`  - ${varName}`) || `  - ${varName}`);
+      console.warn(chalk.yellow(`  - ${varName}`));
     });
     console.warn('\nWithout CORS configuration, all origins will be allowed (not recommended for production).');
     console.warn('Set CORS_ALLOWED_ORIGINS to a comma-separated list of allowed frontend URLs.\n');
   }
   
   if (missing.recommended.length > 0 && logWarnings) {
-    console.warn(chalk?.yellow?.('\n⚠️  MISSING RECOMMENDED VARIABLES:') || '\n⚠️  MISSING RECOMMENDED VARIABLES:');
+    console.warn(chalk.yellow('\n⚠️  MISSING RECOMMENDED VARIABLES:'));
     missing.recommended.forEach((varName) => {
-      console.warn(chalk?.yellow?.(`  - ${varName}`) || `  - ${varName}`);
+      console.warn(chalk.yellow(`  - ${varName}`));
     });
     console.warn('\nThese are optional but recommended for full functionality.\n');
   }
   
   if (isValid && hasCorsConfig) {
-    console.log(chalk?.green?.('\n✅ Environment configuration is valid\n') || '\n✅ Environment configuration is valid\n');
+    console.log(chalk.green('\n✅ Environment configuration is valid\n'));
   }
   
   // Throw error in strict mode if required vars are missing
@@ -172,7 +172,7 @@ const logEnvStatus = () => {
   console.log(`Email (SMTP):     ${emailConfigured ? '✅ Configured' : '⚠️  Not configured'}`);
   console.log(`Node Environment: ${process.env.NODE_ENV || 'development'}`);
   
-  if (corsConfigured) {
+  if (corsConfigured && process.env.CORS_ALLOWED_ORIGINS) {
     const origins = process.env.CORS_ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean);
     console.log(`\nAllowed Origins (${origins.length}):`);
     origins.forEach((origin) => {
