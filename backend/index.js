@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const { logPaymentReadiness } = require('./lib/payment-readiness');
 
 let helmet;
@@ -38,7 +39,7 @@ const limiter = rateLimit({
 });
 app.use(limiter); // Basic rate limiting
 
-// Lightweight CORS support to allow the frontend onboarding flow
+// CORS Configuration
 const parseAllowedOrigins = (value = '') =>
   value
     .split(',')
@@ -48,21 +49,38 @@ const parseAllowedOrigins = (value = '') =>
 const configuredOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS);
 const allowAllOrigins = configuredOrigins.length === 0 || configuredOrigins.includes('*');
 
+// Allowed origins for CORS
+const allowedOrigins = [
+  'https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:8080',
+  ...configuredOrigins,
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow non-browser tools like curl/Postman (no origin header)
+      if (!origin) return callback(null, true);
+      
+      // Allow configured origins or all origins if wildcard is set
+      if (allowAllOrigins || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true, // Allow cookies/sessions
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+
+// Request logging middleware
 app.use((req, res, next) => {
-  const origin = req.headers.origin;
-
-  if (origin && (allowAllOrigins || configuredOrigins.includes(origin))) {
-    res.header('Access-Control-Allow-Origin', allowAllOrigins ? '*' : origin);
-    res.header('Vary', 'Origin');
-  }
-
-  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(204);
-  }
-
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${req.method} ${req.url} - Origin: ${req.headers.origin || 'none'}`);
   next();
 });
 
@@ -100,6 +118,24 @@ app.use('/api/payment', paymentRoutes);
 app.use('/resolve', resolveRoutes);
 app.use('/api/auth/otp', otpRoutes);
 app.use('/api/email', emailRoutes);
+
+// Global error handler
+app.use((err, req, res, next) => {
+  // Log error details (excluding sensitive information)
+  console.error('Unhandled error:', {
+    message: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    url: req.url,
+    method: req.method,
+  });
+
+  // Send JSON error response
+  res.status(err.status || 500).json({
+    error: process.env.NODE_ENV === 'production' 
+      ? 'Internal server error' 
+      : err.message,
+  });
+});
 
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
