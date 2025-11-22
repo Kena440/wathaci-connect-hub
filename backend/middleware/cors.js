@@ -19,7 +19,7 @@ const createCorsMiddleware = ({ allowedOrigins = [], allowCredentials = false, a
     }
 
     if (!isAllowed) {
-      return next(new Error('Not allowed by CORS'));
+      return res.status(403).json({ error: 'Not allowed by CORS' });
     }
 
     if (req.method === 'OPTIONS') {

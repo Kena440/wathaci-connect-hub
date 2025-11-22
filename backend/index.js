@@ -73,7 +73,7 @@ const corsMiddleware = cors
       },
       credentials: true,
     })
-  : createCorsMiddleware({ allowedOrigins, allowCredentials: true });
+  : createCorsMiddleware({ allowedOrigins, allowCredentials: true, allowNoOrigin: true });
 
 app.use(corsMiddleware);
 
