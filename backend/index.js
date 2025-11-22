@@ -62,18 +62,19 @@ const defaultAllowedOrigins = [
 
 const configuredOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS);
 const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...configuredOrigins]));
-const allowAllOrigins = allowedOrigins.length === 0 || allowedOrigins.includes('*');
+const allowAllOrigins = (defaultAllowedOrigins.length === 0 && configuredOrigins.length === 0) || allowedOrigins.includes('*');
 
 const corsMiddleware = cors
   ? cors({
       origin(origin, callback) {
+        // Allow requests without Origin header (e.g., server-to-server, health checks, CLI tools)
         if (!origin) return callback(null, true);
         if (allowAllOrigins || allowedOrigins.includes(origin)) return callback(null, true);
         return callback(new Error('Not allowed by CORS'));
       },
       credentials: true,
     })
-  : createCorsMiddleware({ allowedOrigins, allowCredentials: true });
+  : createCorsMiddleware({ allowedOrigins, allowCredentials: true, allowNoOrigin: true });
 
 app.use(corsMiddleware);
 
