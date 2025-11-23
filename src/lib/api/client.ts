@@ -62,6 +62,18 @@ export async function apiGet<T = unknown>(path: string, options: Omit<ApiFetchOp
   return apiFetch<T>(path, { ...options, method: 'GET' });
 }
 
+/**
+ * Helper function for making POST requests with JSON bodies.
+ * 
+ * Note: This function is specifically designed for JSON payloads and will
+ * automatically stringify the body. For other content types (FormData, 
+ * pre-stringified JSON, etc.), use the apiFetch function directly.
+ * 
+ * @param path - The API path
+ * @param body - The request body (will be JSON stringified)
+ * @param options - Additional fetch options
+ * @returns Promise resolving to the response data
+ */
 export async function apiPost<T = unknown>(
   path: string, 
   body?: Record<string, unknown> | unknown[] | null, 
