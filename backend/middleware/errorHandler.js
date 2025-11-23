@@ -22,25 +22,22 @@ const isProduction = () => process.env.NODE_ENV === 'production';
  * @param {string} message - Original error message
  * @returns {string} Sanitized message
  */
+// Compile patterns once at module load time for better performance
+const sensitivePatterns = [
+  /postgresql:\/\/[^\s]*/gi,
+  /mysql:\/\/[^\s]*/gi,
+  /mongodb:\/\/[^\s]*/gi,
+  /password[=:]\S+/gi,
+  /token[=:]\S+/gi,
+  /key[=:]\S+/gi,
+  /secret[=:]\S+/gi,
+  /\/home\/[^\s]*/gi,
+  /\/usr\/[^\s]*/gi,
+  /\/var\/[^\s]*/gi,
+];
+
 const sanitizeErrorMessage = (message) => {
   if (!message) return 'An error occurred';
-  
-  // Remove potential sensitive patterns
-  // - Database connection strings
-  // - File paths
-  // - Stack traces embedded in messages
-  const sensitivePatterns = [
-    /postgresql:\/\/[^\s]*/gi,
-    /mysql:\/\/[^\s]*/gi,
-    /mongodb:\/\/[^\s]*/gi,
-    /password[=:]\S+/gi,
-    /token[=:]\S+/gi,
-    /key[=:]\S+/gi,
-    /secret[=:]\S+/gi,
-    /\/home\/[^\s]*/gi,
-    /\/usr\/[^\s]*/gi,
-    /\/var\/[^\s]*/gi,
-  ];
   
   let sanitized = message;
   sensitivePatterns.forEach(pattern => {

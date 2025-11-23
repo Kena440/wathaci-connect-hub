@@ -63,6 +63,7 @@ export async function apiFetch<T = any>(
       data = await response.json();
     } catch (parseError) {
       // If JSON parsing fails but response is OK, return empty object
+      // This handles cases like 204 No Content or empty successful responses
       if (response.ok) {
         return {} as T;
       }

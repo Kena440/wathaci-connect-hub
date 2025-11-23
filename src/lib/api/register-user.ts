@@ -1,4 +1,4 @@
-import { API_BASE_URL, getApiEndpoint } from '@/config/api';
+import { getApiEndpoint } from '@/config/api';
 
 const API_TIMEOUT_MS = 15000;
 
@@ -44,12 +44,12 @@ export const registerUser = async (
 ): Promise<RegisterUserResponse> => {
   const endpoint = buildEndpoint();
 
-  let response: Response;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
     controller.abort();
   }, API_TIMEOUT_MS);
 
+  let response: Response | undefined;
   try {
     response = await fetch(endpoint, {
       method: 'POST',
@@ -73,13 +73,13 @@ export const registerUser = async (
   try {
     data = await response.json();
   } catch (error) {
-    if (!response.ok) {
+    if (response && !response.ok) {
       throw new Error('Failed to register user with backend');
     }
     throw error;
   }
 
-  if (!response.ok) {
+  if (response && !response.ok) {
     const errorMessage = extractErrorMessage(data) || 'Failed to register user with backend';
     throw new Error(errorMessage);
   }
