@@ -19,7 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { apiFetch } from '@/lib/api/client';
+import { getApiEndpoint } from '@/config/api';
 import { withSupportContact } from '@/lib/supportEmail';
 
 interface OTPVerificationProps {
@@ -51,17 +51,17 @@ export default function OTPVerification({
     setLoading(true);
 
     try {
-      const data = await apiFetch<{ ok?: boolean; error?: string; expiresAt?: string }>(
-        '/api/auth/otp/send',
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            phone,
-            channel,
-            userId,
-          }),
-        }
-      );
+      const response = await fetch(getApiEndpoint('/api/auth/otp/send'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone,
+          channel,
+          userId,
+        }),
+      });
+
+      const data = await response.json();
 
       if (data.ok) {
         setSuccess(`Verification code sent via ${channel.toUpperCase()}`);
@@ -88,17 +88,17 @@ export default function OTPVerification({
     setLoading(true);
 
     try {
-      const data = await apiFetch<{ ok?: boolean; error?: string; phoneVerified?: boolean }>(
-        '/api/auth/otp/verify',
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            phone,
-            channel,
-            code,
-          }),
-        }
-      );
+      const response = await fetch(getApiEndpoint('/api/auth/otp/verify'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone,
+          channel,
+          code,
+        }),
+      });
+
+      const data = await response.json();
 
       if (data.ok && data.phoneVerified) {
         setSuccess('Phone number verified successfully!');

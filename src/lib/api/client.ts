@@ -1,60 +1,165 @@
-import { API_BASE_URL, getApiEndpoint } from '@/config/api';
+/**
+ * Centralized API Client Utility
+ * 
+ * Provides a consistent interface for making API requests to the backend.
+ * All API calls should use this utility to ensure proper error handling,
+ * authentication, and configuration.
+ */
 
-export type ApiFetchOptions = RequestInit & { parseJson?: boolean };
+import { API_BASE_URL } from '@/config/api';
 
-const normalizePath = (path: string) => (path.startsWith('/') ? path : `/${path}`);
-
-const ensureApiBaseUrl = () => {
-  if (!API_BASE_URL) {
-    throw new Error('API base URL is not configured. Please set VITE_API_BASE_URL or REACT_APP_API_BASE_URL.');
-  }
+export type ApiRequestOptions = RequestInit & {
+  headers?: Record<string, string>;
 };
 
-export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptions = {}): Promise<T> {
-  ensureApiBaseUrl();
+export type ApiResponse<T = any> = {
+  data?: T;
+  error?: string;
+  status: number;
+};
 
-  const url = getApiEndpoint(normalizePath(path));
-  const { headers, parseJson, ...rest } = options;
-  // Only set 'Content-Type' if a body is present and the header is not already set
-  const normalizedHeaders = { ...(headers || {}) };
-  const hasBody = 'body' in options && options.body !== undefined && options.body !== null;
-  const hasContentType = Object.keys(normalizedHeaders)
-    .some(h => h.toLowerCase() === 'content-type');
-  if (hasBody && !hasContentType) {
-    normalizedHeaders['Content-Type'] = 'application/json';
-  }
-  const response = await fetch(url, {
-    headers: normalizedHeaders,
-    ...rest,
-  });
+/**
+ * Make an API request to the backend
+ * 
+ * @param path - API endpoint path (e.g., '/users', '/api/health')
+ * @param options - Fetch options (method, headers, body, etc.)
+ * @returns Promise with typed response data
+ * 
+ * @example
+ * ```typescript
+ * // GET request
+ * const health = await apiFetch('/health');
+ * 
+ * // POST request
+ * const user = await apiFetch('/users', {
+ *   method: 'POST',
+ *   body: JSON.stringify({ email: 'user@example.com' })
+ * });
+ * ```
+ */
+export async function apiFetch<T = any>(
+  path: string,
+  options: ApiRequestOptions = {}
+): Promise<T> {
+  // Normalize path to start with /
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const url = `${API_BASE_URL}${normalizedPath}`;
 
-  const contentType = response.headers.get('content-type') ?? '';
-  const shouldParseJson = parseJson ?? contentType.includes('application/json');
-  
-  let data: unknown;
-  if (shouldParseJson) {
+  // Default headers
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    // Parse response as JSON
+    let data: unknown;
     try {
       data = await response.json();
-    } catch {
-      // If JSON parsing fails, treat as text
-      data = await response.text();
+    } catch (parseError) {
+      // If JSON parsing fails but response is OK, return empty object
+      // This handles cases like 204 No Content or empty successful responses
+      if (response.ok) {
+        return {} as T;
+      }
+      // Otherwise, throw error about failed response
+      throw new Error(`Failed to parse response: ${response.statusText}`);
     }
-  } else {
-    data = await response.text();
+
+    // Handle non-2xx responses
+    if (!response.ok) {
+      const errorData = data as { error?: string; message?: string; success?: boolean };
+      
+      // Extract error message from standardized backend response
+      const errorMessage = errorData?.error || errorData?.message || `Request failed with status ${response.status}`;
+      
+      // Create error with status code for better error handling
+      const error = new Error(errorMessage);
+      (error as any).status = response.status;
+      (error as any).response = response;
+      
+      throw error;
+    }
+
+    return data as T;
+  } catch (error) {
+    // Re-throw with additional context
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('An unexpected error occurred while making the request');
   }
-
-  if (!response.ok) {
-    const errorMessage =
-      typeof data === 'object' && data && 'error' in data && typeof (data as { error?: unknown }).error === 'string'
-        ? (data as { error: string }).error
-        : response.statusText || 'Request failed';
-
-    const error = new Error(errorMessage);
-    (error as Error & { status?: number; data?: unknown }).status = response.status;
-    (error as Error & { status?: number; data?: unknown }).data = data;
-    throw error;
-  }
-
-  return data as T;
 }
 
+/**
+ * Make a GET request to the API
+ * 
+ * @param path - API endpoint path
+ * @param options - Additional fetch options
+ * @returns Promise with typed response data
+ */
+export async function apiGet<T = any>(
+  path: string,
+  options?: ApiRequestOptions
+): Promise<T> {
+  return apiFetch<T>(path, { ...options, method: 'GET' });
+}
+
+/**
+ * Make a POST request to the API
+ * 
+ * @param path - API endpoint path
+ * @param data - Request body data
+ * @param options - Additional fetch options
+ * @returns Promise with typed response data
+ */
+export async function apiPost<T = any>(
+  path: string,
+  data?: any,
+  options?: ApiRequestOptions
+): Promise<T> {
+  return apiFetch<T>(path, {
+    ...options,
+    method: 'POST',
+    body: data ? JSON.stringify(data) : undefined,
+  });
+}
+
+/**
+ * Make a PUT request to the API
+ * 
+ * @param path - API endpoint path
+ * @param data - Request body data
+ * @param options - Additional fetch options
+ * @returns Promise with typed response data
+ */
+export async function apiPut<T = any>(
+  path: string,
+  data?: any,
+  options?: ApiRequestOptions
+): Promise<T> {
+  return apiFetch<T>(path, {
+    ...options,
+    method: 'PUT',
+    body: data ? JSON.stringify(data) : undefined,
+  });
+}
+
+/**
+ * Make a DELETE request to the API
+ * 
+ * @param path - API endpoint path
+ * @param options - Additional fetch options
+ * @returns Promise with typed response data
+ */
+export async function apiDelete<T = any>(
+  path: string,
+  options?: ApiRequestOptions
+): Promise<T> {
+  return apiFetch<T>(path, { ...options, method: 'DELETE' });
+}

@@ -1,4 +1,4 @@
-import { apiFetch } from '@/lib/api/client';
+import { getApiEndpoint } from '@/config/api';
 
 const API_TIMEOUT_MS = 15000;
 
@@ -24,6 +24,11 @@ export type RegisterUserResponse = {
   };
 };
 
+const buildEndpoint = () => {
+  // Use centralized API config
+  return getApiEndpoint('/users');
+};
+
 const extractErrorMessage = (data: unknown) => {
   if (typeof data === 'object' && data && 'error' in data) {
     const errorValue = (data as { error?: unknown }).error;
@@ -37,31 +42,47 @@ const extractErrorMessage = (data: unknown) => {
 export const registerUser = async (
   payload: RegisterUserPayload,
 ): Promise<RegisterUserResponse> => {
+  const endpoint = buildEndpoint();
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
     controller.abort();
   }, API_TIMEOUT_MS);
 
+  let response: Response | undefined;
   try {
-    const data = await apiFetch<RegisterUserResponse>('/users', {
+    response = await fetch(endpoint, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
-
-    return data;
   } catch (error) {
     if ((error as DOMException)?.name === 'AbortError') {
       throw new Error('Registration service timed out. Please try again later.');
     }
 
-    const errorMessage =
-      extractErrorMessage((error as { data?: unknown })?.data) ||
-      (error as Error)?.message ||
-      'Failed to register user with backend';
-
-    throw new Error(errorMessage);
+    throw new Error('Unable to reach registration service. Please try again later.');
   } finally {
     clearTimeout(timeoutId);
   }
+
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch (error) {
+    if (response && !response.ok) {
+      throw new Error('Failed to register user with backend');
+    }
+    throw error;
+  }
+
+  if (response && !response.ok) {
+    const errorMessage = extractErrorMessage(data) || 'Failed to register user with backend';
+    throw new Error(errorMessage);
+  }
+
+  return data as RegisterUserResponse;
 };

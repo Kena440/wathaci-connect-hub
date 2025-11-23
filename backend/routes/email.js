@@ -67,6 +67,7 @@
 const express = require('express');
 const Joi = require('joi');
 const validate = require('../middleware/validate');
+const { asyncHandler } = require('../middleware/errorHandler');
 const {
   sendEmail,
   sendOTPEmail,
@@ -152,221 +153,173 @@ const sendPasswordResetEmailSchema = Joi.object({
  * GET /api/email/test
  * Test SMTP connection and verify configuration
  */
-router.get('/test', async (req, res) => {
-  try {
-    const result = await verifyConnection();
-    
-    if (!result.ok) {
-      return res.status(500).json({
-        ok: false,
-        error: result.message,
-        details: result.details,
-      });
-    }
-    
-    return res.status(200).json({
-      ok: true,
-      message: result.message,
+router.get('/test', asyncHandler(async (req, res) => {
+  const result = await verifyConnection();
+  
+  if (!result.ok) {
+    return res.status(500).json({
+      success: false,
+      error: result.message,
       details: result.details,
     });
-  } catch (error) {
-    console.error('[Email Routes] Error in /test:', error);
-    return res.status(500).json({
-      ok: false,
-      error: 'Failed to verify SMTP connection',
-    });
   }
-});
+  
+  return res.status(200).json({
+    success: true,
+    message: result.message,
+    details: result.details,
+  });
+}));
 
 /**
  * GET /api/email/status
  * Get email service configuration status
  */
-router.get('/status', (req, res) => {
-  try {
-    const status = getConfigStatus();
-    
-    return res.status(200).json({
-      ok: true,
-      ...status,
-    });
-  } catch (error) {
-    console.error('[Email Routes] Error in /status:', error);
-    return res.status(500).json({
-      ok: false,
-      error: 'Failed to get configuration status',
-    });
-  }
-});
+router.get('/status', asyncHandler(async (req, res) => {
+  const status = getConfigStatus();
+  
+  return res.status(200).json({
+    success: true,
+    ...status,
+  });
+}));
 
 /**
  * POST /api/email/send
  * Send a generic email
  */
-router.post('/send', validate(sendEmailSchema), async (req, res) => {
+router.post('/send', validate(sendEmailSchema), asyncHandler(async (req, res) => {
   const { to, subject, text, html, template } = req.body;
   
   if (!isEmailConfigured()) {
     return res.status(503).json({
-      ok: false,
+      success: false,
       error: 'Email service is not configured',
     });
   }
   
-  try {
-    const result = await sendEmail({
-      to,
-      subject,
-      text,
-      html,
-      template: template || 'generic',
-    });
-    
-    if (!result.ok) {
-      return res.status(500).json({
-        ok: false,
-        error: result.message,
-      });
-    }
-    
-    return res.status(200).json({
-      ok: true,
-      message: result.message,
-      messageId: result.messageId,
-    });
-  } catch (error) {
-    console.error('[Email Routes] Error in /send:', error);
+  const result = await sendEmail({
+    to,
+    subject,
+    text,
+    html,
+    template: template || 'generic',
+  });
+  
+  if (!result.ok) {
     return res.status(500).json({
-      ok: false,
-      error: 'Failed to send email',
+      success: false,
+      error: result.message,
     });
   }
-});
+  
+  return res.status(200).json({
+    success: true,
+    message: result.message,
+    messageId: result.messageId,
+  });
+}));
 
 /**
  * POST /api/email/send-otp
  * Send OTP verification email
  */
-router.post('/send-otp', validate(sendOTPEmailSchema), async (req, res) => {
+router.post('/send-otp', validate(sendOTPEmailSchema), asyncHandler(async (req, res) => {
   const { to, otpCode, expiryMinutes } = req.body;
   
   if (!isEmailConfigured()) {
     return res.status(503).json({
-      ok: false,
+      success: false,
       error: 'Email service is not configured',
     });
   }
   
-  try {
-    const result = await sendOTPEmail({
-      to,
-      otpCode,
-      expiryMinutes,
-    });
-    
-    if (!result.ok) {
-      return res.status(500).json({
-        ok: false,
-        error: result.message,
-      });
-    }
-    
-    return res.status(200).json({
-      ok: true,
-      message: result.message,
-      messageId: result.messageId,
-    });
-  } catch (error) {
-    console.error('[Email Routes] Error in /send-otp:', error);
+  const result = await sendOTPEmail({
+    to,
+    otpCode,
+    expiryMinutes,
+  });
+  
+  if (!result.ok) {
     return res.status(500).json({
-      ok: false,
-      error: 'Failed to send OTP email',
+      success: false,
+      error: result.message,
     });
   }
-});
+  
+  return res.status(200).json({
+    success: true,
+    message: result.message,
+    messageId: result.messageId,
+  });
+}));
 
 /**
  * POST /api/email/send-verification
  * Send email verification email
  */
-router.post('/send-verification', validate(sendVerificationEmailSchema), async (req, res) => {
+router.post('/send-verification', validate(sendVerificationEmailSchema), asyncHandler(async (req, res) => {
   const { to, verificationUrl, userName } = req.body;
   
   if (!isEmailConfigured()) {
     return res.status(503).json({
-      ok: false,
+      success: false,
       error: 'Email service is not configured',
     });
   }
   
-  try {
-    const result = await sendVerificationEmail({
-      to,
-      verificationUrl,
-      userName,
-    });
-    
-    if (!result.ok) {
-      return res.status(500).json({
-        ok: false,
-        error: result.message,
-      });
-    }
-    
-    return res.status(200).json({
-      ok: true,
-      message: result.message,
-      messageId: result.messageId,
-    });
-  } catch (error) {
-    console.error('[Email Routes] Error in /send-verification:', error);
+  const result = await sendVerificationEmail({
+    to,
+    verificationUrl,
+    userName,
+  });
+  
+  if (!result.ok) {
     return res.status(500).json({
-      ok: false,
-      error: 'Failed to send verification email',
+      success: false,
+      error: result.message,
     });
   }
-});
+  
+  return res.status(200).json({
+    success: true,
+    message: result.message,
+    messageId: result.messageId,
+  });
+}));
 
 /**
  * POST /api/email/send-password-reset
  * Send password reset email
  */
-router.post('/send-password-reset', validate(sendPasswordResetEmailSchema), async (req, res) => {
+router.post('/send-password-reset', validate(sendPasswordResetEmailSchema), asyncHandler(async (req, res) => {
   const { to, resetUrl, userName } = req.body;
   
   if (!isEmailConfigured()) {
     return res.status(503).json({
-      ok: false,
+      success: false,
       error: 'Email service is not configured',
     });
   }
   
-  try {
-    const result = await sendPasswordResetEmail({
-      to,
-      resetUrl,
-      userName,
-    });
-    
-    if (!result.ok) {
-      return res.status(500).json({
-        ok: false,
-        error: result.message,
-      });
-    }
-    
-    return res.status(200).json({
-      ok: true,
-      message: result.message,
-      messageId: result.messageId,
-    });
-  } catch (error) {
-    console.error('[Email Routes] Error in /send-password-reset:', error);
+  const result = await sendPasswordResetEmail({
+    to,
+    resetUrl,
+    userName,
+  });
+  
+  if (!result.ok) {
     return res.status(500).json({
-      ok: false,
-      error: 'Failed to send password reset email',
+      success: false,
+      error: result.message,
     });
   }
-});
+  
+  return res.status(200).json({
+    success: true,
+    message: result.message,
+    messageId: result.messageId,
+  });
+}));
 
 module.exports = router;

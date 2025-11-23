@@ -1,6 +1,8 @@
 const express = require('express');
+const cors = require('cors');
 const { logPaymentReadiness } = require('./lib/payment-readiness');
-const { createCorsMiddleware } = require('./middleware/cors');
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { requestLogger } = require('./middleware/requestLogger');
 
 let helmet;
 try {
@@ -13,15 +15,7 @@ let rateLimit;
 try {
   rateLimit = require('express-rate-limit');
 } catch (err) {
-  rateLimit = () => (req, res, next) => next();
-}
-
-let cors;
-try {
-  // Prefer the official cors package when available
-  cors = require('cors');
-} catch (err) {
-  cors = null;
+  rateLimit = (options) => (req, res, next) => next();
 }
 
 const app = express();
@@ -41,47 +35,73 @@ app.use(express.json({
 
 // Security middlewares
 app.use(helmet()); // Sets various HTTP headers for security
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-});
-app.use(limiter); // Basic rate limiting
 
-// CORS configuration
+// Rate limiting for all requests
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many requests, please try again later.' },
+});
+app.use(limiter);
+
+// Stricter rate limiting for auth-related routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many authentication attempts, please try again later.' },
+  skipSuccessfulRequests: true, // Don't count successful requests
+});
+
+// CORS Configuration
 const parseAllowedOrigins = (value = '') =>
   value
     .split(',')
     .map(origin => origin.trim())
     .filter(Boolean);
 
-const defaultAllowedOrigins = [
-  'https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app',
+const configuredOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS);
+const allowAllOrigins = configuredOrigins.length === 0 || configuredOrigins.includes('*');
+
+// Default allowed origins for local development
+const defaultOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
+  'http://localhost:8080',
 ];
 
-const configuredOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS);
-const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...configuredOrigins]));
-const allowAllOrigins = (defaultAllowedOrigins.length === 0 && configuredOrigins.length === 0) || allowedOrigins.includes('*');
+// Combine configured origins with defaults
+// If CORS_ALLOWED_ORIGINS is set and doesn't include *, use configured origins + defaults
+// Otherwise, if CORS_ALLOWED_ORIGINS is empty or *, allow all origins
+const allowedOrigins = allowAllOrigins ? [] : [...configuredOrigins, ...defaultOrigins];
 
-const corsMiddleware = cors
-  ? cors({
-      origin(origin, callback) {
-        if (!origin) return callback(null, true);
-        if (allowAllOrigins || allowedOrigins.includes(origin)) return callback(null, true);
-        return callback(new Error('Not allowed by CORS'));
-      },
-      credentials: true,
-    })
-  : createCorsMiddleware({ allowedOrigins, allowCredentials: true, allowNoOrigin: true });
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow non-browser tools like curl/Postman (no origin header)
+      if (!origin) return callback(null, true);
+      
+      // Allow all origins if wildcard is set or no configuration
+      if (allowAllOrigins) return callback(null, true);
+      
+      // Allow if origin is in the allowed list
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true, // Allow cookies/sessions
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 
-app.use(corsMiddleware);
-
-// Request logging
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  next();
-});
+// Request logging middleware (replaces the simple console.log)
+app.use(requestLogger);
 
 const userRoutes = require('./routes/users');
 const logRoutes = require('./routes/logs');
@@ -111,31 +131,18 @@ app.get('/api', (req, res) => {
   });
 });
 
-app.use(['/users', '/api/users'], userRoutes);
+app.use(['/users', '/api/users'], authLimiter, userRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/resolve', resolveRoutes);
-app.use('/api/auth/otp', otpRoutes);
+app.use('/api/auth/otp', authLimiter, otpRoutes);
 app.use('/api/email', emailRoutes);
 
-// Helper function to determine if we're in production mode
-const isProduction = () => process.env.NODE_ENV === 'production';
+// 404 handler - must be after all routes
+app.use(notFoundHandler);
 
-// Global error handler
-app.use((err, req, res, next) => {
-  // Log error details (excluding sensitive information)
-  console.error('Unhandled error:', {
-    message: err.message,
-    stack: isProduction() ? undefined : err.stack,
-    url: req.url,
-    method: req.method,
-  });
-
-  // Send JSON error response
-  res.status(err.status || 500).json({
-    error: isProduction() ? 'Internal server error' : err.message,
-  });
-});
+// Global error handler - must be last
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {

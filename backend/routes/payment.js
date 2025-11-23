@@ -1,34 +1,50 @@
 const express = require('express');
 const crypto = require('node:crypto');
+const { asyncHandler } = require('../middleware/errorHandler');
 const { getPaymentReadiness } = require('../lib/payment-readiness');
 
 const router = express.Router();
 
-router.get('/readiness', (req, res) => {
+router.get('/readiness', asyncHandler(async (req, res) => {
   const readiness = getPaymentReadiness();
   const hasErrors = readiness.errors.length > 0;
-  res.status(hasErrors ? 503 : 200).json(readiness);
-});
+  res.status(hasErrors ? 503 : 200).json({
+    success: !hasErrors,
+    ...readiness,
+  });
+}));
 
-router.post('/webhook', (req, res) => {
+router.post('/webhook', asyncHandler(async (req, res) => {
   const webhookSecret = process.env.LENCO_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
-    return res.status(500).json({ error: 'LENCO_WEBHOOK_SECRET is not configured' });
+    return res.status(500).json({ 
+      success: false, 
+      error: 'LENCO_WEBHOOK_SECRET is not configured' 
+    });
   }
 
   const signature = (req.get('x-lenco-signature') || '').trim();
   if (!signature) {
-    return res.status(400).json({ error: 'Missing webhook signature' });
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Missing webhook signature' 
+    });
   }
 
   const rawBody = typeof req.rawBody === 'string' ? req.rawBody : '';
   if (!rawBody) {
-    return res.status(400).json({ error: 'Missing request body' });
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Missing request body' 
+    });
   }
 
   if (!verifyLencoSignature(signature, rawBody, webhookSecret)) {
-    return res.status(400).json({ error: 'Invalid webhook signature' });
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Invalid webhook signature' 
+    });
   }
 
   const payload = req.body && typeof req.body === 'object' ? req.body : {};
@@ -39,8 +55,11 @@ router.post('/webhook', (req, res) => {
     console.log('[lenco-webhook] Received webhook with valid signature');
   }
 
-  return res.status(200).json({ received: true });
-});
+  return res.status(200).json({ 
+    success: true, 
+    received: true 
+  });
+}));
 
 const verifyLencoSignature = (signature, rawBody, secret) => {
   const digest = crypto.createHash('sha256').update(secret + rawBody, 'utf8').digest();

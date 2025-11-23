@@ -44,6 +44,7 @@
 const express = require('express');
 const Joi = require('joi');
 const validate = require('../middleware/validate');
+const { asyncHandler } = require('../middleware/errorHandler');
 const { sendOTP, verifyOTP } = require('../services/otp-service');
 
 const router = express.Router();
@@ -90,62 +91,46 @@ const verifyOTPSchema = Joi.object({
  * POST /api/auth/otp/send
  * Send OTP code via SMS or WhatsApp
  */
-router.post('/send', validate(sendOTPSchema), async (req, res) => {
+router.post('/send', validate(sendOTPSchema), asyncHandler(async (req, res) => {
   const { phone, channel, userId } = req.body;
 
-  try {
-    const result = await sendOTP({ phone, channel, userId });
+  const result = await sendOTP({ phone, channel, userId });
 
-    if (!result.ok) {
-      return res.status(400).json({
-        ok: false,
-        error: result.message,
-      });
-    }
-
-    return res.status(200).json({
-      ok: true,
-      message: result.message,
-      expiresAt: result.expiresAt,
-    });
-  } catch (error) {
-    console.error('[OTP Routes] Error in /send:', error);
-    return res.status(500).json({
-      ok: false,
-      error: 'Failed to send OTP. Please try again later.',
+  if (!result.ok) {
+    return res.status(400).json({
+      success: false,
+      error: result.message,
     });
   }
-});
+
+  return res.status(200).json({
+    success: true,
+    message: result.message,
+    expiresAt: result.expiresAt,
+  });
+}));
 
 /**
  * POST /api/auth/otp/verify
  * Verify OTP code
  */
-router.post('/verify', validate(verifyOTPSchema), async (req, res) => {
+router.post('/verify', validate(verifyOTPSchema), asyncHandler(async (req, res) => {
   const { phone, channel, code } = req.body;
 
-  try {
-    const result = await verifyOTP({ phone, channel, code });
+  const result = await verifyOTP({ phone, channel, code });
 
-    if (!result.ok) {
-      return res.status(400).json({
-        ok: false,
-        error: result.message,
-      });
-    }
-
-    return res.status(200).json({
-      ok: true,
-      message: result.message,
-      phoneVerified: result.phoneVerified,
-    });
-  } catch (error) {
-    console.error('[OTP Routes] Error in /verify:', error);
-    return res.status(500).json({
-      ok: false,
-      error: 'Verification failed. Please try again later.',
+  if (!result.ok) {
+    return res.status(400).json({
+      success: false,
+      error: result.message,
     });
   }
-});
+
+  return res.status(200).json({
+    success: true,
+    message: result.message,
+    phoneVerified: result.phoneVerified,
+  });
+}));
 
 module.exports = router;
