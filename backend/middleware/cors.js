@@ -7,6 +7,10 @@ const createCorsMiddleware = ({ allowedOrigins = [], allowCredentials = false, a
     const isAllowed = (allowNoOrigin && !origin) || allowAll || normalizedOrigins.includes(origin);
 
     if (!isAllowed) {
+      // Check if headers were already sent by previous middleware
+      if (res.headersSent) {
+        return next(new Error('Not allowed by CORS'));
+      }
       return res.status(403).json({ error: 'Not allowed by CORS' });
     }
 

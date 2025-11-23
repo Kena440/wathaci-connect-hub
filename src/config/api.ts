@@ -14,8 +14,8 @@
  * @returns The API base URL without trailing slash
  */
 const getApiBaseUrl = (): string => {
-  const viteUrl = import.meta?.env?.VITE_API_BASE_URL;
-  const reactUrl = import.meta?.env?.REACT_APP_API_BASE_URL;
+  const viteUrl = import.meta.env.VITE_API_BASE_URL;
+  const reactUrl = import.meta.env.REACT_APP_API_BASE_URL;
   const nodeReactUrl = typeof process !== 'undefined' ? process.env?.REACT_APP_API_BASE_URL : undefined;
 
   const envUrl = viteUrl ?? reactUrl ?? nodeReactUrl;
