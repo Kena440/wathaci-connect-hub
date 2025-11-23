@@ -28,21 +28,96 @@ All conflicts between the `V3` and `copilot/resolve-merge-conflicts-v3-again` br
 ### Key Improvements from V3
 
 #### Backend Enhancements
-- **Enhanced Error Handling**: CORS errors now include proper status codes (403)
-- **Production-Safe Logging**: Error logging excludes sensitive information in production
-- **Improved Error Messages**: Environment-aware error messages for better debugging
+
+**1. Enhanced Error Handling**
+CORS errors now include proper status codes:
+```javascript
+// Before: Simple error without status
+return callback(new Error('Not allowed by CORS'));
+
+// After: Error with 403 status code
+const error = new Error('Not allowed by CORS');
+error.status = 403;
+return callback(error);
+```
+
+**2. Production-Safe Logging**
+Error logging excludes sensitive information in production:
+```javascript
+// After: Environment-aware logging
+console.error('Unhandled error:', {
+  message: err.message,
+  stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
+  url: req.url,
+  method: req.method,
+});
+```
+
+**3. Improved Error Messages**
+Environment-aware error messages for better debugging:
+```javascript
+// After: Production-safe error responses
+res.status(err.status || 500).json({
+  error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
+});
+```
 
 #### Frontend Enhancements
-- **API Client Consistency**: All API calls now use the `apiFetch` helper function
-- **Environment Variable Flexibility**: Support for both `VITE_` and `REACT_APP_` prefixes
-- **Better Error Handling**: Improved try-catch blocks with proper error propagation
-- **Health Check Standardization**: Health status changed from "ok" to "healthy"
+
+**1. API Client Consistency**
+All API calls now use the `apiFetch` helper function:
+```typescript
+// Before: Raw fetch calls
+const response = await fetch(getApiEndpoint('/api/auth/otp/send'), {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ phone, channel, userId }),
+});
+const data = await response.json();
+
+// After: Using apiFetch helper
+const data = await apiFetch('/api/auth/otp/send', {
+  method: 'POST',
+  body: JSON.stringify({ phone, channel, userId }),
+});
+```
+
+**2. Environment Variable Flexibility**
+Support for both `VITE_` and `REACT_APP_` prefixes:
+```typescript
+// After: Dual prefix support
+const apiBaseUrl = env.VITE_API_BASE_URL ?? env.REACT_APP_API_BASE_URL;
+```
+
+**3. Better Error Handling**
+Improved try-catch blocks with proper error propagation in `client.ts`:
+```typescript
+// After: Structured error handling
+let data: unknown;
+if (shouldParseJson) {
+  try {
+    data = await response.json();
+  } catch {
+    // If JSON parsing fails, treat as text
+    data = await response.text();
+  }
+} else {
+  data = await response.text();
+}
+```
+
+**4. Health Check Standardization**
+Health status changed from "ok" to "healthy" for consistency with industry standards
 
 ### Validation Results
 
 - ✅ **TypeScript Type Check**: Passed
 - ✅ **Build**: Successful (6.38s)
 - ⚠️ **Linting**: Pre-existing issues found (unrelated to merge)
+  - 8 errors in `src/@types/supabase.types.ts` (empty object type definitions)
+  - 1 error in `src/lib/authBypass.ts` (@ts-ignore usage)
+  - 4 warnings in various components (React hooks dependencies)
+  - These issues existed before the merge and are not introduced by the V3 changes
 
 ### Resolution Strategy
 
