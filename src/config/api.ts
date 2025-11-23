@@ -14,13 +14,13 @@
  * @returns The API base URL without trailing slash
  */
 const getApiBaseUrl = (): string => {
-  const envUrl = import.meta.env.VITE_API_BASE_URL ?? import.meta.env.REACT_APP_API_BASE_URL;
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
   
-  // In production, API base URL must be set
+  // In production, VITE_API_BASE_URL must be set
   if (import.meta.env.MODE === 'production' && !envUrl) {
     throw new Error(
-      'API base URL is required in production mode. ' +
-      'Please set VITE_API_BASE_URL or REACT_APP_API_BASE_URL to your live backend API URL (e.g., https://api.wathaci.com)'
+      'VITE_API_BASE_URL is required in production mode. ' +
+      'Please set it to your live backend API URL (e.g., https://api.wathaci.com)'
     );
   }
   
