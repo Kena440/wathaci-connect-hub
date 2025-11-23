@@ -81,6 +81,36 @@ node scripts/test-webhook-integration.js \
   whsec_your_secret_key
 ```
 
+### Branch Management
+
+#### `sync-version-branches.sh`
+**Purpose**: Synchronizes version branches (V1, V2, V3) with main branch  
+**Usage**: `./scripts/sync-version-branches.sh`  
+**Description**: Interactive script that:
+- Merges main into V1, V2, and V3 branches
+- Resolves conflicts automatically (accepting main's version)
+- Pushes updated branches to remote
+- Provides color-coded status output
+
+**Requirements**:
+- Write access to the repository
+- Clean working directory
+
+**Documentation**: See [BRANCH_CONFLICT_RESOLUTION_SUMMARY.md](../BRANCH_CONFLICT_RESOLUTION_SUMMARY.md)
+
+#### `verify-no-conflicts.sh`
+**Purpose**: Verifies no merge conflicts exist between branches  
+**Usage**: `./scripts/verify-no-conflicts.sh`  
+**Description**: Tests all important merge combinations and reports:
+- Which merges are clean
+- Which merges have conflicts
+- Overall pass/fail status
+
+**When to use**:
+- After merging branches
+- Before creating a release
+- As part of CI/CD pipeline
+
 ## Common Workflows
 
 ### Initial Setup
@@ -126,6 +156,23 @@ node scripts/test-webhook-integration.js \
 4. Test webhook integration:
    ```bash
    node scripts/test-webhook-integration.js <url> <secret>
+   ```
+
+### Branch Maintenance
+
+1. Verify no conflicts exist:
+   ```bash
+   ./scripts/verify-no-conflicts.sh
+   ```
+
+2. If conflicts found, sync branches:
+   ```bash
+   ./scripts/sync-version-branches.sh
+   ```
+
+3. Verify again:
+   ```bash
+   ./scripts/verify-no-conflicts.sh
    ```
 
 ### Development
@@ -252,6 +299,7 @@ When adding new scripts:
 
 For issues with:
 - **Scripts**: Check this README and inline script documentation
+- **Branch Conflicts**: See [APPLYING_BRANCH_FIXES.md](../APPLYING_BRANCH_FIXES.md) and [BRANCH_CONFLICT_RESOLUTION_SUMMARY.md](../BRANCH_CONFLICT_RESOLUTION_SUMMARY.md)
 - **Supabase CLI**: See [SUPABASE_CLI_SETUP.md](../docs/SUPABASE_CLI_SETUP.md)
 - **Environment**: See [ENVIRONMENT_SETUP.md](../docs/ENVIRONMENT_SETUP.md)
 - **Webhooks**: See [WEBHOOK_SETUP_GUIDE.md](../docs/WEBHOOK_SETUP_GUIDE.md)
@@ -259,5 +307,5 @@ For issues with:
 
 ---
 
-**Last Updated**: 2025-10-20  
+**Last Updated**: 2025-11-23  
 **Maintained By**: WATHACI CONNECT Development Team
