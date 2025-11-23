@@ -94,8 +94,19 @@ async function testPasswordResetRequest() {
   log('This will send a password reset email...', 'info');
 
   try {
+    // Construct redirect URL - use app base URL if available, otherwise infer from Supabase URL
+    let redirectUrl;
+    if (process.env.VITE_APP_BASE_URL) {
+      redirectUrl = `${process.env.VITE_APP_BASE_URL}/reset-password`;
+    } else if (supabaseUrl.includes('localhost')) {
+      redirectUrl = 'http://localhost:3000/reset-password';
+    } else {
+      // For production, use wathaci.com domain
+      redirectUrl = 'https://wathaci.com/reset-password';
+    }
+
     const { data, error } = await supabase.auth.resetPasswordForEmail(emailArg, {
-      redirectTo: `${supabaseUrl.replace('supabase.co', 'wathaci.com')}/reset-password`,
+      redirectTo: redirectUrl,
     });
 
     const duration = Date.now() - startTime;

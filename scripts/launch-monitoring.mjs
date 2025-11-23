@@ -61,6 +61,10 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Monitoring state
+const METRICS_MAX_LENGTH = 100; // Keep last 100 data points
+const ALERTS_MAX_LENGTH = 50; // Keep last 50 alerts
+const ERROR_THRESHOLD = 5; // Threshold for error rate alerts
+
 const monitoringState = {
   startTime: Date.now(),
   checkCount: 0,
@@ -102,8 +106,8 @@ function recordMetric(category, value) {
       value,
       timestamp: Date.now(),
     });
-    // Keep only last 100 data points
-    if (monitoringState.metrics[category].length > 100) {
+    // Keep only last METRICS_MAX_LENGTH data points
+    if (monitoringState.metrics[category].length > METRICS_MAX_LENGTH) {
       monitoringState.metrics[category].shift();
     }
   }
@@ -118,8 +122,8 @@ function addAlert(severity, message) {
   monitoringState.alerts.push(alert);
   log(`ALERT: ${message}`, 'alert');
   
-  // Keep only last 50 alerts
-  if (monitoringState.alerts.length > 50) {
+  // Keep only last ALERTS_MAX_LENGTH alerts
+  if (monitoringState.alerts.length > ALERTS_MAX_LENGTH) {
     monitoringState.alerts.shift();
   }
 }
@@ -198,8 +202,8 @@ async function checkErrorLogs() {
     const errorCount = data?.length || 0;
     recordMetric('errorRate', errorCount);
     
-    if (errorCount > 5) {
-      addAlert('MEDIUM', `High error rate detected: ${errorCount} errors in last interval`);
+    if (errorCount > ERROR_THRESHOLD) {
+      addAlert('MEDIUM', `High error rate detected: ${errorCount} errors in last interval (threshold: ${ERROR_THRESHOLD})`);
     }
     
     return { errorCount, errors: data || [] };
