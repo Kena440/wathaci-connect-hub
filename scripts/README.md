@@ -2,6 +2,32 @@
 
 This directory contains helper scripts for managing the WATHACI CONNECT application.
 
+## 🚀 NEW: Production Launch Scripts
+
+### Quick Testing (Pre-Launch)
+```bash
+# Test email/OTP verification (2-3 min)
+npm run test:email-otp
+
+# Test password reset flow (2-3 min)
+npm run test:password-reset -- --email test@example.com
+```
+
+### Launch Monitoring
+```bash
+# Monitor for 1 hour (default)
+npm run launch:monitor
+
+# Continuous monitoring until stopped
+npm run launch:monitor:continuous
+```
+
+**📚 Full Documentation**: 
+- [PRODUCTION_TESTING_AND_MONITORING_GUIDE.md](../PRODUCTION_TESTING_AND_MONITORING_GUIDE.md) - Comprehensive guide
+- [QUICK_LAUNCH_TESTING_REFERENCE.md](../QUICK_LAUNCH_TESTING_REFERENCE.md) - Quick reference
+
+---
+
 ## Available Scripts
 
 ### Environment Management
@@ -61,6 +87,62 @@ npm run keys:rotate
 **Description**: Guides through configuring payment gateway settings, transaction limits, and webhook URLs.
 
 ### Testing
+
+#### `production-email-otp-test.mjs`
+**Purpose**: Quick production verification of email/OTP authentication  
+**Usage**: 
+```bash
+npm run test:email-otp
+# or with custom email
+node scripts/production-email-otp-test.mjs --email test@example.com
+```
+**Description**: Tests:
+- Email signup with confirmation email
+- OTP sign-in request
+- Password reset email
+- Email configuration
+- Provides deliverability checklist
+
+**Duration**: 2-3 minutes  
+**Documentation**: See [PRODUCTION_TESTING_AND_MONITORING_GUIDE.md](../PRODUCTION_TESTING_AND_MONITORING_GUIDE.md)
+
+#### `password-reset-test.mjs`
+**Purpose**: Comprehensive password reset flow testing  
+**Usage**: 
+```bash
+npm run test:password-reset -- --email test@example.com
+# or directly
+node scripts/password-reset-test.mjs --email test@example.com
+```
+**Description**: Tests:
+- User existence verification
+- Password reset email request
+- Email authentication (SPF/DKIM/DMARC)
+- Reset link validation
+- Security checks
+
+**Duration**: 2-3 minutes (automated) + 5 minutes (manual verification)
+
+#### `launch-monitoring.mjs`
+**Purpose**: Continuous monitoring during launch window  
+**Usage**: 
+```bash
+npm run launch:monitor
+# or continuous until stopped
+npm run launch:monitor:continuous
+# custom interval (30 seconds)
+node scripts/launch-monitoring.mjs --interval=30 --duration=7200
+```
+**Description**: Monitors:
+- Auth system health
+- Database connectivity
+- Response time metrics
+- Error rate tracking
+- Webhook processing status
+- Automatic alerts
+
+**Duration**: 1 hour default, configurable  
+**Stop**: Press Ctrl+C for graceful shutdown with final report
 
 #### `test-webhook-integration.js`
 **Purpose**: Tests Lenco webhook integration  
@@ -157,6 +239,48 @@ node scripts/test-webhook-integration.js \
    ```bash
    node scripts/test-webhook-integration.js <url> <secret>
    ```
+
+5. **NEW: Run pre-launch verification**:
+   ```bash
+   npm run test:email-otp
+   npm run test:password-reset -- --email test@example.com
+   ```
+
+6. **NEW: Start launch monitoring**:
+   ```bash
+   npm run launch:monitor:continuous
+   ```
+
+### Launch Day Workflow
+
+**T-1 Hour (Pre-Launch Testing)**:
+```bash
+# Run quick verification tests
+npm run test:email-otp                                    # 2-3 min
+npm run test:password-reset -- --email test@example.com  # 2-3 min
+
+# Manually verify emails received
+# Check email headers (SPF/DKIM/DMARC pass)
+# Test all email links/buttons work
+```
+
+**T-0 (Launch + Monitoring)**:
+```bash
+# Start continuous monitoring
+npm run launch:monitor:continuous
+
+# Keep terminal visible during launch
+# Monitor for any alerts
+```
+
+**T+1 Hour (First Check)**:
+```bash
+# Review monitoring stats (Ctrl+C to see report)
+# Run quick verification test
+npm run test:email-otp
+```
+
+**Full Guide**: See [PRODUCTION_TESTING_AND_MONITORING_GUIDE.md](../PRODUCTION_TESTING_AND_MONITORING_GUIDE.md)
 
 ### Branch Maintenance
 
