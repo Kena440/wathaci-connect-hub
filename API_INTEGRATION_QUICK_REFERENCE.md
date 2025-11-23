@@ -14,25 +14,33 @@ curl http://localhost:3000/api
 
 ## Frontend Usage
 
-### Import API Config
+### Import API Utilities
 ```typescript
 import { getApiEndpoint } from '@/config/api';
+import { apiGet, apiPost } from '@/lib/api/client';
 ```
 
 ### Make API Calls
 ```typescript
+// Using helper functions (recommended)
 // User registration
+const user = await apiPost('/users', { 
+  firstName, lastName, email, accountType 
+});
+
+// Send OTP
+const result = await apiPost('/api/auth/otp/send', { 
+  phone, channel: 'sms' 
+});
+
+// Get health status
+const health = await apiGet('/health');
+
+// Using fetch directly (alternative)
 const response = await fetch(getApiEndpoint('/users'), {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ firstName, lastName, email, accountType })
-});
-
-// Send OTP
-const response = await fetch(getApiEndpoint('/api/auth/otp/send'), {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ phone, channel: 'sms' })
 });
 ```
 
