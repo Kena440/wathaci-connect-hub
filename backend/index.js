@@ -70,7 +70,9 @@ const corsMiddleware = cors
         // Allow requests without Origin header (e.g., server-to-server, health checks, CLI tools)
         if (!origin) return callback(null, true);
         if (allowAllOrigins || allowedOrigins.includes(origin)) return callback(null, true);
-        return callback(new Error('Not allowed by CORS'));
+        const error = new Error('Not allowed by CORS');
+        error.status = 403;
+        return callback(error);
       },
       credentials: true,
     })
@@ -119,16 +121,24 @@ app.use('/resolve', resolveRoutes);
 app.use('/api/auth/otp', otpRoutes);
 app.use('/api/email', emailRoutes);
 
+
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
+  // Log error details (excluding sensitive information)
+  console.error('Unhandled error:', {
+    message: err.message,
+    stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
+    url: req.url,
+    method: req.method,
+  });
 
   if (res.headersSent) {
     return next(err);
   }
 
+  // Send JSON error response
   res.status(err.status || 500).json({
-    error: err.message || 'Internal server error',
+    error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
   });
 });
 
