@@ -33,6 +33,7 @@ Replace `[PROJECT-REF]` with your Supabase project reference ID.
 - ✅ payment.failed
 - ✅ payment.pending
 - ✅ payment.cancelled
+- ℹ️ Additional operational events (`transfer.*`, `collection.*`, `transaction.*`) are documented in [LENCO_WEBHOOK_EVENTS_REFERENCE.md](./LENCO_WEBHOOK_EVENTS_REFERENCE.md) and are logged automatically when received.
 
 ## 🧪 Testing Commands
 

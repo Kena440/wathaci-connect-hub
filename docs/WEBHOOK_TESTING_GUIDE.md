@@ -244,6 +244,8 @@ node scripts/test-webhook-integration.js <url> <secret>
 # (Modify test script or send manual cURL with event: "payment.cancelled")
 ```
 
+> **Heads up:** Operational events such as `transfer.successful`, `collection.failed`, or `transaction.credit` can also be relayed to this webhook. They are primarily logged for auditing. Refer to the [Lenco Webhook Events Reference](./LENCO_WEBHOOK_EVENTS_REFERENCE.md) for the payload fields when crafting manual requests.
+
 ### Test Duplicate Events
 
 Send the same webhook payload twice:

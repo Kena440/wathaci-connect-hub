@@ -534,10 +534,26 @@ try {
 
 ### Supported Events
 
+#### Payment Events
+
 - `payment.success`: Payment completed successfully
 - `payment.failed`: Payment failed
 - `payment.pending`: Payment is being processed
 - `payment.cancelled`: Payment was cancelled
+
+#### Account, Transfer, and Collection Events
+
+The webhook handler also accepts operational events published by Lenco for banking operations. These events are logged for auditing and reconciliation:
+
+- `transfer.successful`
+- `transfer.failed`
+- `collection.successful`
+- `collection.failed`
+- `collection.settled`
+- `transaction.credit`
+- `transaction.debit`
+
+See the [Webhook Events Reference](./LENCO_WEBHOOK_EVENTS_REFERENCE.md) for payload schemas and field descriptions.
 
 ### Status Mapping
 
