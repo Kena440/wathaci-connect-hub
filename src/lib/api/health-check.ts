@@ -130,7 +130,7 @@ export const verifyEndpoint = async (
     });
 
     clearTimeout(timeoutId);
-    
+
     // For OPTIONS and HEAD, any response (including errors) means endpoint exists
     // For GET, we want a successful response
     return method === 'GET' ? response.ok : true;
@@ -139,3 +139,4 @@ export const verifyEndpoint = async (
     return false;
   }
 };
+

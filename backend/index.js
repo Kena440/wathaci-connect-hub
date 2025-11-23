@@ -131,6 +131,11 @@ app.use((err, req, res, next) => {
     method: req.method,
   });
 
+  // Don't send response if headers already sent
+  if (res.headersSent) {
+    return next(err);
+  }
+
   // Send JSON error response
   res.status(err.status || 500).json({
     error: isProduction() ? 'Internal server error' : err.message,
