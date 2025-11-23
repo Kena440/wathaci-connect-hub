@@ -57,3 +57,15 @@ export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptio
 
   return data as T;
 }
+
+export async function apiGet<T = unknown>(path: string, options: Omit<ApiFetchOptions, 'method' | 'body'> = {}): Promise<T> {
+  return apiFetch<T>(path, { ...options, method: 'GET' });
+}
+
+export async function apiPost<T = unknown>(path: string, body?: unknown, options: Omit<ApiFetchOptions, 'method' | 'body'> = {}): Promise<T> {
+  return apiFetch<T>(path, { 
+    ...options, 
+    method: 'POST', 
+    body: body ? JSON.stringify(body) : undefined 
+  });
+}
