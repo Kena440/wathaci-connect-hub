@@ -118,7 +118,6 @@ app.use('/resolve', resolveRoutes);
 app.use('/api/auth/otp', otpRoutes);
 app.use('/api/email', emailRoutes);
 
-<<<<<<< HEAD
 // Helper function to determine if we're in production mode
 const isProduction = () => process.env.NODE_ENV === 'production';
 
@@ -132,21 +131,14 @@ app.use((err, req, res, next) => {
     method: req.method,
   });
 
-  // Send JSON error response
-  res.status(err.status || 500).json({
-    error: isProduction() ? 'Internal server error' : err.message,
-=======
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-
+  // Don't send response if headers already sent
   if (res.headersSent) {
     return next(err);
   }
 
+  // Send JSON error response
   res.status(err.status || 500).json({
-    error: err.message || 'Internal server error',
->>>>>>> codex/ensure-frontend-and-backend-integration
+    error: isProduction() ? 'Internal server error' : err.message,
   });
 });
 
