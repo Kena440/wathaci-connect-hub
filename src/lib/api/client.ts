@@ -62,10 +62,14 @@ export async function apiGet<T = unknown>(path: string, options: Omit<ApiFetchOp
   return apiFetch<T>(path, { ...options, method: 'GET' });
 }
 
-export async function apiPost<T = unknown>(path: string, body?: unknown, options: Omit<ApiFetchOptions, 'method' | 'body'> = {}): Promise<T> {
+export async function apiPost<T = unknown>(
+  path: string, 
+  body?: Record<string, unknown> | unknown[] | null, 
+  options: Omit<ApiFetchOptions, 'method' | 'body'> = {}
+): Promise<T> {
   return apiFetch<T>(path, { 
     ...options, 
     method: 'POST', 
-    body: body ? JSON.stringify(body) : undefined 
+    body: body !== null && body !== undefined ? JSON.stringify(body) : undefined 
   });
 }
