@@ -41,8 +41,8 @@ sync_branch() {
     # Fetch latest changes
     git fetch origin "$branch"
     
-    # Try to merge main
-    if git merge --allow-unrelated-histories --strategy-option=theirs main -m "Sync ${branch} with main: resolve conflicts by accepting main version"; then
+    # Try to merge main (we're on branch, merging main, so -X theirs accepts main's version)
+    if git merge --allow-unrelated-histories -X theirs main -m "Sync ${branch} with main: resolve conflicts by accepting main version"; then
         echo -e "${GREEN}✓ ${branch} synchronized successfully${NC}"
         
         # Push changes
@@ -78,7 +78,8 @@ fi
 echo ""
 echo -e "${YELLOW}Checking V3...${NC}"
 git checkout V3
-if git merge-base --is-ancestor V3 main; then
+# Check if main has commits that V3 doesn't have
+if [ $(git rev-list --count V3..main) -eq 0 ]; then
     echo -e "${GREEN}✓ V3 is already synchronized with main${NC}"
 else
     if sync_branch "V3"; then

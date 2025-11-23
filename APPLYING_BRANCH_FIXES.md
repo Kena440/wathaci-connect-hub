@@ -35,12 +35,12 @@ If you prefer to do it manually or the script doesn't work:
 ```bash
 # Sync V1
 git checkout V1
-git merge --allow-unrelated-histories --strategy-option=theirs main -m "Sync V1 with main"
+git merge --allow-unrelated-histories -X theirs main -m "Sync V1 with main"
 git push origin V1
 
 # Sync V2
 git checkout V2
-git merge --allow-unrelated-histories --strategy-option=theirs main -m "Sync V2 with main"
+git merge --allow-unrelated-histories -X theirs main -m "Sync V2 with main"
 git push origin V2
 
 # V3 is already synced, no action needed

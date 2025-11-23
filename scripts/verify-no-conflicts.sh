@@ -25,13 +25,14 @@ test_merge() {
     
     git checkout -q "$target"
     
-    if git merge --no-commit --no-ff "$source" 2>&1 | grep -q "CONFLICT"; then
+    # Try merge, check exit status for conflicts
+    if ! git merge --no-commit --no-ff "$source" >/dev/null 2>&1; then
         echo -e "${RED}✗ CONFLICT FOUND${NC}"
         git merge --abort 2>/dev/null || true
         return 1
     else
         echo -e "${GREEN}✓ Clean merge${NC}"
-        git merge --abort 2>/dev/null || git reset --hard HEAD 2>/dev/null || true
+        git merge --abort 2>/dev/null || true
         return 0
     fi
 }
