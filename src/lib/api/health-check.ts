@@ -5,7 +5,6 @@
  * Used for connection status monitoring and debugging.
  */
 
-import { apiFetch } from '@/lib/api/client';
 import { getApiEndpoint } from '@/config/api';
 
 export type HealthStatus = {
@@ -42,16 +41,23 @@ export const checkApiHealth = async (timeout = 5000): Promise<HealthStatus> => {
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   try {
-    const data = await apiFetch<{ status?: string; timestamp?: string; uptime?: number; environment?: string }>(
-      '/health',
-      {
-        method: 'GET',
-        signal: controller.signal,
-      }
-    );
+    const response = await fetch(getApiEndpoint('/health'), {
+      method: 'GET',
+      signal: controller.signal,
+    });
 
     clearTimeout(timeoutId);
     const responseTime = Date.now() - startTime;
+
+    if (!response.ok) {
+      return {
+        isHealthy: false,
+        responseTime,
+        error: `Server responded with status ${response.status}`,
+      };
+    }
+
+    const data = await response.json();
 
     return {
       isHealthy: true,
@@ -88,14 +94,18 @@ export const getApiInfo = async (timeout = 5000): Promise<any> => {
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   try {
-    const data = await apiFetch('/api', {
+    const response = await fetch(getApiEndpoint('/api'), {
       method: 'GET',
       signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
 
-    return data;
+    if (!response.ok) {
+      throw new Error(`Failed to fetch API info: ${response.status}`);
+    }
+
+    return await response.json();
   } catch (error) {
     clearTimeout(timeoutId);
 
