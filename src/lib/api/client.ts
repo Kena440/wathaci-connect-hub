@@ -30,7 +30,7 @@ export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptio
 
   const contentType = response.headers.get('content-type') ?? '';
   const shouldParseJson = parseJson ?? contentType.includes('application/json');
-  
+
   let data: unknown;
   if (shouldParseJson) {
     try {
@@ -57,4 +57,3 @@ export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptio
 
   return data as T;
 }
-
