@@ -70,7 +70,9 @@ const corsMiddleware = cors
         // Allow requests without Origin header (e.g., server-to-server, health checks, CLI tools)
         if (!origin) return callback(null, true);
         if (allowAllOrigins || allowedOrigins.includes(origin)) return callback(null, true);
-        return callback(new Error('Not allowed by CORS'));
+        const error = new Error('Not allowed by CORS');
+        error.status = 403;
+        return callback(error);
       },
       credentials: true,
     })

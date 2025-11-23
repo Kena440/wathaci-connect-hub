@@ -7,7 +7,9 @@ const createCorsMiddleware = ({ allowedOrigins = [], allowCredentials = false, a
     const isAllowed = (allowNoOrigin && !origin) || allowAll || normalizedOrigins.includes(origin);
 
     if (!isAllowed) {
-      return next(new Error('Not allowed by CORS'));
+      const error = new Error('Not allowed by CORS');
+      error.status = 403;
+      return next(error);
     }
 
     if (origin) {
