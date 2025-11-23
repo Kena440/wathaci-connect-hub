@@ -57,4 +57,3 @@ export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptio
 
   return data as T;
 }
-

@@ -62,14 +62,17 @@ const defaultAllowedOrigins = [
 
 const configuredOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS);
 const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...configuredOrigins]));
-const allowAllOrigins = (defaultAllowedOrigins.length === 0 && configuredOrigins.length === 0) || allowedOrigins.includes('*');
+const allowAllOrigins = allowedOrigins.includes('*');
 
 const corsMiddleware = cors
   ? cors({
       origin(origin, callback) {
+        // Allow requests without Origin header (e.g., server-to-server, health checks, CLI tools)
         if (!origin) return callback(null, true);
         if (allowAllOrigins || allowedOrigins.includes(origin)) return callback(null, true);
-        return callback(new Error('Not allowed by CORS'));
+        const error = new Error('Not allowed by CORS');
+        error.status = 403;
+        return callback(error);
       },
       credentials: true,
     })
@@ -118,22 +121,24 @@ app.use('/resolve', resolveRoutes);
 app.use('/api/auth/otp', otpRoutes);
 app.use('/api/email', emailRoutes);
 
-// Helper function to determine if we're in production mode
-const isProduction = () => process.env.NODE_ENV === 'production';
 
 // Global error handler
 app.use((err, req, res, next) => {
   // Log error details (excluding sensitive information)
   console.error('Unhandled error:', {
     message: err.message,
-    stack: isProduction() ? undefined : err.stack,
+    stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
     url: req.url,
     method: req.method,
   });
 
+  if (res.headersSent) {
+    return next(err);
+  }
+
   // Send JSON error response
   res.status(err.status || 500).json({
-    error: isProduction() ? 'Internal server error' : err.message,
+    error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
   });
 });
 
