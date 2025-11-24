@@ -29,7 +29,9 @@
     "supabase:pull": "supabase db pull",
     "supabase:push": "supabase db push",
     "supabase:deploy": "supabase functions deploy",
-    "supabase:logs": "supabase functions logs"
+    "supabase:logs": "supabase functions logs",
+    "supabase:diagnose": "bash ./scripts/diagnose-auth-profile.sh",
+    "supabase:backfill": "bash ./scripts/backfill-profiles.sh"
   },
   "dependencies": {
     "@eslint/js": "^9.9.0",
