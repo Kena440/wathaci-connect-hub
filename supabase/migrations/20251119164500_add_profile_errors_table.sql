@@ -41,7 +41,7 @@ CREATE POLICY profile_errors_admin_all ON public.profile_errors
       SELECT 1
       FROM public.profiles p_admin
       WHERE p_admin.id = auth.uid()
-        AND p_admin.account_type = 'ADMIN'
+        AND p_admin.account_type = 'government'
     )
   );
 
