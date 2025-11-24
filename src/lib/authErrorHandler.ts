@@ -129,14 +129,33 @@ function parseSupabaseAuthError(error: AuthError): DetailedAuthError {
     };
   }
 
-  // Rate limiting
-  if (message.includes('rate limit') || message.includes('too many requests')) {
+  // Rate limiting and blocked signups
+  if (
+    message.includes('rate limit') || 
+    message.includes('too many requests') ||
+    message.includes('too many signups') ||
+    message.includes('email rate limit') ||
+    message.includes('for security purposes, you can only request this once')
+  ) {
     return {
-      friendlyMessage: 'Too many attempts. Please wait a moment and try again.',
-      errorCode: 'RATE_LIMITED',
+      friendlyMessage: 'Too many signup attempts detected. Please wait 5-10 minutes before trying again.',
+      errorCode: 'SIGNUP_RATE_LIMITED',
       originalMessage: error.message,
       category: 'validation',
+      suggestedAction: 'Wait at least 5-10 minutes, then try signing up again. If you already have an account, try signing in instead.',
       shouldReport: false,
+    };
+  }
+
+  // Blocked by abuse protection
+  if (message.includes('blocked') || message.includes('abuse protection') || message.includes('spam detection')) {
+    return {
+      friendlyMessage: 'Your signup attempt has been temporarily blocked for security reasons.',
+      errorCode: 'SIGNUP_BLOCKED',
+      originalMessage: error.message,
+      category: 'validation',
+      suggestedAction: 'Please wait 10-15 minutes and try again. If the issue persists, contact support@wathaci.com',
+      shouldReport: true, // We want to know about these to investigate
     };
   }
 
