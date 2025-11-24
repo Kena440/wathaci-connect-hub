@@ -83,6 +83,7 @@ const GovernmentAssessment = lazy(() =>
   }))
 );
 const DocumentGenerators = lazy(() => import("./pages/DocumentGenerators"));
+const CreditPassport = lazy(() => import("./pages/CreditPassport"));
 
 // Onboarding pages
 const SmeNeedsAssessmentPage = lazy(() =>
@@ -284,6 +285,14 @@ export const AppRoutes = () => (
         element={
           <PrivateRoute>
             <DocumentGenerators />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/credit-passport"
+        element={
+          <PrivateRoute>
+            <CreditPassport />
           </PrivateRoute>
         }
       />
