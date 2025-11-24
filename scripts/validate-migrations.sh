@@ -22,31 +22,33 @@ ERRORS=0
 for migration in "${MIGRATIONS[@]}"; do
   echo -e "Checking ${YELLOW}$migration${NC}..."
   
-  # Use pg_parse to check syntax (if available), or basic grep checks
-  if command -v psql >/dev/null 2>&1; then
-    # Try to connect to a dummy database for syntax check only
-    # This won't execute, just validate syntax
-    if psql -v ON_ERROR_STOP=1 postgres://localhost:5432/nonexistent \
-         -f "$migration" --no-psqlrc -q 2>&1 | grep -qi "syntax error"; then
-      echo -e "${RED}✗ Syntax error found in $migration${NC}"
-      ERRORS=$((ERRORS + 1))
-    else
-      # Check for common SQL issues via pattern matching
-      if grep -E "(\bFROM\s+FROM\b|\bWHERE\s+WHERE\b|\bSELECT\s+FROM\b)" "$migration" >/dev/null; then
-        echo -e "${RED}✗ Potential SQL error in $migration${NC}"
-        ERRORS=$((ERRORS + 1))
-      else
-        echo -e "${GREEN}✓ Syntax looks good${NC}"
-      fi
-    fi
+  # Basic pattern-based validation for common SQL errors
+  ERROR_FOUND=0
+  
+  # Check for duplicate keywords (but not SELECT FROM which is valid)
+  if grep -E "(\bFROM\s+FROM\b|\bWHERE\s+WHERE\b)" "$migration" >/dev/null; then
+    echo -e "${RED}✗ Duplicate keywords found in $migration${NC}"
+    ERROR_FOUND=1
+  fi
+  
+  # Check for basic syntax issues
+  if grep -E "(\bSELECT\s*;|\bFROM\s*;|\bWHERE\s*;)" "$migration" >/dev/null; then
+    echo -e "${RED}✗ Incomplete SQL statement in $migration${NC}"
+    ERROR_FOUND=1
+  fi
+  
+  # Check for unmatched BEGIN/COMMIT
+  BEGIN_COUNT=$(grep -c "^BEGIN;" "$migration" || true)
+  COMMIT_COUNT=$(grep -c "^COMMIT;" "$migration" || true)
+  if [[ $BEGIN_COUNT -ne $COMMIT_COUNT ]]; then
+    echo -e "${RED}✗ Unmatched BEGIN/COMMIT in $migration (BEGIN: $BEGIN_COUNT, COMMIT: $COMMIT_COUNT)${NC}"
+    ERROR_FOUND=1
+  fi
+  
+  if [[ $ERROR_FOUND -eq 0 ]]; then
+    echo -e "${GREEN}✓ Basic validation passed${NC}"
   else
-    # Basic pattern-based validation
-    if grep -E "(\bFROM\s+FROM\b|\bWHERE\s+WHERE\b|\bSELECT\s+FROM\b)" "$migration" >/dev/null; then
-      echo -e "${RED}✗ Potential SQL error in $migration${NC}"
-      ERRORS=$((ERRORS + 1))
-    else
-      echo -e "${GREEN}✓ Basic validation passed${NC}"
-    fi
+    ERRORS=$((ERRORS + 1))
   fi
   echo ""
 done

@@ -7,7 +7,11 @@ BEGIN;
 -- 1. Create a view to extract signup events from audit logs
 CREATE OR REPLACE VIEW public.signup_audit_summary AS
 SELECT DISTINCT
-  (payload->'traits'->>'user_id')::uuid AS user_id,
+  CASE 
+    WHEN payload->'traits'->>'user_id' ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    THEN (payload->'traits'->>'user_id')::uuid
+    ELSE NULL
+  END AS user_id,
   payload->'traits'->>'user_email' AS email,
   payload->>'action' AS action,
   created_at
@@ -17,7 +21,8 @@ WHERE payload->>'action' IN (
   'user_repeated_signup',
   'user_confirmation_requested'
 )
-AND payload->'traits'->>'user_id' IS NOT NULL;
+AND payload->'traits'->>'user_id' IS NOT NULL
+AND payload->'traits'->>'user_id' ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
 
 -- 2. Create a view to identify users with missing profiles
 CREATE OR REPLACE VIEW public.auth_profile_mismatch AS
@@ -265,5 +270,17 @@ COMMENT ON FUNCTION public.get_user_signup_events(uuid) IS
 
 COMMENT ON FUNCTION public.monitor_signup_health() IS 
   'Returns signup health metrics for the last hour (percentage of successful profile creations)';
+
+-- 9. Create recommended indexes for performance (if tables exist and indexes don't)
+-- Index for user_events table to optimize monitoring queries
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'user_events') THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND tablename = 'user_events' AND indexname = 'idx_user_events_kind_created_at') THEN
+      CREATE INDEX idx_user_events_kind_created_at ON public.user_events(kind, created_at DESC);
+      RAISE NOTICE 'Created performance index: idx_user_events_kind_created_at';
+    END IF;
+  END IF;
+END $$;
 
 COMMIT;

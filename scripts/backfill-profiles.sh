@@ -31,6 +31,19 @@ fi
 DRY_RUN="${1:-true}"
 BATCH_SIZE="${2:-100}"
 
+# Validate inputs
+if [[ "$DRY_RUN" != "true" && "$DRY_RUN" != "false" ]]; then
+  echo -e "${RED}Error: First parameter must be 'true' or 'false'${NC}"
+  echo "Usage: $0 [true|false] [batch_size]"
+  exit 1
+fi
+
+if ! [[ "$BATCH_SIZE" =~ ^[0-9]+$ ]] || [[ "$BATCH_SIZE" -lt 1 ]] || [[ "$BATCH_SIZE" -gt 1000 ]]; then
+  echo -e "${RED}Error: Batch size must be a number between 1 and 1000${NC}"
+  echo "Usage: $0 [true|false] [batch_size]"
+  exit 1
+fi
+
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║         Profile Backfill Utility                               ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"

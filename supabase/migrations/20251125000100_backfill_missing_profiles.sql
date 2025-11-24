@@ -60,16 +60,22 @@ BEGIN
     account_type = COALESCE(public.profiles.account_type, EXCLUDED.account_type),
     updated_at = timezone('utc', now());
   
-  -- Log the event
-  PERFORM public.log_user_event(
-    p_user_id,
-    'profile_backfilled',
-    jsonb_build_object(
-      'email', v_email,
-      'account_type', v_account_type,
-      'backfill_time', now()
-    )
-  );
+  -- Log the event (if function exists)
+  BEGIN
+    PERFORM public.log_user_event(
+      p_user_id,
+      'profile_backfilled',
+      jsonb_build_object(
+        'email', v_email,
+        'account_type', v_account_type,
+        'backfill_time', now()
+      )
+    );
+  EXCEPTION
+    WHEN undefined_function THEN
+      -- log_user_event not available, continue without logging
+      NULL;
+  END;
   
   RETURN jsonb_build_object(
     'success', true,
@@ -80,15 +86,19 @@ BEGIN
   );
   
 EXCEPTION WHEN OTHERS THEN
-  -- Log the error
-  PERFORM public.log_user_event(
-    p_user_id,
-    'profile_backfill_error',
-    jsonb_build_object(
-      'error', SQLERRM,
-      'sqlstate', SQLSTATE
-    )
-  );
+  -- Log the error (if function exists)
+  BEGIN
+    PERFORM public.log_user_event(
+      p_user_id,
+      'profile_backfill_error',
+      jsonb_build_object(
+        'error', SQLERRM,
+        'sqlstate', SQLSTATE
+      )
+    );
+  EXCEPTION WHEN undefined_function THEN
+    NULL;
+  END;
   
   RETURN jsonb_build_object(
     'success', false,
