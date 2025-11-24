@@ -46,10 +46,12 @@ import {
   ResourcePurchaseService,
   resourcePurchaseService,
 } from './resource-purchase-service';
+import { documentGeneratorService } from './document-generator-service';
 
 export {
   ResourcePurchaseService,
   resourcePurchaseService,
+  documentGeneratorService,
 };
 
 // Transfer recipient services

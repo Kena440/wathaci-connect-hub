@@ -89,6 +89,7 @@ app.use((req, res, next) => {
 const userRoutes = require('./routes/users');
 const logRoutes = require('./routes/logs');
 const paymentRoutes = require('./routes/payment');
+const documentRoutes = require('./routes/documents');
 const resolveRoutes = require('./routes/resolve');
 const otpRoutes = require('./routes/otp');
 const emailRoutes = require('./routes/email');
@@ -109,6 +110,8 @@ app.get('/api', (req, res) => {
       users: 'POST /users, POST /api/users',
       logs: 'POST /api/logs, GET /api/logs',
       payment: 'GET /api/payment/readiness, POST /api/payment/webhook',
+      documents:
+        'GET /api/documents, GET /api/documents/:id, POST /api/documents/pay, POST /api/documents/:id/confirm-payment, POST /api/documents/:id/generate',
       resolve: 'POST /resolve/lenco-merchant',
       otp: 'POST /api/auth/otp/send, POST /api/auth/otp/verify',
       email: 'GET /api/email/test, GET /api/email/status, POST /api/email/send, POST /api/email/send-otp, POST /api/email/send-verification, POST /api/email/send-password-reset',
@@ -120,6 +123,7 @@ app.get('/api', (req, res) => {
 app.use(['/users', '/api/users'], userRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/documents', documentRoutes);
 app.use('/resolve', resolveRoutes);
 app.use('/api/auth/otp', otpRoutes);
 app.use('/api/email', emailRoutes);

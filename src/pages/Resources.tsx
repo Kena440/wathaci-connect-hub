@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Download, Eye, Calendar, User, Search } from 'lucide-react';
+import { FileText, Download, Eye, Calendar, User, Search, Sparkles, Lock } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { LencoPayment } from '@/components/LencoPayment';
@@ -252,6 +252,32 @@ const Resources = () => {
         <div className="relative z-10 max-w-6xl mx-auto px-6 py-12 bg-gray-50">
           {activeTab === 'documents' && (
             <div>
+              <Card className="mb-6 border-emerald-200 bg-white">
+                <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-full bg-emerald-50 p-3 text-emerald-700">
+                      <Sparkles className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <CardTitle>AI Business Plan & Pitch Deck Generators</CardTitle>
+                      <CardDescription>
+                        Pay-per-document (ZMW150 each) with receipts, private storage, and expiring download links.
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-start gap-2 md:items-end">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Lock className="h-4 w-4" /> Payment required • No free generations
+                    </div>
+                    <div className="flex gap-2">
+                      <Button asChild variant="secondary">
+                        <a href="/ai-documents">Open generator</a>
+                      </Button>
+                      <Button variant="outline">ZMW300 bundle</Button>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
               <div className="flex gap-4 mb-8">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
