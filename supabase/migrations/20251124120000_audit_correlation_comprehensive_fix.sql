@@ -66,7 +66,7 @@ BEGIN
   END IF;
 END $$;
 
--- If neither kind nor event_type exists, add event_type
+-- If neither kind nor event_type exists, add event_type with default
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -75,7 +75,9 @@ BEGIN
       AND table_name = 'user_events'
       AND column_name IN ('kind', 'event_type')
   ) THEN
-    ALTER TABLE public.user_events ADD COLUMN event_type text NOT NULL;
+    ALTER TABLE public.user_events ADD COLUMN event_type text NOT NULL DEFAULT 'unknown';
+    -- Remove default after column is added (for future inserts to require explicit value)
+    ALTER TABLE public.user_events ALTER COLUMN event_type DROP DEFAULT;
   END IF;
 END $$;
 
@@ -127,7 +129,9 @@ BEGIN
     timezone('utc', now())
   );
 EXCEPTION WHEN OTHERS THEN
-  -- Swallow errors so logging never blocks the main flow
+  -- Log error but don't propagate to avoid blocking main flow
+  -- Consider adding a separate error logging mechanism if needed
+  RAISE NOTICE 'log_user_event failed: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
   NULL;
 END;
 $$;
@@ -160,7 +164,7 @@ BEGIN
   v_email := COALESCE(
     NULLIF(NEW.email, ''),
     NULLIF(NEW.raw_user_meta_data->>'email', ''),
-    'missing-email-' || NEW.id::text || '@invalid.local'
+    'missing-email-' || NEW.id::text || '@invalid.example'
   );
 
   -- Extract name fields
@@ -484,7 +488,7 @@ BEGIN
     ORDER BY u.created_at
   LOOP
     -- Extract metadata
-    v_email := COALESCE(NULLIF(v_user.email, ''), 'backfill-' || v_user.id::text || '@invalid.local');
+    v_email := COALESCE(NULLIF(v_user.email, ''), 'backfill-' || v_user.id::text || '@invalid.example');
     v_account_type := COALESCE(v_user.raw_user_meta_data->>'account_type', 'sole_proprietor');
     v_full_name := COALESCE(
       v_user.raw_user_meta_data->>'full_name',
@@ -587,7 +591,7 @@ AS $$
     END AS issue_type
   FROM auth.users u
   LEFT JOIN public.profiles p ON p.id = u.id
-  WHERE u.created_at > NOW() - (p_minutes || ' minutes')::interval
+  WHERE u.created_at > NOW() - make_interval(mins => p_minutes)
     AND (
       p.id IS NULL 
       OR NOT EXISTS(
@@ -626,10 +630,10 @@ AS $$
     COUNT(DISTINCT u.id) FILTER (WHERE p.id IS NULL) AS users_without_profiles,
     (SELECT COUNT(*) FROM public.user_events ue 
      WHERE ue.event_type = 'signup_completed' 
-       AND ue.created_at > NOW() - (p_hours || ' hours')::interval) AS signup_completed_events,
+       AND ue.created_at > NOW() - make_interval(hours => p_hours)) AS signup_completed_events,
     (SELECT COUNT(*) FROM public.user_events ue 
      WHERE ue.event_type = 'profile_creation_error' 
-       AND ue.created_at > NOW() - (p_hours || ' hours')::interval) AS profile_creation_errors,
+       AND ue.created_at > NOW() - make_interval(hours => p_hours)) AS profile_creation_errors,
     COUNT(DISTINCT u.id) FILTER (
       WHERE p.id IS NOT NULL 
         AND EXISTS(
@@ -639,7 +643,7 @@ AS $$
     ) AS healthy_signups
   FROM auth.users u
   LEFT JOIN public.profiles p ON p.id = u.id
-  WHERE u.created_at > NOW() - (p_hours || ' hours')::interval;
+  WHERE u.created_at > NOW() - make_interval(hours => p_hours);
 $$;
 
 COMMENT ON FUNCTION public.get_signup_statistics(integer) IS 
