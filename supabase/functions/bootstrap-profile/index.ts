@@ -29,15 +29,26 @@ const json = (obj: Record<string, unknown>, status = 200) =>
     headers: { "Content-Type": "application/json" },
   });
 
-const logUserEvent = async (userId: string, kind: string, payload: JsonRecord = null) => {
+const logUserEvent = async (
+  userId: string,
+  eventType: string,
+  email: string | null | undefined,
+  metadata: JsonRecord = null
+) => {
+  const emailValue = email ?? `missing-email-${userId}@example.invalid`;
+
   const { error } = await supabaseAdmin.from("user_events").insert({
     user_id: userId,
-    kind,
-    payload,
+    event_type: eventType,
+    email: emailValue,
+    metadata,
+    // Maintain legacy columns for backward compatibility with existing analytics.
+    kind: eventType,
+    payload: metadata,
   });
 
   if (error) {
-    console.error(`[bootstrap-profile] failed to log user_event ${kind}`, error);
+    console.error(`[bootstrap-profile] failed to log user_event ${eventType}`, error);
   }
 };
 
@@ -65,18 +76,28 @@ Deno.serve(async (req: Request) => {
     return json({ error: "userId required" }, 400);
   }
 
-  await logUserEvent(userId, "bootstrap_profile_start", {
+  await logUserEvent(
+    userId,
+    "bootstrap_profile_start",
     email,
-    msisdn,
-    profile_type,
-  });
+    {
+      email,
+      msisdn,
+      profile_type,
+    }
+  );
 
   if (!msisdn || msisdn.trim() === "") {
-    await logUserEvent(userId, "bootstrap_profile_missing_msisdn", {
+    await logUserEvent(
+      userId,
+      "bootstrap_profile_missing_msisdn",
       email,
-      full_name,
-      msisdn,
-    });
+      {
+        email,
+        full_name,
+        msisdn,
+      }
+    );
   }
 
   try {
@@ -90,7 +111,7 @@ Deno.serve(async (req: Request) => {
 
     if (ensureResult.error) {
       console.error("[bootstrap-profile] ensure_profile_exists error", ensureResult.error);
-      await logUserEvent(userId, "bootstrap_profile_error", {
+      await logUserEvent(userId, "bootstrap_profile_error", email, {
         error: ensureResult.error.message,
         hint: ensureResult.error.hint,
         code: ensureResult.error.code,
@@ -107,19 +128,19 @@ Deno.serve(async (req: Request) => {
 
     if (error) {
       console.error("[bootstrap-profile] profile select error", error);
-      await logUserEvent(userId, "bootstrap_profile_error", { error: error.message, code: error.code });
+      await logUserEvent(userId, "bootstrap_profile_error", email, { error: error.message, code: error.code });
 
       return json({ error: "failed to read profile" }, 500);
     }
 
-    await logUserEvent(userId, "bootstrap_profile_ok", {
+    await logUserEvent(userId, "bootstrap_profile_ok", email, {
       profile_id: profile.id,
     });
 
     return json({ ok: true, profile }, 200);
   } catch (error) {
     console.error("[bootstrap-profile] unexpected error", error);
-    await logUserEvent(userId, "bootstrap_profile_error", { error: String(error) });
+    await logUserEvent(userId, "bootstrap_profile_error", email, { error: String(error) });
 
     return json({ error: "internal error" }, 500);
   }
