@@ -381,6 +381,76 @@ For issues or questions:
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2025-11-19  
+## 🔍 Auth Audit & Profile Management
+
+### New Documentation (2025-11-24)
+
+Complete solution for Supabase authentication audit log correlation and profile management:
+
+1. **[AUTH_AUDIT_INTEGRATION_GUIDE.md](./AUTH_AUDIT_INTEGRATION_GUIDE.md)** ⭐ **NEW**
+   - Complete integration guide with TypeScript/React examples
+   - Audit log correlation using `actor_id` and `actor_username`
+   - Application-level event logging
+   - **Size**: 21KB | **Read Time**: 25-30 min
+
+2. **[AUTH_AUDIT_BLOCKED_SIGNUPS.md](./AUTH_AUDIT_BLOCKED_SIGNUPS.md)** ⭐ **NEW**
+   - Deep dive into `[blocked]` signups
+   - Rate limiting and abuse protection
+   - User support guidelines
+   - **Size**: 16KB | **Read Time**: 15-20 min
+
+3. **[AUTH_AUDIT_COMPLETE_SUMMARY.md](./AUTH_AUDIT_COMPLETE_SUMMARY.md)** ⭐ **NEW**
+   - Executive summary and production checklist
+   - Complete system architecture
+   - Deployment verification
+   - **Size**: 15KB | **Read Time**: 15-20 min
+
+4. **[AUTH_AUDIT_QUICK_REFERENCE.md](./AUTH_AUDIT_QUICK_REFERENCE.md)** ⭐ **NEW**
+   - Quick reference for common queries
+   - Alert thresholds and troubleshooting
+   - **Size**: 7KB | **Read Time**: 5-10 min
+
+### SQL Scripts
+
+Located in `backend/supabase/`:
+
+1. **[auth_audit_comprehensive_guide.sql](../../backend/supabase/auth_audit_comprehensive_guide.sql)** ⭐ **NEW**
+   - All audit log correlation queries
+   - Profile backfill utilities
+   - Event logging examples
+   - **Size**: 30KB | **1100+ lines**
+
+2. **[auth_audit_monitoring_dashboard.sql](../../backend/supabase/auth_audit_monitoring_dashboard.sql)** ⭐ **NEW**
+   - Production monitoring queries
+   - Real-time health checks
+   - Critical alerts
+   - **Size**: 24KB | **900+ lines**
+
+### Key Features
+
+- ✅ **Audit Log Correlation:** Correctly use `actor_id` and `actor_username` (traits.user_id is NULL)
+- ✅ **Blocked Signup Handling:** Complete explanation of `[blocked]` suffix
+- ✅ **Automatic Profile Creation:** Database trigger ensures profiles always created
+- ✅ **Event Logging:** Application-controlled `user_events` table
+- ✅ **Production Monitoring:** Real-time alerts and health checks
+
+### Quick Start
+
+```sql
+-- 1. Check system health
+SELECT * FROM public.get_signup_statistics(24);
+
+-- 2. Run backfill if needed
+SELECT * FROM public.backfill_missing_profiles();
+
+-- 3. Verify no issues
+SELECT * FROM public.check_recent_signup_issues(10);
+```
+
+See [AUTH_AUDIT_QUICK_REFERENCE.md](./AUTH_AUDIT_QUICK_REFERENCE.md) for more.
+
+---
+
+**Document Version**: 1.1  
+**Last Updated**: 2025-11-24  
 **Maintained By**: Development Team
