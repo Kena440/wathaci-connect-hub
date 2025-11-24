@@ -1,0 +1,220 @@
+{
+  "description": "Example diagnosis output for a Micro SME - Early Stage Business",
+  "sme_profile": {
+    "business_name": "Chikwanda General Dealers",
+    "sector": "retail",
+    "years_in_operation": 1,
+    "employee_count_fulltime": 1,
+    "registration_status": "sole_trader",
+    "female_ownership_pct": 100,
+    "business_model": ["B2C"],
+    "revenue_model": ["product_sales"],
+    "has_board_of_directors": false,
+    "uses_accounting_software": false
+  },
+  "diagnosis_output": {
+    "overall_summary": {
+      "health_band": "developing",
+      "business_stage": "early",
+      "headline": "Developing early-stage business with potential for growth",
+      "key_strengths": [
+        "Registered as sole trader",
+        "100% women-owned - eligible for women enterprise programs",
+        "Clear B2C business model"
+      ],
+      "urgent_gaps": [
+        "No formal financial record keeping",
+        "Not tax registered",
+        "No business website or social media"
+      ],
+      "recommended_themes": [
+        "Focus on compliance and regulatory requirements",
+        "Improve financial documentation and track record",
+        "Enhance digital presence and capabilities"
+      ]
+    },
+    "scores": {
+      "funding_readiness": 25,
+      "compliance_maturity": 20,
+      "governance_maturity": 15,
+      "digital_maturity": 10,
+      "market_readiness": 35,
+      "operational_efficiency": 20
+    },
+    "swot_analysis": {
+      "strengths": [
+        { "id": "str-1", "text": "Registered as sole trader", "importance": "medium" },
+        { "id": "str-2", "text": "1 year in operation", "importance": "low" },
+        { "id": "str-3", "text": "Clear B2C business model", "importance": "medium" },
+        { "id": "str-4", "text": "100% women-owned", "importance": "high" }
+      ],
+      "weaknesses": [
+        { "id": "weak-1", "text": "Not tax registered", "importance": "high" },
+        { "id": "weak-2", "text": "No financial records available", "importance": "high" },
+        { "id": "weak-3", "text": "No business website", "importance": "medium" },
+        { "id": "weak-4", "text": "No social media presence", "importance": "medium" },
+        { "id": "weak-5", "text": "No governance structures", "importance": "low" }
+      ],
+      "opportunities": [
+        { "id": "opp-1", "text": "Eligible for women-owned business programs and funding", "importance": "high" },
+        { "id": "opp-2", "text": "Growing retail market in the area", "importance": "medium" },
+        { "id": "opp-3", "text": "Mobile money penetration enables digital payments", "importance": "medium" }
+      ],
+      "threats": [
+        { "id": "threat-1", "text": "Limited track record may affect access to finance", "importance": "high" },
+        { "id": "threat-2", "text": "Non-compliance may result in penalties", "importance": "high" },
+        { "id": "threat-3", "text": "Load shedding affects retail operations", "importance": "medium" }
+      ]
+    },
+    "bottlenecks": [
+      {
+        "id": "bn-1",
+        "area": "Compliance",
+        "severity": "high",
+        "description": "Not tax registered",
+        "impact": "Cannot access formal finance or government tenders"
+      },
+      {
+        "id": "bn-2",
+        "area": "Financial Management",
+        "severity": "high",
+        "description": "No financial records available",
+        "impact": "Limits ability to access bank loans and grants"
+      },
+      {
+        "id": "bn-3",
+        "area": "Digital Presence",
+        "severity": "medium",
+        "description": "No online presence",
+        "impact": "Limits market reach and customer acquisition"
+      }
+    ],
+    "recommendations": [
+      {
+        "id": "rec-1",
+        "priority": 1,
+        "area": "Compliance",
+        "action": "Register for tax with ZRA",
+        "why": "Tax registration is required for formal business operations and accessing finance",
+        "how": [
+          "Visit ZRA e-portal or nearest ZRA office",
+          "Complete TPIN registration form",
+          "Provide ID, business details, and location",
+          "Obtain TIN certificate"
+        ],
+        "estimated_time": "1-2 weeks",
+        "difficulty": "easy",
+        "timeline_category": "NOW"
+      },
+      {
+        "id": "rec-2",
+        "priority": 2,
+        "area": "Financial Management",
+        "action": "Set up basic financial record keeping",
+        "why": "Proper records are essential for tax compliance and accessing finance",
+        "how": [
+          "Download a free mobile bookkeeping app (Wave, Zoho Invoice)",
+          "Record all daily sales and expenses",
+          "Keep receipts organized by month",
+          "Generate monthly summary reports"
+        ],
+        "estimated_time": "1-2 weeks",
+        "difficulty": "easy",
+        "timeline_category": "NOW"
+      },
+      {
+        "id": "rec-3",
+        "priority": 3,
+        "area": "Digital Presence",
+        "action": "Create a WhatsApp Business account",
+        "why": "Free way to establish online presence and reach more customers",
+        "how": [
+          "Download WhatsApp Business app",
+          "Set up business profile with name, address, hours",
+          "Add product catalog",
+          "Share contact with existing customers"
+        ],
+        "estimated_time": "1 day",
+        "difficulty": "easy",
+        "timeline_category": "NOW"
+      },
+      {
+        "id": "rec-4",
+        "priority": 4,
+        "area": "Funding",
+        "action": "Apply to women enterprise development programs",
+        "why": "As 100% women-owned, you qualify for special support programs",
+        "how": [
+          "Research programs through Wathaci Connect",
+          "Prepare basic business information",
+          "Submit applications",
+          "Follow up actively"
+        ],
+        "estimated_time": "2-4 weeks",
+        "difficulty": "medium",
+        "timeline_category": "NEXT"
+      }
+    ],
+    "recommended_partners": [
+      {
+        "partner_type": "donor",
+        "partner_id": "partner-wed-1",
+        "name": "Women Enterprise Development Programs",
+        "reason": "As a 100% women-owned business, you qualify for specialized support",
+        "suggested_product": "Grant Funding & Technical Assistance",
+        "fit_score": 90
+      },
+      {
+        "partner_type": "training_provider",
+        "partner_id": "partner-train-1",
+        "name": "SME Capacity Building Center",
+        "reason": "Training can help build business fundamentals",
+        "suggested_product": "Basic Business Management Training",
+        "fit_score": 85
+      },
+      {
+        "partner_type": "consultant",
+        "partner_id": "partner-cons-1",
+        "name": "Tax & Compliance Consultants",
+        "reason": "Professional support can help address compliance gaps quickly",
+        "suggested_product": "Tax Registration Support",
+        "fit_score": 80
+      }
+    ],
+    "suggested_opportunities": [
+      {
+        "id": "opp-grant-1",
+        "type": "grant",
+        "title": "Women Enterprise Fund",
+        "description": "Grant funding for women-owned micro enterprises",
+        "provider": "Development Partners",
+        "amount": { "min": 500, "max": 5000, "currency": "USD" },
+        "fit_score": 85,
+        "requirements": ["Women-owned", "Registered business"]
+      },
+      {
+        "id": "opp-training-1",
+        "type": "training",
+        "title": "Free Business Skills Training",
+        "description": "Basic business management and record keeping",
+        "provider": "Wathaci Academy",
+        "fit_score": 90
+      },
+      {
+        "id": "opp-mentor-1",
+        "type": "mentorship",
+        "title": "Women in Business Mentorship",
+        "description": "Connect with successful women entrepreneurs",
+        "provider": "Wathaci Connect",
+        "fit_score": 80
+      }
+    ],
+    "meta": {
+      "last_updated": "2024-01-15T10:30:00Z",
+      "data_coverage_level": "minimal",
+      "data_sources_used": ["profile"],
+      "model_version": "v1.0",
+      "prompt_version": "v1.0"
+    }
+  }
+}

@@ -1,0 +1,318 @@
+{
+  "description": "Example diagnosis output for a Mature SME - Scale Stage Business",
+  "sme_profile": {
+    "business_name": "Copperbelt Manufacturing Solutions Ltd",
+    "sector": "manufacturing",
+    "sub_sector": "metal_fabrication",
+    "years_in_operation": 8,
+    "employee_count_fulltime": 45,
+    "employee_count_parttime": 10,
+    "employee_count_casual": 15,
+    "registration_status": "company",
+    "registration_authority": "PACRA",
+    "registration_number": "12345678",
+    "tax_status": ["registered", "vat", "paye"],
+    "female_ownership_pct": 30,
+    "local_ownership_pct": 100,
+    "business_model": ["B2B", "B2G"],
+    "revenue_model": ["product_sales", "services"],
+    "website_url": "https://copperbeltmanufacturing.co.zm",
+    "social_media_links": {
+      "facebook": "https://facebook.com/copperbeltmfg",
+      "linkedin": "https://linkedin.com/company/copperbeltmfg",
+      "twitter": "https://twitter.com/copperbeltmfg"
+    },
+    "online_store_presence": ["website"],
+    "has_board_of_directors": true,
+    "has_advisory_board": true,
+    "has_hr_policy": true,
+    "has_finance_policy": true,
+    "has_procurement_policy": true,
+    "has_risk_policy": true,
+    "uses_erp": true,
+    "uses_pos": true,
+    "uses_accounting_software": true,
+    "annual_audits_done": true,
+    "tax_returns_filed_on_time": "yes"
+  },
+  "financial_data": {
+    "revenue_year_1": 1800000,
+    "revenue_year_2": 1500000,
+    "revenue_year_3": 1200000,
+    "profit_year_1": 180000,
+    "profit_year_2": 135000,
+    "profit_year_3": 96000,
+    "cash_flow_positive": true,
+    "avg_invoice_size": 15000,
+    "payment_terms_days": 45,
+    "top_3_clients_revenue_pct": 35,
+    "existing_loans_count": 2,
+    "total_debt_amount": 250000,
+    "has_defaults_or_arrears": false,
+    "currency": "USD"
+  },
+  "documents": [
+    { "document_type": "registration_certificate", "verified": true },
+    { "document_type": "tax_clearance", "verified": true, "expiry_date": "2024-12-31" },
+    { "document_type": "tin", "verified": true },
+    { "document_type": "financial_statements", "verified": true },
+    { "document_type": "insurance_policy", "verified": true }
+  ],
+  "platform_behavior": {
+    "grant_applications_count": 5,
+    "tender_applications_count": 12,
+    "login_count_30d": 25,
+    "profile_completion_pct": 95,
+    "training_courses_completed": 3,
+    "message_response_rate_pct": 85,
+    "avg_response_time_hours": 4,
+    "avg_rating": 4.5,
+    "review_count": 8
+  },
+  "diagnosis_output": {
+    "overall_summary": {
+      "health_band": "established",
+      "business_stage": "scale",
+      "headline": "Established scale-stage enterprise ready for expansion",
+      "key_strengths": [
+        "Strong 8-year track record with consistent growth",
+        "Comprehensive governance with board and policies",
+        "Fully tax compliant with clearance certificate",
+        "Audited financial statements",
+        "Full digital tools adoption (ERP, POS, Accounting)",
+        "Strong platform engagement and ratings"
+      ],
+      "urgent_gaps": [
+        "Customer concentration could be further reduced",
+        "Extended payment terms (45 days) affecting cash flow"
+      ],
+      "recommended_themes": [
+        "Leverage strengths for growth and expansion",
+        "Optimize operations and processes",
+        "Clarify market positioning and strategy"
+      ]
+    },
+    "scores": {
+      "funding_readiness": 88,
+      "compliance_maturity": 92,
+      "governance_maturity": 90,
+      "digital_maturity": 95,
+      "market_readiness": 85,
+      "operational_efficiency": 82
+    },
+    "swot_analysis": {
+      "strengths": [
+        { "id": "str-1", "text": "Formally registered company with PACRA", "importance": "high" },
+        { "id": "str-2", "text": "8 years in operation - established track record", "importance": "high" },
+        { "id": "str-3", "text": "Strong revenue growth trend", "importance": "high" },
+        { "id": "str-4", "text": "Business is profitable", "importance": "high" },
+        { "id": "str-5", "text": "Tax compliant with clearance certificate", "importance": "high" },
+        { "id": "str-6", "text": "Good debt repayment history", "importance": "high" },
+        { "id": "str-7", "text": "Financial statements available", "importance": "high" },
+        { "id": "str-8", "text": "Annual audits conducted", "importance": "high" },
+        { "id": "str-9", "text": "Board of Directors established", "importance": "high" },
+        { "id": "str-10", "text": "Comprehensive written policies in place", "importance": "high" },
+        { "id": "str-11", "text": "Full digital tools adoption", "importance": "high" },
+        { "id": "str-12", "text": "Strong social media presence (3+ platforms)", "importance": "medium" },
+        { "id": "str-13", "text": "Excellent response time", "importance": "medium" },
+        { "id": "str-14", "text": "High platform engagement", "importance": "medium" }
+      ],
+      "weaknesses": [
+        { "id": "weak-1", "text": "Extended payment terms (45 days)", "importance": "medium" },
+        { "id": "weak-2", "text": "Customer concentration at 35% of revenue", "importance": "low" }
+      ],
+      "opportunities": [
+        { "id": "opp-1", "text": "With funding readiness score of 88%, strongly positioned for bank and investor funding", "importance": "high" },
+        { "id": "opp-2", "text": "Can participate in government procurement opportunities", "importance": "high" },
+        { "id": "opp-3", "text": "Manufacturing sector has high growth potential", "importance": "high" },
+        { "id": "opp-4", "text": "Ready for regional expansion", "importance": "high" },
+        { "id": "opp-5", "text": "Ready to expand into e-commerce and digital sales channels", "importance": "medium" },
+        { "id": "opp-6", "text": "100% local ownership supports local content requirements", "importance": "medium" }
+      ],
+      "threats": [
+        { "id": "threat-1", "text": "High import dependence creates supply chain risks", "importance": "high" },
+        { "id": "threat-2", "text": "Power supply issues (load shedding) affect operations", "importance": "high" },
+        { "id": "threat-3", "text": "Skilled labor shortages in manufacturing sector", "importance": "medium" },
+        { "id": "threat-4", "text": "Foreign exchange volatility affects input costs", "importance": "medium" }
+      ]
+    },
+    "bottlenecks": [
+      {
+        "id": "bn-1",
+        "area": "Financial Management",
+        "severity": "low",
+        "description": "Extended payment terms (45 days)",
+        "impact": "Ties up working capital and may create cash flow pressure"
+      },
+      {
+        "id": "bn-2",
+        "area": "Operations",
+        "severity": "medium",
+        "description": "Power supply challenges (load shedding)",
+        "impact": "Production disruptions and increased generator costs"
+      }
+    ],
+    "recommendations": [
+      {
+        "id": "rec-1",
+        "priority": 1,
+        "area": "Growth",
+        "action": "Develop a regional expansion strategy",
+        "why": "With strong fundamentals, the business is ready for geographic expansion",
+        "how": [
+          "Research target markets (neighboring countries)",
+          "Identify local partners or agents",
+          "Develop market entry strategy",
+          "Secure expansion financing"
+        ],
+        "estimated_time": "6-12 months",
+        "difficulty": "hard",
+        "timeline_category": "NEXT"
+      },
+      {
+        "id": "rec-2",
+        "priority": 2,
+        "area": "Financial Management",
+        "action": "Negotiate improved payment terms with major clients",
+        "why": "45-day terms tie up working capital; reducing to 30 days would improve cash flow",
+        "how": [
+          "Review payment terms with top 10 clients",
+          "Offer early payment discounts",
+          "Consider invoice factoring for large orders",
+          "Implement strict collection procedures"
+        ],
+        "estimated_time": "1-3 months",
+        "difficulty": "medium",
+        "timeline_category": "NOW"
+      },
+      {
+        "id": "rec-3",
+        "priority": 3,
+        "area": "Operations",
+        "action": "Invest in backup power generation",
+        "why": "Reduce production disruptions from load shedding",
+        "how": [
+          "Assess power requirements for critical operations",
+          "Evaluate generator vs solar options",
+          "Obtain quotations from vendors",
+          "Implement phased installation"
+        ],
+        "estimated_time": "2-4 months",
+        "difficulty": "medium",
+        "timeline_category": "NEXT"
+      },
+      {
+        "id": "rec-4",
+        "priority": 4,
+        "area": "Market",
+        "action": "Further diversify customer base",
+        "why": "Reduce concentration risk even though current levels are acceptable",
+        "how": [
+          "Target new industry segments",
+          "Develop marketing for export markets",
+          "Participate in trade shows and exhibitions",
+          "Build relationships with more government entities"
+        ],
+        "estimated_time": "6-12 months",
+        "difficulty": "medium",
+        "timeline_category": "LATER"
+      },
+      {
+        "id": "rec-5",
+        "priority": 5,
+        "area": "Governance",
+        "action": "Enhance board composition with independent directors",
+        "why": "Independent directors add credibility and governance strength",
+        "how": [
+          "Identify skills gaps on current board",
+          "Search for qualified independent candidates",
+          "Formalize appointment process",
+          "Implement board evaluation practices"
+        ],
+        "estimated_time": "3-6 months",
+        "difficulty": "medium",
+        "timeline_category": "LATER"
+      }
+    ],
+    "recommended_partners": [
+      {
+        "partner_type": "bank",
+        "partner_id": "partner-bank-1",
+        "name": "Commercial Banks (Corporate Banking)",
+        "reason": "With a funding readiness score of 88%, you are strongly bankable",
+        "suggested_product": "Term Loan for Expansion",
+        "fit_score": 95
+      },
+      {
+        "partner_type": "investor",
+        "partner_id": "partner-inv-1",
+        "name": "Private Equity / Development Finance",
+        "reason": "Scale-stage manufacturing with strong governance attracts institutional investors",
+        "suggested_product": "Growth Equity Investment",
+        "fit_score": 85
+      },
+      {
+        "partner_type": "corporate",
+        "partner_id": "partner-corp-1",
+        "name": "Mining Sector Corporates",
+        "reason": "Major buyers looking for local manufacturing partners",
+        "suggested_product": "Supply Contracts",
+        "fit_score": 80
+      },
+      {
+        "partner_type": "accelerator",
+        "partner_id": "partner-acc-1",
+        "name": "Export Development Programs",
+        "reason": "Support for regional expansion and export development",
+        "suggested_product": "Export Readiness Program",
+        "fit_score": 75
+      }
+    ],
+    "suggested_opportunities": [
+      {
+        "id": "opp-loan-1",
+        "type": "loan",
+        "title": "Long-term Expansion Loan",
+        "description": "5-7 year term loan for capacity expansion",
+        "provider": "Development Banks",
+        "amount": { "min": 500000, "max": 5000000, "currency": "USD" },
+        "fit_score": 90,
+        "requirements": ["Audited statements", "Business plan", "Collateral"]
+      },
+      {
+        "id": "opp-tender-1",
+        "type": "tender",
+        "title": "Mining Sector Procurement",
+        "description": "Supply manufactured goods to mining companies",
+        "provider": "Mining Companies",
+        "fit_score": 85,
+        "requirements": ["ISO certification", "Tax clearance", "Track record"]
+      },
+      {
+        "id": "opp-investment-1",
+        "type": "investment",
+        "title": "Private Equity Investment",
+        "description": "Growth capital for expansion",
+        "provider": "PE Funds",
+        "amount": { "min": 1000000, "max": 10000000, "currency": "USD" },
+        "fit_score": 80,
+        "requirements": ["Audited statements", "Strong management", "Growth plan"]
+      },
+      {
+        "id": "opp-training-1",
+        "type": "training",
+        "title": "Export Development Training",
+        "description": "Training on export procedures and market entry",
+        "provider": "Trade Development Agency",
+        "fit_score": 75
+      }
+    ],
+    "meta": {
+      "last_updated": "2024-01-15T10:30:00Z",
+      "data_coverage_level": "comprehensive",
+      "data_sources_used": ["profile", "financial_data", "documents", "platform_behavior"],
+      "model_version": "v1.0",
+      "prompt_version": "v1.0"
+    }
+  }
+}

@@ -129,6 +129,13 @@ const ComplianceDashboard = lazy(() =>
   }))
 );
 
+// Business Health Diagnostics feature
+const BusinessHealthDashboard = lazy(() =>
+  import("./features/diagnostics/BusinessHealthDashboard").then((module) => ({
+    default: module.BusinessHealthDashboard,
+  }))
+);
+
 
 export const AppRoutes = () => (
   <Suspense fallback={<LoadingScreen />}>
@@ -274,6 +281,16 @@ export const AppRoutes = () => (
         element={
           <PrivateRoute>
             <ComplianceDashboard />
+          </PrivateRoute>
+        }
+      />
+      
+      {/* Business Health Diagnostics route */}
+      <Route
+        path="/business-health"
+        element={
+          <PrivateRoute>
+            <BusinessHealthDashboard />
           </PrivateRoute>
         }
       />

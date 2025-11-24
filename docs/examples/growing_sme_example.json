@@ -1,0 +1,282 @@
+{
+  "description": "Example diagnosis output for a Growing SME - Growth Stage Business",
+  "sme_profile": {
+    "business_name": "Lusaka Fresh Farms Ltd",
+    "sector": "agriculture",
+    "sub_sector": "horticulture",
+    "years_in_operation": 3,
+    "employee_count_fulltime": 8,
+    "employee_count_parttime": 5,
+    "employee_count_casual": 20,
+    "registration_status": "company",
+    "registration_authority": "PACRA",
+    "tax_status": ["registered", "vat"],
+    "female_ownership_pct": 40,
+    "youth_ownership_pct": 60,
+    "business_model": ["B2B", "B2C"],
+    "revenue_model": ["product_sales"],
+    "website_url": "https://lusakafreshfarms.com",
+    "social_media_links": {
+      "facebook": "https://facebook.com/lusakafreshfarms",
+      "instagram": "https://instagram.com/lusakafreshfarms"
+    },
+    "has_board_of_directors": false,
+    "has_advisory_board": true,
+    "has_hr_policy": true,
+    "has_finance_policy": false,
+    "uses_accounting_software": true,
+    "uses_pos": true,
+    "annual_audits_done": false,
+    "tax_returns_filed_on_time": "yes"
+  },
+  "financial_data": {
+    "revenue_year_1": 250000,
+    "revenue_year_2": 180000,
+    "revenue_year_3": 120000,
+    "profit_year_1": 35000,
+    "cash_flow_positive": true,
+    "top_3_clients_revenue_pct": 45,
+    "existing_loans_count": 1,
+    "has_defaults_or_arrears": false,
+    "currency": "USD"
+  },
+  "diagnosis_output": {
+    "overall_summary": {
+      "health_band": "emerging",
+      "business_stage": "growth",
+      "headline": "Emerging growth-stage enterprise with strong market potential",
+      "key_strengths": [
+        "Strong revenue growth (39% YoY)",
+        "Profitable with positive cash flow",
+        "Tax compliant with returns filed on time",
+        "Good digital presence with website and social media",
+        "Advisory board in place"
+      ],
+      "urgent_gaps": [
+        "No valid tax clearance certificate",
+        "No annual audits conducted",
+        "No formal finance policy"
+      ],
+      "recommended_themes": [
+        "Strengthen governance and policy frameworks",
+        "Focus on compliance and regulatory requirements",
+        "Leverage strengths for growth and expansion"
+      ]
+    },
+    "scores": {
+      "funding_readiness": 65,
+      "compliance_maturity": 55,
+      "governance_maturity": 45,
+      "digital_maturity": 70,
+      "market_readiness": 72,
+      "operational_efficiency": 60
+    },
+    "swot_analysis": {
+      "strengths": [
+        { "id": "str-1", "text": "Formally registered company with PACRA", "importance": "high" },
+        { "id": "str-2", "text": "Strong revenue growth trend (39% YoY)", "importance": "high" },
+        { "id": "str-3", "text": "Business is profitable", "importance": "high" },
+        { "id": "str-4", "text": "Tax registered with VAT", "importance": "medium" },
+        { "id": "str-5", "text": "Good debt repayment history", "importance": "medium" },
+        { "id": "str-6", "text": "Business website available", "importance": "medium" },
+        { "id": "str-7", "text": "Advisory board in place", "importance": "medium" },
+        { "id": "str-8", "text": "Uses accounting software and POS", "importance": "medium" }
+      ],
+      "weaknesses": [
+        { "id": "weak-1", "text": "No valid tax clearance certificate", "importance": "high" },
+        { "id": "weak-2", "text": "No annual audits conducted", "importance": "medium" },
+        { "id": "weak-3", "text": "No formal finance policy", "importance": "medium" },
+        { "id": "weak-4", "text": "No formal board of directors", "importance": "low" }
+      ],
+      "opportunities": [
+        { "id": "opp-1", "text": "Eligible for youth entrepreneurship programs (60% youth-owned)", "importance": "high" },
+        { "id": "opp-2", "text": "With funding readiness score of 65%, ready to approach formal lenders", "importance": "high" },
+        { "id": "opp-3", "text": "Agriculture sector has high growth potential", "importance": "high" },
+        { "id": "opp-4", "text": "Can participate in government procurement opportunities", "importance": "medium" },
+        { "id": "opp-5", "text": "Ready to expand into e-commerce and digital sales channels", "importance": "medium" }
+      ],
+      "threats": [
+        { "id": "threat-1", "text": "Climate variability affects agricultural operations", "importance": "high" },
+        { "id": "threat-2", "text": "Customer concentration at 45% may create revenue risk", "importance": "medium" },
+        { "id": "threat-3", "text": "Power supply issues (load shedding) affect operations", "importance": "medium" }
+      ]
+    },
+    "bottlenecks": [
+      {
+        "id": "bn-1",
+        "area": "Compliance",
+        "severity": "high",
+        "description": "No valid tax clearance certificate",
+        "impact": "Cannot participate in government tenders or access some funding"
+      },
+      {
+        "id": "bn-2",
+        "area": "Governance",
+        "severity": "medium",
+        "description": "No annual audits conducted",
+        "impact": "Reduces credibility with investors and formal lenders"
+      },
+      {
+        "id": "bn-3",
+        "area": "Governance",
+        "severity": "medium",
+        "description": "No formal finance policy",
+        "impact": "May create internal control weaknesses"
+      }
+    ],
+    "recommendations": [
+      {
+        "id": "rec-1",
+        "priority": 1,
+        "area": "Compliance",
+        "action": "Obtain a current Tax Clearance Certificate",
+        "why": "Required for government tenders and many formal financing options",
+        "how": [
+          "Log into ZRA e-portal",
+          "Ensure all tax returns are filed and payments up to date",
+          "Submit tax clearance application",
+          "Collect certificate once approved"
+        ],
+        "estimated_time": "2-4 weeks",
+        "difficulty": "medium",
+        "timeline_category": "NOW"
+      },
+      {
+        "id": "rec-2",
+        "priority": 2,
+        "area": "Governance",
+        "action": "Develop a formal finance policy",
+        "why": "Strengthens internal controls and improves investor confidence",
+        "how": [
+          "Document authorization levels for payments",
+          "Establish expense approval process",
+          "Define financial reporting requirements",
+          "Implement segregation of duties"
+        ],
+        "estimated_time": "2-4 weeks",
+        "difficulty": "medium",
+        "timeline_category": "NOW"
+      },
+      {
+        "id": "rec-3",
+        "priority": 3,
+        "area": "Governance",
+        "action": "Engage an auditor for annual audit",
+        "why": "Audited statements increase credibility with banks and investors",
+        "how": [
+          "Get quotes from 3 audit firms",
+          "Select based on experience with SMEs",
+          "Prepare financial records for audit",
+          "Complete audit and obtain opinion"
+        ],
+        "estimated_time": "2-3 months",
+        "difficulty": "medium",
+        "timeline_category": "NEXT"
+      },
+      {
+        "id": "rec-4",
+        "priority": 4,
+        "area": "Market",
+        "action": "Diversify customer base to reduce concentration",
+        "why": "45% revenue from top 3 clients creates risk",
+        "how": [
+          "Identify new target customer segments",
+          "Develop marketing to reach smaller buyers",
+          "Consider retail/direct-to-consumer channels",
+          "Build relationships with more B2B clients"
+        ],
+        "estimated_time": "3-6 months",
+        "difficulty": "medium",
+        "timeline_category": "NEXT"
+      },
+      {
+        "id": "rec-5",
+        "priority": 5,
+        "area": "Funding",
+        "action": "Approach banks for working capital facility",
+        "why": "With 65% funding readiness, you are positioned to access bank finance",
+        "how": [
+          "Prepare business plan and financial projections",
+          "Gather required documents (tax clearance, statements)",
+          "Approach 2-3 banks with SME units",
+          "Compare terms and select best offer"
+        ],
+        "estimated_time": "2-3 months",
+        "difficulty": "medium",
+        "timeline_category": "NEXT"
+      }
+    ],
+    "recommended_partners": [
+      {
+        "partner_type": "bank",
+        "partner_id": "partner-bank-1",
+        "name": "Commercial Banks (SME Units)",
+        "reason": "With a funding readiness score of 65%, you may qualify for bank financing",
+        "suggested_product": "Working Capital Facility",
+        "fit_score": 75
+      },
+      {
+        "partner_type": "donor",
+        "partner_id": "partner-youth-1",
+        "name": "Youth Enterprise Funds",
+        "reason": "As a 60% youth-owned business, you qualify for youth enterprise programs",
+        "suggested_product": "Youth Enterprise Grant",
+        "fit_score": 90
+      },
+      {
+        "partner_type": "investor",
+        "partner_id": "partner-inv-1",
+        "name": "Agribusiness Investors",
+        "reason": "Growth-stage agribusiness with strong margins is attractive to investors",
+        "suggested_product": "Growth Equity Investment",
+        "fit_score": 70
+      },
+      {
+        "partner_type": "consultant",
+        "partner_id": "partner-cons-1",
+        "name": "Financial Advisory Services",
+        "reason": "Can help with audit preparation and finance policy development",
+        "suggested_product": "Financial Systems Setup",
+        "fit_score": 80
+      }
+    ],
+    "suggested_opportunities": [
+      {
+        "id": "opp-grant-1",
+        "type": "grant",
+        "title": "Youth Enterprise Development Grant",
+        "description": "Grants for youth-owned businesses in agriculture",
+        "provider": "Youth Development Fund",
+        "amount": { "min": 5000, "max": 25000, "currency": "USD" },
+        "fit_score": 88,
+        "requirements": ["Youth-owned", "Tax compliant", "Business plan"]
+      },
+      {
+        "id": "opp-loan-1",
+        "type": "loan",
+        "title": "Agricultural Working Capital Loan",
+        "description": "Short-term financing for seasonal operations",
+        "provider": "Commercial Banks",
+        "amount": { "min": 10000, "max": 100000, "currency": "USD" },
+        "fit_score": 75,
+        "requirements": ["Tax clearance", "Financial statements", "Collateral"]
+      },
+      {
+        "id": "opp-tender-1",
+        "type": "tender",
+        "title": "Government Food Procurement",
+        "description": "Supply fresh produce to government institutions",
+        "provider": "Government Ministries",
+        "fit_score": 60,
+        "requirements": ["Tax clearance", "PACRA registration", "ZRA compliance"]
+      }
+    ],
+    "meta": {
+      "last_updated": "2024-01-15T10:30:00Z",
+      "data_coverage_level": "partial",
+      "data_sources_used": ["profile", "financial_data"],
+      "model_version": "v1.0",
+      "prompt_version": "v1.0"
+    }
+  }
+}
