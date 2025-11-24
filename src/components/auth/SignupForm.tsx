@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,11 +10,21 @@ import { logSupabaseAuthError } from "@/lib/supabaseClient";
 import { getEmailConfirmationRedirectUrl } from "@/lib/emailRedirect";
 import { logAuthError, getUserFriendlyMessage, shouldReportError } from "@/lib/authErrorHandler";
 import { isStrongPassword, PASSWORD_MIN_LENGTH, passwordStrengthMessage } from "@/utils/password";
+import { 
+  recordSignupAttempt, 
+  getClientBlockedStatus, 
+  markAsBlocked, 
+  clearSignupAttempts,
+  isBlockedError,
+  getBlockedMessage,
+  formatRetryTime
+} from "@/lib/blockedSignupDetection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   fullName: z
@@ -89,11 +99,28 @@ export const SignupForm = ({
 
   const [formError, setFormError] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [blockedStatus, setBlockedStatus] = useState<ReturnType<typeof getClientBlockedStatus> | null>(null);
 
   const useSmsOtp = watch("useSmsOtp");
   const mobileNumber = watch("mobileNumber");
+  const emailValue = watch("email");
 
   const isDisabled = disabled || isSubmitting;
+
+  // Check blocked status when email changes
+  useEffect(() => {
+    if (emailValue) {
+      const status = getClientBlockedStatus(emailValue);
+      setBlockedStatus(status);
+      
+      // Show warning if user has attempted multiple times
+      if (status.attemptCount >= 2 && !status.isBlocked) {
+        setFormError(`You've attempted to sign up ${status.attemptCount} times recently. Please ensure all information is correct before trying again.`);
+      } else if (!status.isBlocked) {
+        setFormError(null);
+      }
+    }
+  }, [emailValue]);
 
   const handleProfileUpsert = async (
     userId: string,
@@ -146,6 +173,17 @@ export const SignupForm = ({
       return;
     }
 
+    // Check if user is currently blocked
+    const currentBlockedStatus = getClientBlockedStatus(values.email);
+    if (currentBlockedStatus.isBlocked && currentBlockedStatus.canRetryAt) {
+      const message = getBlockedMessage(currentBlockedStatus);
+      setFormError(`${message} You can try again at ${formatRetryTime(currentBlockedStatus.canRetryAt)}.`);
+      return;
+    }
+
+    // Record this signup attempt
+    recordSignupAttempt(values.email);
+
     const normalizedEmail = values.email.trim().toLowerCase();
     const normalizedMobileNumber = values.mobileNumber?.trim() || '';
     const normalizedAccountType = accountType;
@@ -178,12 +216,26 @@ export const SignupForm = ({
       });
 
       if (error) {
-        // Enhanced error logging with detailed context
-        logAuthError("signup-sms", error, {
-          email: normalizedEmail,
-          accountType: normalizedAccountType,
-          hasPhone: Boolean(normalizedMobileNumber),
-        });
+        // Check if this is a blocked/rate-limited error
+        if (isBlockedError(error)) {
+          // Mark email as blocked for 1 hour
+          markAsBlocked(60 * 60 * 1000);
+          
+          // Enhanced error logging with detailed context
+          logAuthError("signup-sms-blocked", error, {
+            email: normalizedEmail,
+            accountType: normalizedAccountType,
+            hasPhone: Boolean(normalizedMobileNumber),
+            blocked: true,
+          });
+        } else {
+          // Enhanced error logging with detailed context
+          logAuthError("signup-sms", error, {
+            email: normalizedEmail,
+            accountType: normalizedAccountType,
+            hasPhone: Boolean(normalizedMobileNumber),
+          });
+        }
         
         // Set user-friendly error message
         const friendlyMessage = getUserFriendlyMessage(error);
@@ -204,6 +256,9 @@ export const SignupForm = ({
         );
       }
 
+      // Clear signup attempt tracking on success
+      clearSignupAttempts();
+
       onSuccess(normalizedEmail, requiresConfirmation, normalizedMobileNumber || undefined);
     } else {
       // Email-based signup (default)
@@ -223,11 +278,24 @@ export const SignupForm = ({
       });
 
       if (error) {
-        // Enhanced error logging with detailed context
-        logAuthError("signup-email", error, {
-          email: normalizedEmail,
-          accountType: normalizedAccountType,
-        });
+        // Check if this is a blocked/rate-limited error
+        if (isBlockedError(error)) {
+          // Mark email as blocked for 1 hour
+          markAsBlocked(60 * 60 * 1000);
+          
+          // Enhanced error logging with detailed context
+          logAuthError("signup-email-blocked", error, {
+            email: normalizedEmail,
+            accountType: normalizedAccountType,
+            blocked: true,
+          });
+        } else {
+          // Enhanced error logging with detailed context
+          logAuthError("signup-email", error, {
+            email: normalizedEmail,
+            accountType: normalizedAccountType,
+          });
+        }
         
         // Set user-friendly error message
         const friendlyMessage = getUserFriendlyMessage(error);
@@ -248,6 +316,9 @@ export const SignupForm = ({
         );
       }
 
+      // Clear signup attempt tracking on success
+      clearSignupAttempts();
+
       onSuccess(normalizedEmail, requiresEmailConfirmation, normalizedMobileNumber || undefined);
     }
   };
@@ -259,12 +330,42 @@ export const SignupForm = ({
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit(onSubmit)} noValidate>
-      {formError ? (
+      {/* Loading/Submitting State */}
+      {isSubmitting && (
+        <Alert>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <AlertTitle>Creating your account</AlertTitle>
+          <AlertDescription>
+            This may take a few seconds. Please do not refresh or go back.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Blocked Status Warning */}
+      {blockedStatus && blockedStatus.isBlocked && blockedStatus.canRetryAt && (
         <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Too Many Signup Attempts</AlertTitle>
+          <AlertDescription>
+            {getBlockedMessage(blockedStatus)}
+            <br />
+            <span className="text-sm">
+              You can try again at {formatRetryTime(blockedStatus.canRetryAt)}.
+              {' '}If you already have an account, <Link to="/signin" className="underline">try signing in instead</Link>.
+            </span>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Form Errors */}
+      {formError && !isSubmitting ? (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
           <AlertDescription>{formError}</AlertDescription>
         </Alert>
       ) : null}
 
+      {/* Profile Errors */}
       {profileError ? (
         <Alert variant="warning">
           <AlertDescription>{profileError}</AlertDescription>
@@ -398,8 +499,19 @@ export const SignupForm = ({
         </label>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isDisabled}>
-        {submitLabel}
+      <Button 
+        type="submit" 
+        className="w-full" 
+        disabled={isDisabled || (blockedStatus?.isBlocked && Boolean(blockedStatus?.canRetryAt))}
+      >
+        {isSubmitting ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Creating account...
+          </>
+        ) : (
+          submitLabel
+        )}
       </Button>
 
       <p className="text-center text-sm text-gray-700">
