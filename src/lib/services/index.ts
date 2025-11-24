@@ -101,3 +101,16 @@ export const getService = <T extends ServiceType>(serviceName: T): ReturnType<ty
 
 // AI-powered services
 export { getCollaborationSuggestions } from './collaboration-service';
+
+// Document Generator services
+export {
+  documentGeneratorService,
+  DOCUMENT_PRICES,
+  DOCUMENT_LABELS,
+} from './document-generator-service';
+export type {
+  CreateDocumentRequestParams,
+  DocumentPaymentParams,
+  DocumentRequestResponse,
+  DocumentListResponse,
+} from './document-generator-service';

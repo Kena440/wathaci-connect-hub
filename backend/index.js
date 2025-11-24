@@ -95,6 +95,7 @@ const emailRoutes = require('./routes/email');
 const healthRoutes = require('./routes/health');
 const auditRoutes = require('./routes/audit');
 const diagnosticsRoutes = require('./routes/diagnostics');
+const documentsRoutes = require('./routes/documents');
 
 // Health check endpoint
 app.use(['/health', '/api/health'], healthRoutes);
@@ -113,6 +114,7 @@ app.get('/api', (req, res) => {
       otp: 'POST /api/auth/otp/send, POST /api/auth/otp/verify',
       email: 'GET /api/email/test, GET /api/email/status, POST /api/email/send, POST /api/email/send-otp, POST /api/email/send-verification, POST /api/email/send-password-reset',
       diagnostics: 'POST /api/diagnostics/run, GET /api/diagnostics/:companyId/latest, GET /api/diagnostics/:companyId/history',
+      documents: 'POST /api/documents/pay, POST /api/documents/webhook, GET /api/documents/:id, GET /api/documents/user/:userId, POST /api/documents/:id/generate',
     },
   });
 });
@@ -125,6 +127,7 @@ app.use('/api/auth/otp', otpRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/diagnostics', diagnosticsRoutes);
+app.use('/api/documents', documentsRoutes);
 
 
 // Global error handler
