@@ -82,6 +82,7 @@ const GovernmentAssessment = lazy(() =>
     default: module.GovernmentAssessment,
   }))
 );
+const DocumentGenerators = lazy(() => import("./pages/DocumentGenerators"));
 
 // Onboarding pages
 const SmeNeedsAssessmentPage = lazy(() =>
@@ -274,6 +275,15 @@ export const AppRoutes = () => (
         element={
           <PrivateRoute>
             <ComplianceDashboard />
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/ai-documents"
+        element={
+          <PrivateRoute>
+            <DocumentGenerators />
           </PrivateRoute>
         }
       />
