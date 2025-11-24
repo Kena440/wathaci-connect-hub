@@ -79,39 +79,59 @@ $$;
 -- end
 -- $$;
 
--- Trigger to automatically create a profile whenever a new auth user is created
-create or replace function public.handle_new_auth_user()
-returns trigger
-language plpgsql
-security definer
-set search_path = public, auth
-as $$
+-- Prefer the enhanced handle_new_user() trigger installed via migrations.
+-- If it is missing (e.g., on a fresh environment before migrations run),
+-- install a minimal implementation so profile creation still works.
+do $$
 begin
-  insert into public.profiles (id, email, account_type, profile_completed, created_at, updated_at)
-  values (
-    new.id,
-    coalesce(new.email, new.raw_user_meta_data ->> 'email'),
-    coalesce((new.raw_user_meta_data ->> 'account_type')::text, 'sole_proprietor'),
-    false,
-    timezone('utc', now()),
-    timezone('utc', now())
-  )
-  on conflict (id) do update set
-    email = excluded.email,
-    updated_at = timezone('utc', now());
+  if not exists (
+    select 1 from pg_proc p
+    join pg_namespace n on p.pronamespace = n.oid
+    where p.proname = 'handle_new_user' and n.nspname = 'public'
+  ) then
+    create or replace function public.handle_new_user()
+    returns trigger
+    language plpgsql
+    security definer
+    set search_path = public, auth
+    as $$
+    declare
+      v_email text;
+      v_account_type text;
+    begin
+      v_email := coalesce(new.email, new.raw_user_meta_data ->> 'email');
+      v_account_type := coalesce((new.raw_user_meta_data ->> 'account_type')::text, 'SME');
 
-  return new;
-exception
-  when unique_violation then
-    -- Ignore duplicate inserts that might occur during retries
-    return new;
+      insert into public.profiles (id, email, account_type, created_at, updated_at)
+      values (
+        new.id,
+        v_email,
+        v_account_type,
+        timezone('utc', now()),
+        timezone('utc', now())
+      )
+      on conflict (id) do update set
+        email = excluded.email,
+        account_type = coalesce(public.profiles.account_type, excluded.account_type),
+        updated_at = timezone('utc', now());
+
+      return new;
+    exception
+      when unique_violation then
+        return new;
+    end;
+    $$;
+  end if;
 end;
 $$;
 
--- Ensure the trigger exists on auth.users
+-- Remove the legacy function to avoid confusion with the canonical trigger path.
+drop function if exists public.handle_new_auth_user();
+
+-- Ensure the trigger exists on auth.users and points to the canonical function.
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
-  for each row execute function public.handle_new_auth_user();
+  for each row execute function public.handle_new_user();
 
 commit;

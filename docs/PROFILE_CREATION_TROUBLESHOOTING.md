@@ -12,10 +12,12 @@ When a user signs up via Supabase Auth:
 
 1. User record is created in `auth.users` table
 2. Database trigger `on_auth_user_created` fires
-3. Trigger function `handle_new_auth_user()` automatically creates a profile in `public.profiles`
+3. Trigger function `handle_new_user()` automatically creates a profile in `public.profiles`
 4. Profile is populated with email, account_type from user metadata, and default values
 
-**Source**: `backend/supabase/profiles_policies.sql` (lines 83-116)
+**Source**:
+- Canonical trigger/function: `supabase/migrations/20251119164600_enhance_handle_new_user_trigger.sql`
+- Provisioning helper: `backend/supabase/profiles_policies.sql` (installs `handle_new_user()` if missing)
 
 ### Fallback Profile Creation (Application-Level)
 
@@ -50,39 +52,66 @@ npm run supabase:provision
 
 Or manually run:
 ```sql
--- From backend/supabase/profiles_policies.sql
-CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, auth
-AS $$
-BEGIN
-  INSERT INTO public.profiles (id, email, account_type, profile_completed, created_at, updated_at)
-  VALUES (
-    new.id,
-    COALESCE(new.email, new.raw_user_meta_data ->> 'email'),
-    COALESCE((new.raw_user_meta_data ->> 'account_type')::text, 'sole_proprietor'),
-    false,
-    timezone('utc', now()),
-    timezone('utc', now())
-  )
-  ON CONFLICT (id) DO UPDATE SET
-    email = EXCLUDED.email,
-    updated_at = timezone('utc', now());
-
-  RETURN new;
-EXCEPTION
-  WHEN unique_violation THEN
-    RETURN new;
-END;
-$$;
-
+-- From supabase/migrations/20251119164600_enhance_handle_new_user_trigger.sql (canonical)
+-- Recreate the trigger if it is missing
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_auth_user();
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 ```
+
+If the function itself is missing (e.g., local dev before migrations run), the
+provisioning helper installs a minimal fallback:
+
+```sql
+-- From backend/supabase/profiles_policies.sql
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc p
+    JOIN pg_namespace n ON p.pronamespace = n.oid
+    WHERE p.proname = 'handle_new_user' AND n.nspname = 'public'
+  ) THEN
+    CREATE OR REPLACE FUNCTION public.handle_new_user()
+    RETURNS trigger
+    LANGUAGE plpgsql
+    SECURITY DEFINER
+    SET search_path = public, auth
+    AS $$
+    DECLARE
+      v_email text;
+      v_account_type text;
+    BEGIN
+      v_email := COALESCE(NEW.email, NEW.raw_user_meta_data ->> 'email');
+      v_account_type := COALESCE((NEW.raw_user_meta_data ->> 'account_type')::text, 'SME');
+
+      INSERT INTO public.profiles (id, email, account_type, created_at, updated_at)
+      VALUES (
+        NEW.id,
+        v_email,
+        v_account_type,
+        timezone('utc', now()),
+        timezone('utc', now())
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        email = EXCLUDED.email,
+        account_type = COALESCE(public.profiles.account_type, EXCLUDED.account_type),
+        updated_at = timezone('utc', now());
+
+      RETURN NEW;
+    EXCEPTION
+      WHEN unique_violation THEN
+        RETURN NEW;
+    END;
+    $$;
+  END IF;
+END;
+$$;
+```
+
+**Note**: The cleanup migration `supabase/migrations/20251120133000_cleanup_profile_triggers.sql`
+drops older duplicate triggers (`auth_create_profile`, `auth_user_created_trigger`) and ensures
+`on_auth_user_created` points to `handle_new_user()`.
 
 ### Issue 2: RLS Policies Blocking Profile Creation
 
@@ -105,7 +134,7 @@ WHERE schemaname = 'public' AND tablename = 'profiles';
 
 Ensure the trigger function has `SECURITY DEFINER` (runs with creator's privileges):
 ```sql
-ALTER FUNCTION public.handle_new_auth_user() SECURITY DEFINER;
+ALTER FUNCTION public.handle_new_user() SECURITY DEFINER;
 ```
 
 Verify RLS policies allow user to read/update their own profile:
@@ -213,38 +242,42 @@ FROM auth.users
 WHERE email = 'test@example.com';
 ```
 
-3. Update trigger to extract additional fields if needed:
+3. Update trigger to extract additional fields if needed (extend `handle_new_user()`):
 ```sql
-CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
+CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
+DECLARE
+  v_account_type public.account_type_enum;
 BEGIN
+  v_account_type := COALESCE((NEW.raw_user_meta_data ->> 'account_type')::public.account_type_enum, 'SME');
+
   INSERT INTO public.profiles (
-    id, email, account_type, profile_completed,
-    first_name, last_name, phone,
-    created_at, updated_at
+    id, email, account_type, full_name, phone, created_at, updated_at
   )
   VALUES (
-    new.id,
-    COALESCE(new.email, new.raw_user_meta_data ->> 'email'),
-    COALESCE((new.raw_user_meta_data ->> 'account_type')::text, 'sole_proprietor'),
-    false,
-    new.raw_user_meta_data ->> 'first_name',
-    new.raw_user_meta_data ->> 'last_name',
-    new.raw_user_meta_data ->> 'phone',
+    NEW.id,
+    COALESCE(NEW.email, NEW.raw_user_meta_data ->> 'email'),
+    v_account_type,
+    NEW.raw_user_meta_data ->> 'full_name',
+    NEW.raw_user_meta_data ->> 'phone',
     timezone('utc', now()),
     timezone('utc', now())
   )
   ON CONFLICT (id) DO UPDATE SET
-    email = EXCLUDED.email,
+    email = COALESCE(public.profiles.email, EXCLUDED.email),
+    account_type = COALESCE(public.profiles.account_type, EXCLUDED.account_type),
+    full_name = COALESCE(public.profiles.full_name, EXCLUDED.full_name),
+    phone = COALESCE(public.profiles.phone, EXCLUDED.phone),
     updated_at = timezone('utc', now());
 
-  RETURN new;
+  RETURN NEW;
 EXCEPTION
   WHEN unique_violation THEN
-    RETURN new;
+    RETURN NEW;
 END;
 $$;
 ```
