@@ -114,7 +114,7 @@ export interface ProfileInsert extends Omit<Profile, 'id' | 'created_at' | 'upda
   id: string;
 }
 
-export interface ProfileUpdate extends Partial<Omit<Profile, 'id' | 'created_at' | 'updated_at'>> {}
+export type ProfileUpdate = Partial<Omit<Profile, 'id' | 'created_at' | 'updated_at'>>;
 
 // ============================================================================
 // SUPPORTING TYPES
@@ -202,8 +202,9 @@ export interface SubscriptionPlanInsert
   id?: string;
 }
 
-export interface SubscriptionPlanUpdate
-  extends Partial<Omit<SubscriptionPlan, 'id' | 'created_at' | 'updated_at'>> {}
+export type SubscriptionPlanUpdate = Partial<
+  Omit<SubscriptionPlan, 'id' | 'created_at' | 'updated_at'>
+>;
 
 // ============================================================================
 // USER SUBSCRIPTIONS
@@ -228,8 +229,9 @@ export interface UserSubscriptionInsert
   id?: string;
 }
 
-export interface UserSubscriptionUpdate
-  extends Partial<Omit<UserSubscription, 'id' | 'created_at' | 'updated_at'>> {}
+export type UserSubscriptionUpdate = Partial<
+  Omit<UserSubscription, 'id' | 'created_at' | 'updated_at'>
+>;
 
 // ============================================================================
 // TRANSACTIONS
@@ -253,8 +255,9 @@ export interface TransactionInsert
   id?: string;
 }
 
-export interface TransactionUpdate
-  extends Partial<Omit<Transaction, 'id' | 'created_at' | 'updated_at'>> {}
+export type TransactionUpdate = Partial<
+  Omit<Transaction, 'id' | 'created_at' | 'updated_at'>
+>;
 
 // ============================================================================
 // PAYMENTS
@@ -292,8 +295,9 @@ export interface PaymentInsert
   id?: string;
 }
 
-export interface PaymentUpdate
-  extends Partial<Omit<Payment, 'id' | 'created_at' | 'updated_at'>> {}
+export type PaymentUpdate = Partial<
+  Omit<Payment, 'id' | 'created_at' | 'updated_at'>
+>;
 
 // ============================================================================
 // WEBHOOK LOGS
@@ -546,7 +550,7 @@ export interface SignInForm {
   password: string;
 }
 
-export interface ProfileUpdateForm extends ProfileUpdate {}
+export type ProfileUpdateForm = ProfileUpdate;
 
 // ============================================================================
 // DATABASE TYPE (For Supabase Client)
@@ -621,8 +625,8 @@ export interface Database {
         Update: Partial<Omit<GovernmentAssessment, 'id' | 'created_at' | 'updated_at'>>;
       };
     };
-    Views: {};
-    Functions: {};
+      Views: Record<string, never>;
+      Functions: Record<string, never>;
     Enums: {
       account_type_enum: AccountType;
     };
