@@ -27,12 +27,15 @@ BEGIN
   -- Extract metadata from raw_user_meta_data if available
   BEGIN
     v_full_name := COALESCE(NEW.raw_user_meta_data->>'full_name', '');
-    v_account_type := COALESCE((NEW.raw_user_meta_data->>'account_type')::public.account_type_enum, 'SME');
+    v_account_type := COALESCE(
+      (NEW.raw_user_meta_data->>'account_type')::public.account_type_enum,
+      'sme'::public.account_type_enum
+    );
   EXCEPTION
     WHEN OTHERS THEN
       -- If metadata extraction fails, use safe defaults
       v_full_name := '';
-      v_account_type := 'SME';
+      v_account_type := 'sme'::public.account_type_enum;
   END;
 
   -- Attempt to insert the profile

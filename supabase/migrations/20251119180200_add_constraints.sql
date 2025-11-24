@@ -26,8 +26,8 @@ BEGIN
   ALTER TABLE public.profiles
     ADD CONSTRAINT profiles_account_type_check
     CHECK (account_type IN (
-      'sole_proprietor', 'SME', 'investor', 'donor', 
-      'professional', 'government', 'NGO'
+      'sole_proprietor', 'professional', 'sme',
+      'investor', 'donor', 'government'
     ));
 END $$;
 
