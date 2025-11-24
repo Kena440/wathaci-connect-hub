@@ -30,6 +30,7 @@ const Header = () => {
     { key: 'partnershipHub', href: '/partnership-hub' },
     { key: 'fundingHub', href: '/funding-hub' },
     { key: 'complianceHub', href: '/compliance' },
+    { key: 'documentGenerator', href: '/document-generator' },
     { key: 'aboutUs', href: '/about-us' }
   ];
 

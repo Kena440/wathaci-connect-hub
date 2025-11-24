@@ -3,7 +3,7 @@
  * Real-time status tracking for document generation
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,8 +51,8 @@ export const DocumentGenerationStatus = () => {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingDocx, setDownloadingDocx] = useState(false);
 
-  // Fetch document status
-  const fetchStatus = async () => {
+  // Fetch document status - memoized with useCallback
+  const fetchStatus = useCallback(async () => {
     if (!documentId) return;
 
     try {
@@ -73,7 +73,7 @@ export const DocumentGenerationStatus = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [documentId]);
 
   // Poll for updates while processing
   useEffect(() => {
@@ -87,8 +87,7 @@ export const DocumentGenerationStatus = () => {
     }, 3000);
 
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [documentId, document?.generation_status]);
+  }, [documentId, document?.generation_status, fetchStatus]);
 
   const handleDownload = async (fileType: 'pdf' | 'docx') => {
     if (!documentId) return;

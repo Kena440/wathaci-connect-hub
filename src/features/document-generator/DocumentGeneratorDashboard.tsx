@@ -235,7 +235,7 @@ export const DocumentGeneratorDashboard = () => {
                   <Sparkles className="h-6 w-6 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">Bundle Offer: Save ZMW 0!</h3>
+                  <h3 className="font-semibold text-lg">Bundle Offer: Both Documents</h3>
                   <p className="text-sm text-muted-foreground">
                     Get both Business Plan and Pitch Deck for {formatAmount(DOCUMENT_PRICES.bundle)}
                   </p>
@@ -244,7 +244,10 @@ export const DocumentGeneratorDashboard = () => {
               <Button
                 variant="default"
                 className="bg-purple-600 hover:bg-purple-700"
-                onClick={() => navigate('/document-generator/bundle')}
+                onClick={() => {
+                  // Navigate to business plan first, then offer pitch deck after payment
+                  navigate('/document-generator/business-plan');
+                }}
               >
                 Get Both Documents
               </Button>
