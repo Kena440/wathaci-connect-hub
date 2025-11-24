@@ -44,6 +44,51 @@ npm run keys:rotate
 **Usage**: Run with Deno or Node.js  
 **Description**: Checks database tables, columns, indexes, and RLS policies are correctly configured.
 
+#### `diagnose-auth-profile.sh`
+**Purpose**: Comprehensive diagnostic tool for auth/profile consistency issues  
+**Usage**: `npm run supabase:diagnose`  
+**Description**: Analyzes and reports on inconsistencies between Supabase authentication and application profiles. Generates a detailed report including:
+- Overall diagnostic summary
+- Profile completeness verification
+- Recent signup health metrics
+- Trigger function status
+- RLS policy configuration
+- Recent errors and issues
+
+**Requirements**:
+- Set `SUPABASE_DB_URL` environment variable
+- PostgreSQL client tools (`psql`)
+
+**Documentation**: See [AUTH_PROFILE_CONSISTENCY_GUIDE.md](../docs/AUTH_PROFILE_CONSISTENCY_GUIDE.md)
+
+#### `backfill-profiles.sh`
+**Purpose**: Safe utility for backfilling missing user profiles  
+**Usage**: 
+```bash
+# Dry run (preview only, no changes)
+npm run supabase:backfill
+
+# Execute actual backfill
+bash ./scripts/backfill-profiles.sh false
+
+# Custom batch size (e.g., 50 profiles)
+bash ./scripts/backfill-profiles.sh false 50
+```
+**Description**: Creates profiles for users that exist in auth.users but are missing from public.profiles. Features:
+- Defaults to dry-run mode for safety
+- Interactive confirmation required for actual changes
+- Batch processing with configurable size
+- ON CONFLICT handling prevents duplicates
+- Comprehensive error logging
+- Post-backfill verification
+
+**Documentation**: See [AUTH_PROFILE_CONSISTENCY_GUIDE.md](../docs/AUTH_PROFILE_CONSISTENCY_GUIDE.md)
+
+#### `validate-migrations.sh`
+**Purpose**: Validates SQL syntax of migration files  
+**Usage**: `bash ./scripts/validate-migrations.sh`  
+**Description**: Checks migration files for syntax errors before applying them. Performs lightweight validation of SQL patterns and common mistakes.
+
 ### Supabase Authentication
 
 #### `supabase-login.sh`
@@ -156,6 +201,17 @@ node scripts/test-webhook-integration.js \
 4. Test webhook integration:
    ```bash
    node scripts/test-webhook-integration.js <url> <secret>
+   ```
+
+5. Verify auth/profile consistency:
+   ```bash
+   npm run supabase:diagnose
+   ```
+
+6. Backfill missing profiles if needed:
+   ```bash
+   npm run supabase:backfill  # dry run first
+   bash ./scripts/backfill-profiles.sh false  # execute if needed
    ```
 
 ### Branch Maintenance
@@ -299,6 +355,7 @@ When adding new scripts:
 
 For issues with:
 - **Scripts**: Check this README and inline script documentation
+- **Auth/Profile Consistency**: See [AUTH_PROFILE_CONSISTENCY_GUIDE.md](../docs/AUTH_PROFILE_CONSISTENCY_GUIDE.md)
 - **Branch Conflicts**: See [APPLYING_BRANCH_FIXES.md](../APPLYING_BRANCH_FIXES.md) and [BRANCH_CONFLICT_RESOLUTION_SUMMARY.md](../BRANCH_CONFLICT_RESOLUTION_SUMMARY.md)
 - **Supabase CLI**: See [SUPABASE_CLI_SETUP.md](../docs/SUPABASE_CLI_SETUP.md)
 - **Environment**: See [ENVIRONMENT_SETUP.md](../docs/ENVIRONMENT_SETUP.md)
