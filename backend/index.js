@@ -93,6 +93,7 @@ const resolveRoutes = require('./routes/resolve');
 const otpRoutes = require('./routes/otp');
 const emailRoutes = require('./routes/email');
 const healthRoutes = require('./routes/health');
+const auditRoutes = require('./routes/audit');
 
 // Health check endpoint
 app.use(['/health', '/api/health'], healthRoutes);
@@ -120,6 +121,7 @@ app.use('/api/payment', paymentRoutes);
 app.use('/resolve', resolveRoutes);
 app.use('/api/auth/otp', otpRoutes);
 app.use('/api/email', emailRoutes);
+app.use('/api/audit', auditRoutes);
 
 
 // Global error handler
