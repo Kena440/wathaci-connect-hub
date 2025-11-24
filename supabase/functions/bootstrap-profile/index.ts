@@ -77,8 +77,6 @@ Deno.serve(async (req: Request) => {
       full_name,
       msisdn,
     });
-
-    return json({ error: "msisdn required" }, 400);
   }
 
   try {
