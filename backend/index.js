@@ -96,6 +96,7 @@ const emailRoutes = require('./routes/email');
 const healthRoutes = require('./routes/health');
 const auditRoutes = require('./routes/audit');
 const diagnosticsRoutes = require('./routes/diagnostics');
+const creditPassportRoutes = require('./routes/credit-passports');
 
 // Health check endpoint
 app.use(['/health', '/api/health'], healthRoutes);
@@ -112,6 +113,8 @@ app.get('/api', (req, res) => {
       payment: 'GET /api/payment/readiness, POST /api/payment/webhook',
       documents:
         'GET /api/documents, GET /api/documents/:id, POST /api/documents/pay, POST /api/documents/:id/confirm-payment, POST /api/documents/:id/generate',
+      credit_passports:
+        'GET /api/credit-passports, GET /api/credit-passports/:id, POST /api/credit-passports/pay, POST /api/credit-passports/:id/confirm-payment, POST /api/credit-passports/:id/generate, POST /api/credit-passports/:id/share, POST /api/credit-passports/:id/pdf',
       resolve: 'POST /resolve/lenco-merchant',
       otp: 'POST /api/auth/otp/send, POST /api/auth/otp/verify',
       email: 'GET /api/email/test, GET /api/email/status, POST /api/email/send, POST /api/email/send-otp, POST /api/email/send-verification, POST /api/email/send-password-reset',
@@ -129,6 +132,7 @@ app.use('/api/auth/otp', otpRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/diagnostics', diagnosticsRoutes);
+app.use('/api/credit-passports', creditPassportRoutes);
 
 
 // Global error handler
