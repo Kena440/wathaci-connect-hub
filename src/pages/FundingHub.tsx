@@ -3,6 +3,7 @@ import { AppLayout } from '@/components/AppLayout';
 import { FundingHub as FundingHubComponent } from '@/components/funding/FundingHub';
 import { FundingMatcher } from '@/components/funding/FundingMatcher';
 import LiveFundingMatcher from '@/components/funding/LiveFundingMatcher';
+import { AutomatedMatchingEngine } from '@/components/funding/AutomatedMatchingEngine';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const FundingHub = () => {
@@ -24,13 +25,18 @@ const FundingHub = () => {
             </p>
           </div>
 
-          <Tabs defaultValue="live-matcher" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
+          <Tabs defaultValue="automated" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="automated">Automated Engine</TabsTrigger>
               <TabsTrigger value="matcher">AI Matcher</TabsTrigger>
               <TabsTrigger value="live-matcher">Live Opportunities</TabsTrigger>
               <TabsTrigger value="ai-analyzer">AI Analyzer</TabsTrigger>
               <TabsTrigger value="discovery">Discovery Hub</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="automated">
+              <AutomatedMatchingEngine />
+            </TabsContent>
 
             <TabsContent value="matcher">
               <FundingMatcher />

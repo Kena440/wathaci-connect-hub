@@ -33,10 +33,10 @@ export const isAuthBypassEnabled = (): boolean => {
   }
 
   // Check browser environment via globalThis
-  if (typeof globalThis !== 'undefined') {
-    try {
-      // @ts-ignore - may not exist
-      const viteEnv = globalThis.__VITE_ENV__ || {};
+    if (typeof globalThis !== 'undefined') {
+      try {
+        // @ts-expect-error - may not exist
+        const viteEnv = globalThis.__VITE_ENV__ || {};
       if (viteEnv.VITE_AUTH_BYPASS_MODE_ENABLED === 'true') {
         return true;
       }
