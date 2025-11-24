@@ -67,7 +67,7 @@ WHERE schemaname = 'public'
 
 ### 5. Check active RLS policies
 ```sql
-SELECT 
+SELECT
   schemaname,
   tablename,
   policyname,
@@ -81,6 +81,27 @@ WHERE schemaname = 'public'
   AND tablename = 'profiles'
 ORDER BY policyname;
 ```
+
+### 6. Fetch recent auth audit entries (Supabase dashboard logs)
+
+The `auth.audit_log_entries` table only exposes `id`, `instance_id`, `payload`, and `created_at`. There is **no** top-level `event_type` column, so attempting to select it results in the `column "event_type" does not exist` error. Use the JSON payload to derive the event type instead:
+
+```sql
+SELECT
+  id,
+  coalesce(
+    payload ->> 'event',
+    payload ->> 'event_type',
+    payload ->> 'action'
+  ) AS event_type,
+  payload,
+  created_at
+FROM auth.audit_log_entries
+ORDER BY created_at DESC
+LIMIT 200;
+```
+
+This version stays compatible with Supabase's schema while still surfacing the event/action name when present in the payload.
 
 ---
 
