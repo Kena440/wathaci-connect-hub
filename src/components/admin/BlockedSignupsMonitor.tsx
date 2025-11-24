@@ -90,9 +90,28 @@ export function BlockedSignupsMonitor() {
 
   useEffect(() => {
     loadData();
-    // Auto-refresh every 5 minutes
-    const interval = setInterval(loadData, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    
+    // Auto-refresh every 5 minutes, but pause when page is hidden
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadData();
+      }
+    };
+    
+    const interval = setInterval(() => {
+      // Only refresh if page is visible
+      if (!document.hidden) {
+        loadData();
+      }
+    }, 5 * 60 * 1000);
+    
+    // Also refresh when page becomes visible again
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const getSeverityColor = (severity: string) => {

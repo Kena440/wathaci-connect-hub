@@ -332,7 +332,7 @@ export const SignupForm = ({
     <form className="space-y-6" onSubmit={handleSubmit(onSubmit)} noValidate>
       {/* Loading/Submitting State */}
       {isSubmitting && (
-        <Alert>
+        <Alert aria-live="polite">
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Creating your account</AlertTitle>
           <AlertDescription>

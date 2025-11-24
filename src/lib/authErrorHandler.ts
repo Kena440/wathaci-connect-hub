@@ -142,7 +142,7 @@ function parseSupabaseAuthError(error: AuthError): DetailedAuthError {
       errorCode: 'SIGNUP_RATE_LIMITED',
       originalMessage: error.message,
       category: 'validation',
-      suggestedAction: 'Wait at least 5 minutes, then try signing up again. If you already have an account, try signing in instead.',
+      suggestedAction: 'Wait at least 5-10 minutes, then try signing up again. If you already have an account, try signing in instead.',
       shouldReport: false,
     };
   }

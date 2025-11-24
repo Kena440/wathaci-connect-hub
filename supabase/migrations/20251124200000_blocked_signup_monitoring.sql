@@ -124,17 +124,24 @@ CREATE OR REPLACE FUNCTION public.is_email_rate_limited(
   p_lookback_hours integer DEFAULT 2
 )
 RETURNS boolean
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT EXISTS(
+DECLARE
+  v_email_escaped text;
+BEGIN
+  -- Escape special characters in email to prevent SQL injection in LIKE pattern
+  v_email_escaped := replace(replace(p_email, '%', '\%'), '_', '\_');
+  
+  RETURN EXISTS(
     SELECT 1
     FROM auth.audit_log_entries a
-    WHERE a.payload->>'actor_username' LIKE p_email || ' [blocked]%'
+    WHERE a.payload->>'actor_username' LIKE v_email_escaped || ' [blocked]%' ESCAPE '\'
       AND a.created_at > NOW() - make_interval(hours => p_lookback_hours)
   );
+END;
 $$;
 
 COMMENT ON FUNCTION public.is_email_rate_limited(text, integer) IS 
@@ -152,11 +159,18 @@ RETURNS TABLE (
   actor_id_internal text,
   minutes_ago numeric
 )
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  v_email_escaped text;
+BEGIN
+  -- Escape special characters in email to prevent SQL injection in LIKE pattern
+  v_email_escaped := replace(replace(p_email, '%', '\%'), '_', '\_');
+  
+  RETURN QUERY
   SELECT
     a.created_at AS blocked_at,
     a.payload->>'action' AS action,
@@ -164,9 +178,10 @@ AS $$
     a.payload->>'actor_id' AS actor_id_internal,
     EXTRACT(EPOCH FROM (NOW() - a.created_at))/60 AS minutes_ago
   FROM auth.audit_log_entries a
-  WHERE a.payload->>'actor_username' LIKE p_email || ' [blocked]%'
+  WHERE a.payload->>'actor_username' LIKE v_email_escaped || ' [blocked]%' ESCAPE '\'
   ORDER BY a.created_at DESC
   LIMIT p_limit;
+END;
 $$;
 
 COMMENT ON FUNCTION public.get_blocked_attempts_for_email(text, integer) IS 

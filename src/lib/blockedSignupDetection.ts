@@ -29,6 +29,8 @@ const RATE_LIMIT_DURATION_MS = 60 * 60 * 1000; // 1 hour typical rate limit
 
 /**
  * Record a signup attempt (to track client-side rate limiting)
+ * Note: Stores email in localStorage for rate limiting. Emails are not encrypted
+ * as they are considered non-sensitive for this use case and are cleared after successful signup.
  */
 export function recordSignupAttempt(email: string): void {
   const now = Date.now();
@@ -52,8 +54,8 @@ export function recordSignupAttempt(email: string): void {
     }
   }
   
-  // Add new attempt
-  attempts.push({ email, timestamp: now });
+  // Add new attempt (store only lowercase email to reduce duplication)
+  attempts.push({ email: email.toLowerCase(), timestamp: now });
   
   // Store updated attempts
   localStorage.setItem(SIGNUP_ATTEMPTS_KEY, JSON.stringify(attempts));
