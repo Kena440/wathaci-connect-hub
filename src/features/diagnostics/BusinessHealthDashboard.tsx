@@ -44,9 +44,6 @@ import { ScoreCard } from './ScoreCard';
 import { RecommendationsTimeline } from './RecommendationsTimeline';
 import { PartnerRecommendations } from './PartnerRecommendations';
 
-// Mock data for demonstration
-const mockDiagnosticsData: DiagnosticsOutput | null = null;
-
 interface HealthBandConfig {
   label: string;
   color: string;
@@ -146,8 +143,9 @@ export const BusinessHealthDashboard = () => {
   };
 
   const handleDownloadPDF = () => {
-    toast.info('PDF export feature coming soon!');
-    // TODO: Implement PDF generation
+    // PDF generation requires additional libraries (e.g., jsPDF, html2pdf)
+    // For now, show a coming soon message
+    toast.info('PDF export feature coming soon! We are working on generating beautiful PDF reports for your business health assessment.');
   };
 
   const getOverallScore = (scores: DiagnosticsScores): number => {
@@ -218,11 +216,14 @@ export const BusinessHealthDashboard = () => {
               Refresh
             </Button>
             <Button
+              variant="outline"
               onClick={handleDownloadPDF}
-              className="bg-orange-600 hover:bg-orange-700 gap-2"
+              className="gap-2"
+              title="PDF export coming soon"
             >
               <Download className="w-4 h-4" />
               Download Report
+              <Badge variant="secondary" className="ml-1 text-xs">Soon</Badge>
             </Button>
           </div>
         </div>

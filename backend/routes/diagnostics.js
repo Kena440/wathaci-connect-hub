@@ -2,12 +2,21 @@
  * Diagnostics API Routes
  * 
  * Backend API routes for the SME Auto-Diagnosis Engine.
+ * 
+ * NOTE: This implementation uses in-memory storage for demonstration purposes.
+ * In production, replace the diagnosticsStore Map with actual Supabase database calls
+ * using the diagnostics_runs table created in the migration.
  */
 
 const express = require('express');
 const router = express.Router();
 
-// In-memory store for diagnostics runs (in production, use database)
+/**
+ * In-memory store for diagnostics runs.
+ * PRODUCTION TODO: Replace with Supabase database integration:
+ * - Use supabase.from('diagnostics_runs').insert/select/update
+ * - This Map will lose all data on server restart
+ */
 const diagnosticsStore = new Map();
 
 /**

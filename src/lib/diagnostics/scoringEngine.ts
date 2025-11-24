@@ -913,7 +913,8 @@ export function calculateAllScores(
 // ================================
 
 export function calculateOverallHealthBand(scores: DiagnosticsScores): string {
-  const avgScore = Object.values(scores).reduce((a, b) => a + b, 0) / Object.values(scores).length;
+  const scoreValues = Object.values(scores);
+  const avgScore = scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length;
   
   if (avgScore <= 20) return 'critical';
   if (avgScore <= 40) return 'developing';

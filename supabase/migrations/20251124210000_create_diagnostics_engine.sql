@@ -373,6 +373,17 @@ CREATE POLICY wathaci_partners_select_active ON public.wathaci_partners
 -- TRIGGERS FOR UPDATED_AT
 -- =====================================================
 
+-- Ensure the update_updated_at_column function exists
+-- This function should have been created in a previous migration (20251117232100_create_sme_readiness_scores.sql)
+-- Adding CREATE OR REPLACE for safety in case it doesn't exist
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TRIGGER update_sme_financial_data_updated_at
   BEFORE UPDATE ON public.sme_financial_data
   FOR EACH ROW
