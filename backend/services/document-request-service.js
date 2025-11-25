@@ -126,6 +126,42 @@ async function getRequestById(id, userId) {
   return data;
 }
 
+async function getRequestByPaymentReference(paymentReference) {
+  const supabase = getSupabaseOrThrow();
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('*')
+    .eq('payment_reference', paymentReference)
+    .single();
+  if (error) {
+    const notFoundError = new Error(`Document request not found for payment reference: ${paymentReference}`);
+    notFoundError.status = 404;
+    throw notFoundError;
+  }
+  return data;
+}
+
+async function markPaymentStatusByReference(paymentReference, status, metadata = {}) {
+  const supabase = getSupabaseOrThrow();
+  const { data, error } = await supabase
+    .from(TABLE)
+    .update({
+      payment_status: status,
+      updated_at: new Date().toISOString(),
+      ...(metadata.transaction_id && { payment_reference: metadata.transaction_id }),
+    })
+    .eq('payment_reference', paymentReference)
+    .select()
+    .single();
+
+  if (error) {
+    const notFoundError = new Error(`Document request not found for payment reference: ${paymentReference}`);
+    notFoundError.status = 404;
+    throw notFoundError;
+  }
+  return data;
+}
+
 async function listRequestsForUser(userId) {
   const supabase = getSupabaseOrThrow();
   const { data, error } = await supabase
@@ -175,7 +211,9 @@ module.exports = {
   SUPPORTED_TYPES,
   createPaymentRequest,
   markPaymentStatus,
+  markPaymentStatusByReference,
   getRequestById,
+  getRequestByPaymentReference,
   listRequestsForUser,
   generateDocument,
   resolveAmount,

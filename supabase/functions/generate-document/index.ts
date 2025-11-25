@@ -156,12 +156,27 @@ serve(async (req: Request) => {
       outputFiles.pptx_url = `${basePath}/document_${timestamp}.pptx`;
     }
 
-    // In production, you would:
-    // 1. Generate actual PDF/DOCX/PPTX content using AI
-    // 2. Upload files to Supabase Storage
-    // 3. Store the actual file paths
+    // TODO: Production implementation required
+    // ======================================
+    // In production, replace this placeholder with actual implementation:
+    // 
+    // 1. AI DOCUMENT GENERATION:
+    //    - Call OpenAI/Anthropic API with inputData to generate document content
+    //    - Use appropriate prompts for business_plan vs pitch_deck
+    //
+    // 2. FILE RENDERING:
+    //    - Use libraries like docx/pptx-templater for document generation
+    //    - Use puppeteer/jspdf for PDF rendering
+    //
+    // 3. STORAGE UPLOAD:
+    //    - Upload generated files to Supabase Storage bucket
+    //    - Store actual file paths (not placeholders)
+    //
+    // 4. RECEIPT GENERATION:
+    //    - Generate payment receipt PDF with transaction details
+    // ======================================
 
-    // Simulate file upload
+    // PLACEHOLDER: Simulate processing delay (remove in production)
     await new Promise((resolve) => setTimeout(resolve, 500));
     await addGenerationLog(supabase, documentRequestId, 'info', 'Finalizing document');
 

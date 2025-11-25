@@ -9,6 +9,7 @@ const {
   SUPPORTED_TYPES,
   createPaymentRequest,
   markPaymentStatus,
+  markPaymentStatusByReference,
   getRequestById,
   listRequestsForUser,
   generateDocument,
@@ -115,11 +116,11 @@ router.post('/webhook', async (req, res) => {
       return res.status(400).json({ error: 'Missing payment_reference' });
     }
 
-    // Update payment status via the service
+    // Update payment status via the service using payment reference
     const paymentStatus = status === 'success' || status === 'completed' ? 'success' : 'failed';
     
     try {
-      const updated = await markPaymentStatus(payment_reference, paymentStatus, {
+      const updated = await markPaymentStatusByReference(payment_reference, paymentStatus, {
         transaction_id,
         received_amount: amount,
       });

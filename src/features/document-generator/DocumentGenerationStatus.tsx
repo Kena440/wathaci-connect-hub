@@ -3,7 +3,7 @@
  * Real-time status tracking for document generation
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,6 +51,9 @@ export const DocumentGenerationStatus = () => {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingDocx, setDownloadingDocx] = useState(false);
 
+  // Use ref to track current generation status to avoid unnecessary effect re-runs
+  const generationStatusRef = useRef<GenerationStatus | null>(null);
+
   // Fetch document status - memoized with useCallback
   const fetchStatus = useCallback(async () => {
     if (!documentId) return;
@@ -59,6 +62,7 @@ export const DocumentGenerationStatus = () => {
       const result = await documentGeneratorService.getDocumentRequest(documentId);
       if (result.success && result.data) {
         setDocument(result.data);
+        generationStatusRef.current = result.data.generation_status;
       } else {
         setError(result.error || 'Failed to load document status');
       }
@@ -75,19 +79,20 @@ export const DocumentGenerationStatus = () => {
     }
   }, [documentId]);
 
-  // Poll for updates while processing
+  // Poll for updates while processing - use ref to check status
   useEffect(() => {
     fetchStatus();
 
     // Poll every 3 seconds while processing
     const interval = setInterval(() => {
-      if (document?.generation_status === 'processing' || document?.generation_status === 'queued') {
+      const status = generationStatusRef.current;
+      if (status === 'processing' || status === 'queued') {
         fetchStatus();
       }
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [documentId, document?.generation_status, fetchStatus]);
+  }, [documentId, fetchStatus]);
 
   const handleDownload = async (fileType: 'pdf' | 'docx') => {
     if (!documentId) return;
