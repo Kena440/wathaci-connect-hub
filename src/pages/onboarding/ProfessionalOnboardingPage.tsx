@@ -251,7 +251,7 @@ export const ProfessionalOnboardingPage = () => {
   ) => {
     const current = (watch(field) || []) as string[];
     const exists = current.includes(value);
-    let next = exists ? current.filter((item) => item !== value) : [...current, value];
+    const next = exists ? current.filter((item) => item !== value) : [...current, value];
 
     if (!exists && max && next.length > max) {
       toast({
