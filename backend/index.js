@@ -48,20 +48,28 @@ const limiter = rateLimit({
 app.use(limiter); // Basic rate limiting
 
 // CORS configuration
+// All origins should be configured via ALLOWED_ORIGINS environment variable
+// Default fallback origins for development only
 const parseAllowedOrigins = (value = '') =>
   value
     .split(',')
     .map(origin => origin.trim())
     .filter(Boolean);
 
-const defaultAllowedOrigins = [
-  'https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app',
+// Default development origins (used only if ALLOWED_ORIGINS is not set)
+const defaultDevOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
 ];
 
-const configuredOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS);
-const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...configuredOrigins]));
+// Read allowed origins from environment variable
+// SECURITY: In production, set ALLOWED_ORIGINS to HTTPS production domains only
+// Example for production: ALLOWED_ORIGINS=https://www.wathaci.com,https://wathaci-connect-platform.vercel.app,https://wathaci-connect-platform-amukenas-projects.vercel.app
+// Example for development: ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+const configuredOrigins = parseAllowedOrigins(process.env.ALLOWED_ORIGINS);
+const allowedOrigins = configuredOrigins.length > 0 
+  ? configuredOrigins 
+  : defaultDevOrigins;
 const allowAllOrigins = allowedOrigins.includes('*');
 
 const corsMiddleware = cors
