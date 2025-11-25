@@ -1,4 +1,10 @@
-const createCorsMiddleware = ({ allowedOrigins = [], allowCredentials = false, allowNoOrigin = false } = {}) => {
+const createCorsMiddleware = ({
+  allowedOrigins = [],
+  allowCredentials = false,
+  allowNoOrigin = false,
+  allowedMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders = ['Content-Type', 'Authorization'],
+} = {}) => {
   const normalizedOrigins = Array.from(new Set(allowedOrigins)).filter(Boolean);
   const allowAll = normalizedOrigins.length === 0 || normalizedOrigins.includes('*');
 
@@ -19,8 +25,8 @@ const createCorsMiddleware = ({ allowedOrigins = [], allowCredentials = false, a
       res.header('Vary', 'Origin');
     }
 
-    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Methods', allowedMethods.join(','));
+    res.header('Access-Control-Allow-Headers', allowedHeaders.join(','));
 
     if (allowCredentials) {
       res.header('Access-Control-Allow-Credentials', 'true');

@@ -28,6 +28,49 @@ const app = express();
 
 logPaymentReadiness();
 
+// CORS configuration
+const parseAllowedOrigins = (value = '') =>
+  value
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
+
+const defaultAllowedOrigins = [
+  'https://www.wathaci.com',
+  'https://wathaci-connect-platform.vercel.app',
+  'https://wathaci-connect-platform-amukenas-projects.vercel.app',
+];
+
+const configuredOrigins = parseAllowedOrigins(
+  process.env.ALLOWED_ORIGINS ?? process.env.CORS_ALLOWED_ORIGINS
+);
+const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...configuredOrigins]));
+const allowAllOrigins = allowedOrigins.includes('*');
+
+const corsMiddleware = cors
+  ? cors({
+      origin(origin, callback) {
+        // Allow requests without Origin header (e.g., server-to-server, health checks, CLI tools)
+        if (!origin) return callback(null, true);
+        if (allowAllOrigins || allowedOrigins.includes(origin)) return callback(null, true);
+        const error = new Error('Not allowed by CORS');
+        error.status = 403;
+        return callback(error);
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    })
+  : createCorsMiddleware({
+      allowedOrigins,
+      allowCredentials: true,
+      allowNoOrigin: true,
+      allowedMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    });
+
+app.use(corsMiddleware);
+
 app.use(express.json({
   limit: '1mb',
   verify: (req, res, buf) => {
@@ -46,39 +89,6 @@ const limiter = rateLimit({
   max: 100,
 });
 app.use(limiter); // Basic rate limiting
-
-// CORS configuration
-const parseAllowedOrigins = (value = '') =>
-  value
-    .split(',')
-    .map(origin => origin.trim())
-    .filter(Boolean);
-
-const defaultAllowedOrigins = [
-  'https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app',
-  'http://localhost:3000',
-  'http://localhost:5173',
-];
-
-const configuredOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS);
-const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...configuredOrigins]));
-const allowAllOrigins = allowedOrigins.includes('*');
-
-const corsMiddleware = cors
-  ? cors({
-      origin(origin, callback) {
-        // Allow requests without Origin header (e.g., server-to-server, health checks, CLI tools)
-        if (!origin) return callback(null, true);
-        if (allowAllOrigins || allowedOrigins.includes(origin)) return callback(null, true);
-        const error = new Error('Not allowed by CORS');
-        error.status = 403;
-        return callback(error);
-      },
-      credentials: true,
-    })
-  : createCorsMiddleware({ allowedOrigins, allowCredentials: true, allowNoOrigin: true });
-
-app.use(corsMiddleware);
 
 // Request logging
 app.use((req, res, next) => {
