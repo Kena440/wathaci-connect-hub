@@ -82,10 +82,10 @@ const getStartedSchema = z
 export type GetStartedFormValues = z.infer<typeof getStartedSchema>;
 
 const accountTypeRoutes: Record<AccountType, string> = {
-  sme: '/onboarding/sme/needs-assessment',
-  professional: '/onboarding/professional/needs-assessment',
-  donor: '/onboarding/donor/needs-assessment',
-  investor: '/onboarding/investor/needs-assessment',
+  sme: '/onboarding/sme',
+  professional: '/onboarding/professional',
+  donor: '/onboarding/investor',
+  investor: '/onboarding/investor',
 };
 
 const identityFieldConfig: Record<

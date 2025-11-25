@@ -488,6 +488,109 @@ export interface GovernmentAssessment {
 }
 
 // ============================================================================
+// ONBOARDING PROFILE TABLES
+// ============================================================================
+
+export interface ProfessionalProfileRecord {
+  id: string;
+  user_id: string;
+  entity_type: 'individual' | 'firm' | 'company';
+  full_name: string;
+  organisation_name: string | null;
+  bio: string | null;
+  primary_expertise: string[];
+  secondary_skills: string[];
+  years_of_experience: number | null;
+  current_organisation: string | null;
+  qualifications: string | null;
+  top_sectors: string[];
+  notable_projects: string | null;
+  services_offered: string[];
+  expected_rates: string | null;
+  location_city: string | null;
+  location_country: string | null;
+  phone: string | null;
+  email: string | null;
+  linkedin_url: string | null;
+  website_url: string | null;
+  portfolio_url: string | null;
+  availability: 'part_time' | 'full_time' | 'occasional' | null;
+  notes: string | null;
+  profile_photo_url: string | null;
+  logo_url: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export type ProfessionalProfileInsert = Omit<
+  ProfessionalProfileRecord,
+  'id' | 'created_at' | 'updated_at'
+>;
+export type ProfessionalProfileUpdate = Partial<
+  Omit<ProfessionalProfileRecord, 'id' | 'created_at' | 'updated_at'>
+>;
+
+export interface SmeProfileRecord {
+  id: string;
+  user_id: string;
+  business_name: string;
+  registration_number: string | null;
+  registration_type: string | null;
+  sector: string | null;
+  subsector: string | null;
+  years_in_operation: number | null;
+  employee_count: number | null;
+  turnover_bracket: string | null;
+  products_overview: string | null;
+  target_market: string | null;
+  location_city: string | null;
+  location_country: string | null;
+  contact_name: string | null;
+  contact_phone: string | null;
+  business_email: string | null;
+  website_url: string | null;
+  social_links: string[];
+  main_challenges: string[];
+  support_needs: string[];
+  logo_url: string | null;
+  photos: string[];
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export type SmeProfileInsert = Omit<SmeProfileRecord, 'id' | 'created_at' | 'updated_at'>;
+export type SmeProfileUpdate = Partial<Omit<SmeProfileRecord, 'id' | 'created_at' | 'updated_at'>>;
+
+export interface InvestorProfileRecord {
+  id: string;
+  user_id: string;
+  organisation_name: string;
+  investor_type: string | null;
+  ticket_size_min: number | null;
+  ticket_size_max: number | null;
+  preferred_sectors: string[];
+  country_focus: string[];
+  stage_preference: string[];
+  instruments: string[];
+  impact_focus: string[];
+  contact_person: string | null;
+  contact_role: string | null;
+  website_url: string | null;
+  linkedin_url: string | null;
+  logo_url: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export type InvestorProfileInsert = Omit<
+  InvestorProfileRecord,
+  'id' | 'created_at' | 'updated_at'
+>;
+export type InvestorProfileUpdate = Partial<
+  Omit<InvestorProfileRecord, 'id' | 'created_at' | 'updated_at'>
+>;
+
+// ============================================================================
 // AUTH TYPES
 // ============================================================================
 
@@ -593,6 +696,21 @@ export interface Database {
         Row: Payment;
         Insert: PaymentInsert;
         Update: PaymentUpdate;
+      };
+      professional_profiles: {
+        Row: ProfessionalProfileRecord;
+        Insert: ProfessionalProfileInsert;
+        Update: ProfessionalProfileUpdate;
+      };
+      sme_profiles: {
+        Row: SmeProfileRecord;
+        Insert: SmeProfileInsert;
+        Update: SmeProfileUpdate;
+      };
+      investor_profiles: {
+        Row: InvestorProfileRecord;
+        Insert: InvestorProfileInsert;
+        Update: InvestorProfileUpdate;
       };
       webhook_logs: {
         Row: WebhookLog;

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { supabase } from '@/lib/supabase-enhanced';
+import { getProfessionalProfile } from '@/lib/api/profile-onboarding';
 
 interface AssessmentData {
   assessment: any;
@@ -112,6 +113,23 @@ export const ProfessionalAssessment = () => {
       setCurrentView('results');
     }
   };
+
+  useEffect(() => {
+    if (!user) return;
+
+    const ensureProfile = async () => {
+      try {
+        const profileRecord = await getProfessionalProfile();
+        if (!profileRecord) {
+          navigate('/onboarding/professional');
+        }
+      } catch (error) {
+        console.error('Unable to verify professional profile', error);
+      }
+    };
+
+    void ensureProfile();
+  }, [navigate, user]);
 
   const handleContactProfessional = (professionalId: string) => {
     // Navigate to messaging or contact functionality
