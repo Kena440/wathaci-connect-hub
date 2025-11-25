@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, X, Globe, User, LogOut, MessageCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { NotificationCenter } from './NotificationCenter';
 import { DonateButton } from './DonateButton';
 import { useAppContext } from '@/contexts/AppContext';
@@ -21,6 +21,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, profile, signOut, loading } = useAppContext();
   const { t, i18n } = useTranslation();
+  const { pathname } = useLocation();
 
   const navItems = [
     { key: 'home', href: '/' },
@@ -70,33 +71,48 @@ const Header = () => {
   const showSignUpCta = !user;
   const showProfileCta = !!user && !user.profile_completed;
 
+  const isActive = (href: string) => {
+    if (href === '/') return pathname === '/';
+    return pathname.startsWith(href);
+  };
+
+  const getNavClasses = (href: string) =>
+    isActive(href)
+      ? 'text-base text-orange-700 font-semibold bg-white/80 shadow-sm border border-orange-200'
+      : 'text-sm text-gray-500 hover:text-orange-600';
+
   return (
     <header className="bg-gradient-to-r from-orange-50 to-green-50 shadow-lg sticky top-0 z-50 border-b-2 border-orange-200">
       <div className="max-w-6xl mx-auto px-6">
-        <div className="flex justify-between items-center py-4">
-          <Link to="/" className="flex items-center space-x-3 cursor-pointer group">
+        <div className="flex items-center justify-between py-4 gap-6">
+          <Link
+            to="/"
+            className="flex items-center space-x-3 cursor-pointer group flex-shrink-0"
+            aria-label="WATHACI CONNECT home"
+          >
             <img
               src="https://d64gsuwffb70l.cloudfront.net/686a39ec793daf0c658a746a_1753699300137_a4fb9790.png"
               alt="WATHACI CONNECT"
               loading="lazy"
               decoding="async"
-              className="h-24 w-auto drop-shadow-lg group-hover:scale-105 transition-transform duration-200"
+              className="h-16 w-auto drop-shadow-lg group-hover:scale-105 transition-transform duration-200"
             />
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden md:flex flex-1 items-center gap-2 bg-white/50 px-2 py-1 rounded-full border border-orange-100 shadow-sm overflow-x-auto">
             {navItems.map((item) => (
               <Link
                 key={item.key}
                 to={item.href}
-                className="text-gray-800 hover:text-orange-600 font-semibold transition-colors text-lg"
+                className={`${getNavClasses(item.href)} rounded-full px-4 py-2 transition-colors whitespace-nowrap`}
+                aria-current={isActive(item.href) ? 'page' : undefined}
               >
                 {t(item.key)}
               </Link>
             ))}
           </nav>
 
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-3 flex-shrink-0">
             {user && <NotificationCenter />}
             {user && (
               <Link to="/messages">
@@ -197,8 +213,9 @@ const Header = () => {
                 <Link
                   key={item.key}
                   to={item.href}
-                  className="text-gray-800 hover:text-orange-600 font-semibold"
+                  className={`${getNavClasses(item.href)} rounded-lg px-3 py-2`}
                   onClick={() => setIsMenuOpen(false)}
+                  aria-current={isActive(item.href) ? 'page' : undefined}
                 >
                   {t(item.key)}
                 </Link>
