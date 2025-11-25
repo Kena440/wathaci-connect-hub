@@ -18,6 +18,7 @@ dist-ssr
 .env
 .env.local
 .env.production
+.env.preview
 backend/.env
 backend/.env.local
 backend/.env.production

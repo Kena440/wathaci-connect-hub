@@ -9,8 +9,8 @@ The React frontend and Express backend have been successfully configured for pro
 ## ✅ Project Status
 
 ### Deployment URLs
-- **Frontend (React)**: https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app
-- **Backend (Express API)**: https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app
+- **Frontend (React)**: https://www.wathaci.com
+- **Backend (Express API)**: https://wathaci-connect-platform2.vercel.app
 
 ### Overall Status: ✅ READY FOR DEPLOYMENT
 
@@ -30,7 +30,7 @@ npm install cors
 #### ✅ Updated Express Server (`backend/index.js`)
 - **Added CORS Middleware**: Replaced manual CORS headers with `cors` package
 - **Configured Allowed Origins**: 
-  - `https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app`
+  - `https://www.wathaci.com`
   - `http://localhost:3000`, `http://localhost:5173`, `http://localhost:8080` (for local development)
   - Additional origins from `CORS_ALLOWED_ORIGINS` environment variable
 - **Added Request Logging**: Logs timestamp, method, URL, and origin for each request
@@ -81,7 +81,7 @@ All functions:
 
 #### ✅ Updated Production Environment (`.env.production`)
 ```env
-VITE_API_BASE_URL="https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app"
+VITE_API_BASE_URL="https://wathaci-connect-platform2.vercel.app"
 ```
 
 #### ✅ Updated Example Environment (`.env.production.example`)
@@ -115,7 +115,7 @@ Added guidance for production backend URL with Vercel deployment URL
 
 | Variable | Status | Value/Example | Purpose |
 |----------|--------|---------------|---------|
-| `VITE_API_BASE_URL` | ✅ Configured | `https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app` | Backend API base URL |
+| `VITE_API_BASE_URL` | ✅ Configured | `https://wathaci-connect-platform2.vercel.app` | Backend API base URL |
 | `VITE_SUPABASE_URL` | ⚠️ Verify | `https://nrjcbdrzaxqvomeogptf.supabase.co` | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | ⚠️ Verify | `eyJhbGci...` | Supabase anonymous key |
 | `VITE_LENCO_PUBLIC_KEY` | ⚠️ Verify | `pub-xxxxx` | Lenco payment public key |
@@ -127,7 +127,7 @@ Added guidance for production backend URL with Vercel deployment URL
 
 | Variable | Status | Value/Example | Purpose |
 |----------|--------|---------------|---------|
-| `CORS_ALLOWED_ORIGINS` | ✅ Configured | `https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app` | Allowed CORS origins |
+| `CORS_ALLOWED_ORIGINS` | ✅ Configured | `https://www.wathaci.com` | Allowed CORS origins |
 | `SUPABASE_URL` | ⚠️ Verify | `https://nrjcbdrzaxqvomeogptf.supabase.co` | Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | ⚠️ Verify | `eyJhbGci...` | Supabase service key (SECRET!) |
 | `LENCO_SECRET_KEY` | ⚠️ Verify | `xxxxx` | Lenco secret key (SECRET!) |
@@ -397,7 +397,7 @@ Next steps require Vercel Dashboard configuration:
 
 **✅ Frontend (React on Vercel) and backend (Express on Vercel) are now fully wired together.**
 
-The React app at `https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app` is configured to successfully communicate with the Express API at `https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app`, with correct environment variables, CORS configuration, and comprehensive documentation.
+The React app at `https://www.wathaci.com` is configured to successfully communicate with the Express API at `https://wathaci-connect-platform2.vercel.app`, with correct environment variables, CORS configuration, and comprehensive documentation.
 
 **All code changes are complete. Ready for production deployment after environment variables are configured in Vercel Dashboard.**
 

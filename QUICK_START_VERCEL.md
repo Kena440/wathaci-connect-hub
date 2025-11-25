@@ -4,8 +4,8 @@
 This guide provides the fastest path to deploy the WATHACI CONNECT platform to Vercel.
 
 **Deployment URLs:**
-- **Frontend**: https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app
-- **Backend**: https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app
+- **Frontend**: https://www.wathaci.com
+- **Backend**: https://wathaci-connect-platform2.vercel.app
 
 ---
 
@@ -18,7 +18,7 @@ This guide provides the fastest path to deploy the WATHACI CONNECT platform to V
 3. Select the `backend/` directory
 4. Set environment variables (minimum required):
    ```
-   CORS_ALLOWED_ORIGINS=https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app
+   CORS_ALLOWED_ORIGINS=https://www.wathaci.com,https://wathaci-connect-platform.vercel.app,https://wathaci-connect-platform-amukenas-projects.vercel.app
    SUPABASE_URL=https://nrjcbdrzaxqvomeogptf.supabase.co
    SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
    NODE_ENV=production
@@ -32,7 +32,7 @@ This guide provides the fastest path to deploy the WATHACI CONNECT platform to V
 2. Navigate to Settings → Environment Variables
 3. Add:
    ```
-   VITE_API_BASE_URL=https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app
+   VITE_API_BASE_URL=https://wathaci-connect-platform2.vercel.app
    VITE_SUPABASE_URL=https://nrjcbdrzaxqvomeogptf.supabase.co
    VITE_SUPABASE_ANON_KEY=<your-anon-key>
    ```
@@ -88,8 +88,8 @@ This guide provides the fastest path to deploy the WATHACI CONNECT platform to V
 
 Your deployment is successful when:
 
-1. ✅ Frontend loads at: `https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app`
-2. ✅ Backend health check passes at: `https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app/health`
+1. ✅ Frontend loads at: `https://www.wathaci.com`
+2. ✅ Backend health check passes at: `https://wathaci-connect-platform2.vercel.app/health`
 3. ✅ No CORS errors in browser console
 4. ✅ API calls visible in Network tab going to backend URL
 5. ✅ Main user flows work (navigation, auth, etc.)

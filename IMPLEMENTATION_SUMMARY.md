@@ -49,10 +49,10 @@ This implementation connects the React frontend with the Express backend for pro
 
 ### Request Flow
 
-1. **User visits frontend** → https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app
+1. **User visits frontend** → https://www.wathaci.com
 2. **Frontend makes API call** → Uses `apiFetch('/users', {...})`
 3. **API client constructs URL** → `${API_BASE_URL}/users`
-4. **Request sent to backend** → https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app/users
+4. **Request sent to backend** → https://wathaci-connect-platform2.vercel.app/users
 5. **Backend receives request** → Logs it, checks CORS
 6. **CORS middleware validates** → Checks origin against allowed list
 7. **Route handler processes** → Returns JSON response
@@ -72,14 +72,14 @@ This implementation connects the React frontend with the Express backend for pro
 
 **Frontend (Vercel Dashboard):**
 ```
-VITE_API_BASE_URL=https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app
+VITE_API_BASE_URL=https://wathaci-connect-platform2.vercel.app
 VITE_SUPABASE_URL=https://nrjcbdrzaxqvomeogptf.supabase.co
 VITE_SUPABASE_ANON_KEY=<your-anon-key>
 ```
 
 **Backend (Vercel Dashboard):**
 ```
-CORS_ALLOWED_ORIGINS=https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app
+CORS_ALLOWED_ORIGINS=https://www.wathaci.com,https://wathaci-connect-platform.vercel.app,https://wathaci-connect-platform-amukenas-projects.vercel.app
 SUPABASE_URL=https://nrjcbdrzaxqvomeogptf.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=<your-service-key>
 NODE_ENV=production
@@ -110,7 +110,7 @@ NODE_ENV=production
 
 ### Backend Health Check
 ```bash
-curl https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app/health
+curl https://wathaci-connect-platform2.vercel.app/health
 ```
 
 Expected: HTTP 200 with JSON `{"status": "healthy", ...}`

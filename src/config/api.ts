@@ -4,8 +4,8 @@
  * Centralizes API base URL configuration for the application.
  * Uses VITE_API_BASE_URL from environment variables.
  * 
- * In development: defaults to http://localhost:3000
- * In production: MUST be set to the live API endpoint (e.g., https://api.wathaci.com)
+ * In development: defaults to http://localhost:4000
+ * In production: MUST be set to the live API endpoint (e.g., https://wathaci-connect-platform2.vercel.app)
  */
 
 /**
@@ -20,12 +20,12 @@ const getApiBaseUrl = (): string => {
   if (import.meta.env.MODE === 'production' && !envUrl) {
     throw new Error(
       'API base URL is required in production mode. ' +
-      'Please set VITE_API_BASE_URL or REACT_APP_API_BASE_URL to your live backend API URL (e.g., https://api.wathaci.com)'
+      'Please set VITE_API_BASE_URL or REACT_APP_API_BASE_URL to your live backend API URL (e.g., https://wathaci-connect-platform2.vercel.app)'
     );
   }
   
   // Default to localhost in development
-  const baseUrl = envUrl ?? 'http://localhost:3000';
+  const baseUrl = envUrl ?? 'http://localhost:4000';
   
   // Remove trailing slash for consistency
   return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;

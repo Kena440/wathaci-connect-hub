@@ -7,8 +7,8 @@ This guide documents the integration between the WATHACI CONNECT frontend (React
 ## Deployment URLs
 
 ### Production
-- **Frontend**: https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app
-- **Backend API**: https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app
+- **Frontend**: https://www.wathaci.com
+- **Backend API**: https://wathaci-connect-platform2.vercel.app
 
 ### Development
 - **Frontend**: http://localhost:8080
@@ -62,7 +62,7 @@ Set these in Vercel Dashboard → Frontend Project → Settings → Environment 
 
 | Variable | Required | Example Value | Description |
 |----------|----------|---------------|-------------|
-| `VITE_API_BASE_URL` | ✅ Yes | `https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app` | Backend API base URL |
+| `VITE_API_BASE_URL` | ✅ Yes | `https://wathaci-connect-platform2.vercel.app` | Backend API base URL |
 | `VITE_SUPABASE_URL` | ✅ Yes | `https://your-project.supabase.co` | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | ✅ Yes | `eyJhbGci...` | Supabase anonymous key |
 | `VITE_SUPABASE_KEY` | ✅ Yes | `eyJhbGci...` | Supabase anonymous key (alias) |
@@ -91,7 +91,7 @@ Set these in Vercel Dashboard → Backend Project → Settings → Environment V
 
 | Variable | Required | Example Value | Description |
 |----------|----------|---------------|-------------|
-| `CORS_ALLOWED_ORIGINS` | ✅ Yes | `https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app` | Comma-separated list of allowed frontend origins |
+| `CORS_ALLOWED_ORIGINS` | ✅ Yes | `https://www.wathaci.com` | Comma-separated list of allowed frontend origins |
 | `SUPABASE_URL` | ✅ Yes | `https://your-project.supabase.co` | Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ Yes | `eyJhbGci...` | Supabase service role key (SECRET!) |
 | `LENCO_SECRET_KEY` | ✅ Yes | `sk_live_xxxxx` | Lenco payment gateway secret key (SECRET!) |
@@ -380,7 +380,7 @@ The backend is configured to accept requests from allowed origins.
 CORS_ALLOWED_ORIGINS="*"
 
 # Production - specific origins
-CORS_ALLOWED_ORIGINS="https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app"
+CORS_ALLOWED_ORIGINS="https://www.wathaci.com"
 
 # Multiple origins
 CORS_ALLOWED_ORIGINS="http://localhost:8080,https://wathaci.com"
@@ -552,7 +552,7 @@ npm test
    curl http://localhost:3000/health
    
    # Production
-   curl https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app/health
+   curl https://wathaci-connect-platform2.vercel.app/health
    ```
 
 2. **API Info:**
@@ -574,11 +574,11 @@ npm test
 
 4. **CORS Test:**
    ```bash
-   curl -H "Origin: https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app" \
+   curl -H "Origin: https://www.wathaci.com" \
         -H "Access-Control-Request-Method: POST" \
         -H "Access-Control-Request-Headers: Content-Type" \
         -X OPTIONS \
-        https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app/api/users
+        https://wathaci-connect-platform2.vercel.app/api/users
    ```
 
 ## Production Deployment
@@ -631,7 +631,7 @@ npm test
 
 After deployment, verify integration:
 
-1. Check health endpoint: `https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app/health`
+1. Check health endpoint: `https://wathaci-connect-platform2.vercel.app/health`
 2. Test CORS from frontend domain
 3. Verify all API endpoints are accessible
 4. Monitor error logs
@@ -716,7 +716,7 @@ After deployment, verify integration:
 Set up automated health checks:
 ```bash
 # Cron job example
-*/5 * * * * curl -f https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app/health || alert-team
+*/5 * * * * curl -f https://wathaci-connect-platform2.vercel.app/health || alert-team
 ```
 
 ### Logging

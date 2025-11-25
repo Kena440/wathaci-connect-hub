@@ -55,12 +55,12 @@ const parseAllowedOrigins = (value = '') =>
     .filter(Boolean);
 
 const defaultAllowedOrigins = [
-  'https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app',
-  'http://localhost:3000',
-  'http://localhost:5173',
+  'https://www.wathaci.com',
+  'https://wathaci-connect-platform.vercel.app',
+  'https://wathaci-connect-platform-amukenas-projects.vercel.app',
 ];
 
-const configuredOrigins = parseAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS);
+const configuredOrigins = parseAllowedOrigins(process.env.ALLOWED_ORIGINS || process.env.CORS_ALLOWED_ORIGINS);
 const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...configuredOrigins]));
 const allowAllOrigins = allowedOrigins.includes('*');
 
@@ -70,11 +70,13 @@ const corsMiddleware = cors
         // Allow requests without Origin header (e.g., server-to-server, health checks, CLI tools)
         if (!origin) return callback(null, true);
         if (allowAllOrigins || allowedOrigins.includes(origin)) return callback(null, true);
-        const error = new Error('Not allowed by CORS');
+        const error = new Error(`CORS blocked for origin: ${origin}`);
         error.status = 403;
         return callback(error);
       },
       credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
     })
   : createCorsMiddleware({ allowedOrigins, allowCredentials: true, allowNoOrigin: true });
 

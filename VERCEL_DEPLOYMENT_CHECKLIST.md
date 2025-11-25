@@ -30,7 +30,7 @@
 ### Frontend Environment Variables (Set in Vercel)
 
 **Critical Variables:**
-- [ ] `VITE_API_BASE_URL` = `https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app`
+- [ ] `VITE_API_BASE_URL` = `https://wathaci-connect-platform2.vercel.app`
 - [ ] `VITE_SUPABASE_URL` = Your Supabase project URL
 - [ ] `VITE_SUPABASE_ANON_KEY` = Your Supabase anonymous key
 - [ ] `VITE_LENCO_PUBLIC_KEY` = Your Lenco public key
@@ -44,7 +44,7 @@
 ### Backend Environment Variables (Set in Vercel)
 
 **Critical Variables:**
-- [ ] `CORS_ALLOWED_ORIGINS` = `https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app`
+- [ ] `CORS_ALLOWED_ORIGINS` = `https://www.wathaci.com,https://wathaci-connect-platform.vercel.app,https://wathaci-connect-platform-amukenas-projects.vercel.app`
 - [ ] `SUPABASE_URL` = Your Supabase project URL
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` = Your Supabase service role key (SECRET!)
 - [ ] `LENCO_SECRET_KEY` = Your Lenco secret key (SECRET!)
@@ -66,8 +66,8 @@
 
 ### Test Backend Independently
 
-- [ ] Health check passes: `curl https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app/health`
-- [ ] API info passes: `curl https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app/api`
+- [ ] Health check passes: `curl https://wathaci-connect-platform2.vercel.app/health`
+- [ ] API info passes: `curl https://wathaci-connect-platform2.vercel.app/api`
 - [ ] Returns HTTP 200 status code
 - [ ] Returns valid JSON response
 - [ ] No 500 Internal Server Error
@@ -75,7 +75,7 @@
 
 ### Test Frontend Independently
 
-- [ ] Frontend URL loads: `https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app`
+- [ ] Frontend URL loads: `https://www.wathaci.com`
 - [ ] No blank white page
 - [ ] No fatal console errors
 - [ ] React app renders correctly
@@ -121,7 +121,7 @@
 3. Set project name: `wathaci-connect-backend` (or similar)
 4. Set environment variables (see Backend checklist above)
 5. Deploy
-6. Copy deployment URL: `https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app`
+6. Copy deployment URL: `https://wathaci-connect-platform2.vercel.app`
 
 ### Step 2: Configure Frontend Environment
 
@@ -136,7 +136,7 @@
 1. Trigger new deployment (Vercel auto-deploys on git push)
 2. Or manually redeploy from Vercel Dashboard → Deployments → Redeploy
 3. Wait for deployment to complete
-4. Frontend URL: `https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app`
+4. Frontend URL: `https://www.wathaci.com`
 
 ### Step 4: Verify Integration
 
@@ -175,9 +175,9 @@
 
 **The integration is complete when:**
 
-✅ Frontend (React on Vercel) loads at: `https://wathaci-connect-platform-git-v3-amukenas-projects.vercel.app`
+✅ Frontend (React on Vercel) loads at: `https://www.wathaci.com`
 
-✅ Backend (Express on Vercel) responds at: `https://wathaci-connect-platform2-bayxdeseg-amukenas-projects.vercel.app`
+✅ Backend (Express on Vercel) responds at: `https://wathaci-connect-platform2.vercel.app`
 
 ✅ Frontend successfully communicates with backend
 
