@@ -63,13 +63,13 @@ test('CORS headers are properly set for allowed origins', async () => {
     // Test with origin header
     const res = await fetch(`http://localhost:${port}/health`, {
       headers: {
-        'Origin': 'http://localhost:8080',
+        'Origin': 'https://www.wathaci.com',
       },
     });
-    
-    // CORS should allow all origins when CORS_ALLOWED_ORIGINS is not set or includes *
+
+    // CORS should allow configured origins
     const allowOriginHeader = res.headers.get('access-control-allow-origin');
-    assert.ok(allowOriginHeader === '*' || allowOriginHeader === 'http://localhost:8080');
+    assert.ok(allowOriginHeader === '*' || allowOriginHeader === 'https://www.wathaci.com');
     
     const allowMethodsHeader = res.headers.get('access-control-allow-methods');
     assert.ok(allowMethodsHeader?.includes('GET'));
@@ -87,7 +87,7 @@ test('OPTIONS request returns proper CORS headers', async () => {
     const res = await fetch(`http://localhost:${port}/users`, {
       method: 'OPTIONS',
       headers: {
-        'Origin': 'http://localhost:8080',
+        'Origin': 'https://www.wathaci.com',
       },
     });
     
@@ -113,14 +113,14 @@ test('User registration endpoint is accessible from frontend', async () => {
       accountType: 'sme',
     };
 
-    const res = await fetch(`http://localhost:${port}/api/users`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Origin': 'http://localhost:8080',
-      },
-      body: JSON.stringify(userData),
-    });
+      const res = await fetch(`http://localhost:${port}/api/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Origin': 'https://www.wathaci.com',
+        },
+        body: JSON.stringify(userData),
+      });
     
     assert.strictEqual(res.status, 201);
     
@@ -146,14 +146,14 @@ test('OTP send endpoint is accessible from frontend', async () => {
       channel: 'sms',
     };
 
-    const res = await fetch(`http://localhost:${port}/api/auth/otp/send`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Origin': 'http://localhost:8080',
-      },
-      body: JSON.stringify(otpRequest),
-    });
+      const res = await fetch(`http://localhost:${port}/api/auth/otp/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Origin': 'https://www.wathaci.com',
+        },
+        body: JSON.stringify(otpRequest),
+      });
     
     // Should succeed or fail gracefully (not 404)
     assert.notStrictEqual(res.status, 404);
@@ -176,14 +176,14 @@ test('Log endpoint accepts frontend logs', async () => {
       context: { test: true },
     };
 
-    const res = await fetch(`http://localhost:${port}/api/logs`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Origin': 'http://localhost:8080',
-      },
-      body: JSON.stringify(logEntry),
-    });
+      const res = await fetch(`http://localhost:${port}/api/logs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Origin': 'https://www.wathaci.com',
+        },
+        body: JSON.stringify(logEntry),
+      });
     
     assert.strictEqual(res.status, 201);
     
@@ -199,11 +199,11 @@ test('Payment readiness endpoint is accessible', async () => {
   const { port } = server.address();
 
   try {
-    const res = await fetch(`http://localhost:${port}/api/payment/readiness`, {
-      headers: {
-        'Origin': 'http://localhost:8080',
-      },
-    });
+      const res = await fetch(`http://localhost:${port}/api/payment/readiness`, {
+        headers: {
+          'Origin': 'https://www.wathaci.com',
+        },
+      });
     
     // Should return 200 (configured) or 503 (not configured), not 404
     assert.ok(res.status === 200 || res.status === 503);

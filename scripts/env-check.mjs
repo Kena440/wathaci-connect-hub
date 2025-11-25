@@ -230,7 +230,11 @@ const checks = [
       { key: 'VITE_APP_NAME', description: 'Application display name' },
     ],
     optional: [
-      { key: 'CORS_ALLOWED_ORIGINS', description: 'Comma-delimited list of origins for the Express backend' },
+      {
+        key: 'ALLOWED_ORIGINS',
+        aliases: ['CORS_ALLOWED_ORIGINS'],
+        description: 'Comma-delimited list of origins for the Express backend',
+      },
     ],
   },
 ];
