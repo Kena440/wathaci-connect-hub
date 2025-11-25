@@ -63,7 +63,9 @@ const defaultDevOrigins = [
 ];
 
 // Read allowed origins from environment variable
-// Production should set: ALLOWED_ORIGINS=https://www.wathaci.com,https://wathaci-connect-platform.vercel.app,https://wathaci-connect-platform-amukenas-projects.vercel.app,http://localhost:5173
+// SECURITY: In production, set ALLOWED_ORIGINS to HTTPS production domains only
+// Example for production: ALLOWED_ORIGINS=https://www.wathaci.com,https://wathaci-connect-platform.vercel.app,https://wathaci-connect-platform-amukenas-projects.vercel.app
+// Example for development: ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
 const configuredOrigins = parseAllowedOrigins(process.env.ALLOWED_ORIGINS);
 const allowedOrigins = configuredOrigins.length > 0 
   ? configuredOrigins 
