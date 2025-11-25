@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AppProvider } from "@/contexts/AppContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { PrivateRoute } from "./components/PrivateRoute";
+import { AccountTypeRoute } from "./components/AccountTypeRoute";
 import { ConfigurationError } from "@/components/ConfigurationError";
 import { RouteChangeDebugger } from "@/components/RouteChangeDebugger";
 import { supabaseConfigStatus } from "@/config/appConfig";
@@ -96,6 +97,11 @@ const ProfessionalNeedsAssessmentPage = lazy(() =>
     default: module.ProfessionalNeedsAssessmentPage,
   }))
 );
+const ProfessionalOnboardingPage = lazy(() =>
+  import("./pages/onboarding/ProfessionalOnboardingPage").then((module) => ({
+    default: module.ProfessionalOnboardingPage,
+  }))
+);
 const DonorNeedsAssessmentPage = lazy(() =>
   import("./pages/onboarding/DonorNeedsAssessmentPage").then((module) => ({
     default: module.DonorNeedsAssessmentPage,
@@ -109,6 +115,16 @@ const InvestorNeedsAssessmentPage = lazy(() =>
 const GovernmentNeedsAssessmentPage = lazy(() =>
   import("./pages/onboarding/GovernmentNeedsAssessmentPage").then((module) => ({
     default: module.GovernmentNeedsAssessmentPage,
+  }))
+);
+const SmeOnboardingPage = lazy(() =>
+  import("./pages/onboarding/SmeOnboardingPage").then((module) => ({
+    default: module.SmeOnboardingPage,
+  }))
+);
+const InvestorOnboardingPage = lazy(() =>
+  import("./pages/onboarding/InvestorOnboardingPage").then((module) => ({
+    default: module.InvestorOnboardingPage,
   }))
 );
 
@@ -220,10 +236,30 @@ export const AppRoutes = () => (
         }
       />
       <Route
+        path="/onboarding/sme"
+        element={
+          <PrivateRoute>
+            <AccountTypeRoute allowed={["sme"]}>
+              <SmeOnboardingPage />
+            </AccountTypeRoute>
+          </PrivateRoute>
+        }
+      />
+      <Route
         path="/onboarding/professional/needs-assessment"
         element={
           <PrivateRoute>
             <ProfessionalNeedsAssessmentPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/onboarding/professional"
+        element={
+          <PrivateRoute>
+            <AccountTypeRoute allowed={["professional"]}>
+              <ProfessionalOnboardingPage />
+            </AccountTypeRoute>
           </PrivateRoute>
         }
       />
@@ -240,6 +276,16 @@ export const AppRoutes = () => (
         element={
           <PrivateRoute>
             <InvestorNeedsAssessmentPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/onboarding/investor"
+        element={
+          <PrivateRoute>
+            <AccountTypeRoute allowed={["investor", "donor"]}>
+              <InvestorOnboardingPage />
+            </AccountTypeRoute>
           </PrivateRoute>
         }
       />

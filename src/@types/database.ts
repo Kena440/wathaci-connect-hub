@@ -519,6 +519,90 @@ export interface SMEReadinessScore {
   updated_at: string;
 }
 
+// ================================
+// Onboarding profile tables
+// ================================
+
+export interface ProfessionalProfileRow {
+  id: string;
+  user_id: string;
+  entity_type: 'individual' | 'firm' | 'company';
+  full_name: string;
+  organisation_name?: string | null;
+  bio?: string | null;
+  primary_expertise: string[];
+  secondary_skills: string[];
+  years_of_experience?: number | null;
+  current_organisation?: string | null;
+  qualifications?: string | null;
+  top_sectors: string[];
+  notable_projects?: string | null;
+  services_offered: string[];
+  expected_rates?: string | null;
+  location_city?: string | null;
+  location_country?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  linkedin_url?: string | null;
+  website_url?: string | null;
+  portfolio_url?: string | null;
+  availability?: 'part_time' | 'full_time' | 'occasional' | null;
+  notes?: string | null;
+  profile_photo_url?: string | null;
+  logo_url?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface SmeProfileRow {
+  id: string;
+  user_id: string;
+  business_name: string;
+  registration_number?: string | null;
+  registration_type?: string | null;
+  sector?: string | null;
+  subsector?: string | null;
+  years_in_operation?: number | null;
+  employee_count?: number | null;
+  turnover_bracket?: string | null;
+  products_overview?: string | null;
+  target_market?: string | null;
+  location_city?: string | null;
+  location_country?: string | null;
+  contact_name?: string | null;
+  contact_phone?: string | null;
+  business_email?: string | null;
+  website_url?: string | null;
+  social_links: string[];
+  main_challenges: string[];
+  support_needs: string[];
+  logo_url?: string | null;
+  photos: string[];
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface InvestorProfileRow {
+  id: string;
+  user_id: string;
+  organisation_name: string;
+  investor_type?: string | null;
+  ticket_size_min?: number | null;
+  ticket_size_max?: number | null;
+  preferred_sectors: string[];
+  country_focus: string[];
+  stage_preference: string[];
+  instruments: string[];
+  impact_focus: string[];
+  contact_person?: string | null;
+  contact_role?: string | null;
+  website_url?: string | null;
+  linkedin_url?: string | null;
+  logo_url?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
 export interface SMEReadinessAnswers {
   q1?: 'yes' | 'no'; // Registered with PACRA
   q2?: 'yes' | 'no'; // Issue receipts/invoices
@@ -538,6 +622,21 @@ export interface Database {
         Row: Profile;
         Insert: Partial<Profile>;
         Update: Partial<Profile>;
+      };
+      professional_profiles: {
+        Row: ProfessionalProfileRow;
+        Insert: Partial<ProfessionalProfileRow>;
+        Update: Partial<ProfessionalProfileRow>;
+      };
+      sme_profiles: {
+        Row: SmeProfileRow;
+        Insert: Partial<SmeProfileRow>;
+        Update: Partial<SmeProfileRow>;
+      };
+      investor_profiles: {
+        Row: InvestorProfileRow;
+        Insert: Partial<InvestorProfileRow>;
+        Update: Partial<InvestorProfileRow>;
       };
       sme_readiness_scores: {
         Row: SMEReadinessScore;

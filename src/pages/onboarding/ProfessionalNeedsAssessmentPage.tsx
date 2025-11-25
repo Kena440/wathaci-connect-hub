@@ -13,6 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { upsertProfile, saveProfessionalNeedsAssessment } from '@/lib/onboarding';
+import { getProfessionalProfile } from '@/lib/api/profile-onboarding';
 import { ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
 
 const professionalAssessmentSchema = z.object({
@@ -52,6 +53,19 @@ export const ProfessionalNeedsAssessmentPage = () => {
     if (!user) {
       navigate('/signin');
     }
+  }, [user, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const checkProfile = async () => {
+      const profileRecord = await getProfessionalProfile();
+      if (!profileRecord) {
+        navigate('/onboarding/professional');
+      }
+    };
+
+    void checkProfile();
   }, [user, navigate]);
 
   const totalSteps = 3;

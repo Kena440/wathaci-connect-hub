@@ -98,7 +98,7 @@ describe('GetStartedPage', () => {
         full_name: 'Ama Mensah Consulting',
         business_name: 'Ama Mensah Consulting',
       },
-      expectedRoute: '/onboarding/professional/needs-assessment',
+      expectedRoute: '/onboarding/professional',
     },
     {
       accountType: /donor/i,
@@ -111,7 +111,7 @@ describe('GetStartedPage', () => {
         business_name: 'Impact Builders Foundation',
         full_name: 'Impact Builders Foundation',
       },
-      expectedRoute: '/onboarding/donor/needs-assessment',
+      expectedRoute: '/onboarding/investor',
     },
     {
       accountType: /investor/i,
@@ -124,7 +124,7 @@ describe('GetStartedPage', () => {
         business_name: 'Growth Catalyst Partners',
         full_name: 'Growth Catalyst Partners',
       },
-      expectedRoute: '/onboarding/investor/needs-assessment',
+      expectedRoute: '/onboarding/investor',
     },
     {
       accountType: /sme/i,
@@ -136,7 +136,7 @@ describe('GetStartedPage', () => {
         msisdn: '+233301122334',
         business_name: 'BrightFuture Enterprises',
       },
-      expectedRoute: '/onboarding/sme/needs-assessment',
+      expectedRoute: '/onboarding/sme',
     },
   ])('submits profile details for $accountType accounts', async ({
     accountType,
