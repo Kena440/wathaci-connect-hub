@@ -1,6 +1,21 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 
+/**
+ * DEVELOPMENT/TESTING IMPLEMENTATION
+ * ==================================
+ * This edge function currently provides a PLACEHOLDER implementation
+ * that simulates document generation without actually creating documents.
+ * 
+ * DO NOT USE IN PRODUCTION without implementing:
+ * 1. Actual AI document generation (OpenAI/Anthropic integration)
+ * 2. Real PDF/DOCX/PPTX file creation
+ * 3. Supabase Storage file uploads
+ * 4. Receipt PDF generation
+ * 
+ * See TODO comments below for implementation details.
+ */
+
 interface GenerateDocumentRequest {
   documentRequestId: string;
 }
@@ -18,6 +33,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Flag to identify this as a development/testing implementation
+const IS_DEVELOPMENT_IMPLEMENTATION = true;
+
 serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -25,6 +43,11 @@ serve(async (req: Request) => {
   }
 
   try {
+    // Log warning in development mode
+    if (IS_DEVELOPMENT_IMPLEMENTATION) {
+      console.warn('[generate-document] Running in DEVELOPMENT mode - documents are not actually generated');
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');

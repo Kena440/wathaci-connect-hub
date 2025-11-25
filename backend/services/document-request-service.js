@@ -143,13 +143,21 @@ async function getRequestByPaymentReference(paymentReference) {
 
 async function markPaymentStatusByReference(paymentReference, status, metadata = {}) {
   const supabase = getSupabaseOrThrow();
+  
+  // Build update object - store transaction_id in payment_gateway metadata, not in payment_reference
+  const updateData = {
+    payment_status: status,
+    updated_at: new Date().toISOString(),
+  };
+  
+  // Store transaction_id in a metadata-friendly way without overwriting payment_reference
+  if (metadata.transaction_id) {
+    updateData.payment_gateway = `${metadata.payment_gateway || 'webhook'}:${metadata.transaction_id}`;
+  }
+  
   const { data, error } = await supabase
     .from(TABLE)
-    .update({
-      payment_status: status,
-      updated_at: new Date().toISOString(),
-      ...(metadata.transaction_id && { payment_reference: metadata.transaction_id }),
-    })
+    .update(updateData)
     .eq('payment_reference', paymentReference)
     .select()
     .single();
