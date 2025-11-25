@@ -119,6 +119,7 @@ app.get('/api', (req, res) => {
       otp: 'POST /api/auth/otp/send, POST /api/auth/otp/verify',
       email: 'GET /api/email/test, GET /api/email/status, POST /api/email/send, POST /api/email/send-otp, POST /api/email/send-verification, POST /api/email/send-password-reset',
       diagnostics: 'POST /api/diagnostics/run, GET /api/diagnostics/:companyId/latest, GET /api/diagnostics/:companyId/history',
+      documents: 'POST /api/documents/pay, POST /api/documents/webhook, GET /api/documents/:id, GET /api/documents/user/:userId, POST /api/documents/:id/generate',
     },
   });
 });

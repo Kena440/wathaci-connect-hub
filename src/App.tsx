@@ -131,6 +131,28 @@ const ComplianceDashboard = lazy(() =>
   }))
 );
 
+// Document Generator feature
+const DocumentGeneratorDashboard = lazy(() =>
+  import("./features/document-generator/DocumentGeneratorDashboard").then((module) => ({
+    default: module.DocumentGeneratorDashboard,
+  }))
+);
+const BusinessPlanForm = lazy(() =>
+  import("./features/document-generator/BusinessPlanForm").then((module) => ({
+    default: module.BusinessPlanForm,
+  }))
+);
+const PitchDeckForm = lazy(() =>
+  import("./features/document-generator/PitchDeckForm").then((module) => ({
+    default: module.PitchDeckForm,
+  }))
+);
+const DocumentGenerationStatus = lazy(() =>
+  import("./features/document-generator/DocumentGenerationStatus").then((module) => ({
+    default: module.DocumentGenerationStatus,
+  }))
+);
+
 
 export const AppRoutes = () => (
   <Suspense fallback={<LoadingScreen />}>
@@ -293,6 +315,48 @@ export const AppRoutes = () => (
         element={
           <PrivateRoute>
             <CreditPassport />
+          </PrivateRoute>
+        }
+      />
+      
+      {/* Document Generator routes */}
+      <Route
+        path="/document-generator"
+        element={
+          <PrivateRoute>
+            <DocumentGeneratorDashboard />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/document-generator/business-plan"
+        element={
+          <PrivateRoute>
+            <BusinessPlanForm />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/document-generator/pitch-deck"
+        element={
+          <PrivateRoute>
+            <PitchDeckForm />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/document-generator/generating/:documentId"
+        element={
+          <PrivateRoute>
+            <DocumentGenerationStatus />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/document-generator/view/:documentId"
+        element={
+          <PrivateRoute>
+            <DocumentGenerationStatus />
           </PrivateRoute>
         }
       />

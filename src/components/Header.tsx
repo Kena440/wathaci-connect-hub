@@ -31,6 +31,7 @@ const Header = () => {
     { key: 'fundingHub', href: '/funding-hub' },
     { key: 'complianceHub', href: '/compliance' },
     { key: 'creditPassport', href: '/credit-passport' },
+    { key: 'documentGenerator', href: '/document-generator' },
     { key: 'aboutUs', href: '/about-us' }
   ];
 
