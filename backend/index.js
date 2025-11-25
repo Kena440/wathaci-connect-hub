@@ -58,6 +58,10 @@ const defaultAllowedOrigins = [
   'https://www.wathaci.com',
   'https://wathaci-connect-platform.vercel.app',
   'https://wathaci-connect-platform-amukenas-projects.vercel.app',
+  // Allow localhost for local development
+  'http://localhost:4000',
+  'http://localhost:5173',
+  'http://localhost:8080',
 ];
 
 const configuredOrigins = parseAllowedOrigins(process.env.ALLOWED_ORIGINS || process.env.CORS_ALLOWED_ORIGINS);
@@ -157,7 +161,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
