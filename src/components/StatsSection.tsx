@@ -14,9 +14,20 @@ import {
   Sparkles,
   MessageCircle,
   RefreshCw,
+  DollarSign,
 } from 'lucide-react';
 
 const formatNumber = (value: number) => value.toLocaleString();
+
+const formatRevenue = (value: number) => {
+  if (value >= 1000000) {
+    return `ZMW ${(value / 1000000).toFixed(1)}M`;
+  }
+  if (value >= 1000) {
+    return `ZMW ${Math.round(value / 1000)}K`;
+  }
+  return `ZMW ${value}`;
+};
 
 const StatsSection = () => {
   const { metrics, status, reload } = useImpactMetrics();
@@ -150,6 +161,14 @@ const StatsSection = () => {
         description: 'People collaborating right now',
       },
       {
+        icon: DollarSign,
+        label: 'Gross Revenue',
+        value: animatedActivityMetrics.platform_revenue,
+        accent: 'from-emerald-500 to-green-500',
+        description: 'Total processed volume (completed)',
+        isRevenue: true,
+      },
+      {
         icon: Heart,
         label: 'Support Queries Resolved',
         value: animatedActivityMetrics.support_queries_resolved,
@@ -230,7 +249,7 @@ const StatsSection = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
               {activityStats.map((stat) => {
                 const Icon = stat.icon;
-                const value = formatNumber(stat.value);
+                const value = stat.isRevenue ? formatRevenue(stat.value) : formatNumber(stat.value);
                 return (
                   <div
                     key={stat.label}
