@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useImpactMetrics } from '@/hooks/useImpactMetrics';
 import {
+  Activity,
   Building2,
   Users,
   Briefcase,
@@ -142,7 +143,7 @@ const StatsSection = () => {
         description: 'New accounts activated recently',
       },
       {
-        icon: Users,
+        icon: Activity,
         label: 'Active Sessions (24h)',
         value: animatedActivityMetrics.active_sessions,
         accent: 'from-blue-500 to-sky-500',
