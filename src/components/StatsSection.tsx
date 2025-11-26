@@ -12,6 +12,7 @@ interface Stats {
   projectsCompleted: number;
   jobsCreated: number;
   countriesServed: number;
+  successStories: number;
 }
 
 const StatsSection = () => {
@@ -24,7 +25,8 @@ const StatsSection = () => {
     totalFunding: 0,
     projectsCompleted: 0,
     jobsCreated: 0,
-    countriesServed: 0
+    countriesServed: 0,
+    successStories: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -53,19 +55,26 @@ const StatsSection = () => {
 
       if (error) throw error;
 
-      // Convert business stats to our format
-      const statsMap = businessStats?.reduce((acc: Record<string, number>, stat: any) => {
-        acc[stat.stat_type] = stat.stat_value;
-        return acc;
-      }, {} as Record<string, number>) || {};
+      const toNumber = (value: unknown) => {
+        if (typeof value === 'number') return value;
+        if (typeof value === 'string') return Number(value) || 0;
+        return 0;
+      };
+
+      // Convert business stats to our format using numeric values
+      const statsMap =
+        businessStats?.reduce((acc: Record<string, number>, stat: any) => {
+          acc[stat.stat_type] = toNumber(stat.stat_value);
+          return acc;
+        }, {} as Record<string, number>) || {};
 
       // Fetch user type counts as fallback with timeout protection
       const userQueries = await Promise.allSettled([
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('account_type', 'sole_proprietor'),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('account_type', 'professional'),
-        supabase.from('freelancers').select('*', { count: 'exact', head: true }),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('account_type', 'investor'),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('account_type', 'donor')
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_type', 'sole_proprietor'),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_type', 'professional'),
+        supabase.from('freelancers').select('id', { count: 'exact', head: true }),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_type', 'investor'),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_type', 'donor')
       ]);
 
       const [smesResult, professionalsResult, freelancersResult, investorsResult, donorsResult] = userQueries;
@@ -77,29 +86,30 @@ const StatsSection = () => {
       const donorsCount = donorsResult.status === 'fulfilled' ? donorsResult.value.count : 0;
 
       setStats({
-        smes: statsMap.businesses || smesCount || 0,
-        professionals: professionalsCount || 0,
-        freelancers: freelancersCount || 0,
-        investors: investorsCount || 0,
-        donors: donorsCount || 0,
+        smes: smesCount || statsMap.businesses || 0,
+        professionals: professionalsCount || statsMap.professionals || 0,
+        freelancers: freelancersCount || statsMap.freelancers || 0,
+        investors: investorsCount || statsMap.investors || 0,
+        donors: donorsCount || statsMap.donors || 0,
         totalFunding: statsMap.funding || 0,
         projectsCompleted: statsMap.transactions || 0,
-        jobsCreated: Math.floor((statsMap.users || 0) * 2.5),
-        countriesServed: 3
+        jobsCreated: statsMap.jobs_created || 0,
+        countriesServed: statsMap.countries_served || 0,
+        successStories: statsMap.success_stories || 0
       });
     } catch (error) {
       console.error('Error fetching impact stats:', error);
-      // Set meaningful demo values for better presentation when database is unavailable
       setStats({
-        smes: 127,
-        professionals: 43,
-        freelancers: 86,
-        investors: 12,
-        donors: 38,
-        totalFunding: 2400000, // $2.4M
-        projectsCompleted: 89,
-        jobsCreated: 245,
-        countriesServed: 3
+        smes: 0,
+        professionals: 0,
+        freelancers: 0,
+        investors: 0,
+        donors: 0,
+        totalFunding: 0,
+        projectsCompleted: 0,
+        jobsCreated: 0,
+        countriesServed: 0,
+        successStories: 0
       });
     } finally {
       setLoading(false);
@@ -146,6 +156,20 @@ const StatsSection = () => {
       description: 'Small businesses empowered'
     },
     {
+      icon: Briefcase,
+      value: loading ? '...' : stats.professionals.toLocaleString(),
+      label: 'Business Professionals',
+      color: 'text-amber-600',
+      description: 'Operators and SME leads onboarded'
+    },
+    {
+      icon: Target,
+      value: loading ? '...' : stats.freelancers.toLocaleString(),
+      label: 'Independent Freelancers',
+      color: 'text-cyan-600',
+      description: 'Service providers available for projects'
+    },
+    {
       icon: TrendingUp,
       value: loading ? '...' : stats.investors.toLocaleString(),
       label: 'Active Investors',
@@ -161,10 +185,10 @@ const StatsSection = () => {
     },
     {
       icon: Award,
-      value: loading ? '...' : `${Math.floor((stats.smes + stats.professionals + stats.freelancers) * 0.85)}`,
+      value: loading ? '...' : stats.successStories.toLocaleString(),
       label: 'Success Stories',
       color: 'text-yellow-600',
-      description: 'Businesses thriving'
+      description: 'Projects with verified outcomes'
     },
     {
       icon: Globe,
