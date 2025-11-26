@@ -32,7 +32,7 @@ const Footer = ({ metrics }: FooterProps) => {
       `Serving ${formatNumber(metrics.user_counts.professionals)} professionals and ${formatNumber(metrics.user_counts.smes)} SMEs, bridging the gap between skills and opportunities.`,
       `Est. Growth: ${formatNumber(metrics.activity_metrics.successful_matches)} successful matches, ${formatNumber(metrics.activity_metrics.projects_posted)} posted projects, ${formatNumber(metrics.activity_metrics.messages_sent)} messages sent.`,
     ],
-    [metrics.activity_metrics.messages_sent, metrics.activity_metrics.projects_posted, metrics.activity_metrics.successful_matches, metrics.user_counts.professionals, metrics.user_counts.smes, metrics.user_counts.total_users],
+    [metrics],
   );
 
   return (

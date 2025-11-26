@@ -94,7 +94,7 @@ export const useImpactMetrics = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setError, setLoading, setMetrics]);
 
   useEffect(() => {
     loadMetrics();
