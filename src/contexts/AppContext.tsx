@@ -649,7 +649,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     refreshPromiseRef.current = refreshTask;
 
     return refreshTask;
-  }, [resolveOfflineAuthState, user?.id]);
+  }, [user?.id]);
 
   const signIn = async (email: string, password: string): Promise<AuthState> => {
     logInfo('Initiating sign-in flow', { event: 'auth:signIn:start' });

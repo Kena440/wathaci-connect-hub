@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppLayout from '@/components/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -70,7 +70,7 @@ const DocumentGenerators = () => {
     setStatusText('Awaiting payment confirmation');
   };
 
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     if (!user) return;
     try {
       const { requests } = await documentGeneratorService.listRequests(user.id);
@@ -78,11 +78,11 @@ const DocumentGenerators = () => {
     } catch (error) {
       console.error('[documents] history error', error);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
-    loadHistory();
-  }, [user?.id]);
+    void loadHistory();
+  }, [loadHistory]);
 
   const triggerPayment = async () => {
     if (!user || !selectedType) {
