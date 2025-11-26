@@ -6,6 +6,7 @@ const router = express.Router();
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 let cachedResponse = null;
 let cacheExpiresAt = 0;
+let fetchPromise = null;
 
 const DEFAULT_USER_COUNTS = {
   total_users: 0,
@@ -25,7 +26,6 @@ const DEFAULT_ACTIVITY_METRICS = {
   support_queries_resolved: 0,
   signups_last_30_days: 0,
   returning_users: 0,
-  platform_revenue: 0,
 };
 
 const getSupabaseOrThrow = () => {
@@ -89,7 +89,6 @@ const fetchUserCounts = async () => {
 };
 
 const fetchActivityMetrics = async () => {
-  const supabase = getSupabaseOrThrow();
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
@@ -99,31 +98,11 @@ const fetchActivityMetrics = async () => {
     successful_matches,
     messages_sent,
     signups_last_30_days,
-    platform_revenue,
   ] = await Promise.all([
     safeCount('marketplace_orders'),
     safeCount('transactions', (query) => query.eq('status', 'completed')),
     safeCount('audit_logs', (query) => query.eq('table_name', 'messages')),
     safeCount('profiles', (query) => query.gte('created_at', thirtyDaysAgo)),
-    (async () => {
-      try {
-        const client = getSupabaseOrThrow();
-        const { data, error } = await client
-          .from('transactions')
-          .select('amount')
-          .eq('status', 'completed');
-
-        if (error) {
-          console.warn('[metrics] Failed to load revenue:', error.message);
-          return 0;
-        }
-
-        return (data || []).reduce((sum, row) => sum + Number(row.amount || 0), 0);
-      } catch (error) {
-        console.warn('[metrics] Revenue unavailable:', error.message);
-        return 0;
-      }
-    })(),
   ]);
 
   const returning_users = await (async () => {
@@ -199,7 +178,6 @@ const fetchActivityMetrics = async () => {
     support_queries_resolved,
     signups_last_30_days,
     returning_users,
-    platform_revenue,
   };
 };
 
@@ -208,14 +186,24 @@ const getImpactGrowthMetrics = async () => {
     return cachedResponse;
   }
 
-  const [user_counts, activity_metrics] = await Promise.all([
+  if (fetchPromise) {
+    return fetchPromise;
+  }
+
+  fetchPromise = Promise.all([
     fetchUserCounts(),
     fetchActivityMetrics(),
-  ]);
+  ]).then(([user_counts, activity_metrics]) => {
+    cachedResponse = { user_counts, activity_metrics };
+    cacheExpiresAt = Date.now() + CACHE_TTL_MS;
+    fetchPromise = null;
+    return cachedResponse;
+  }).catch((error) => {
+    fetchPromise = null;
+    throw error;
+  });
 
-  cachedResponse = { user_counts, activity_metrics };
-  cacheExpiresAt = Date.now() + CACHE_TTL_MS;
-  return cachedResponse;
+  return fetchPromise;
 };
 
 router.get('/impact-growth', async (req, res) => {
