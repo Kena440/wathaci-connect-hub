@@ -19,7 +19,6 @@ export interface ActivityMetrics {
   support_queries_resolved: number;
   signups_last_30_days: number;
   returning_users: number;
-  platform_revenue: number;
 }
 
 export interface ImpactMetricsResponse {
@@ -46,7 +45,6 @@ const DEFAULT_METRICS: ImpactMetricsResponse = {
     support_queries_resolved: 0,
     signups_last_30_days: 0,
     returning_users: 0,
-    platform_revenue: 0,
   },
 };
 
@@ -61,26 +59,26 @@ export const useImpactMetrics = () => {
       const response = await fetch(`${API_BASE_URL}/api/metrics/impact-growth`);
       if (!response.ok) {
         let errorMessage = `Failed to load metrics: ${response.statusText}`;
-        let fallbackMetrics = {};
+        let partialMetrics = {};
         try {
           const errorPayload = await response.json();
           if (errorPayload && typeof errorPayload === 'object') {
             if (errorPayload.error) {
               errorMessage = errorPayload.error;
             }
-            fallbackMetrics = {
+            partialMetrics = {
               user_counts: errorPayload.user_counts ?? DEFAULT_METRICS.user_counts,
               activity_metrics: errorPayload.activity_metrics ?? DEFAULT_METRICS.activity_metrics,
             };
           }
         } catch (e) {
           // Ignore JSON parse errors, use default error message and metrics
-          fallbackMetrics = {
+          partialMetrics = {
             user_counts: DEFAULT_METRICS.user_counts,
             activity_metrics: DEFAULT_METRICS.activity_metrics,
           };
         }
-        setMetrics({ ...DEFAULT_METRICS, ...fallbackMetrics });
+        setMetrics({ ...DEFAULT_METRICS, ...partialMetrics });
         setError(errorMessage);
         return;
       }

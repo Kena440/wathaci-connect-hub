@@ -6,7 +6,6 @@ import {
   Briefcase,
   TrendingUp,
   Heart,
-  DollarSign,
   Target,
   Award,
   Globe,
@@ -17,17 +16,6 @@ import {
 } from 'lucide-react';
 
 const formatNumber = (value: number) => value.toLocaleString();
-
-const formatCurrency = (amount: number) => {
-  if (!amount) return 'ZMW 0';
-  if (amount >= 1_000_000) {
-    return `ZMW ${(amount / 1_000_000).toFixed(1)}M`;
-  }
-  if (amount >= 1_000) {
-    return `ZMW ${(amount / 1_000).toFixed(0)}K`;
-  }
-  return `ZMW ${amount.toLocaleString()}`;
-};
 
 const StatsSection = () => {
   const { metrics, status, reload } = useImpactMetrics();
@@ -161,14 +149,6 @@ const StatsSection = () => {
         description: 'People collaborating right now',
       },
       {
-        icon: DollarSign,
-        label: 'Gross Revenue',
-        value: animatedActivityMetrics.platform_revenue,
-        formatter: formatCurrency,
-        accent: 'from-emerald-500 to-green-500',
-        description: 'Total processed volume (completed)',
-      },
-      {
         icon: Heart,
         label: 'Support Queries Resolved',
         value: animatedActivityMetrics.support_queries_resolved,
@@ -197,7 +177,9 @@ const StatsSection = () => {
           <button
             type="button"
             onClick={reload}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
+            aria-label={status.loading ? "Refreshing metrics..." : "Refresh metrics"}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={status.loading}
           >
             <RefreshCw className={`w-4 h-4 ${status.loading ? 'animate-spin' : ''}`} />
             Refresh metrics
@@ -211,46 +193,31 @@ const StatsSection = () => {
         )}
 
         <div className="bg-white rounded-3xl shadow-xl ring-1 ring-gray-100 overflow-hidden">
-          <div className="grid md:grid-cols-3 gap-6 p-8 bg-gradient-to-r from-orange-500/10 via-white to-amber-50">
-            <div className="col-span-2">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">User Growth</h3>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {userGrowthStats.map((stat) => {
-                  const Icon = stat.icon;
-                  return (
-                    <div
-                      key={stat.label}
-                      className="group rounded-2xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition-all duration-300"
-                    >
-                      <div className={`inline-flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br ${stat.accent} text-white mb-3 shadow`}>
-                        <Icon className="w-6 h-6" />
-                      </div>
-                      <div className="flex items-baseline gap-2">
-                        <p className="text-3xl font-bold text-gray-900">
-                          {formatNumber(stat.value)}
-                        </p>
-                        {stat.highlight && (
-                          <span className="text-xs font-semibold text-orange-600 px-2 py-1 bg-orange-50 rounded-full">Platform total</span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600 mt-1">{stat.label}</p>
+          <div className="p-8 bg-gradient-to-r from-orange-500/10 via-white to-amber-50">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">User Growth</h3>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {userGrowthStats.map((stat) => {
+                const Icon = stat.icon;
+                return (
+                  <div
+                    key={stat.label}
+                    className="group rounded-2xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition-all duration-300"
+                  >
+                    <div className={`inline-flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br ${stat.accent} text-white mb-3 shadow`}>
+                      <Icon className="w-6 h-6" />
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-500 to-amber-500 text-white p-6 shadow-lg">
-              <div className="flex items-center gap-3 mb-4">
-                <DollarSign className="w-6 h-6" />
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] font-semibold text-orange-100">Economic impact</p>
-                  <p className="text-xl font-semibold">Gross Revenue</p>
-                </div>
-              </div>
-              <p className="text-4xl font-bold leading-tight mb-2">{formatCurrency(animatedActivityMetrics.platform_revenue)}</p>
-              <p className="text-sm text-orange-50">
-                Completed transaction volume driven by SMEs, professionals, and partners on the platform.
-              </p>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-3xl font-bold text-gray-900">
+                        {formatNumber(stat.value)}
+                      </p>
+                      {stat.highlight && (
+                        <span className="text-xs font-semibold text-orange-600 px-2 py-1 bg-orange-50 rounded-full">Platform total</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">{stat.label}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -262,7 +229,7 @@ const StatsSection = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
               {activityStats.map((stat) => {
                 const Icon = stat.icon;
-                const value = stat.formatter ? stat.formatter(stat.value) : formatNumber(stat.value);
+                const value = formatNumber(stat.value);
                 return (
                   <div
                     key={stat.label}
@@ -284,7 +251,7 @@ const StatsSection = () => {
         <div className="mt-12 grid md:grid-cols-3 gap-6">
           {[{
             title: 'Proven Growth',
-            description: 'Live user acquisition, engagement, and revenue signals prove market pull across Zambia and beyond.',
+            description: 'Live user acquisition and engagement signals prove market pull across Zambia and beyond.',
           },
           {
             title: 'Operational Resilience',
