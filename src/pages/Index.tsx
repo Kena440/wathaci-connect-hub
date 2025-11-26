@@ -18,9 +18,8 @@ const Index: React.FC = () => {
           aria-hidden="true"
           className="fixed inset-0 bg-center bg-no-repeat"
           style={{
-            backgroundImage:
-              "url('/images/ChatGPT%20Image%20Sep%2023%2C%202025%2C%2001_52_19%20PM.png')",
-            backgroundSize: 'contain',
+            backgroundImage: "url('/images/Homepage%20Background%202.png')",
+            backgroundSize: 'cover',
           }}
         />
         <div
