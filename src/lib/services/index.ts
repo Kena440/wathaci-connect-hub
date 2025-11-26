@@ -46,12 +46,10 @@ import {
   ResourcePurchaseService,
   resourcePurchaseService,
 } from './resource-purchase-service';
-import { documentGeneratorService } from './document-generator-service';
 
 export {
   ResourcePurchaseService,
   resourcePurchaseService,
-  documentGeneratorService,
 };
 
 // Transfer recipient services
@@ -103,3 +101,17 @@ export const getService = <T extends ServiceType>(serviceName: T): ReturnType<ty
 
 // AI-powered services
 export { getCollaborationSuggestions } from './collaboration-service';
+
+// Document Generator services
+export {
+  documentGeneratorService,
+  documentGeneratorApi,
+  DOCUMENT_PRICES,
+  DOCUMENT_LABELS,
+} from './document-generator-service';
+export type {
+  CreateDocumentRequestParams,
+  DocumentPaymentParams,
+  DocumentRequestResponse,
+  DocumentListResponse,
+} from './document-generator-service';

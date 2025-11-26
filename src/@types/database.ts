@@ -612,6 +612,214 @@ export interface SMEReadinessAnswers {
 }
 
 // ================================
+// AI Document Generator Types
+// ================================
+
+export type DocumentType = 'business_plan' | 'pitch_deck';
+export type PaymentStatus = 'pending' | 'success' | 'failed' | 'refunded';
+export type GenerationStatus = 'not_started' | 'queued' | 'processing' | 'completed' | 'failed';
+export type PaymentGateway = 'mobile_money' | 'stripe' | 'flutterwave' | 'card' | 'bank_transfer';
+
+export interface PaidDocumentRequest {
+  id: string;
+  user_id: string;
+  company_id: string;
+  document_type: DocumentType;
+  input_data: BusinessPlanInput | PitchDeckInput;
+  payment_status: PaymentStatus;
+  amount: number;
+  currency: string;
+  payment_reference?: string;
+  payment_gateway?: PaymentGateway;
+  generation_status: GenerationStatus;
+  output_files?: DocumentOutputFiles;
+  receipt_url?: string;
+  ip_address?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DocumentOutputFiles {
+  pdf_url?: string;
+  docx_url?: string;
+  pptx_url?: string;
+  expires_at?: string;
+}
+
+export interface BusinessPlanInput {
+  // Executive Summary
+  business_name: string;
+  business_description: string;
+  mission_statement?: string;
+  vision_statement?: string;
+  value_proposition: string;
+  
+  // Business Details
+  industry_sector: string;
+  business_model: string;
+  legal_structure: string;
+  registration_number?: string;
+  year_established?: number;
+  location: string;
+  
+  // Products/Services
+  products_services: string;
+  unique_selling_points: string[];
+  competitive_advantages: string[];
+  
+  // Market Analysis
+  target_market: string;
+  market_size_estimate?: string;
+  market_trends?: string;
+  competitor_analysis?: string;
+  
+  // Financials
+  current_revenue?: number;
+  projected_revenue_year1?: number;
+  projected_revenue_year2?: number;
+  projected_revenue_year3?: number;
+  startup_costs?: number;
+  operating_expenses?: number;
+  funding_required?: number;
+  funding_purpose?: string;
+  
+  // Team
+  team_members?: TeamMember[];
+  key_positions_to_fill?: string[];
+  
+  // Goals & Milestones
+  short_term_goals?: string[];
+  long_term_goals?: string[];
+  milestones?: Milestone[];
+  
+  // Additional Info
+  swot_analysis?: SWOTAnalysis;
+  risk_factors?: string[];
+  exit_strategy?: string;
+}
+
+export interface PitchDeckInput {
+  // Core Info
+  company_name: string;
+  tagline: string;
+  logo_url?: string;
+  
+  // Problem & Solution
+  problem_statement: string;
+  solution_description: string;
+  
+  // Market Opportunity
+  target_market: string;
+  market_size: string;
+  market_growth_rate?: string;
+  
+  // Product/Service
+  product_description: string;
+  key_features: string[];
+  demo_url?: string;
+  product_images?: string[];
+  
+  // Business Model
+  revenue_streams: string[];
+  pricing_strategy?: string;
+  unit_economics?: string;
+  
+  // Traction
+  current_customers?: number;
+  revenue_to_date?: number;
+  key_metrics?: KeyMetric[];
+  testimonials?: string[];
+  
+  // Competition
+  competitors: string[];
+  competitive_advantage: string;
+  
+  // Team
+  founders: FounderInfo[];
+  advisors?: AdvisorInfo[];
+  
+  // Financials
+  funding_ask: number;
+  use_of_funds: UseOfFunds[];
+  financial_projections?: FinancialProjection[];
+  
+  // Call to Action
+  contact_email: string;
+  website_url?: string;
+  social_links?: SocialLinks;
+}
+
+export interface TeamMember {
+  name: string;
+  role: string;
+  bio?: string;
+  linkedin_url?: string;
+}
+
+export interface Milestone {
+  title: string;
+  target_date: string;
+  description?: string;
+  status?: 'pending' | 'in_progress' | 'completed';
+}
+
+export interface SWOTAnalysis {
+  strengths: string[];
+  weaknesses: string[];
+  opportunities: string[];
+  threats: string[];
+}
+
+export interface KeyMetric {
+  name: string;
+  value: string;
+  growth_rate?: string;
+}
+
+export interface FounderInfo {
+  name: string;
+  title: string;
+  bio: string;
+  photo_url?: string;
+  linkedin_url?: string;
+}
+
+export interface AdvisorInfo {
+  name: string;
+  expertise: string;
+  company?: string;
+}
+
+export interface UseOfFunds {
+  category: string;
+  percentage: number;
+  description?: string;
+}
+
+export interface FinancialProjection {
+  year: number;
+  revenue: number;
+  expenses: number;
+  profit?: number;
+}
+
+export interface SocialLinks {
+  twitter?: string;
+  linkedin?: string;
+  facebook?: string;
+  instagram?: string;
+}
+
+export interface DocumentGenerationLog {
+  id: string;
+  document_request_id: string;
+  log_type: 'info' | 'warning' | 'error' | 'success';
+  message: string;
+  metadata?: Record<string, any>;
+  created_at: string;
+}
+
+// ================================
 // Supabase Database Type
 // ================================
 

@@ -126,6 +126,50 @@ async function getRequestById(id, userId) {
   return data;
 }
 
+async function getRequestByPaymentReference(paymentReference) {
+  const supabase = getSupabaseOrThrow();
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('*')
+    .eq('payment_reference', paymentReference)
+    .single();
+  if (error) {
+    const notFoundError = new Error(`Document request not found for payment reference: ${paymentReference}`);
+    notFoundError.status = 404;
+    throw notFoundError;
+  }
+  return data;
+}
+
+async function markPaymentStatusByReference(paymentReference, status, metadata = {}) {
+  const supabase = getSupabaseOrThrow();
+  
+  // Build update object - store transaction_id in payment_gateway metadata, not in payment_reference
+  const updateData = {
+    payment_status: status,
+    updated_at: new Date().toISOString(),
+  };
+  
+  // Store transaction_id in a metadata-friendly way without overwriting payment_reference
+  if (metadata.transaction_id) {
+    updateData.payment_gateway = `${metadata.payment_gateway || 'webhook'}:${metadata.transaction_id}`;
+  }
+  
+  const { data, error } = await supabase
+    .from(TABLE)
+    .update(updateData)
+    .eq('payment_reference', paymentReference)
+    .select()
+    .single();
+
+  if (error) {
+    const notFoundError = new Error(`Document request not found for payment reference: ${paymentReference}`);
+    notFoundError.status = 404;
+    throw notFoundError;
+  }
+  return data;
+}
+
 async function listRequestsForUser(userId) {
   const supabase = getSupabaseOrThrow();
   const { data, error } = await supabase
@@ -175,7 +219,9 @@ module.exports = {
   SUPPORTED_TYPES,
   createPaymentRequest,
   markPaymentStatus,
+  markPaymentStatusByReference,
   getRequestById,
+  getRequestByPaymentReference,
   listRequestsForUser,
   generateDocument,
   resolveAmount,
