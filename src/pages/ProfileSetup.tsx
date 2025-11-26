@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase-enhanced';
 import { ProfileForm } from '@/components/ProfileForm';
@@ -36,7 +36,10 @@ export const ProfileSetup = () => {
   const { user, refreshUser } = useAppContext();
   const [lastAutoAppliedAccountType, setLastAutoAppliedAccountType] = useState<AccountTypeValue | null>(null);
 
-  const validAccountTypeValues = new Set<AccountTypeValue>(accountTypes.map(({ value }) => value));
+  const validAccountTypeValues = useMemo(
+    () => new Set<AccountTypeValue>(accountTypes.map(({ value }) => value)),
+    []
+  );
 
   const accountTypeFromParams = (() => {
     const paramValue = searchParams.get('accountType');

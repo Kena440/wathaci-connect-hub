@@ -2,7 +2,7 @@
  * ComplianceDashboard - Main view for the Compliance Hub feature
  * Displays user's compliance tasks organized by status (Overdue, Upcoming, Completed)
  */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAppContext } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
@@ -39,13 +39,7 @@ export const ComplianceDashboard = () => {
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [isAddStandardDrawerOpen, setIsAddStandardDrawerOpen] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      fetchTasks();
-    }
-  }, [user]);
-
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -77,7 +71,13 @@ export const ComplianceDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (user) {
+      void fetchTasks();
+    }
+  }, [fetchTasks, user]);
 
   const markAsCompleted = async (taskId: string) => {
     try {
