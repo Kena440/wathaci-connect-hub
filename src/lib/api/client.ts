@@ -6,7 +6,7 @@ const normalizePath = (path: string) => (path.startsWith('/') ? path : `/${path}
 
 const ensureApiBaseUrl = () => {
   if (!API_BASE_URL) {
-    throw new Error('API base URL is not configured. Please set VITE_API_BASE_URL or REACT_APP_API_BASE_URL.');
+    throw new Error('API base URL is not configured. Please set VITE_API_BASE_URL.');
   }
 };
 

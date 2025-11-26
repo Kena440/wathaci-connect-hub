@@ -16,14 +16,6 @@ try {
   rateLimit = () => (req, res, next) => next();
 }
 
-let cors;
-try {
-  // Prefer the official cors package when available
-  cors = require('cors');
-} catch (err) {
-  cors = null;
-}
-
 const app = express();
 
 logPaymentReadiness();
@@ -33,7 +25,7 @@ const parseAllowedOrigins = (value = '') =>
   value
     .split(',')
     .map(origin => origin.trim())
-    .filter(Boolean);
+    .filter(origin => Boolean(origin) && origin !== '*');
 
 const defaultAllowedOrigins = [
   'https://www.wathaci.com',
@@ -45,29 +37,14 @@ const configuredOrigins = parseAllowedOrigins(
   process.env.ALLOWED_ORIGINS ?? process.env.CORS_ALLOWED_ORIGINS
 );
 const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...configuredOrigins]));
-const allowAllOrigins = allowedOrigins.includes('*');
 
-const corsMiddleware = cors
-  ? cors({
-      origin(origin, callback) {
-        // Allow requests without Origin header (e.g., server-to-server, health checks, CLI tools)
-        if (!origin) return callback(null, true);
-        if (allowAllOrigins || allowedOrigins.includes(origin)) return callback(null, true);
-        const error = new Error('Not allowed by CORS');
-        error.status = 403;
-        return callback(error);
-      },
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
-    })
-  : createCorsMiddleware({
-      allowedOrigins,
-      allowCredentials: true,
-      allowNoOrigin: true,
-      allowedMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
-    });
+const corsMiddleware = createCorsMiddleware({
+  allowedOrigins,
+  allowCredentials: true,
+  allowNoOrigin: true,
+  allowedMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+});
 
 app.use(corsMiddleware);
 
