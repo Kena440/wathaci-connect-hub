@@ -247,7 +247,7 @@ const StatsSection = () => {
                   <p className="text-xl font-semibold">Gross Revenue</p>
                 </div>
               </div>
-              <p className="text-4xl font-bold leading-tight mb-2">{formatCurrency(metrics.activity_metrics.platform_revenue)}</p>
+              <p className="text-4xl font-bold leading-tight mb-2">{formatCurrency(animatedActivityMetrics.platform_revenue)}</p>
               <p className="text-sm text-orange-50">
                 Completed transaction volume driven by SMEs, professionals, and partners on the platform.
               </p>
