@@ -6,6 +6,8 @@ const normalizePath = (path: string) => (path.startsWith('/') ? path : `/${path}
 
 const ensureApiBaseUrl = () => {
   if (!API_BASE_URL) {
+    // Surface configuration issues early while still allowing tests to stub fetch
+    console.error('VITE_API_BASE_URL is not defined');
     throw new Error('API base URL is not configured. Please set VITE_API_BASE_URL.');
   }
 };
@@ -15,22 +17,21 @@ export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptio
 
   const url = getApiEndpoint(normalizePath(path));
   const { headers, parseJson, ...rest } = options;
-  // Only set 'Content-Type' if a body is present and the header is not already set
-  const normalizedHeaders = { ...(headers || {}) };
-  const hasBody = 'body' in options && options.body !== undefined && options.body !== null;
-  const hasContentType = Object.keys(normalizedHeaders)
-    .some(h => h.toLowerCase() === 'content-type');
-  if (hasBody && !hasContentType) {
-    normalizedHeaders['Content-Type'] = 'application/json';
-  }
+
+  const defaultHeaders: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(headers || {}),
+  };
+
   const response = await fetch(url, {
-    headers: normalizedHeaders,
+    credentials: 'include',
     ...rest,
+    headers: defaultHeaders,
   });
 
   const contentType = response.headers.get('content-type') ?? '';
   const shouldParseJson = parseJson ?? contentType.includes('application/json');
-  
+
   let data: unknown;
   if (shouldParseJson) {
     try {
@@ -48,6 +49,13 @@ export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptio
       typeof data === 'object' && data && 'error' in data && typeof (data as { error?: unknown }).error === 'string'
         ? (data as { error: string }).error
         : response.statusText || 'Request failed';
+
+    // Provide detailed logging to aid debugging of onboarding/auth issues
+    try {
+      console.error('API Error:', response.status, data);
+    } catch (logError) {
+      console.error('API Error (unable to stringify response)', response.status, logError);
+    }
 
     const error = new Error(errorMessage);
     (error as Error & { status?: number; data?: unknown }).status = response.status;
