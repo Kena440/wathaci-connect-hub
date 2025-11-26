@@ -2,12 +2,28 @@ import { Link } from 'react-router-dom';
 import { useMemo } from 'react';
 import { Facebook, Twitter, Linkedin, Instagram, Mail, Phone, MapPin, CheckCircle2 } from 'lucide-react';
 import { SUPPORT_EMAIL } from '@/lib/supportEmail';
-import { useImpactMetrics } from '@/hooks/useImpactMetrics';
+// import { useImpactMetrics } from '@/hooks/useImpactMetrics';
 
 const formatNumber = (value: number) => value.toLocaleString();
 
-const Footer = () => {
-  const { metrics } = useImpactMetrics();
+type ImpactMetrics = {
+  user_counts: {
+    total_users: number;
+    professionals: number;
+    smes: number;
+  };
+  activity_metrics: {
+    successful_matches: number;
+    projects_posted: number;
+    messages_sent: number;
+  };
+};
+
+interface FooterProps {
+  metrics: ImpactMetrics;
+}
+
+const Footer = ({ metrics }: FooterProps) => {
   const currentYear = useMemo(() => new Date().getFullYear(), []);
 
   const dynamicStatements = useMemo(
