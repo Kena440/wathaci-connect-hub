@@ -31,7 +31,9 @@ exports[`StatsSection matches snapshot 1`] = `
           </p>
         </div>
         <button
-          class="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
+          aria-busy="false"
+          aria-label="Refresh metrics"
+          class="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors disabled:opacity-50"
           type="button"
         >
           <svg
@@ -718,7 +720,7 @@ exports[`StatsSection matches snapshot 1`] = `
                 class="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-sky-500 text-white mb-3 shadow"
               >
                 <svg
-                  class="lucide lucide-users w-6 h-6"
+                  class="lucide lucide-activity w-6 h-6"
                   fill="none"
                   height="24"
                   stroke="currentColor"
@@ -730,18 +732,7 @@ exports[`StatsSection matches snapshot 1`] = `
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
-                    d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
-                  />
-                  <circle
-                    cx="9"
-                    cy="7"
-                    r="4"
-                  />
-                  <path
-                    d="M22 21v-2a4 4 0 0 0-3-3.87"
-                  />
-                  <path
-                    d="M16 3.13a4 4 0 0 1 0 7.75"
+                    d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"
                   />
                 </svg>
               </div>

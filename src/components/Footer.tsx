@@ -2,28 +2,28 @@ import { Link } from 'react-router-dom';
 import { useMemo } from 'react';
 import { Facebook, Twitter, Linkedin, Instagram, Mail, Phone, MapPin, CheckCircle2 } from 'lucide-react';
 import { SUPPORT_EMAIL } from '@/lib/supportEmail';
-// import { useImpactMetrics } from '@/hooks/useImpactMetrics';
+import { useImpactMetrics } from '@/hooks/useImpactMetrics';
 
 const formatNumber = (value: number) => value.toLocaleString();
 
-type ImpactMetrics = {
-  user_counts: {
-    total_users: number;
-    professionals: number;
-    smes: number;
-  };
-  activity_metrics: {
-    successful_matches: number;
-    projects_posted: number;
-    messages_sent: number;
-  };
-};
-
 interface FooterProps {
-  metrics: ImpactMetrics;
+  metrics?: {
+    user_counts: {
+      total_users: number;
+      professionals: number;
+      smes: number;
+    };
+    activity_metrics: {
+      successful_matches: number;
+      projects_posted: number;
+      messages_sent: number;
+    };
+  };
 }
 
-const Footer = ({ metrics }: FooterProps) => {
+const Footer = ({ metrics: propMetrics }: FooterProps) => {
+  const { metrics: hookMetrics } = useImpactMetrics();
+  const metrics = propMetrics ?? hookMetrics;
   const currentYear = useMemo(() => new Date().getFullYear(), []);
 
   const dynamicStatements = useMemo(
@@ -58,8 +58,8 @@ const Footer = ({ metrics }: FooterProps) => {
                 <CheckCircle2 className="w-4 h-4 text-orange-300" />
                 <p className="text-sm text-gray-100">Live platform proof points</p>
               </div>
-              {dynamicStatements.map((statement) => (
-                <p key={statement} className="text-gray-200 text-sm leading-relaxed">
+              {dynamicStatements.map((statement, index) => (
+                <p key={`statement-${index}`} className="text-gray-200 text-sm leading-relaxed">
                   {statement}
                 </p>
               ))}

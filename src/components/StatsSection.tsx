@@ -14,6 +14,7 @@ import {
   Sparkles,
   MessageCircle,
   RefreshCw,
+  Activity,
 } from 'lucide-react';
 
 const formatNumber = (value: number) => value.toLocaleString();
@@ -37,6 +38,7 @@ const StatsSection = () => {
   useEffect(() => {
     const duration = 900;
     const start = performance.now();
+    let rafId: number;
 
     const animate = (timestamp: number) => {
       const progress = Math.min((timestamp - start) / duration, 1);
@@ -60,11 +62,15 @@ const StatsSection = () => {
       );
 
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        rafId = requestAnimationFrame(animate);
       }
     };
 
-    requestAnimationFrame(animate);
+    rafId = requestAnimationFrame(animate);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [metrics]);
 
   const userGrowthStats = useMemo(
@@ -154,7 +160,7 @@ const StatsSection = () => {
         description: 'New accounts activated recently',
       },
       {
-        icon: Users,
+        icon: Activity,
         label: 'Active Sessions (24h)',
         value: animatedActivityMetrics.active_sessions,
         accent: 'from-blue-500 to-sky-500',
@@ -197,7 +203,10 @@ const StatsSection = () => {
           <button
             type="button"
             onClick={reload}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
+            disabled={status.loading}
+            aria-busy={status.loading}
+            aria-label={status.loading ? "Refreshing metrics..." : "Refresh metrics"}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${status.loading ? 'animate-spin' : ''}`} />
             Refresh metrics
@@ -205,7 +214,7 @@ const StatsSection = () => {
         </div>
 
         {hasError && (
-          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm">
+          <div role="alert" className="mb-6 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm">
             We could not load the latest metrics automatically. Showing the most recent cached values instead.
           </div>
         )}
