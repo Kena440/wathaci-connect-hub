@@ -19,7 +19,6 @@ export interface ActivityMetrics {
   support_queries_resolved: number;
   signups_last_30_days: number;
   returning_users: number;
-  platform_revenue: number;
 }
 
 export interface ImpactMetricsResponse {
@@ -46,7 +45,6 @@ const DEFAULT_METRICS: ImpactMetricsResponse = {
     support_queries_resolved: 0,
     signups_last_30_days: 0,
     returning_users: 0,
-    platform_revenue: 0,
   },
 };
 
