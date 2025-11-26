@@ -177,7 +177,9 @@ const StatsSection = () => {
           <button
             type="button"
             onClick={reload}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
+            aria-label={status.loading ? "Refreshing metrics..." : "Refresh metrics"}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={status.loading}
           >
             <RefreshCw className={`w-4 h-4 ${status.loading ? 'animate-spin' : ''}`} />
             Refresh metrics
