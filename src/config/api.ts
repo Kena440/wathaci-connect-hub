@@ -14,19 +14,19 @@
  * @returns The API base URL without trailing slash
  */
 const getApiBaseUrl = (): string => {
-  const envUrl = import.meta.env.VITE_API_BASE_URL ?? import.meta.env.REACT_APP_API_BASE_URL;
-  
-  // In production, API base URL must be set
+  const envUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+
+  // In production, API base URL must be explicitly configured
   if (import.meta.env.MODE === 'production' && !envUrl) {
     throw new Error(
       'API base URL is required in production mode. ' +
-      'Please set VITE_API_BASE_URL or REACT_APP_API_BASE_URL to your live backend API URL (e.g., https://api.wathaci.com)'
+      'Please set VITE_API_BASE_URL to your live backend API URL (e.g., https://wathaci-connect-platform2.vercel.app)'
     );
   }
-  
-  // Default to localhost in development
+
+  // Default to localhost in development when unset
   const baseUrl = envUrl ?? 'http://localhost:3000';
-  
+
   // Remove trailing slash for consistency
   return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
 };
