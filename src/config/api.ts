@@ -2,7 +2,7 @@
  * API Configuration
  * 
  * Centralizes API base URL configuration for the application.
- * Uses VITE_API_BASE_URL from environment variables.
+ * Uses VITE_API_BASE_URL (or REACT_APP_API_BASE_URL) from environment variables.
  * 
  * In development: defaults to http://localhost:3000
  * In production: MUST be set to the live API endpoint (e.g., https://api.wathaci.com)
@@ -11,16 +11,21 @@
 /**
  * Get the API base URL from environment variables
  * 
+ * Supports both VITE_API_BASE_URL and REACT_APP_API_BASE_URL for backward compatibility.
+ * 
  * @returns The API base URL without trailing slash
  */
 const getApiBaseUrl = (): string => {
-  const envUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+  // Support both Vite and Create React App environment variable prefixes
+  const viteUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+  const reactUrl = import.meta.env.REACT_APP_API_BASE_URL?.trim();
+  const envUrl = viteUrl ?? reactUrl;
 
   // In production, API base URL must be explicitly configured
   if (import.meta.env.MODE === 'production' && !envUrl) {
     throw new Error(
       'API base URL is required in production mode. ' +
-      'Please set VITE_API_BASE_URL to your live backend API URL (e.g., https://wathaci-connect-platform2.vercel.app)'
+      'Please set VITE_API_BASE_URL (or REACT_APP_API_BASE_URL) to your live backend API URL (e.g., https://wathaci-connect-platform2.vercel.app)'
     );
   }
 

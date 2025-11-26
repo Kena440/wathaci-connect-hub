@@ -91,11 +91,12 @@ export function getAppEnvStatus(): AppEnvStatus {
   // API CONFIGURATION
   // ============================================================
 
-  const apiBaseUrl = env.VITE_API_BASE_URL?.trim();
+  // Support both Vite and Create React App environment variable prefixes
+  const apiBaseUrl = env.VITE_API_BASE_URL?.trim() ?? env.REACT_APP_API_BASE_URL?.trim();
   
   if (!apiBaseUrl) {
     blockingErrors.push(
-      'Missing API base URL. Set VITE_API_BASE_URL to your backend API base URL (e.g., https://wathaci-connect-platform2.vercel.app).'
+      'Missing API base URL. Set VITE_API_BASE_URL (or REACT_APP_API_BASE_URL) to your backend API base URL (e.g., https://wathaci-connect-platform2.vercel.app).'
     );
   } else {
     // Check for common development values in production
@@ -107,8 +108,8 @@ export function getAppEnvStatus(): AppEnvStatus {
     
     if (isProduction && isDevelopmentUrl) {
       blockingErrors.push(
-        `VITE_API_BASE_URL is set to a development value ("${apiBaseUrl}") but app is in production mode. ` +
-        'Update to your live backend API URL before deploying to production.'
+        `API base URL is set to a development value ("${apiBaseUrl}") but app is in production mode. ` +
+        'Update VITE_API_BASE_URL (or REACT_APP_API_BASE_URL) to your live backend API URL before deploying to production.'
       );
     }
   }
