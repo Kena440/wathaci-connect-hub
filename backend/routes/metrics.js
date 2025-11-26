@@ -111,7 +111,8 @@ const fetchActivityMetrics = async () => {
         const { data, error } = await client
           .from('transactions')
           .select('amount')
-          .eq('status', 'completed');
+          .eq('status', 'completed')
+          .gte('created_at', thirtyDaysAgo);
 
         if (error) {
           console.warn('[metrics] Failed to load revenue:', error.message);
