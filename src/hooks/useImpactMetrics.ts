@@ -66,7 +66,10 @@ export const useImpactMetrics = () => {
       }
 
       const payload = (await response.json()) as ImpactMetricsResponse;
-      setMetrics({ ...DEFAULT_METRICS, ...payload });
+      setMetrics({
+        user_counts: { ...DEFAULT_METRICS.user_counts, ...payload.user_counts },
+        activity_metrics: { ...DEFAULT_METRICS.activity_metrics, ...payload.activity_metrics },
+      });
       setError(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to load metrics';

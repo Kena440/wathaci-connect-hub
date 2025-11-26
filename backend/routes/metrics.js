@@ -62,8 +62,7 @@ const fetchUserCounts = async () => {
     const supabase = getSupabaseOrThrow();
     const { data, error } = await supabase
       .from('profiles')
-      .select('account_type, count:count(*)')
-      .group('account_type');
+      .select('account_type');
 
     if (error) {
       console.warn('[metrics] Unable to load user counts:', error.message);
@@ -71,7 +70,10 @@ const fetchUserCounts = async () => {
     }
 
     const countsByType = (data || []).reduce((acc, row) => {
-      acc[row.account_type] = Number(row.count) || 0;
+      const type = row.account_type;
+      if (type) {
+        acc[type] = (acc[type] || 0) + 1;
+      }
       return acc;
     }, {});
 

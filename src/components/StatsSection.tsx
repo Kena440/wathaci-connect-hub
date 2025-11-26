@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useImpactMetrics } from '@/hooks/useImpactMetrics';
 import {
   Building2,
@@ -33,8 +33,18 @@ const StatsSection = () => {
   const { metrics, status, reload } = useImpactMetrics();
   const [animatedUserCounts, setAnimatedUserCounts] = useState(metrics.user_counts);
   const [animatedActivityMetrics, setAnimatedActivityMetrics] = useState(metrics.activity_metrics);
+  const prevTotalUsersRef = useRef(metrics.user_counts.total_users);
 
   useEffect(() => {
+    // Only animate if data actually changed
+    const hasChanged = prevTotalUsersRef.current !== metrics.user_counts.total_users;
+    if (!hasChanged && prevTotalUsersRef.current !== 0) {
+      setAnimatedUserCounts(metrics.user_counts);
+      setAnimatedActivityMetrics(metrics.activity_metrics);
+      return;
+    }
+    prevTotalUsersRef.current = metrics.user_counts.total_users;
+
     const duration = 900;
     const start = performance.now();
 
