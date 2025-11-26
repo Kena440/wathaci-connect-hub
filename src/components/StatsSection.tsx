@@ -68,7 +68,7 @@ const StatsSection = () => {
     rafId = requestAnimationFrame(animate);
 
     return () => {
-      if (rafId) {
+      if (rafId !== undefined) {
         cancelAnimationFrame(rafId);
       }
     };
