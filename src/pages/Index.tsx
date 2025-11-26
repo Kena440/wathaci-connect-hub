@@ -13,18 +13,17 @@ const Index: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="relative min-h-screen bg-white/50 backdrop-blur-sm">
+      <div className="relative min-h-screen overflow-hidden bg-white/40 backdrop-blur-sm">
         <div
           aria-hidden="true"
-          className="fixed inset-0 bg-center bg-no-repeat"
+          className="absolute inset-0 bg-center bg-no-repeat bg-cover"
           style={{
             backgroundImage: "url('/images/Homepage%20Background%202.png')",
-            backgroundSize: 'cover',
           }}
         />
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-r from-blue-600/50 to-emerald-600/50"
+          className="absolute inset-0 bg-gradient-to-r from-blue-600/40 to-emerald-600/40"
         />
         <div className="relative z-10">
           <HeroSection />
