@@ -6,6 +6,7 @@ const router = express.Router();
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 let cachedResponse = null;
 let cacheExpiresAt = 0;
+let fetchPromise = null;
 
 const DEFAULT_USER_COUNTS = {
   total_users: 0,
@@ -89,7 +90,13 @@ const fetchUserCounts = async () => {
 };
 
 const fetchActivityMetrics = async () => {
-  const supabase = getSupabaseOrThrow();
+  let supabase;
+  try {
+    supabase = getSupabaseOrThrow();
+  } catch (error) {
+    console.warn('[metrics] Supabase unavailable for activity metrics:', error.message);
+    return DEFAULT_ACTIVITY_METRICS;
+  }
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
@@ -174,10 +181,9 @@ const fetchActivityMetrics = async () => {
     try {
       const client = getSupabaseOrThrow();
       const { count, error } = await client
-        .from('audit_logs')
+        .from('support_tickets')
         .select('*', { count: 'exact', head: true })
-        .eq('table_name', 'support_tickets')
-        .eq('action_type', 'update');
+        .eq('status', 'resolved');
 
       if (error) {
         console.warn('[metrics] Support query lookup failed:', error.message);
@@ -208,14 +214,25 @@ const getImpactGrowthMetrics = async () => {
     return cachedResponse;
   }
 
-  const [user_counts, activity_metrics] = await Promise.all([
+  // Return existing promise to prevent duplicate fetches
+  if (fetchPromise) {
+    return fetchPromise;
+  }
+
+  fetchPromise = Promise.all([
     fetchUserCounts(),
     fetchActivityMetrics(),
-  ]);
+  ]).then(([user_counts, activity_metrics]) => {
+    cachedResponse = { user_counts, activity_metrics };
+    cacheExpiresAt = Date.now() + CACHE_TTL_MS;
+    fetchPromise = null;
+    return cachedResponse;
+  }).catch((error) => {
+    fetchPromise = null;
+    throw error;
+  });
 
-  cachedResponse = { user_counts, activity_metrics };
-  cacheExpiresAt = Date.now() + CACHE_TTL_MS;
-  return cachedResponse;
+  return fetchPromise;
 };
 
 router.get('/impact-growth', async (req, res) => {
