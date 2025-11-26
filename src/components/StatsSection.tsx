@@ -200,62 +200,64 @@ const StatsSection = () => {
   ];
 
   return (
-    <section className="py-16 px-6 bg-white/60 backdrop-blur-sm">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Our Impact & Growth
-          </h2>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Real impact metrics that demonstrate our platform's success in empowering SMEs, 
-            creating jobs, and driving economic growth across Africa
-          </p>
-        </div>
-        
-        <div className="grid md:grid-cols-4 gap-6">
-          {impactStats.map((stat, index) => {
-            const IconComponent = stat.icon;
-            return (
-              <div key={index} className="text-center bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4`}>
-                  <IconComponent className={`w-8 h-8 ${stat.color}`} />
-                </div>
-                <div className="text-3xl font-bold text-gray-900 mb-2">
-                  {stat.value}
-                </div>
-                <div className="text-gray-800 font-semibold mb-1">
-                  {stat.label}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {stat.description}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+    <section className="py-16 bg-gradient-to-r from-orange-50 to-green-50">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="bg-white/70 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-10">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Our Impact & Growth
+            </h2>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              Real impact metrics that demonstrate our platform's success in empowering SMEs,
+              creating jobs, and driving economic growth across Africa
+            </p>
+          </div>
 
-        <div className="mt-12 text-center bg-white p-8 rounded-xl shadow-lg">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
-            Why Invest in WATHACI Connect?
-          </h3>
-          <div className="grid md:grid-cols-3 gap-6 text-left">
-            <div>
-              <h4 className="font-semibold text-gray-800 mb-2">Proven Track Record</h4>
-              <p className="text-sm text-gray-600">
-                Consistent growth in user adoption and successful project completion rates
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-800 mb-2">Scalable Impact</h4>
-              <p className="text-sm text-gray-600">
-                Each investment multiplies across our network, creating exponential value
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-800 mb-2">Sustainable Growth</h4>
-              <p className="text-sm text-gray-600">
-                Building long-term economic development through SME empowerment
-              </p>
+          <div className="grid md:grid-cols-4 gap-6">
+            {impactStats.map((stat, index) => {
+              const IconComponent = stat.icon;
+              return (
+                <div key={index} className="text-center bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+                    <IconComponent className={`w-8 h-8 ${stat.color}`} />
+                  </div>
+                  <div className="text-3xl font-bold text-gray-900 mb-2">
+                    {stat.value}
+                  </div>
+                  <div className="text-gray-800 font-semibold mb-1">
+                    {stat.label}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {stat.description}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-12 text-center bg-white p-8 rounded-xl shadow-lg">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              Why Invest in WATHACI Connect?
+            </h3>
+            <div className="grid md:grid-cols-3 gap-6 text-left">
+              <div>
+                <h4 className="font-semibold text-gray-800 mb-2">Proven Track Record</h4>
+                <p className="text-sm text-gray-600">
+                  Consistent growth in user adoption and successful project completion rates
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-800 mb-2">Scalable Impact</h4>
+                <p className="text-sm text-gray-600">
+                  Each investment multiplies across our network, creating exponential value
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-800 mb-2">Sustainable Growth</h4>
+                <p className="text-sm text-gray-600">
+                  Building long-term economic development through SME empowerment
+                </p>
+              </div>
             </div>
           </div>
         </div>
