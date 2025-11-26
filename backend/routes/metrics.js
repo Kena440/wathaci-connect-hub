@@ -59,28 +59,17 @@ const safeCount = async (table, buildQuery) => {
 
 const fetchUserCounts = async () => {
   try {
-    const supabase = getSupabaseOrThrow();
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('account_type, count:count(*)')
-      .group('account_type');
-
-    if (error) {
-      console.warn('[metrics] Unable to load user counts:', error.message);
-      return DEFAULT_USER_COUNTS;
-    }
-
-    const countsByType = (data || []).reduce((acc, row) => {
-      acc[row.account_type] = Number(row.count) || 0;
-      return acc;
-    }, {});
-
-    const professionals = countsByType.professional ?? 0;
-    const smes = (countsByType.sme ?? 0) + (countsByType.sole_proprietor ?? 0);
-    const firms = countsByType.investor ?? 0;
-    const companies = countsByType.government ?? 0;
-    const students = countsByType.student ?? 0;
-    const total_users = Object.values(countsByType).reduce((sum, value) => sum + value, 0);
+    // Individual counts for each account_type
+    const professionals = await safeCount('profiles', q => q.eq('account_type', 'professional'));
+    const smes = (
+      await safeCount('profiles', q => q.eq('account_type', 'sme'))
+    ) + (
+      await safeCount('profiles', q => q.eq('account_type', 'sole_proprietor'))
+    );
+    const firms = await safeCount('profiles', q => q.eq('account_type', 'investor'));
+    const companies = await safeCount('profiles', q => q.eq('account_type', 'government'));
+    const students = await safeCount('profiles', q => q.eq('account_type', 'student'));
+    const total_users = await safeCount('profiles');
     const mappedTotal = professionals + smes + firms + companies + students;
     const others = Math.max(total_users - mappedTotal, 0);
 
