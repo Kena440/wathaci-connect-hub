@@ -129,19 +129,16 @@ const fetchActivityMetrics = async () => {
   const returning_users = await (async () => {
     try {
       const client = getSupabaseOrThrow();
-      const { data, error } = await client
-        .from('audit_logs')
-        .select('user_id')
-        .eq('action_type', 'login')
-        .gte('created_at', thirtyDaysAgo);
+      const { data, error } = await client.rpc('count_distinct_login_users', {
+        since_timestamp: thirtyDaysAgo,
+      });
 
       if (error) {
         console.warn('[metrics] Failed to load returning users:', error.message);
         return 0;
       }
 
-      const uniqueUserIds = new Set((data || []).map((row) => row.user_id).filter(Boolean));
-      return uniqueUserIds.size;
+      return data ?? 0;
     } catch (error) {
       console.warn('[metrics] Returning users unavailable:', error.message);
       return 0;
@@ -151,19 +148,16 @@ const fetchActivityMetrics = async () => {
   const active_sessions = await (async () => {
     try {
       const client = getSupabaseOrThrow();
-      const { data, error } = await client
-        .from('audit_logs')
-        .select('user_id')
-        .eq('action_type', 'login')
-        .gte('created_at', twentyFourHoursAgo);
+      const { data, error } = await client.rpc('count_distinct_login_users', {
+        since_timestamp: twentyFourHoursAgo,
+      });
 
       if (error) {
         console.warn('[metrics] Active sessions lookup failed:', error.message);
         return 0;
       }
 
-      const uniqueUserIds = new Set((data || []).map((row) => row.user_id).filter(Boolean));
-      return uniqueUserIds.size;
+      return data ?? 0;
     } catch (error) {
       console.warn('[metrics] Active sessions unavailable:', error.message);
       return 0;
