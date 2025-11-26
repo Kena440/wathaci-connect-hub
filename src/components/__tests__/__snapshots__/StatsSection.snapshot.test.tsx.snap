@@ -31,7 +31,7 @@ exports[`StatsSection matches snapshot 1`] = `
           </p>
         </div>
         <button
-          class="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
+          class="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700 disabled:text-orange-400 disabled:cursor-not-allowed transition-colors"
           type="button"
         >
           <svg
