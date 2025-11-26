@@ -37,6 +37,7 @@ const StatsSection = () => {
   useEffect(() => {
     const duration = 900;
     const start = performance.now();
+    let frameId: number;
 
     const animate = (timestamp: number) => {
       const progress = Math.min((timestamp - start) / duration, 1);
@@ -60,11 +61,13 @@ const StatsSection = () => {
       );
 
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        frameId = requestAnimationFrame(animate);
       }
     };
 
-    requestAnimationFrame(animate);
+    frameId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(frameId);
   }, [metrics]);
 
   const userGrowthStats = useMemo(
@@ -197,7 +200,10 @@ const StatsSection = () => {
           <button
             type="button"
             onClick={reload}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
+            disabled={status.loading}
+            aria-busy={status.loading}
+            aria-label={status.loading ? 'Refreshing metrics...' : 'Refresh metrics'}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RefreshCw className={`w-4 h-4 ${status.loading ? 'animate-spin' : ''}`} />
             Refresh metrics
@@ -207,6 +213,11 @@ const StatsSection = () => {
         {hasError && (
           <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm">
             We could not load the latest metrics automatically. Showing the most recent cached values instead.
+          </div>
+        )}
+        {!hasError && !status.loading && !status.hasData && (
+          <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 text-yellow-800 px-4 py-3 text-sm">
+            Metrics are currently unavailable or empty. Please check back later.
           </div>
         )}
 
