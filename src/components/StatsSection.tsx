@@ -37,6 +37,7 @@ const StatsSection = () => {
   useEffect(() => {
     const duration = 900;
     const start = performance.now();
+    let rafId: number;
 
     const animate = (timestamp: number) => {
       const progress = Math.min((timestamp - start) / duration, 1);
@@ -60,11 +61,17 @@ const StatsSection = () => {
       );
 
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        rafId = requestAnimationFrame(animate);
       }
     };
 
-    requestAnimationFrame(animate);
+    rafId = requestAnimationFrame(animate);
+
+    return () => {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
+    };
   }, [metrics]);
 
   const userGrowthStats = useMemo(
