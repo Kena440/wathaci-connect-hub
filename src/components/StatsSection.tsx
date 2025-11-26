@@ -19,12 +19,15 @@ import {
 
 const formatNumber = (value: number) => value.toLocaleString();
 
+const MILLION = 1_000_000;
+const THOUSAND = 1_000;
+
 const formatRevenue = (value: number) => {
-  if (value >= 1000000) {
-    return `ZMW ${(value / 1000000).toFixed(1)}M`;
+  if (value >= MILLION) {
+    return `ZMW ${(value / MILLION).toFixed(1)}M`;
   }
-  if (value >= 1000) {
-    return `ZMW ${Math.round(value / 1000)}K`;
+  if (value >= THOUSAND) {
+    return `ZMW ${Math.round(value / THOUSAND)}K`;
   }
   return `ZMW ${value}`;
 };
