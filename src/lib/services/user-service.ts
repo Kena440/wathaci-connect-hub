@@ -259,13 +259,33 @@ const getEmailRedirectTo = (
 
 const normaliseEmail = (value: string) => (value || '').trim().toLowerCase();
 
+let hasLoggedMockWarning = false;
+
 const validateSupabaseAuthConfig = (): Error | null => {
-  if (!supabaseAuthConfigStatus.hasValidConfig && supabaseAuthConfigStatus.isProductionEnvironment) {
+  const {
+    hasValidConfig,
+    isProductionEnvironment,
+    allowMockSupabaseClient,
+    forcedMockSupabaseClient,
+    usingMockClient,
+    configWarning,
+  } = supabaseAuthConfigStatus;
+
+  if (!hasValidConfig && isProductionEnvironment && !allowMockSupabaseClient) {
     return new Error('Authentication service is not configured. Please try again later.');
   }
 
-  if (supabaseAuthConfigStatus.usingMockClient && supabaseAuthConfigStatus.isProductionEnvironment) {
-    return new Error('Authentication service is temporarily unavailable. Please contact support.');
+  if (forcedMockSupabaseClient && !hasLoggedMockWarning && typeof console !== 'undefined') {
+    console.warn(
+      'Missing Supabase credentials detected in production. Using mock client to keep sign-in and sign-up available.',
+      { configWarning },
+    );
+    hasLoggedMockWarning = true;
+  }
+
+  if (usingMockClient && !hasLoggedMockWarning && typeof console !== 'undefined') {
+    console.warn('Using mock Supabase client due to missing configuration.');
+    hasLoggedMockWarning = true;
   }
 
   return null;

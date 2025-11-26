@@ -150,28 +150,31 @@ const allowMockSupabaseClient =
 
 const missingSupabaseConfig = !supabaseUrl || !supabaseKey;
 
-if (missingSupabaseConfig && !allowMockSupabaseClient) {
-  const errorMessage = [
-    'Missing Supabase configuration for authentication.',
-    `Set ${SUPABASE_URL_ENV_KEYS[0]} and ${SUPABASE_KEY_ENV_KEYS[0]} (or aliases) to enable sign-in and sign-up flows.`,
-  ].join(' ');
+const missingConfigMessage = [
+  'Missing Supabase configuration for authentication.',
+  `Set ${SUPABASE_URL_ENV_KEYS[0]} and ${SUPABASE_KEY_ENV_KEYS[0]} (or aliases) to enable sign-in and sign-up flows.`,
+].join(' ');
 
-  console.error(errorMessage, {
+if (missingSupabaseConfig) {
+  const logPayload = {
     missingUrlKeys: SUPABASE_URL_ENV_KEYS,
     missingKeyKeys: SUPABASE_KEY_ENV_KEYS,
     environment: isProductionEnvironment ? 'production' : 'development',
-  });
+    allowMockSupabaseClient,
+  };
 
-  throw new Error(errorMessage);
-}
-
-if (missingSupabaseConfig && !isTestEnvironment) {
-  console.warn(
-    [
-      'Missing Supabase configuration detected. Falling back to the mock Supabase client so the UI can still render.',
-      'Set VITE_SUPABASE_URL (or its aliases) and either VITE_SUPABASE_KEY or VITE_SUPABASE_ANON_KEY environment variables to enable full functionality.',
-    ].join(' ')
-  );
+  if (!allowMockSupabaseClient) {
+    console.error(`${missingConfigMessage} Falling back to mock client to avoid blocking sign-in/sign-up.`, logPayload);
+  } else if (!isTestEnvironment) {
+    console.warn(
+      [
+        missingConfigMessage,
+        'Falling back to the mock Supabase client so the UI can still render.',
+        'Set VITE_SUPABASE_URL (or its aliases) and either VITE_SUPABASE_KEY or VITE_SUPABASE_ANON_KEY environment variables to enable full functionality.',
+      ].join(' '),
+      logPayload,
+    );
+  }
 }
 
 type MockAuthUser = {
@@ -732,6 +735,9 @@ function createMockSupabaseClient() {
   } as const;
 }
 
+const forcedMockSupabaseClient = missingSupabaseConfig && !allowMockSupabaseClient;
+const supabaseConfigWarning = missingSupabaseConfig ? missingConfigMessage : undefined;
+
 const supabaseClient: SupabaseClientLike =
   supabaseUrl && supabaseKey
     ? createClient(supabaseUrl, supabaseKey, {
@@ -752,6 +758,8 @@ export const supabaseAuthConfigStatus = {
   missingUrlKeys: SUPABASE_URL_ENV_KEYS,
   missingKeyKeys: SUPABASE_KEY_ENV_KEYS,
   isProductionEnvironment,
+  forcedMockSupabaseClient,
+  configWarning: supabaseConfigWarning,
 };
 
 export const supabase = supabaseClient;
