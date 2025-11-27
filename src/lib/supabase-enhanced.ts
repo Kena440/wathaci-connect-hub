@@ -554,11 +554,13 @@ function createMockSupabaseClient() {
         const normalizedEmail = (email || '').toLowerCase();
         const record = mockAuthUsers.get(normalizedEmail);
 
+        // Mirror Supabase behaviour: always succeed to avoid user enumeration
         if (!record) {
-          return {
-            data: null,
-            error: { message: 'User not found', status: 404 },
-          };
+          console.info(
+            '[mock-supabase] Password reset email would be sent to %s (no matching account found)',
+            normalizedEmail
+          );
+          return { data: {}, error: null };
         }
 
         console.info('[mock-supabase] Password reset email would be sent to %s', normalizedEmail);

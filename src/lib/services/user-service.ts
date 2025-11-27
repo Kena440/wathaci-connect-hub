@@ -613,6 +613,11 @@ export class UserService extends BaseService<User> {
           });
 
           if (error) {
+            if (error.status === 404) {
+              // Match Supabase behaviour: do not reveal whether the account exists
+              return { data: { success: true }, error: null };
+            }
+
             if (isNetworkError(error)) {
               return {
                 data: null,
