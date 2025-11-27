@@ -187,6 +187,15 @@ const ResetPassword = () => {
                     <AlertDescription>{sessionError}</AlertDescription>
                   </Alert>
                 )}
+                {sessionError && (
+                  <p className="text-sm text-gray-600">
+                    Need a fresh link?{' '}
+                    <Link to="/forgot-password" className="font-medium text-orange-600 hover:text-orange-700">
+                      Request another password reset
+                    </Link>
+                    .
+                  </p>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-left text-gray-700 font-medium">

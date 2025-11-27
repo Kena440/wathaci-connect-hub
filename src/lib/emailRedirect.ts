@@ -15,6 +15,7 @@ const getAppBaseUrl = (): string | undefined => {
     'VITE_APP_BASE_URL',
     'VITE_SITE_URL',
     'VITE_PUBLIC_SITE_URL',
+    'NEXT_PUBLIC_SITE_URL',
   ];
 
   for (const key of envKeys) {
@@ -118,20 +119,32 @@ export const getPasswordResetRedirectUrl = (fallbackPath: string = '/reset-passw
   const baseUrl = getAppBaseUrl();
 
   // Try absolute URL first
-  const absoluteUrl = import.meta.env.VITE_PASSWORD_RESET_REDIRECT_URL;
-  if (absoluteUrl && typeof absoluteUrl === 'string') {
-    const trimmed = absoluteUrl.trim();
-    if (trimmed && trimmed !== 'undefined' && trimmed !== 'null') {
-      return trimmed;
+  const absoluteUrlOptions = [
+    import.meta.env.VITE_PASSWORD_RESET_REDIRECT_URL,
+    (import.meta.env as any)?.NEXT_PUBLIC_PASSWORD_RESET_REDIRECT_URL,
+  ];
+
+  for (const absoluteUrl of absoluteUrlOptions) {
+    if (absoluteUrl && typeof absoluteUrl === 'string') {
+      const trimmed = absoluteUrl.trim();
+      if (trimmed && trimmed !== 'undefined' && trimmed !== 'null') {
+        return trimmed;
+      }
     }
   }
 
   // Try path-based redirect
-  const redirectPath = import.meta.env.VITE_PASSWORD_RESET_REDIRECT_PATH;
-  if (redirectPath && typeof redirectPath === 'string') {
-    const trimmed = redirectPath.trim();
-    if (trimmed && trimmed !== 'undefined' && trimmed !== 'null') {
-      return buildAbsoluteUrl(trimmed, baseUrl);
+  const redirectPathOptions = [
+    import.meta.env.VITE_PASSWORD_RESET_REDIRECT_PATH,
+    (import.meta.env as any)?.NEXT_PUBLIC_PASSWORD_RESET_REDIRECT_PATH,
+  ];
+
+  for (const redirectPath of redirectPathOptions) {
+    if (redirectPath && typeof redirectPath === 'string') {
+      const trimmed = redirectPath.trim();
+      if (trimmed && trimmed !== 'undefined' && trimmed !== 'null') {
+        return buildAbsoluteUrl(trimmed, baseUrl);
+      }
     }
   }
 

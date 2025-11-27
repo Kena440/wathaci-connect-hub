@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { userService } from '@/lib/services';
+import { supabase } from '@/lib/supabaseClient';
+import { getPasswordResetRedirectUrl } from '@/lib/emailRedirect';
 
 const forgotPasswordSchema = z.object({
   email: z
@@ -41,11 +42,15 @@ const ForgotPassword = () => {
     setErrorMessage(null);
 
     try {
-      const { error } = await userService.requestPasswordReset(email);
+      const redirectTo = getPasswordResetRedirectUrl('/reset-password');
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        ...(redirectTo ? { redirectTo } : {}),
+      });
 
       if (error) {
         const message =
           error.message || 'We could not send a reset link right now. Please try again shortly.';
+        console.error('Password reset error:', error);
         setErrorMessage(message);
         toast({
           variant: 'destructive',
@@ -84,7 +89,7 @@ const ForgotPassword = () => {
                 <div className="space-y-2">
                   <h2 className="text-xl font-semibold text-gray-900">Reset link sent</h2>
                   <p className="text-gray-600">
-                    Please check your inbox for an email with the next steps. The link will expire shortly for security reasons.
+                    If an account exists with that email, we've sent password reset instructions. The link will expire shortly for security reasons.
                   </p>
                 </div>
                 <Button asChild className="w-full">

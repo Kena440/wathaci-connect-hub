@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { logSupabaseAuthError } from '@/lib/supabaseClient';
 import { useAppContext } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
@@ -297,6 +297,13 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
         )}
         {mode === 'signup' && (
           <p className="text-xs text-gray-500">{passwordStrengthMessage}</p>
+        )}
+        {mode === 'signin' && (
+          <div className="text-right text-sm">
+            <Link to="/forgot-password" className="font-semibold text-orange-600 hover:text-orange-700">
+              Forgot password?
+            </Link>
+          </div>
         )}
       </div>
 
