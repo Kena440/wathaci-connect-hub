@@ -3,6 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lock, Eye } from 'lucide-react';
 import { supabase } from '@/lib/supabase-enhanced';
+import {
+  SUBSCRIPTION_BYPASS_FEATURES,
+  SUBSCRIPTION_DEBUG_BYPASS_ENABLED,
+} from '@/config/subscriptionDebug';
 import { useNavigate } from 'react-router-dom';
 
 interface AccessGateProps {
@@ -21,6 +25,18 @@ export const AccessGate = ({ children, feature }: AccessGateProps) => {
   }, []);
 
   const checkAccess = async () => {
+    const normalizedFeature = feature.toLowerCase();
+
+    if (
+      SUBSCRIPTION_DEBUG_BYPASS_ENABLED &&
+      SUBSCRIPTION_BYPASS_FEATURES.has(normalizedFeature)
+    ) {
+      // TEMPORARY: Subscription gating disabled for this feature to allow debugging
+      setHasAccess(true);
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
