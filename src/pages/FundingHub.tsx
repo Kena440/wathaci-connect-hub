@@ -5,9 +5,14 @@ import { FundingMatcher } from '@/components/funding/FundingMatcher';
 import LiveFundingMatcher from '@/components/funding/LiveFundingMatcher';
 import { AutomatedMatchingEngine } from '@/components/funding/AutomatedMatchingEngine';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useSubscriptionAccess } from '@/hooks/useSubscriptionAccess';
 
 const FundingHub = () => {
-  const sharedProps = { viewOnly: false } as const;
+  const { isSubscribed } = useSubscriptionAccess('funding hub');
+
+  // TEMPORARY: subscription gating bypass for Funding Hub analysis (see subscriptionDebug.ts)
+  // TODO: Restore subscription-gated viewOnly handling when analysis is complete.
+  const sharedProps = { viewOnly: !isSubscribed } as const;
 
   return (
     <AppLayout>
