@@ -411,8 +411,22 @@ const InnerApp = () => {
     };
   }, [paymentConfigSnapshot]);
 
+  const isRuntimeProd =
+    import.meta.env.PROD || paymentConfigSnapshot.config.environment === "production";
+
   const shouldBlockRender =
-    !supabaseConfigStatus.hasValidConfig || paymentConfigSnapshot.fatalIssues.length > 0;
+    (isRuntimeProd && !supabaseConfigStatus.hasValidConfig) ||
+    paymentConfigSnapshot.fatalIssues.length > 0;
+
+  if (!shouldBlockRender && !supabaseConfigStatus.hasValidConfig) {
+    console.warn(
+      "[app] Supabase configuration missing. Using mock client so the UI can continue rendering.",
+      {
+        missingUrlKeys: supabaseConfigStatus.missingUrlKeys,
+        missingAnonKeys: supabaseConfigStatus.missingAnonKeys,
+      },
+    );
+  }
 
   if (shouldBlockRender) {
     return (
