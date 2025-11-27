@@ -608,7 +608,7 @@ export class UserService extends BaseService<User> {
             pathKeys: PASSWORD_RESET_REDIRECT_PATH_KEYS,
           });
 
-          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
             ...(emailRedirectTo ? { redirectTo: emailRedirectTo } : {}),
           });
 
