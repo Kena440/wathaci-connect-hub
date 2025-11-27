@@ -13,9 +13,6 @@ import { toast } from 'sonner';
 import { AddComplianceTaskModal } from './AddComplianceTaskModal';
 import { AddStandardTasksDrawer } from './AddStandardTasksDrawer';
 import { withSupportContact } from '@/lib/supportEmail';
-import { useSubscriptionAccess } from '@/hooks/useSubscriptionAccess';
-import { ViewOnlyBanner } from '@/components/ViewOnlyBanner';
-import { useNavigate } from 'react-router-dom';
 
 interface ComplianceTask {
   id: string;
@@ -41,16 +38,9 @@ export const ComplianceDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [isAddStandardDrawerOpen, setIsAddStandardDrawerOpen] = useState(false);
-  const { isSubscribed, loading: checkingSubscription } = useSubscriptionAccess();
-  const viewOnly = !checkingSubscription && !isSubscribed;
-  const navigate = useNavigate();
+  const viewOnly = false;
 
   const ensureInteractive = () => {
-    if (viewOnly) {
-      navigate('/subscription-plans');
-      toast.info('Subscribe to unlock compliance task workflows. Per-task fees still apply when available.');
-      return false;
-    }
     return true;
   };
 
@@ -223,13 +213,6 @@ export const ComplianceDashboard = () => {
             Track ZRA, PACRA, NAPSA and other business compliance tasks in one place.
           </p>
         </div>
-
-        {!checkingSubscription && viewOnly && (
-          <ViewOnlyBanner
-            onUpgrade={() => navigate('/subscription-plans')}
-            message="You currently have view-only access. Subscribe to add, update, or complete compliance tasks."
-          />
-        )}
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
