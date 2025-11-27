@@ -1,9 +1,13 @@
 import React, { useState } from "react";
-import { supabaseClient, accountTypePaths, type AccountType } from "@/lib/wathaciSupabaseClient";
+import {
+  supabaseClient,
+  getDashboardPathForAccountType,
+  type AccountType,
+} from "@/lib/wathaciSupabaseClient";
 import { withSupportContact } from "@/lib/supportEmail";
 
 export interface LoginFormProps {
-  onLogin?: (accountType: AccountType) => void;
+  onLogin?: (accountType: AccountType | null | undefined) => void;
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
@@ -46,9 +50,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
         return;
       }
 
-      const accountType = profile?.account_type as AccountType;
-      const destination = accountType ? accountTypePaths[accountType] : "/";
-      onLogin?.(accountType);
+      const normalizedType = (typeof profile?.account_type === "string"
+        ? (profile.account_type.toLowerCase() as AccountType)
+        : null);
+
+      const destination = getDashboardPathForAccountType(normalizedType);
+      onLogin?.(normalizedType || undefined);
       window.location.href = destination;
     } catch (unknownError) {
       console.error(unknownError);
