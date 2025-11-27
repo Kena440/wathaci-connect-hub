@@ -26,9 +26,6 @@ import {
   MonetizationState,
   PaymentAction,
 } from './types';
-import { useSubscriptionAccess } from '@/hooks/useSubscriptionAccess';
-import { ViewOnlyBanner } from '@/components/ViewOnlyBanner';
-import { useNavigate } from 'react-router-dom';
 
 const PaymentGrid = ({
   actions,
@@ -208,15 +205,9 @@ export const CreditPassportPage = () => {
   const [result, setResult] = useState<CreditPassportResult | null>(null);
   const [history, setHistory] = useState<CreditPassportResult[]>([]);
   const [notes, setNotes] = useState('');
-  const { isSubscribed, loading: checkingSubscription } = useSubscriptionAccess();
-  const viewOnly = !checkingSubscription && !isSubscribed;
-  const navigate = useNavigate();
+  const viewOnly = false;
 
   const ensureInteractive = () => {
-    if (viewOnly) {
-      navigate('/subscription-plans');
-      return false;
-    }
     return true;
   };
 
@@ -329,18 +320,10 @@ export const CreditPassportPage = () => {
           </Card>
         </div>
 
-        {!checkingSubscription && viewOnly && (
-          <ViewOnlyBanner
-            onUpgrade={() => navigate('/subscription-plans')}
-            message="You currently have view-only access. Subscribe to generate, share, or download Credit Passports."
-          />
-        )}
-
         <PaymentGrid
           actions={paymentActions}
           onPay={handlePay}
           viewOnly={viewOnly}
-          onRequestAccess={() => navigate('/subscription-plans')}
         />
 
         <Card className="border-orange-100">

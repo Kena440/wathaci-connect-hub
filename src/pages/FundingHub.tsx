@@ -5,26 +5,9 @@ import { FundingMatcher } from '@/components/funding/FundingMatcher';
 import LiveFundingMatcher from '@/components/funding/LiveFundingMatcher';
 import { AutomatedMatchingEngine } from '@/components/funding/AutomatedMatchingEngine';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useSubscriptionAccess } from '@/hooks/useSubscriptionAccess';
-import { ViewOnlyBanner } from '@/components/ViewOnlyBanner';
-import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 
 const FundingHub = () => {
-  const { isSubscribed, loading } = useSubscriptionAccess();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const viewOnly = !loading && !isSubscribed;
-
-  const handleUpgrade = () => {
-    toast({
-      title: 'Subscribe to unlock full access',
-      description: 'Funding workflows require an active subscription. Service-specific fees still apply.',
-    });
-    navigate('/subscription-plans');
-  };
-
-  const sharedProps = { viewOnly, onRequestAccess: handleUpgrade } as const;
+  const sharedProps = { viewOnly: false } as const;
 
   return (
     <AppLayout>
@@ -42,10 +25,6 @@ const FundingHub = () => {
                   Discover live funding opportunities and get matched with expert professionals using advanced AI
                 </p>
               </div>
-
-            {!loading && viewOnly && (
-              <ViewOnlyBanner onUpgrade={handleUpgrade} message="You currently have view-only access. Subscribe to submit applications, generate matches, and unlock interactive tools." />
-            )}
 
             <Tabs defaultValue="automated" className="space-y-6 relative w-full">
               <TabsList className="flex w-full flex-wrap gap-2 bg-white/90 backdrop-blur justify-center md:justify-start">
