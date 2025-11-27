@@ -92,21 +92,17 @@ export const PartnershipHub = () => {
     }
   };
 
-    return (
-      <div className="min-h-screen bg-white relative">
-        <Header />
-
-        <div
-          aria-hidden="true"
-          className="pointer-events-none fixed inset-0 bg-center bg-cover"
-          style={{
-            backgroundImage: "url('/images/Marketplace.png')",
-          }}
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-orange-50/70 via-white/60 to-green-50/70"
-        />
+  return (
+    <div className="min-h-screen bg-white relative">
+      <Header />
+      
+      <div 
+        className="fixed inset-0 bg-center bg-cover"
+        style={{
+          backgroundImage: "url('/images/Marketplace.png')",
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-orange-50/70 via-white/60 to-green-50/70" />
       <div className="relative z-10 py-16 text-gray-900">
         <div className="max-w-6xl mx-auto px-6 text-center">
           <Handshake className="w-16 h-16 mx-auto mb-6 text-gray-900" />
