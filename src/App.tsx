@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo } from "react";
+import { ReactNode, Suspense, lazy, useEffect, useMemo } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -13,6 +13,7 @@ import { ConfigurationError } from "@/components/ConfigurationError";
 import { RouteChangeDebugger } from "@/components/RouteChangeDebugger";
 import { supabaseConfigStatus } from "@/config/appConfig";
 import { getPaymentConfig } from "@/lib/payment-config";
+import AppLayout from "./components/AppLayout";
 import "./i18n";
 
 const queryClient = new QueryClient();
@@ -147,6 +148,10 @@ const ComplianceDashboard = lazy(() =>
   }))
 );
 
+const withAppLayout = (element: ReactNode, options: { showFooter?: boolean } = {}) => (
+  <AppLayout showFooter={options.showFooter ?? true}>{element}</AppLayout>
+);
+
 
 export const AppRoutes = () => (
   <Suspense fallback={<LoadingScreen />}>
@@ -155,15 +160,15 @@ export const AppRoutes = () => (
       <Route path="/marketplace" element={<Marketplace />} />
       <Route path="/freelancer-hub" element={<FreelancerHub />} />
       <Route path="/resources" element={<Resources />} />
-      <Route path="/signin" element={<SignIn />} />
-      <Route path="/signup" element={<SignUp />} />
-      <Route path="/signup-zaqa" element={<ZaqaSignup />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/get-started" element={<GetStartedPage />} />
-      <Route path="/profile-setup" element={<ProfileSetup />} />
-      <Route path="/profile-review" element={<ProfileReview />} />
-      <Route path="/subscription-plans" element={<SubscriptionPlans />} />
+      <Route path="/signin" element={withAppLayout(<SignIn />, { showFooter: false })} />
+      <Route path="/signup" element={withAppLayout(<SignUp />, { showFooter: false })} />
+      <Route path="/signup-zaqa" element={withAppLayout(<ZaqaSignup />, { showFooter: false })} />
+      <Route path="/forgot-password" element={withAppLayout(<ForgotPassword />, { showFooter: false })} />
+      <Route path="/reset-password" element={withAppLayout(<ResetPassword />, { showFooter: false })} />
+      <Route path="/get-started" element={withAppLayout(<GetStartedPage />)} />
+      <Route path="/profile-setup" element={withAppLayout(<ProfileSetup />, { showFooter: false })} />
+      <Route path="/profile-review" element={withAppLayout(<ProfileReview />, { showFooter: false })} />
+      <Route path="/subscription-plans" element={withAppLayout(<SubscriptionPlans />)} />
       <Route path="/partnership-hub" element={<PartnershipHub />} />
       <Route
         path="/funding-hub"
@@ -173,10 +178,10 @@ export const AppRoutes = () => (
           </PrivateRoute>
         }
       />
-      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-      <Route path="/terms-of-service" element={<TermsOfService />} />
+      <Route path="/privacy-policy" element={withAppLayout(<PrivacyPolicy />)} />
+      <Route path="/terms-of-service" element={withAppLayout(<TermsOfService />)} />
       <Route path="/about-us" element={<AboutUs />} />
-      <Route path="/test-error" element={<TestError />} />
+      <Route path="/test-error" element={withAppLayout(<TestError />, { showFooter: false })} />
       <Route
         path="/messages"
         element={
@@ -188,41 +193,56 @@ export const AppRoutes = () => (
       <Route
         path="/sme-assessment"
         element={
-          <PrivateRoute>
-            <SMEAssessment />
-          </PrivateRoute>
+          withAppLayout(
+            <PrivateRoute>
+              <SMEAssessment />
+            </PrivateRoute>,
+            { showFooter: false }
+          )
         }
       />
       <Route
         path="/investor-assessment"
         element={
-          <PrivateRoute>
-            <InvestorAssessment />
-          </PrivateRoute>
+          withAppLayout(
+            <PrivateRoute>
+              <InvestorAssessment />
+            </PrivateRoute>,
+            { showFooter: false }
+          )
         }
       />
       <Route
         path="/donor-assessment"
         element={
-          <PrivateRoute>
-            <DonorAssessment />
-          </PrivateRoute>
+          withAppLayout(
+            <PrivateRoute>
+              <DonorAssessment />
+            </PrivateRoute>,
+            { showFooter: false }
+          )
         }
       />
       <Route
         path="/professional-assessment"
         element={
-          <PrivateRoute>
-            <ProfessionalAssessment />
-          </PrivateRoute>
+          withAppLayout(
+            <PrivateRoute>
+              <ProfessionalAssessment />
+            </PrivateRoute>,
+            { showFooter: false }
+          )
         }
       />
       <Route
         path="/government-assessment"
         element={
-          <PrivateRoute>
-            <GovernmentAssessment />
-          </PrivateRoute>
+          withAppLayout(
+            <PrivateRoute>
+              <GovernmentAssessment />
+            </PrivateRoute>,
+            { showFooter: false }
+          )
         }
       />
       
@@ -230,71 +250,95 @@ export const AppRoutes = () => (
       <Route
         path="/onboarding/sme/needs-assessment"
         element={
-          <PrivateRoute>
-            <SmeNeedsAssessmentPage />
-          </PrivateRoute>
+          withAppLayout(
+            <PrivateRoute>
+              <SmeNeedsAssessmentPage />
+            </PrivateRoute>,
+            { showFooter: false }
+          )
         }
       />
       <Route
         path="/onboarding/sme"
         element={
-          <PrivateRoute>
-            <AccountTypeRoute allowed={["sme"]}>
-              <SmeOnboardingPage />
-            </AccountTypeRoute>
-          </PrivateRoute>
+          withAppLayout(
+            <PrivateRoute>
+              <AccountTypeRoute allowed={["sme"]}>
+                <SmeOnboardingPage />
+              </AccountTypeRoute>
+            </PrivateRoute>,
+            { showFooter: false }
+          )
         }
       />
       <Route
         path="/onboarding/professional/needs-assessment"
         element={
-          <PrivateRoute>
-            <ProfessionalNeedsAssessmentPage />
-          </PrivateRoute>
+          withAppLayout(
+            <PrivateRoute>
+              <ProfessionalNeedsAssessmentPage />
+            </PrivateRoute>,
+            { showFooter: false }
+          )
         }
       />
       <Route
         path="/onboarding/professional"
         element={
-          <PrivateRoute>
-            <AccountTypeRoute allowed={["professional"]}>
-              <ProfessionalOnboardingPage />
-            </AccountTypeRoute>
-          </PrivateRoute>
+          withAppLayout(
+            <PrivateRoute>
+              <AccountTypeRoute allowed={["professional"]}>
+                <ProfessionalOnboardingPage />
+              </AccountTypeRoute>
+            </PrivateRoute>,
+            { showFooter: false }
+          )
         }
       />
       <Route
         path="/onboarding/donor/needs-assessment"
         element={
-          <PrivateRoute>
-            <DonorNeedsAssessmentPage />
-          </PrivateRoute>
+          withAppLayout(
+            <PrivateRoute>
+              <DonorNeedsAssessmentPage />
+            </PrivateRoute>,
+            { showFooter: false }
+          )
         }
       />
       <Route
         path="/onboarding/investor/needs-assessment"
         element={
-          <PrivateRoute>
-            <InvestorNeedsAssessmentPage />
-          </PrivateRoute>
+          withAppLayout(
+            <PrivateRoute>
+              <InvestorNeedsAssessmentPage />
+            </PrivateRoute>,
+            { showFooter: false }
+          )
         }
       />
       <Route
         path="/onboarding/investor"
         element={
-          <PrivateRoute>
-            <AccountTypeRoute allowed={["investor", "donor"]}>
-              <InvestorOnboardingPage />
-            </AccountTypeRoute>
-          </PrivateRoute>
+          withAppLayout(
+            <PrivateRoute>
+              <AccountTypeRoute allowed={["investor", "donor"]}>
+                <InvestorOnboardingPage />
+              </AccountTypeRoute>
+            </PrivateRoute>,
+            { showFooter: false }
+          )
         }
       />
       <Route
         path="/onboarding/government/needs-assessment"
         element={
-          <PrivateRoute>
-            <GovernmentNeedsAssessmentPage />
-          </PrivateRoute>
+          withAppLayout(
+            <PrivateRoute>
+              <GovernmentNeedsAssessmentPage />
+            </PrivateRoute>,
+            { showFooter: false }
+          )
         }
       />
       
@@ -320,9 +364,11 @@ export const AppRoutes = () => (
       <Route
         path="/compliance"
         element={
-          <PrivateRoute>
-            <ComplianceDashboard />
-          </PrivateRoute>
+          withAppLayout(
+            <PrivateRoute>
+              <ComplianceDashboard />
+            </PrivateRoute>
+          )
         }
       />
 
@@ -342,8 +388,8 @@ export const AppRoutes = () => (
           </PrivateRoute>
         }
       />
-      
-      <Route path="*" element={<NotFound />} />
+
+      <Route path="*" element={withAppLayout(<NotFound />, { showFooter: false })} />
     </Routes>
   </Suspense>
 );
