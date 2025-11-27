@@ -1,7 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import AppLayout from "@/components/AppLayout";
 
 export default function TermsOfService() {
   return (
+    <AppLayout>
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <Card>
         <CardHeader>
@@ -95,5 +97,6 @@ export default function TermsOfService() {
         </CardContent>
       </Card>
     </div>
+    </AppLayout>
   );
 }

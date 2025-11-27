@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { supabase } from '@/lib/supabase-enhanced';
 import { getProfessionalProfile } from '@/lib/api/profile-onboarding';
+import AppLayout from '@/components/AppLayout';
 
 interface AssessmentData {
   assessment: any;
@@ -138,18 +139,21 @@ export const ProfessionalAssessment = () => {
 
   if (loading) {
     return (
+      <AppLayout>
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading your professional assessment...</p>
         </div>
       </div>
+      </AppLayout>
     );
   }
 
   // Intro View
   if (currentView === 'intro') {
     return (
+      <AppLayout>
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 py-8 px-4">
         <div className="max-w-2xl mx-auto">
           <Card>
@@ -206,24 +210,28 @@ export const ProfessionalAssessment = () => {
           </Card>
         </div>
       </div>
+      </AppLayout>
     );
   }
 
   // Assessment Form View
   if (currentView === 'assessment') {
     return (
+      <AppLayout>
       <div className="min-h-screen bg-gray-50 py-8">
         <ProfessionalNeedsAssessment 
           onComplete={handleAssessmentComplete}
           onSkip={handleSkipAssessment}
         />
       </div>
+      </AppLayout>
     );
   }
 
   // Results View
   if (currentView === 'results' && assessmentData) {
     return (
+      <AppLayout>
       <div className="min-h-screen bg-gray-50 py-8">
         <AssessmentResults
           assessment={assessmentData.assessment}
@@ -232,6 +240,7 @@ export const ProfessionalAssessment = () => {
           onRetakeAssessment={handleRetakeAssessment}
         />
       </div>
+      </AppLayout>
     );
   }
 

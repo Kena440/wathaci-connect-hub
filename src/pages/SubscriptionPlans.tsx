@@ -8,6 +8,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { subscriptionPlans, getPlansForUserType, getUserTypeLabel } from '@/data/subscriptionPlans';
 import { UserTypeSubscriptions } from '@/components/UserTypeSubscriptions';
 import { SubscriptionCard } from '@/components/SubscriptionCard';
+import AppLayout from '@/components/AppLayout';
 
 export const SubscriptionPlans = () => {
   const [selectedUserType, setSelectedUserType] = useState<string>('all');
@@ -38,6 +39,7 @@ export const SubscriptionPlans = () => {
   };
 
   return (
+    <AppLayout>
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-emerald-50 py-12 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
@@ -100,5 +102,6 @@ export const SubscriptionPlans = () => {
         </div>
       </div>
     </div>
+    </AppLayout>
   );
 };

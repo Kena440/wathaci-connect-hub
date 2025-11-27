@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { UserTypeSubscriptions } from '@/components/UserTypeSubscriptions';
 import { accountTypes, type AccountTypeValue } from '@/data/accountTypes';
 import { normalizeMsisdn, normalizePhoneNumber } from '@/utils/phone';
+import AppLayout from '@/components/AppLayout';
 // TEMPORARY BYPASS MODE: remove after auth errors are fixed
 import {
   isAuthBypassEnabled,
@@ -507,11 +508,12 @@ export const ProfileSetup = () => {
   };
 
   if (!user) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <AppLayout><div className="min-h-screen flex items-center justify-center">Loading...</div></AppLayout>;
   }
 
   if (!showProfileForm) {
     return (
+      <AppLayout>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-emerald-50 py-8 px-4">
         <Card className="w-full max-w-2xl mx-auto">
           <CardHeader>
@@ -547,10 +549,12 @@ export const ProfileSetup = () => {
           </CardContent>
         </Card>
       </div>
+      </AppLayout>
     );
   }
 
   return (
+    <AppLayout>
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-emerald-50 py-8 px-4">
       <div className="max-w-6xl mx-auto">
         {/* TEMPORARY BYPASS MODE: remove after auth errors are fixed */}
@@ -603,5 +607,6 @@ export const ProfileSetup = () => {
         </Card>
       </div>
     </div>
+    </AppLayout>
   );
 };

@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase-enhanced';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle, TrendingUp } from 'lucide-react';
+import AppLayout from '@/components/AppLayout';
 
 interface AssessmentData {
   assessment: any;
@@ -140,18 +141,21 @@ export const SMEAssessment = () => {
 
   if (loading) {
     return (
+      <AppLayout>
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
+      </AppLayout>
     );
   }
 
   // Introduction/Welcome View
   if (currentView === 'intro') {
     return (
+      <AppLayout>
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50">
         <div className="max-w-4xl mx-auto p-6 pt-12">
           <Button 
@@ -286,24 +290,28 @@ export const SMEAssessment = () => {
           )}
         </div>
       </div>
+      </AppLayout>
     );
   }
 
   // Assessment Form View
   if (currentView === 'assessment') {
     return (
+      <AppLayout>
       <div className="min-h-screen bg-gray-50 py-8">
         <SMENeedsAssessment 
           onComplete={handleAssessmentComplete}
           onSkip={handleSkipAssessment}
         />
       </div>
+      </AppLayout>
     );
   }
 
   // Results View
   if (currentView === 'results' && assessmentData) {
     return (
+      <AppLayout>
       <div className="min-h-screen bg-gray-50 py-8">
         <AssessmentResults
           assessment={assessmentData.assessment}
@@ -312,6 +320,7 @@ export const SMEAssessment = () => {
           onRetakeAssessment={handleRetakeAssessment}
         />
       </div>
+      </AppLayout>
     );
   }
 

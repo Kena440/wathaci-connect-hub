@@ -14,6 +14,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { getSmeProfile, upsertSmeProfile, uploadProfileMedia } from '@/lib/api/profile-onboarding';
 import { ArrowLeft, Loader2, Upload, Check } from 'lucide-react';
 import { supabaseClient } from '@/lib/supabaseClient';
+import AppLayout from '@/components/AppLayout';
 
 const challenges = [
   'Access to finance',
@@ -191,13 +192,16 @@ export const SmeOnboardingPage = () => {
 
   if (initializing) {
     return (
+      <AppLayout>
       <div className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="h-5 w-5 animate-spin text-primary" />
       </div>
+      </AppLayout>
     );
   }
 
   return (
+    <AppLayout>
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50 py-10">
       <div className="max-w-4xl mx-auto px-4">
         <Button variant="ghost" className="mb-4" onClick={() => navigate(-1)}>
@@ -417,6 +421,7 @@ export const SmeOnboardingPage = () => {
         </form>
       </div>
     </div>
+    </AppLayout>
   );
 };
 

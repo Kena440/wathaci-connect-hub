@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { upsertProfile, type ProfileParams } from '@/lib/onboarding';
+import AppLayout from '@/components/AppLayout';
 
 const ACCOUNT_TYPE_OPTIONS = ['sme', 'professional', 'donor', 'investor'] as const;
 
@@ -255,6 +256,7 @@ export const GetStartedPage = () => {
   } = form;
 
   return (
+    <AppLayout>
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50 py-12 px-4">
       <div className="mx-auto w-full max-w-4xl">
         <Card className="border-orange-100 shadow-xl">
@@ -381,6 +383,7 @@ export const GetStartedPage = () => {
         </Card>
       </div>
     </div>
+    </AppLayout>
   );
 };
 

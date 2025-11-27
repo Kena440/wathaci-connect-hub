@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { upsertProfile, saveInvestorNeedsAssessment } from '@/lib/onboarding';
 import { ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
+import AppLayout from '@/components/AppLayout';
 
 const investorAssessmentSchema = z.object({
   organization_name: z.string().min(2, 'Name/Organization is required'),
@@ -189,6 +190,7 @@ export const InvestorNeedsAssessmentPage = () => {
   if (!user) return null;
 
   return (
+    <AppLayout>
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50 py-8">
       <div className="max-w-3xl mx-auto px-4">
         <div className="mb-6">
@@ -432,5 +434,6 @@ export const InvestorNeedsAssessmentPage = () => {
         </form>
       </div>
     </div>
+    </AppLayout>
   );
 };

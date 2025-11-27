@@ -21,6 +21,7 @@ import {
 } from '@/lib/api/profile-onboarding';
 import { supabaseClient } from '@/lib/supabaseClient';
 import { ArrowLeft, ArrowRight, Check, Loader2, Upload } from 'lucide-react';
+import AppLayout from '@/components/AppLayout';
 
 const primaryExpertiseOptions = [
   'Financial Modelling',
@@ -364,13 +365,16 @@ export const ProfessionalOnboardingPage = () => {
 
   if (initializing) {
     return (
+      <AppLayout>
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="h-6 w-6 animate-spin text-primary" aria-label="Loading profile" />
       </div>
+      </AppLayout>
     );
   }
 
   return (
+    <AppLayout>
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50 py-10">
       <div className="max-w-5xl mx-auto px-4">
         <Button variant="ghost" className="mb-4" onClick={() => navigate(-1)}>
@@ -781,6 +785,7 @@ export const ProfessionalOnboardingPage = () => {
         </form>
       </div>
     </div>
+    </AppLayout>
   );
 };
 

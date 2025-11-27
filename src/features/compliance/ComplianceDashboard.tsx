@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { AddComplianceTaskModal } from './AddComplianceTaskModal';
 import { AddStandardTasksDrawer } from './AddStandardTasksDrawer';
 import { withSupportContact } from '@/lib/supportEmail';
+import AppLayout from '@/components/AppLayout';
 
 interface ComplianceTask {
   id: string;
@@ -186,6 +187,7 @@ export const ComplianceDashboard = () => {
 
   if (loading) {
     return (
+      <AppLayout>
       <div className="min-h-screen bg-gradient-to-b from-orange-50 to-green-50 py-8 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="text-center py-12">
@@ -193,10 +195,12 @@ export const ComplianceDashboard = () => {
           </div>
         </div>
       </div>
+      </AppLayout>
     );
   }
 
   return (
+    <AppLayout>
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-green-50 py-8 px-4">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
@@ -289,5 +293,6 @@ export const ComplianceDashboard = () => {
         />
       </div>
     </div>
+    </AppLayout>
   );
 };

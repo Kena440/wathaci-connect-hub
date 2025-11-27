@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { upsertProfile, saveSmeNeedsAssessment } from '@/lib/onboarding';
 import { ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
+import AppLayout from '@/components/AppLayout';
 
 // Validation schema
 const smeAssessmentSchema = z.object({
@@ -211,6 +212,7 @@ export const SmeNeedsAssessmentPage = () => {
   if (!user) return null;
 
   return (
+    <AppLayout>
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50 py-8">
       <div className="max-w-3xl mx-auto px-4">
         <div className="mb-6">
@@ -519,5 +521,6 @@ export const SmeNeedsAssessmentPage = () => {
         </form>
       </div>
     </div>
+    </AppLayout>
   );
 };

@@ -15,6 +15,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { upsertProfile, saveProfessionalNeedsAssessment } from '@/lib/onboarding';
 import { getProfessionalProfile } from '@/lib/api/profile-onboarding';
 import { ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
+import AppLayout from '@/components/AppLayout';
 
 const professionalAssessmentSchema = z.object({
   full_name: z.string().min(2, 'Full name is required'),
@@ -170,6 +171,7 @@ export const ProfessionalNeedsAssessmentPage = () => {
   if (!user) return null;
 
   return (
+    <AppLayout>
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50 py-8">
       <div className="max-w-3xl mx-auto px-4">
         <div className="mb-6">
@@ -365,5 +367,6 @@ export const ProfessionalNeedsAssessmentPage = () => {
         </form>
       </div>
     </div>
+    </AppLayout>
   );
 };

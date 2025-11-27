@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { supabase } from '@/lib/supabase-enhanced';
+import AppLayout from '@/components/AppLayout';
 
 interface AssessmentData {
   assessment: any;
@@ -120,18 +121,21 @@ export const GovernmentAssessment = () => {
 
   if (loading) {
     return (
+      <AppLayout>
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading your government assessment...</p>
         </div>
       </div>
+      </AppLayout>
     );
   }
 
   // Intro View
   if (currentView === 'intro') {
     return (
+      <AppLayout>
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 py-8 px-4">
         <div className="max-w-2xl mx-auto">
           <Card>
@@ -188,24 +192,28 @@ export const GovernmentAssessment = () => {
           </Card>
         </div>
       </div>
+      </AppLayout>
     );
   }
 
   // Assessment Form View
   if (currentView === 'assessment') {
     return (
+      <AppLayout>
       <div className="min-h-screen bg-gray-50 py-8">
         <GovernmentNeedsAssessment 
           onComplete={handleAssessmentComplete}
           onSkip={handleSkipAssessment}
         />
       </div>
+      </AppLayout>
     );
   }
 
   // Results View
   if (currentView === 'results' && assessmentData) {
     return (
+      <AppLayout>
       <div className="min-h-screen bg-gray-50 py-8">
         <AssessmentResults
           assessment={assessmentData.assessment}
@@ -214,6 +222,7 @@ export const GovernmentAssessment = () => {
           onRetakeAssessment={handleRetakeAssessment}
         />
       </div>
+      </AppLayout>
     );
   }
 

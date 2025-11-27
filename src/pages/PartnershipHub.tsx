@@ -7,8 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
+import AppLayout from '@/components/AppLayout';
 import { supabase } from '@/lib/supabase-enhanced';
 import IndustryMatcher from '@/components/industry/IndustryMatcher';
 import { Handshake, Users, TrendingUp, Award, Building, Globe, CheckCircle, Star, Target } from 'lucide-react';
@@ -93,9 +92,8 @@ export const PartnershipHub = () => {
   };
 
     return (
+      <AppLayout>
       <div className="min-h-screen bg-white relative">
-        <Header />
-
         <div
           aria-hidden="true"
           className="pointer-events-none fixed inset-0 bg-center bg-cover"
@@ -330,8 +328,7 @@ export const PartnershipHub = () => {
           </TabsContent>
         </Tabs>
       </div>
-      
-      <Footer />
     </div>
+    </AppLayout>
   );
 };
