@@ -5,9 +5,10 @@ import Footer from './Footer';
 interface AppLayoutProps {
   children?: ReactNode;
   showHomeContent?: boolean;
+  showFooter?: boolean;
 }
 
-export const AppLayout = ({ children, showHomeContent = false }: AppLayoutProps) => {
+export const AppLayout = ({ children, showHomeContent = false, showFooter = true }: AppLayoutProps) => {
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -21,7 +22,7 @@ export const AppLayout = ({ children, showHomeContent = false }: AppLayoutProps)
           children
         )}
       </main>
-      <Footer />
+      {showFooter && <Footer />}
     </div>
   );
 };
