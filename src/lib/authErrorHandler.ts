@@ -53,6 +53,47 @@ export function parseAuthError(error: unknown): DetailedAuthError {
  */
 function parseSupabaseAuthError(error: AuthError): DetailedAuthError {
   const message = error.message.toLowerCase();
+  const status = typeof (error as any)?.status === 'number' ? (error as any).status : undefined;
+  const code = (error as any)?.code as string | undefined;
+
+  // Signups disabled or blocked at project level
+  if (
+    message.includes('signup') &&
+    (message.includes('not allowed') || message.includes('disabled') || message.includes('forbidden'))
+  ) {
+    return {
+      friendlyMessage: 'New account creation is currently disabled. Please contact support if you believe this is in error.',
+      errorCode: 'SIGNUPS_DISABLED',
+      originalMessage: error.message,
+      category: 'auth',
+      suggestedAction: 'Reach out to support@wathaci.com so we can enable signups for your workspace.',
+      shouldReport: true,
+    };
+  }
+
+  // Explicit Supabase rate limiting
+  if (status === 429 || code === '429' || message.includes('rate limit')) {
+    return {
+      friendlyMessage: 'Too many signup attempts. Please wait a few minutes before trying again.',
+      errorCode: 'SIGNUP_RATE_LIMITED',
+      originalMessage: error.message,
+      category: 'validation',
+      suggestedAction: 'Pause for a few minutes, then try signing up once. Contact support if the issue persists.',
+      shouldReport: false,
+    };
+  }
+
+  // Backend/network outages
+  if (status && status >= 500) {
+    return {
+      friendlyMessage: 'Our authentication service is temporarily unavailable. Please try again shortly.',
+      errorCode: 'AUTH_SERVICE_UNAVAILABLE',
+      originalMessage: error.message,
+      category: 'network',
+      suggestedAction: 'Retry in a few minutes. If the problem continues, contact support@wathaci.com.',
+      shouldReport: true,
+    };
+  }
 
   // Email already registered
   if (message.includes('user already registered') || message.includes('duplicate key')) {

@@ -101,6 +101,33 @@ export const SignupForm = ({
   const [profileError, setProfileError] = useState<string | null>(null);
   const [blockedStatus, setBlockedStatus] = useState<ReturnType<typeof getClientBlockedStatus> | null>(null);
 
+  const logAuthFailure = (context: string, error: unknown, extra?: Record<string, unknown>) => {
+    const friendlyMessage = getUserFriendlyMessage(error);
+    setFormError(friendlyMessage);
+
+    const normalizedError =
+      error && typeof error === "object"
+        ? {
+            status: (error as any)?.status,
+            code: (error as any)?.code,
+            name: (error as any)?.name,
+            message: (error as any)?.message,
+            hint: (error as any)?.hint ?? (error as any)?.error_description,
+          }
+        : { message: String(error) };
+
+    // Enhanced error logging for debugging
+    logAuthError(context, error, { ...extra, ...normalizedError });
+    logSupabaseAuthError(context, error);
+
+    if (typeof console !== "undefined" && import.meta.env.DEV) {
+      console.error(`[signup] ${context}`, {
+        ...normalizedError,
+        ...extra,
+      });
+    }
+  };
+
   const useSmsOtp = watch("useSmsOtp");
   const mobileNumber = watch("mobileNumber");
   const emailValue = watch("email");
@@ -221,28 +248,19 @@ export const SignupForm = ({
           // Mark email as blocked for 1 hour
           markAsBlocked(60 * 60 * 1000);
           
-          // Enhanced error logging with detailed context
-          logAuthError("signup-sms-blocked", error, {
+          logAuthFailure("signup-sms-blocked", error, {
             email: normalizedEmail,
             accountType: normalizedAccountType,
             hasPhone: Boolean(normalizedMobileNumber),
             blocked: true,
           });
         } else {
-          // Enhanced error logging with detailed context
-          logAuthError("signup-sms", error, {
+          logAuthFailure("signup-sms", error, {
             email: normalizedEmail,
             accountType: normalizedAccountType,
             hasPhone: Boolean(normalizedMobileNumber),
           });
         }
-        
-        // Set user-friendly error message
-        const friendlyMessage = getUserFriendlyMessage(error);
-        setFormError(friendlyMessage);
-        
-        // Log to legacy system for compatibility
-        logSupabaseAuthError("signup-sms", error);
         return;
       }
 
@@ -283,26 +301,17 @@ export const SignupForm = ({
           // Mark email as blocked for 1 hour
           markAsBlocked(60 * 60 * 1000);
           
-          // Enhanced error logging with detailed context
-          logAuthError("signup-email-blocked", error, {
+          logAuthFailure("signup-email-blocked", error, {
             email: normalizedEmail,
             accountType: normalizedAccountType,
             blocked: true,
           });
         } else {
-          // Enhanced error logging with detailed context
-          logAuthError("signup-email", error, {
+          logAuthFailure("signup-email", error, {
             email: normalizedEmail,
             accountType: normalizedAccountType,
           });
         }
-        
-        // Set user-friendly error message
-        const friendlyMessage = getUserFriendlyMessage(error);
-        setFormError(friendlyMessage);
-        
-        // Log to legacy system for compatibility
-        logSupabaseAuthError("signup", error);
         return;
       }
 
