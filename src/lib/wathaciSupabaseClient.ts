@@ -1,36 +1,26 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { supabaseClient } from "./supabaseClient";
+import type { AccountTypeValue } from "@/data/accountTypes";
 
-// Minimal Supabase client dedicated to the Wathaci auth/onboarding flow.
-// Ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your
-// Vite environment (e.g., .env.local). We intentionally keep this lean so
-// it can be copied into standalone onboarding pages without the broader
-// application config dependencies.
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Use the shared, fully-configured Supabase client so auth state is consistent
+// across the app (sessions, headers, interceptors, etc.). This prevents the
+// standalone onboarding utilities from crashing when environment variables are
+// missing and keeps login/signup flows aligned with the main application.
+export { supabaseClient };
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  // Early surface of misconfiguration for developers.
-  throw new Error(
-    "Missing Supabase configuration. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment."
-  );
-}
-
-export const supabaseClient: SupabaseClient = createClient(
-  supabaseUrl,
-  supabaseAnonKey
-);
-
-export type AccountType =
-  | "SME"
-  | "INVESTOR"
-  | "SERVICE_PROVIDER"
-  | "PARTNER"
-  | "ADMIN";
+export type AccountType = AccountTypeValue;
 
 export const accountTypePaths: Record<AccountType, string> = {
-  SME: "/dashboard/sme",
-  INVESTOR: "/dashboard/investor",
-  SERVICE_PROVIDER: "/dashboard/service-provider",
-  PARTNER: "/dashboard/partner",
-  ADMIN: "/dashboard/admin",
+  sme: "/sme-assessment",
+  sole_proprietor: "/sme-assessment",
+  investor: "/investor-assessment",
+  professional: "/professional-assessment",
+  donor: "/donor-assessment",
+  government: "/government-assessment",
+};
+
+export const getDashboardPathForAccountType = (accountType?: string | null): string => {
+  if (!accountType) return "/profile-review";
+
+  const normalized = accountType.trim().toLowerCase() as AccountTypeValue;
+  return accountTypePaths[normalized] ?? "/profile-review";
 };
