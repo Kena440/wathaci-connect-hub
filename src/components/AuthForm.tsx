@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { logSupabaseAuthError } from '@/lib/supabaseClient';
 import { useAppContext } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
@@ -395,17 +395,26 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
       )}
 
       {mode === 'signin' && (
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="rememberPassword"
-            disabled={isFormDisabled}
-            className="h-4 w-4 rounded border-gray-300"
-            {...register('rememberPassword')}
-          />
-          <Label htmlFor="rememberPassword" className="cursor-pointer text-sm font-normal">
-            Remember my email on this device
-          </Label>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="rememberPassword"
+              disabled={isFormDisabled}
+              className="h-4 w-4 rounded border-gray-300"
+              {...register('rememberPassword')}
+            />
+            <Label htmlFor="rememberPassword" className="cursor-pointer text-sm font-normal">
+              Remember my email on this device
+            </Label>
+          </div>
+
+          <Link
+            to="/forgot-password"
+            className="text-sm font-semibold text-red-600 hover:text-red-700 focus-visible:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+          >
+            Forgot password?
+          </Link>
         </div>
       )}
 

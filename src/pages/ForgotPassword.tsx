@@ -41,7 +41,8 @@ const ForgotPassword = () => {
     setErrorMessage(null);
 
     try {
-      const { error } = await userService.requestPasswordReset(email);
+      const normalizedEmail = email.trim().toLowerCase();
+      const { error } = await userService.requestPasswordReset(normalizedEmail);
 
       if (error) {
         const message =
@@ -58,7 +59,7 @@ const ForgotPassword = () => {
       setSuccess(true);
       toast({
         title: 'Check your email',
-        description: 'We sent you a link to reset your password.',
+        description: 'If an account exists for that email, we sent reset instructions.',
       });
     } finally {
       setLoading(false);
@@ -84,7 +85,8 @@ const ForgotPassword = () => {
                 <div className="space-y-2">
                   <h2 className="text-xl font-semibold text-gray-900">Reset link sent</h2>
                   <p className="text-gray-600">
-                    Please check your inbox for an email with the next steps. The link will expire shortly for security reasons.
+                    If an account exists for that email, we sent reset instructions. The link will expire shortly for security
+                    reasons.
                   </p>
                 </div>
                 <Button asChild className="w-full">

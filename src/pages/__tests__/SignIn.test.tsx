@@ -1,5 +1,22 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
+
+jest.mock('@/lib/supabaseClient', () => ({
+  __esModule: true,
+  logSupabaseAuthError: jest.fn(),
+}));
+
+jest.mock('@/config/featureFlags', () => ({
+  __esModule: true,
+  getMaintenanceConfig: () => ({
+    enabled: false,
+    allowSignIn: true,
+    allowSignUp: true,
+    bannerTitle: '',
+    bannerMessage: '',
+  }),
+}));
+
 import SignIn from '../SignIn';
 
 const mockSignIn = jest.fn().mockResolvedValue({ user: null, profile: null });
@@ -44,7 +61,7 @@ describe('SignIn Validation', () => {
   it('shows validation error for invalid email format', async () => {
     render(<SignInWrapper />);
 
-    const emailInput = screen.getByLabelText(/email/i);
+    const emailInput = screen.getByLabelText(/^email$/i);
     const submitButton = screen.getByRole('button', { name: /sign in/i });
 
     fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
@@ -73,7 +90,7 @@ describe('SignIn Validation', () => {
   it('submits valid credentials', async () => {
     render(<SignInWrapper />);
 
-    const emailInput = screen.getByLabelText(/email/i);
+    const emailInput = screen.getByLabelText(/^email$/i);
     const passwordInput = screen.getByLabelText(/password/i, { selector: 'input' });
     const submitButton = screen.getByRole('button', { name: /sign in/i });
 
@@ -89,5 +106,13 @@ describe('SignIn Validation', () => {
     });
 
     expect(mockSignIn).toHaveBeenCalledWith('test@example.com', 'password123');
+  });
+
+  it('shows a persistent forgot password link', async () => {
+    render(<SignInWrapper />);
+
+    const forgotLink = screen.getByRole('link', { name: /forgot password\?/i });
+    expect(forgotLink).toBeInTheDocument();
+    expect(forgotLink).toHaveAttribute('href', '/forgot-password');
   });
 });
