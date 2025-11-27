@@ -1,6 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppContext } from '@/contexts/AppContext';
 import { subscriptionService } from '@/lib/services';
+import {
+  SUBSCRIPTION_BYPASS_FEATURES,
+  SUBSCRIPTION_DEBUG_BYPASS_ENABLED,
+} from '@/config/subscriptionDebug';
 
 interface SubscriptionAccessState {
   isSubscribed: boolean;
@@ -8,7 +12,7 @@ interface SubscriptionAccessState {
   loading: boolean;
 }
 
-export const useSubscriptionAccess = (): SubscriptionAccessState => {
+export const useSubscriptionAccess = (featureKey?: string): SubscriptionAccessState => {
   const { user } = useAppContext();
   const [state, setState] = useState<SubscriptionAccessState>({
     isSubscribed: false,
@@ -16,10 +20,25 @@ export const useSubscriptionAccess = (): SubscriptionAccessState => {
     loading: true,
   });
 
+  const bypassActive = useMemo(() => {
+    if (!SUBSCRIPTION_DEBUG_BYPASS_ENABLED || !featureKey) return false;
+    return SUBSCRIPTION_BYPASS_FEATURES.has(featureKey.toLowerCase());
+  }, [featureKey]);
+
   useEffect(() => {
     let isMounted = true;
 
     const checkSubscription = async () => {
+      if (bypassActive) {
+        // TEMPORARY: Treat target features as subscribed for analysis
+        setState({
+          isSubscribed: true,
+          isAuthenticated: Boolean(user),
+          loading: false,
+        });
+        return;
+      }
+
       if (!user) {
         if (isMounted) {
           setState({ isSubscribed: false, isAuthenticated: false, loading: false });
@@ -42,7 +61,7 @@ export const useSubscriptionAccess = (): SubscriptionAccessState => {
     return () => {
       isMounted = false;
     };
-  }, [user]);
+  }, [bypassActive, user]);
 
   return state;
 };
