@@ -100,3 +100,36 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-gray-400;
 }
+
+/* Homepage hero background adjustments for full-image visibility and clarity */
+.homepage-hero {
+  background-image: url('/images/Homepage%20Background%202.png');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: scroll;
+  min-height: 90vh;
+  aspect-ratio: 16 / 9;
+  image-rendering: -webkit-optimize-contrast;
+  filter: saturate(1.05) contrast(1.05);
+  position: relative;
+  isolation: isolate;
+}
+
+.homepage-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+      rgba(0, 0, 0, 0.35),
+      rgba(0, 0, 0, 0.25)
+    ),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.28), rgba(16, 185, 129, 0.28));
+  z-index: 1;
+  pointer-events: none;
+}
+
+.homepage-hero > * {
+  position: relative;
+  z-index: 2;
+}
