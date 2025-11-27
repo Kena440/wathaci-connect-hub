@@ -13,6 +13,9 @@ import { toast } from 'sonner';
 import { AddComplianceTaskModal } from './AddComplianceTaskModal';
 import { AddStandardTasksDrawer } from './AddStandardTasksDrawer';
 import { withSupportContact } from '@/lib/supportEmail';
+import { useSubscriptionAccess } from '@/hooks/useSubscriptionAccess';
+import { ViewOnlyBanner } from '@/components/ViewOnlyBanner';
+import { useNavigate } from 'react-router-dom';
 
 interface ComplianceTask {
   id: string;
@@ -38,6 +41,18 @@ export const ComplianceDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [isAddStandardDrawerOpen, setIsAddStandardDrawerOpen] = useState(false);
+  const { isSubscribed, loading: checkingSubscription } = useSubscriptionAccess();
+  const viewOnly = !checkingSubscription && !isSubscribed;
+  const navigate = useNavigate();
+
+  const ensureInteractive = () => {
+    if (viewOnly) {
+      navigate('/subscription-plans');
+      toast.info('Subscribe to unlock compliance task workflows. Per-task fees still apply when available.');
+      return false;
+    }
+    return true;
+  };
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -80,6 +95,7 @@ export const ComplianceDashboard = () => {
   }, [fetchTasks, user]);
 
   const markAsCompleted = async (taskId: string) => {
+    if (!ensureInteractive()) return;
     try {
       const { error } = await supabase
         .from('compliance_tasks')
@@ -174,6 +190,7 @@ export const ComplianceDashboard = () => {
               onClick={() => markAsCompleted(task.id)}
               size="sm"
               className="bg-green-600 hover:bg-green-700 whitespace-nowrap"
+              disabled={viewOnly}
             >
               <CheckCircle className="w-4 h-4 mr-2" />
               Mark Complete
@@ -200,25 +217,38 @@ export const ComplianceDashboard = () => {
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-green-50 py-8 px-4">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-4">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Compliance Hub</h1>
           <p className="text-lg text-gray-600">
             Track ZRA, PACRA, NAPSA and other business compliance tasks in one place.
           </p>
         </div>
 
+        {!checkingSubscription && viewOnly && (
+          <ViewOnlyBanner
+            onUpgrade={() => navigate('/subscription-plans')}
+            message="You currently have view-only access. Subscribe to add, update, or complete compliance tasks."
+          />
+        )}
+
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <Button
-            onClick={() => setIsAddTaskModalOpen(true)}
+            onClick={() => {
+              if (ensureInteractive()) setIsAddTaskModalOpen(true);
+            }}
             className="bg-orange-600 hover:bg-orange-700"
+            disabled={viewOnly}
           >
             Add Compliance Task
           </Button>
           <Button
-            onClick={() => setIsAddStandardDrawerOpen(true)}
+            onClick={() => {
+              if (ensureInteractive()) setIsAddStandardDrawerOpen(true);
+            }}
             variant="outline"
             className="border-orange-600 text-orange-600 hover:bg-orange-50"
+            disabled={viewOnly}
           >
             Add Standard Tasks (ZRA / PACRA / NAPSA)
           </Button>

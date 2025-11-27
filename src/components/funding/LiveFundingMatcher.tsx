@@ -8,6 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Filter, TrendingUp, Users, Clock, Award } from 'lucide-react';
 import { supabase } from '@/lib/supabase-enhanced';
 
+interface LiveFundingMatcherProps {
+  viewOnly?: boolean;
+  onRequestAccess?: () => void;
+}
+
 interface FundingOpportunity {
   id: string;
   title: string;
@@ -34,13 +39,21 @@ interface Professional {
   availability: string;
 }
 
-export default function LiveFundingMatcher() {
+export default function LiveFundingMatcher({ viewOnly = false, onRequestAccess }: LiveFundingMatcherProps) {
   const [opportunities, setOpportunities] = useState<FundingOpportunity[]>([]);
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sectorFilter, setSectorFilter] = useState('all');
   const [activeTab, setActiveTab] = useState('opportunities');
+
+  const ensureInteractive = () => {
+    if (viewOnly) {
+      onRequestAccess?.();
+      return false;
+    }
+    return true;
+  };
 
   useEffect(() => {
     fetchLiveOpportunities();
@@ -65,6 +78,7 @@ export default function LiveFundingMatcher() {
   };
 
   const fetchMatchedProfessionals = async (opportunityId: string) => {
+    if (!ensureInteractive()) return;
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('matched-professionals', {
@@ -107,7 +121,7 @@ export default function LiveFundingMatcher() {
           </div>
         </div>
         <Select value={sectorFilter} onValueChange={setSectorFilter}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full md:w-48">
             <SelectValue placeholder="Filter by sector" />
           </SelectTrigger>
           <SelectContent>
@@ -118,7 +132,7 @@ export default function LiveFundingMatcher() {
             <SelectItem value="healthcare">Healthcare</SelectItem>
           </SelectContent>
         </Select>
-        <Button onClick={fetchLiveOpportunities} disabled={loading}>
+        <Button onClick={fetchLiveOpportunities} disabled={loading} className="w-full md:w-auto">
           <Filter className="w-4 h-4 mr-2" />
           Refresh AI Matches
         </Button>
@@ -197,15 +211,25 @@ export default function LiveFundingMatcher() {
                       </div>
                     </div>
                     <div className="flex gap-2 mt-4">
-                      <Button 
+                      <Button
                         onClick={() => fetchMatchedProfessionals(opportunity.id)}
                         className="flex-1"
+                        disabled={viewOnly}
                       >
                         <Users className="w-4 h-4 mr-2" />
-                        Find Expert Help
+                        {viewOnly ? 'Subscribe to engage' : 'Find Expert Help'}
                       </Button>
-                      <Button variant="outline" className="flex-1">
-                        View Details
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        disabled={viewOnly}
+                        onClick={() => {
+                          if (viewOnly) {
+                            onRequestAccess?.();
+                          }
+                        }}
+                      >
+                        {viewOnly ? 'Upgrade to unlock' : 'View Details'}
                       </Button>
                     </div>
                   </CardContent>

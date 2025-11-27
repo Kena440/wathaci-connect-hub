@@ -8,7 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase-enhanced';
 import { Search, TrendingUp, DollarSign, Clock, Loader2 } from 'lucide-react';
 
-export const FundingMatcher = () => {
+interface FundingMatcherProps {
+  viewOnly?: boolean;
+  onRequestAccess?: () => void;
+}
+
+export const FundingMatcher = ({ viewOnly = false, onRequestAccess }: FundingMatcherProps) => {
   const [businessProfile, setBusinessProfile] = useState({
     businessType: '',
     sector: '',
@@ -35,7 +40,16 @@ export const FundingMatcher = () => {
   const [matches, setMatches] = useState<FundingMatch[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const ensureInteractive = () => {
+    if (viewOnly) {
+      onRequestAccess?.();
+      return false;
+    }
+    return true;
+  };
+
   const handleMatch = async () => {
+    if (!ensureInteractive()) return;
     if (!businessProfile.businessType || !fundingNeeds.amount) {
       alert('Please fill in business type and funding amount');
       return;
@@ -136,7 +150,7 @@ export const FundingMatcher = () => {
             </div>
           </div>
 
-          <Button onClick={handleMatch} disabled={loading} className="w-full">
+          <Button onClick={handleMatch} disabled={loading || viewOnly} className="w-full">
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -145,7 +159,7 @@ export const FundingMatcher = () => {
             ) : (
               <>
                 <Search className="w-4 h-4 mr-2" />
-                Find Funding Matches
+                {viewOnly ? 'Subscribe to run matches' : 'Find Funding Matches'}
               </>
             )}
           </Button>
@@ -191,7 +205,18 @@ export const FundingMatcher = () => {
                   </div>
                 )}
 
-                <Button className="w-full">Apply Now</Button>
+                <Button
+                  className="w-full"
+                  disabled={viewOnly}
+                  onClick={() => {
+                    if (viewOnly) {
+                      onRequestAccess?.();
+                      return;
+                    }
+                  }}
+                >
+                  {viewOnly ? 'Subscribe to apply' : 'Apply Now'}
+                </Button>
               </CardContent>
             </Card>
           ))}

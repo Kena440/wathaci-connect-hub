@@ -5,62 +5,81 @@ import { FundingMatcher } from '@/components/funding/FundingMatcher';
 import LiveFundingMatcher from '@/components/funding/LiveFundingMatcher';
 import { AutomatedMatchingEngine } from '@/components/funding/AutomatedMatchingEngine';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useSubscriptionAccess } from '@/hooks/useSubscriptionAccess';
+import { ViewOnlyBanner } from '@/components/ViewOnlyBanner';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 const FundingHub = () => {
+  const { isSubscribed, loading } = useSubscriptionAccess();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const viewOnly = !loading && !isSubscribed;
+
+  const handleUpgrade = () => {
+    toast({
+      title: 'Subscribe to unlock full access',
+      description: 'Funding workflows require an active subscription. Service-specific fees still apply.',
+    });
+    navigate('/subscription-plans');
+  };
+
+  const sharedProps = { viewOnly, onRequestAccess: handleUpgrade } as const;
+
   return (
     <AppLayout>
-      <div className="min-h-screen relative">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none fixed inset-0 bg-center bg-cover"
-          style={{
-            backgroundImage: "url('/images/Funding%20Hub.png')",
-          }}
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-orange-50/70 via-white/60 to-green-50/70"
-        />
-        <div className="relative z-10 container mx-auto px-4 py-8 min-h-screen">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">AI-Powered Funding Hub</h1>
-            <p className="text-gray-600">
-              Discover live funding opportunities and get matched with expert professionals using advanced AI
-            </p>
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50">
+        <div className="relative overflow-hidden"> 
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-center bg-cover opacity-70"
+            style={{ backgroundImage: "url('/images/Funding%20Hub.png')" }}
+          />
+          <div className="relative z-10 container mx-auto px-4 py-10 min-h-[60vh]">
+            <div className="mb-6 text-center md:text-left">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">AI-Powered Funding Hub</h1>
+              <p className="text-gray-700 max-w-3xl mx-auto md:mx-0">
+                Discover live funding opportunities and get matched with expert professionals using advanced AI
+              </p>
+            </div>
+
+            {!loading && viewOnly && (
+              <ViewOnlyBanner onUpgrade={handleUpgrade} message="You currently have view-only access. Subscribe to submit applications, generate matches, and unlock interactive tools." />
+            )}
+
+            <Tabs defaultValue="automated" className="space-y-6 relative">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 bg-white/90 backdrop-blur">
+                <TabsTrigger value="automated">Automated Engine</TabsTrigger>
+                <TabsTrigger value="matcher">AI Matcher</TabsTrigger>
+                <TabsTrigger value="live-matcher">Live Opportunities</TabsTrigger>
+                <TabsTrigger value="ai-analyzer">AI Analyzer</TabsTrigger>
+                <TabsTrigger value="discovery">Discovery Hub</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="automated">
+                <AutomatedMatchingEngine {...sharedProps} />
+              </TabsContent>
+
+              <TabsContent value="matcher">
+                <FundingMatcher {...sharedProps} />
+              </TabsContent>
+
+              <TabsContent value="live-matcher">
+                <LiveFundingMatcher {...sharedProps} />
+              </TabsContent>
+
+              <TabsContent value="ai-analyzer">
+                <div className="p-8 text-center">
+                  <h3 className="text-xl font-semibold mb-4">AI Analyzer Coming Soon</h3>
+                  <p className="text-gray-600">Advanced AI analysis features will be available soon.</p>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="discovery">
+                <FundingHubComponent />
+              </TabsContent>
+            </Tabs>
           </div>
-
-          <Tabs defaultValue="automated" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="automated">Automated Engine</TabsTrigger>
-              <TabsTrigger value="matcher">AI Matcher</TabsTrigger>
-              <TabsTrigger value="live-matcher">Live Opportunities</TabsTrigger>
-              <TabsTrigger value="ai-analyzer">AI Analyzer</TabsTrigger>
-              <TabsTrigger value="discovery">Discovery Hub</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="automated">
-              <AutomatedMatchingEngine />
-            </TabsContent>
-
-            <TabsContent value="matcher">
-              <FundingMatcher />
-            </TabsContent>
-
-            <TabsContent value="live-matcher">
-              <LiveFundingMatcher />
-            </TabsContent>
-
-            <TabsContent value="ai-analyzer">
-              <div className="p-8 text-center">
-                <h3 className="text-xl font-semibold mb-4">AI Analyzer Coming Soon</h3>
-                <p className="text-gray-600">Advanced AI analysis features will be available soon.</p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="discovery">
-              <FundingHubComponent />
-            </TabsContent>
-          </Tabs>
         </div>
       </div>
     </AppLayout>
