@@ -11,12 +11,13 @@ const FundingHub = () => {
     <AppLayout>
       <div className="min-h-screen relative">
         <div 
+          aria-hidden="true"
           className="fixed inset-0 bg-center bg-cover"
           style={{
             backgroundImage: "url('/images/Funding%20Hub.png')",
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-50/70 via-white/60 to-green-50/70" />
+        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-orange-50/70 via-white/60 to-green-50/70" />
         <div className="relative z-10 container mx-auto px-4 py-8 min-h-screen">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">AI-Powered Funding Hub</h1>
