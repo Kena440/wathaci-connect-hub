@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lock, Eye } from 'lucide-react';
 import { supabase } from '@/lib/supabase-enhanced';
+import { subscriptionService } from '@/lib/services';
 import {
   SUBSCRIPTION_BYPASS_FEATURES,
   SUBSCRIPTION_DEBUG_BYPASS_ENABLED,
@@ -21,66 +22,66 @@ export const AccessGate = ({ children, feature }: AccessGateProps) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    checkAccess();
-  }, []);
+    const checkAccess = async () => {
+      const normalizedFeature = feature.toLowerCase();
 
-  const checkAccess = async () => {
-    const normalizedFeature = feature.toLowerCase();
-
-    if (
-      SUBSCRIPTION_DEBUG_BYPASS_ENABLED &&
-      SUBSCRIPTION_BYPASS_FEATURES.has(normalizedFeature)
-    ) {
-      // TEMPORARY: Subscription gating disabled for this feature to allow debugging
-      setHasAccess(true);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      // Check subscription status
-      const { data: subscription } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .single();
-
-      if (subscription) {
+      if (
+        SUBSCRIPTION_DEBUG_BYPASS_ENABLED &&
+        SUBSCRIPTION_BYPASS_FEATURES.has(normalizedFeature)
+      ) {
+        // TEMPORARY: Subscription gating disabled for this feature to allow debugging
+        console.info('[AccessGate] Bypass active for feature:', normalizedFeature);
         setHasAccess(true);
         setLoading(false);
         return;
       }
 
-      // Check trial status (14 days from profile creation)
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('created_at')
-        .eq('id', user.id)
-        .single();
-
-      if (profile) {
-        const trialEnd = new Date(profile.created_at);
-        trialEnd.setDate(trialEnd.getDate() + 14);
-        const now = new Date();
-        
-        if (now < trialEnd) {
-          setIsTrialActive(true);
-          setHasAccess(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setLoading(false);
+          return;
         }
+
+        // Check subscription status using the shared subscription service (V3 alignment)
+        const { data: isSubscribed, error: subscriptionError } = await subscriptionService.hasActiveSubscription(user.id);
+
+        if (subscriptionError) {
+          throw subscriptionError;
+        }
+
+        if (isSubscribed) {
+          setHasAccess(true);
+          setLoading(false);
+          return;
+        }
+
+        // Check trial status (14 days from profile creation)
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('created_at')
+          .eq('id', user.id)
+          .single();
+
+        if (profile) {
+          const trialEnd = new Date(profile.created_at);
+          trialEnd.setDate(trialEnd.getDate() + 14);
+          const now = new Date();
+
+          if (now < trialEnd) {
+            setIsTrialActive(true);
+            setHasAccess(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking access:', error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error checking access:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    void checkAccess();
+  }, [feature]);
 
   if (loading) {
     return <div className="animate-pulse bg-gray-200 h-32 rounded"></div>;
