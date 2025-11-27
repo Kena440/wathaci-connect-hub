@@ -14,7 +14,7 @@ const Index: React.FC = () => {
   return (
     <AppLayout>
       <div className="homepage-hero relative flex min-h-screen flex-col overflow-hidden bg-white/40 backdrop-blur-sm">
-        <div className="relative z-10">
+        <div className="relative">
           <HeroSection />
           {user && (
             <div className="container mx-auto px-4 py-6">
