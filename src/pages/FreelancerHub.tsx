@@ -14,13 +14,17 @@ const FreelancerHub = () => {
   return (
     <AppLayout>
       <div className="min-h-screen bg-gray-50 relative">
-        <div 
-          className="fixed inset-0 bg-center bg-cover"
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 bg-center bg-cover"
           style={{
             backgroundImage: "url('/images/Freelancer Hub.png')",
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/70 via-emerald-600/60 to-blue-800/70" />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-600/70 via-emerald-600/60 to-blue-800/70"
+        />
         <div className="relative z-10 py-16 text-white">
           <div className="max-w-6xl mx-auto px-6">
             <div className="flex items-center justify-between">
