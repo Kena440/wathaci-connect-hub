@@ -32,6 +32,10 @@ export const AccessGate = ({ children, feature }: AccessGateProps) => {
       SUBSCRIPTION_BYPASS_FEATURES.has(normalizedFeature)
     ) {
       // TEMPORARY: Subscription gating disabled for this feature to allow debugging
+      console.log('[subscription-debug] AccessGate bypass enabled', {
+        feature,
+        pathname: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+      });
       setHasAccess(true);
       setLoading(false);
       return;
@@ -39,6 +43,11 @@ export const AccessGate = ({ children, feature }: AccessGateProps) => {
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('[subscription-debug] AccessGate subscription check', {
+        feature,
+        pathname: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+        hasUser: Boolean(user),
+      });
       if (!user) {
         setLoading(false);
         return;

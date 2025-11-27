@@ -26,6 +26,7 @@ import {
   MonetizationState,
   PaymentAction,
 } from './types';
+import { useSubscriptionAccess } from '@/hooks/useSubscriptionAccess';
 
 const PaymentGrid = ({
   actions,
@@ -206,6 +207,13 @@ export const CreditPassportPage = () => {
   const [history, setHistory] = useState<CreditPassportResult[]>([]);
   const [notes, setNotes] = useState('');
   const viewOnly = false;
+  
+  // TEMPORARY: Trace subscription gating status for Credit Passport
+  const subscriptionState = useSubscriptionAccess('credit-passport');
+
+  useEffect(() => {
+    console.log('[subscription-debug] Credit Passport access', subscriptionState);
+  }, [subscriptionState]);
 
   const ensureInteractive = () => {
     return true;

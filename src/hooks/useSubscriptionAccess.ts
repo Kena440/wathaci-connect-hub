@@ -31,6 +31,10 @@ export const useSubscriptionAccess = (featureKey?: string): SubscriptionAccessSt
     const checkSubscription = async () => {
       if (bypassActive) {
         // TEMPORARY: Treat target features as subscribed for analysis
+        console.log('[subscription-debug] Bypass active for feature', {
+          featureKey,
+          pathname: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+        });
         setState({
           isSubscribed: true,
           isAuthenticated: Boolean(user),
@@ -40,6 +44,10 @@ export const useSubscriptionAccess = (featureKey?: string): SubscriptionAccessSt
       }
 
       if (!user) {
+        console.log('[subscription-debug] No user while checking subscription', {
+          featureKey,
+          pathname: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+        });
         if (isMounted) {
           setState({ isSubscribed: false, isAuthenticated: false, loading: false });
         }
@@ -48,6 +56,13 @@ export const useSubscriptionAccess = (featureKey?: string): SubscriptionAccessSt
 
       const { data, error } = await subscriptionService.hasActiveSubscription(user.id);
       if (!isMounted) return;
+
+      console.log('[subscription-debug] Subscription lookup complete', {
+        featureKey,
+        hasActiveSubscription: !!data && !error,
+        error,
+        pathname: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+      });
 
       setState({
         isSubscribed: !!data && !error,

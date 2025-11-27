@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { AddComplianceTaskModal } from './AddComplianceTaskModal';
 import { AddStandardTasksDrawer } from './AddStandardTasksDrawer';
 import { withSupportContact } from '@/lib/supportEmail';
+import { useSubscriptionAccess } from '@/hooks/useSubscriptionAccess';
 
 interface ComplianceTask {
   id: string;
@@ -39,6 +40,13 @@ export const ComplianceDashboard = () => {
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [isAddStandardDrawerOpen, setIsAddStandardDrawerOpen] = useState(false);
   const viewOnly = false;
+
+  // TEMPORARY: Trace subscription gating status for Compliance Hub
+  const subscriptionState = useSubscriptionAccess('compliance-hub');
+
+  useEffect(() => {
+    console.log('[subscription-debug] Compliance Hub access', subscriptionState);
+  }, [subscriptionState]);
 
   const ensureInteractive = () => {
     return true;

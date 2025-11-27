@@ -1,12 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AppLayout } from '@/components/AppLayout';
 import { FundingHub as FundingHubComponent } from '@/components/funding/FundingHub';
 import { FundingMatcher } from '@/components/funding/FundingMatcher';
 import LiveFundingMatcher from '@/components/funding/LiveFundingMatcher';
 import { AutomatedMatchingEngine } from '@/components/funding/AutomatedMatchingEngine';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useSubscriptionAccess } from '@/hooks/useSubscriptionAccess';
 
 const FundingHub = () => {
+  // TEMPORARY: Trace subscription gating status for Funding Hub
+  const subscriptionState = useSubscriptionAccess('funding-hub');
+
+  useEffect(() => {
+    console.log('[subscription-debug] Funding Hub access', subscriptionState);
+  }, [subscriptionState]);
+
   const sharedProps = { viewOnly: false } as const;
 
   return (
