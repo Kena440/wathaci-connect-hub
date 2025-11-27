@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { useSubscriptionAccess } from '@/hooks/useSubscriptionAccess';
 import { defaultPassportInputs } from './mockData';
 import { generateCreditPassport, PRICE_POINTS } from './scoring';
 import {
@@ -205,7 +206,11 @@ export const CreditPassportPage = () => {
   const [result, setResult] = useState<CreditPassportResult | null>(null);
   const [history, setHistory] = useState<CreditPassportResult[]>([]);
   const [notes, setNotes] = useState('');
-  const viewOnly = false;
+  const { isSubscribed } = useSubscriptionAccess('credit passport');
+
+  // TEMPORARY: subscription gating bypass for Credit Passport analysis (see subscriptionDebug.ts)
+  // TODO: Restore subscription-gated viewOnly behavior when analysis is complete.
+  const viewOnly = !isSubscribed;
 
   const ensureInteractive = () => {
     return true;
