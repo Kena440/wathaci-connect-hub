@@ -26,13 +26,20 @@ import {
   MonetizationState,
   PaymentAction,
 } from './types';
+import { useSubscriptionAccess } from '@/hooks/useSubscriptionAccess';
+import { ViewOnlyBanner } from '@/components/ViewOnlyBanner';
+import { useNavigate } from 'react-router-dom';
 
 const PaymentGrid = ({
   actions,
   onPay,
+  viewOnly,
+  onRequestAccess,
 }: {
   actions: PaymentAction[];
   onPay: (action: PaymentAction['actionKey']) => void;
+  viewOnly?: boolean;
+  onRequestAccess?: () => void;
 }) => (
   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
     {actions.map(action => (
@@ -54,11 +61,17 @@ const PaymentGrid = ({
             <p className="text-sm text-muted-foreground">Pay before continuing</p>
           </div>
           <Button
-            disabled={action.status === 'paid'}
-            onClick={() => onPay(action.actionKey)}
+            disabled={action.status === 'paid' || viewOnly}
+            onClick={() => {
+              if (viewOnly) {
+                onRequestAccess?.();
+                return;
+              }
+              onPay(action.actionKey);
+            }}
             className="bg-orange-600 hover:bg-orange-700"
           >
-            {action.status === 'paid' ? 'Recorded' : 'Record payment'}
+            {action.status === 'paid' ? 'Recorded' : viewOnly ? 'Subscribe to unlock' : 'Record payment'}
           </Button>
         </CardContent>
       </Card>
@@ -195,6 +208,17 @@ export const CreditPassportPage = () => {
   const [result, setResult] = useState<CreditPassportResult | null>(null);
   const [history, setHistory] = useState<CreditPassportResult[]>([]);
   const [notes, setNotes] = useState('');
+  const { isSubscribed, loading: checkingSubscription } = useSubscriptionAccess();
+  const viewOnly = !checkingSubscription && !isSubscribed;
+  const navigate = useNavigate();
+
+  const ensureInteractive = () => {
+    if (viewOnly) {
+      navigate('/subscription-plans');
+      return false;
+    }
+    return true;
+  };
 
   const paymentActions: PaymentAction[] = useMemo(
     () => [
@@ -236,6 +260,7 @@ export const CreditPassportPage = () => {
   };
 
   const handlePay = (action: PaymentAction['actionKey']) => {
+    if (!ensureInteractive()) return;
     setMonetization(prev => {
       const next = { ...prev };
       next[action] = 'paid';
@@ -244,6 +269,7 @@ export const CreditPassportPage = () => {
   };
 
   const runEngine = () => {
+    if (!ensureInteractive()) return;
     if (monetization.generation !== 'paid') return;
     const generated = generateCreditPassport(inputs);
     const withNotes: CreditPassportResult = {
@@ -303,7 +329,19 @@ export const CreditPassportPage = () => {
           </Card>
         </div>
 
-        <PaymentGrid actions={paymentActions} onPay={handlePay} />
+        {!checkingSubscription && viewOnly && (
+          <ViewOnlyBanner
+            onUpgrade={() => navigate('/subscription-plans')}
+            message="You currently have view-only access. Subscribe to generate, share, or download Credit Passports."
+          />
+        )}
+
+        <PaymentGrid
+          actions={paymentActions}
+          onPay={handlePay}
+          viewOnly={viewOnly}
+          onRequestAccess={() => navigate('/subscription-plans')}
+        />
 
         <Card className="border-orange-100">
           <CardHeader>
@@ -385,14 +423,14 @@ export const CreditPassportPage = () => {
           <Button
             className="bg-orange-600 hover:bg-orange-700"
             onClick={runEngine}
-            disabled={monetization.generation !== 'paid'}
+            disabled={monetization.generation !== 'paid' || viewOnly}
           >
             <Sparkles className="w-4 h-4 mr-2" /> Generate passport
           </Button>
-          <Button variant="outline" disabled={!canDownload} className="border-orange-300">
+          <Button variant="outline" disabled={!canDownload || viewOnly} className="border-orange-300">
             <Download className="w-4 h-4 mr-2" /> Download PDF (requires payment)
           </Button>
-          <Button variant="outline" disabled={!canShare} className="border-green-300">
+          <Button variant="outline" disabled={!canShare || viewOnly} className="border-green-300">
             <UploadCloud className="w-4 h-4 mr-2" /> Share with bank/investor
           </Button>
           {monetization.generation !== 'paid' && (

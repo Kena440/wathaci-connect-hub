@@ -210,50 +210,50 @@ const Resources = () => {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gray-50 relative">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none fixed inset-0 bg-center bg-cover"
-          style={{
-            backgroundImage: "url('/images/ChatGPT%20Image%20Sep%2023%2C%202025%2C%2002_02_31%20PM.png')",
-          }}
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-gradient-to-r from-emerald-600/70 to-blue-600/70"
-        />
-        <div className="relative z-10 py-16 text-white">
-          <div className="max-w-6xl mx-auto px-6 text-center">
-            <h1 className="text-5xl font-bold mb-4">Business Resources</h1>
-            <p className="text-xl mb-8">Tools, templates, and knowledge to grow your business</p>
-            
-            <div className="flex justify-center gap-4 mb-8">
-              <Button 
+      <div className="min-h-screen bg-gray-50">
+        <section className="relative overflow-hidden text-white">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-center bg-cover"
+            style={{
+              backgroundImage: "url('/images/ChatGPT%20Image%20Sep%2023%2C%202025%2C%2002_02_31%20PM.png')",
+            }}
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-r from-emerald-700/80 to-blue-700/80"
+          />
+          <div className="relative z-10 max-w-6xl mx-auto px-6 py-14 text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">Business Resources</h1>
+            <p className="text-lg md:text-xl mb-8">Tools, templates, and knowledge to grow your business</p>
+
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap sm:gap-4 mb-4">
+              <Button
                 variant={activeTab === 'documents' ? 'secondary' : 'outline'}
                 onClick={() => setActiveTab('documents')}
-                className="text-lg px-8"
+                className="text-base md:text-lg w-full sm:w-auto px-6"
               >
                 Documents & Templates
               </Button>
-              <Button 
+              <Button
                 variant={activeTab === 'webinars' ? 'secondary' : 'outline'}
                 onClick={() => setActiveTab('webinars')}
-                className="text-lg px-8"
+                className="text-base md:text-lg w-full sm:w-auto px-6"
               >
                 Webinars & Training
               </Button>
-              <Button 
+              <Button
                 variant={activeTab === 'tools' ? 'secondary' : 'outline'}
                 onClick={() => setActiveTab('tools')}
-                className="text-lg px-8"
+                className="text-base md:text-lg w-full sm:w-auto px-6"
               >
                 Business Tools
               </Button>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="relative z-10 max-w-6xl mx-auto px-6 py-12 bg-gray-50">
+        <div className="relative z-10 max-w-6xl mx-auto px-6 py-10 bg-gray-50">
           {activeTab === 'documents' && (
             <div>
               <Card className="mb-6 border-emerald-200 bg-white">
@@ -282,10 +282,10 @@ const Resources = () => {
                   </div>
                 </CardHeader>
               </Card>
-              <div className="flex gap-4 mb-8">
-                <div className="relative flex-1">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4 mb-8">
+                <div className="relative w-full md:flex-1">
                   <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                  <Input 
+                  <Input
                     placeholder="Search resources..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -293,7 +293,7 @@ const Resources = () => {
                   />
                 </div>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-48">
+                  <SelectTrigger className="w-full md:w-52">
                     <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
                   <SelectContent>
@@ -306,15 +306,16 @@ const Resources = () => {
                     <SelectItem value="Training">Training</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button 
+                <Button
                   variant={showPremiumOnly ? 'default' : 'outline'}
                   onClick={() => setShowPremiumOnly(!showPremiumOnly)}
+                  className="w-full md:w-auto"
                 >
                   Premium Only
                 </Button>
               </div>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredResources.map((resource) => (
                   <Card key={resource.id} className="hover:shadow-lg transition-shadow">
                     <CardHeader>

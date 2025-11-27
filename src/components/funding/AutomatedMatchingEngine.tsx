@@ -250,7 +250,12 @@ const scoreOpportunity = (sme: SMEProfile, opportunity: Opportunity): Opportunit
   };
 };
 
-export const AutomatedMatchingEngine = () => {
+interface AutomatedMatchingEngineProps {
+  viewOnly?: boolean;
+  onRequestAccess?: () => void;
+}
+
+export const AutomatedMatchingEngine = ({ viewOnly = false, onRequestAccess }: AutomatedMatchingEngineProps) => {
   const [profile, setProfile] = useState<SMEProfile>(defaultProfile);
   const [selectedPackage, setSelectedPackage] = useState<string>("full");
   const [selectedCategory, setSelectedCategory] = useState<string>("investors");
@@ -263,6 +268,14 @@ export const AutomatedMatchingEngine = () => {
   const [sharePurchases, setSharePurchases] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
 
+  const ensureInteractive = () => {
+    if (viewOnly) {
+      onRequestAccess?.();
+      return false;
+    }
+    return true;
+  };
+
   const filteredFunders = useMemo(() => {
     if (selectedPackage === "full") return sampleFunders;
     const category = categories.find((c) => c.id === selectedCategory);
@@ -271,6 +284,7 @@ export const AutomatedMatchingEngine = () => {
   }, [selectedCategory, selectedPackage]);
 
   const runMatching = () => {
+    if (!ensureInteractive()) return;
     if (!paid) {
       toast({ title: "Payment required", description: "Complete the payment to unlock AI-driven matching." });
       return;
@@ -305,6 +319,7 @@ export const AutomatedMatchingEngine = () => {
   };
 
   const handlePayment = () => {
+    if (!ensureInteractive()) return;
     setPaid(true);
     toast({
       title: "Payment captured",
@@ -313,6 +328,7 @@ export const AutomatedMatchingEngine = () => {
   };
 
   const handleShare = (id: string) => {
+    if (!ensureInteractive()) return;
     setSharePurchases((prev) => ({ ...prev, [id]: true }));
     toast({ title: "Share link unlocked", description: "ZMW 50 share credit applied. Link expires in 48 hours." });
   };
@@ -387,7 +403,11 @@ export const AutomatedMatchingEngine = () => {
             )}
 
             <div className="flex flex-wrap items-center gap-3">
-              <Button onClick={handlePayment} className="bg-green-600 hover:bg-green-700">
+              <Button
+                onClick={handlePayment}
+                className="bg-green-600 hover:bg-green-700"
+                disabled={viewOnly}
+              >
                 {paid ? "Payment Confirmed" : `Pay ZMW ${selectedPackage === "full" ? 250 : 75}`}
               </Button>
               <Badge variant="secondary" className="flex items-center gap-1">
@@ -496,7 +516,11 @@ export const AutomatedMatchingEngine = () => {
             <CardTitle>AI Automation Pipeline</CardTitle>
             <CardDescription>Eligibility filter → Fit score (0-100) → Narrative → Monetized actions</CardDescription>
           </div>
-          <Button onClick={runMatching} disabled={loading} className="bg-orange-600 hover:bg-orange-700">
+          <Button
+            onClick={runMatching}
+            disabled={loading || viewOnly}
+            className="bg-orange-600 hover:bg-orange-700"
+          >
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Running engine
@@ -607,13 +631,32 @@ export const AutomatedMatchingEngine = () => {
                         variant="outline"
                         onClick={() => handleShare(match.funder.id)}
                         className={sharePurchases[match.funder.id] ? "border-green-500 text-green-700" : ""}
+                        disabled={viewOnly}
                       >
                         {sharePurchases[match.funder.id] ? "Share link active" : "Share (ZMW50)"}
                       </Button>
-                      <Button variant="secondary" className="bg-orange-100 text-orange-800">
+                      <Button
+                        variant="secondary"
+                        className="bg-orange-100 text-orange-800"
+                        disabled={viewOnly}
+                        onClick={() => {
+                          if (viewOnly) {
+                            onRequestAccess?.();
+                          }
+                        }}
+                      >
                         AI proposal (ZMW100)
                       </Button>
-                      <Button variant="ghost" className="flex items-center justify-center gap-1">
+                      <Button
+                        variant="ghost"
+                        className="flex items-center justify-center gap-1"
+                        disabled={viewOnly}
+                        onClick={() => {
+                          if (viewOnly) {
+                            onRequestAccess?.();
+                          }
+                        }}
+                      >
                         <ArrowUpRight className="h-4 w-4" /> Apply / Contact
                       </Button>
                     </div>
@@ -666,7 +709,16 @@ export const AutomatedMatchingEngine = () => {
                         ))}
                       </div>
                     )}
-                    <Button variant="outline" className="w-full">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      disabled={viewOnly}
+                      onClick={() => {
+                        if (viewOnly) {
+                          onRequestAccess?.();
+                        }
+                      }}
+                    >
                       Save as PDF (ZMW50)
                     </Button>
                   </CardContent>
