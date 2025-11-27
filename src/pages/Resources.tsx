@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -315,49 +315,60 @@ const Resources = () => {
                 </Button>
               </div>
 
-              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredResources.map((resource) => (
-                  <Card key={resource.id} className="hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <div className="flex items-start justify-between mb-2">
-                        <Badge variant={resource.isPremium ? 'default' : 'secondary'}>
-                          {resource.isPremium ? 'Premium' : 'Free'}
-                        </Badge>
-                        <Badge variant="outline">{resource.type}</Badge>
-                      </div>
-                      <CardTitle className="text-lg">{resource.title}</CardTitle>
-                      <p className="text-gray-600 text-sm">{resource.description}</p>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 mb-4 text-sm text-gray-500">
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4" />
-                          <span>{resource.author}</span>
+              {filteredResources.length === 0 ? (
+                <Card className="text-center py-12">
+                  <CardHeader>
+                    <CardTitle>No resources found</CardTitle>
+                    <CardDescription>
+                      Try adjusting your search or filters to see more business resources.
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              ) : (
+                <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredResources.map((resource) => (
+                    <Card key={resource.id} className="hover:shadow-lg transition-shadow">
+                      <CardHeader>
+                        <div className="flex items-start justify-between mb-2">
+                          <Badge variant={resource.isPremium ? 'default' : 'secondary'}>
+                            {resource.isPremium ? 'Premium' : 'Free'}
+                          </Badge>
+                          <Badge variant="outline">{resource.type}</Badge>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4" />
-                          <span>{new Date(resource.date).toLocaleDateString()}</span>
+                        <CardTitle className="text-lg">{resource.title}</CardTitle>
+                        <p className="text-gray-600 text-sm">{resource.description}</p>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 mb-4 text-sm text-gray-500">
+                          <div className="flex items-center gap-2">
+                            <User className="w-4 h-4" />
+                            <span>{resource.author}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            <span>{new Date(resource.date).toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>{resource.fileSize}</span>
+                            <span>{resource.downloadCount} downloads</span>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span>{resource.fileSize}</span>
-                          <span>{resource.downloadCount} downloads</span>
+
+                        <div className="flex gap-2">
+                          <Button size="sm" className="flex-1">
+                            <Eye className="w-4 h-4 mr-2" />
+                            Preview
+                          </Button>
+                          <Button size="sm" variant="outline" className="flex-1" onClick={() => handleDownload(resource)}>
+                            <Download className="w-4 h-4 mr-2" />
+                            Download
+                          </Button>
                         </div>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Button size="sm" className="flex-1">
-                          <Eye className="w-4 h-4 mr-2" />
-                          Preview
-                        </Button>
-                        <Button size="sm" variant="outline" className="flex-1" onClick={() => handleDownload(resource)}>
-                          <Download className="w-4 h-4 mr-2" />
-                          Download
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
