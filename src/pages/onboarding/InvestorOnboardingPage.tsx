@@ -13,6 +13,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { getInvestorProfile, upsertInvestorProfile, uploadProfileMedia } from '@/lib/api/profile-onboarding';
 import { ArrowLeft, Loader2, Upload, Check } from 'lucide-react';
 import { supabaseClient } from '@/lib/supabaseClient';
+import OnboardingGraceBanner from '@/components/OnboardingGraceBanner';
 
 const investorTypes = ['Angel', 'VC', 'Bank', 'Donor', 'Foundation', 'Development Finance'];
 const sectors = ['Agriculture', 'Retail', 'Manufacturing', 'Tech & Digital', 'Healthcare', 'Education', 'Logistics'];
@@ -177,6 +178,8 @@ export const InvestorOnboardingPage = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Complete your Investor/Donor Profile</h1>
           <p className="text-gray-700">Tell us about your mandate so we can match you with the right opportunities.</p>
         </div>
+
+        <OnboardingGraceBanner />
 
         <form onSubmit={handleSubmit((values) => onSubmit(values, false))} className="space-y-6">
           <Card>

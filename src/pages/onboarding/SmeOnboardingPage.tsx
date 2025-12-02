@@ -14,6 +14,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { getSmeProfile, upsertSmeProfile, uploadProfileMedia } from '@/lib/api/profile-onboarding';
 import { ArrowLeft, Loader2, Upload, Check } from 'lucide-react';
 import { supabaseClient } from '@/lib/supabaseClient';
+import OnboardingGraceBanner from '@/components/OnboardingGraceBanner';
 
 const challenges = [
   'Access to finance',
@@ -208,6 +209,8 @@ export const SmeOnboardingPage = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Complete your SME Profile</h1>
           <p className="text-gray-700">Share your business details to unlock tailored support and services.</p>
         </div>
+
+        <OnboardingGraceBanner />
 
         <form onSubmit={handleSubmit((values) => onSubmit(values, false))} className="space-y-6">
           <Card>

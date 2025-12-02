@@ -6,6 +6,7 @@ import { BaseService } from './base-service';
 import { supabase, withErrorHandling } from '@/lib/supabase-enhanced';
 import { lencoPaymentService } from './lenco-payment-service';
 import { logger } from '../logger';
+import { isSubscriptionTemporarilyDisabled } from '@/lib/subscriptionWindow';
 import type { 
   SubscriptionPlan, 
   UserSubscription, 
@@ -664,6 +665,10 @@ export class SubscriptionService extends BaseService<UserSubscription> {
   }
 
   async hasActiveSubscription(userId: string): Promise<DatabaseResponse<boolean>> {
+    if (isSubscriptionTemporarilyDisabled()) {
+      return { data: true, error: null };
+    }
+
     return withErrorHandling(
       async () => {
         const { data, error } = await supabase
@@ -708,6 +713,10 @@ export class SubscriptionService extends BaseService<UserSubscription> {
   }
 
   async hasFeatureAccess(userId: string, feature: string): Promise<DatabaseResponse<boolean>> {
+    if (isSubscriptionTemporarilyDisabled()) {
+      return { data: true, error: null };
+    }
+
     return withErrorHandling(
       async () => {
         const { data: features, error } = await this.getUserSubscriptionFeatures(userId);

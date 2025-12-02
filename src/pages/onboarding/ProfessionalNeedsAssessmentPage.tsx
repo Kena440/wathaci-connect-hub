@@ -15,6 +15,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { upsertProfile, saveProfessionalNeedsAssessment } from '@/lib/onboarding';
 import { getProfessionalProfile } from '@/lib/api/profile-onboarding';
 import { ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
+import OnboardingGraceBanner from '@/components/OnboardingGraceBanner';
 
 const professionalAssessmentSchema = z.object({
   full_name: z.string().min(2, 'Full name is required'),
@@ -182,6 +183,8 @@ export const ProfessionalNeedsAssessmentPage = () => {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Professional Profile</h1>
             <p className="text-gray-600">Tell us about your expertise</p>
           </div>
+
+          <OnboardingGraceBanner />
 
           <Progress value={progress} className="mb-4" />
           <p className="text-sm text-gray-600 text-center">Step {currentStep} of {totalSteps}</p>
