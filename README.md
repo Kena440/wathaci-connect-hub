@@ -118,6 +118,24 @@ This interactive script will:
 - Validate the configuration
 - Provide testing instructions
 
+## AI Onboarding & Payments Agent (Ciso)
+
+The Ciso agent orchestrates end-to-end signup, profile completion, and payments via dedicated API routes exposed by the Express backend:
+
+- **Signup:** `POST /api/agent/signup` – validates credentials, creates Supabase auth users, seeds profile rows, and logs correlation IDs to `agent_logs`.
+- **Signin:** `POST /api/agent/signin` – wraps Supabase password auth with consistent logging and error responses.
+- **Profile:** `GET/PUT /api/agent/profile` – fetch and update profile states with status transitions (`incomplete`, `pending_verification`, `active`).
+- **Checkout:** `POST /api/agent/payments/checkout` – records payments, calls the pluggable payment provider (Lenco placeholder), and returns checkout URLs.
+- **Webhook:** `POST /api/agent/payments/webhook` – idempotently updates payments/subscriptions and logs every event.
+
+Schema guardrails live in `supabase/migrations/20260101090000_onboarding_payments_agent.sql`, which ensures agent tables (`agent_logs`, `payments`, `subscriptions`) and profile status columns exist. Apply migrations with `npm run supabase:push` after deploying code changes.
+
+### Extending the agent
+
+- **Add a payment provider:** Implement `PaymentProvider` and wire it into `WathaciOnboardingAgent` (see `backend/services/payment-provider.js`).
+- **Introduce new plans:** Update plan codes or defaults in environment variables (`DEFAULT_PLAN_CODE`, `DEFAULT_PLAN_AMOUNT`) and reuse the checkout endpoint.
+- **Debug failures:** Check `agent_logs` for every signup, profile update, or payment webhook. Errors are never silent and return structured `{ code, error, details }` payloads to the frontend hooks under `src/hooks/useOnboardingAgent.ts`.
+
 For manual rotation or troubleshooting, see the [Lenco Keys Rotation Guide](docs/LENCO_KEYS_ROTATION_GUIDE.md).
 
 Key steps:
