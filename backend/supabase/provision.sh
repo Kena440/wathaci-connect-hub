@@ -8,6 +8,7 @@ SQL_FILES=(
   "registrations.sql"
   "frontend_logs.sql"
   "webhook_logs.sql"
+  "support_schema.sql"
   "profiles_policies.sql"
 )
 
