@@ -21,6 +21,7 @@ import {
 } from '@/lib/api/profile-onboarding';
 import { supabaseClient } from '@/lib/supabaseClient';
 import { ArrowLeft, ArrowRight, Check, Loader2, Upload } from 'lucide-react';
+import OnboardingGraceBanner from '@/components/OnboardingGraceBanner';
 
 const primaryExpertiseOptions = [
   'Financial Modelling',
@@ -384,6 +385,8 @@ export const ProfessionalOnboardingPage = () => {
             This helps SMEs and partners understand your expertise and how to work with you.
           </p>
         </div>
+
+        <OnboardingGraceBanner />
 
         <div className="mb-6 space-y-2">
           <Progress value={progress} />

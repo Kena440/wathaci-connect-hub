@@ -9,6 +9,7 @@ import {
   SUBSCRIPTION_DEBUG_BYPASS_ENABLED,
 } from '@/config/subscriptionDebug';
 import { useNavigate } from 'react-router-dom';
+import { isSubscriptionTemporarilyDisabled } from '@/lib/subscriptionWindow';
 
 interface AccessGateProps {
   children: React.ReactNode;
@@ -24,6 +25,12 @@ export const AccessGate = ({ children, feature }: AccessGateProps) => {
   useEffect(() => {
     const checkAccess = async () => {
       const normalizedFeature = feature.toLowerCase();
+
+      if (isSubscriptionTemporarilyDisabled()) {
+        setHasAccess(true);
+        setLoading(false);
+        return;
+      }
 
       if (
         SUBSCRIPTION_DEBUG_BYPASS_ENABLED &&

@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { upsertProfile, saveDonorNeedsAssessment } from '@/lib/onboarding';
 import { ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
+import OnboardingGraceBanner from '@/components/OnboardingGraceBanner';
 
 const donorAssessmentSchema = z.object({
   organization_name: z.string().min(2, 'Organization name is required'),
@@ -180,6 +181,8 @@ export const DonorNeedsAssessmentPage = () => {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Donor Profile</h1>
             <p className="text-gray-600">Tell us about your funding priorities</p>
           </div>
+
+          <OnboardingGraceBanner />
 
           <Progress value={progress} className="mb-4" />
           <p className="text-sm text-gray-600 text-center">Step {currentStep} of {totalSteps}</p>

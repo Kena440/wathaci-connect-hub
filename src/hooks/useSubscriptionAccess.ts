@@ -5,6 +5,7 @@ import {
   SUBSCRIPTION_BYPASS_FEATURES,
   SUBSCRIPTION_DEBUG_BYPASS_ENABLED,
 } from '@/config/subscriptionDebug';
+import { isSubscriptionTemporarilyDisabled } from '@/lib/subscriptionWindow';
 
 interface SubscriptionAccessState {
   isSubscribed: boolean;
@@ -29,6 +30,15 @@ export const useSubscriptionAccess = (featureKey?: string): SubscriptionAccessSt
     let isMounted = true;
 
     const checkSubscription = async () => {
+      if (isSubscriptionTemporarilyDisabled()) {
+        setState({
+          isSubscribed: true,
+          isAuthenticated: Boolean(user),
+          loading: false,
+        });
+        return;
+      }
+
       if (bypassActive) {
         // TEMPORARY: Treat target features as subscribed for analysis
         setState({
