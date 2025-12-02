@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import Header from './Header';
 import Footer from './Footer';
+import AskCisoFloatingWidget from './AskCisoFloatingWidget';
 
 interface AppLayoutProps {
   children?: ReactNode;
@@ -23,6 +24,7 @@ export const AppLayout = ({ children, showHomeContent = false, showFooter = true
         )}
       </main>
       {showFooter && <Footer />}
+      <AskCisoFloatingWidget />
     </div>
   );
 };
