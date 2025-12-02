@@ -1,8 +1,8 @@
-const GRACE_CUTOFF_ISO = '2026-01-04T23:59:59+02:00';
-const GRACE_LABEL = '4 January 2026 (Africa/Lusaka)';
+import graceConfig from '../../shared/subscription-window.json';
 
-export const SUBSCRIPTION_GRACE_CUTOFF = GRACE_CUTOFF_ISO;
-export const SUBSCRIPTION_GRACE_LABEL = GRACE_LABEL;
+const { SUBSCRIPTION_GRACE_CUTOFF, SUBSCRIPTION_GRACE_LABEL } = graceConfig;
+
+export { SUBSCRIPTION_GRACE_CUTOFF, SUBSCRIPTION_GRACE_LABEL };
 
 export function getSubscriptionGraceCutoffDate(): Date {
   return new Date(SUBSCRIPTION_GRACE_CUTOFF);

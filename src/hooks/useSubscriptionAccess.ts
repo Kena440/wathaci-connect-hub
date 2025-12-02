@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAppContext } from '@/contexts/AppContext';
-import { subscriptionService } from '@/lib/services';
 import {
   SUBSCRIPTION_BYPASS_FEATURES,
   SUBSCRIPTION_DEBUG_BYPASS_ENABLED,
 } from '@/config/subscriptionDebug';
-import { isSubscriptionTemporarilyDisabled } from '@/lib/subscriptionWindow';
+import { ensureServiceAccess } from '@/lib/ensureServiceAccess';
 
 interface SubscriptionAccessState {
   isSubscribed: boolean;
@@ -30,15 +29,6 @@ export const useSubscriptionAccess = (featureKey?: string): SubscriptionAccessSt
     let isMounted = true;
 
     const checkSubscription = async () => {
-      if (isSubscriptionTemporarilyDisabled()) {
-        setState({
-          isSubscribed: true,
-          isAuthenticated: Boolean(user),
-          loading: false,
-        });
-        return;
-      }
-
       if (bypassActive) {
         // TEMPORARY: Treat target features as subscribed for analysis
         setState({
@@ -56,14 +46,25 @@ export const useSubscriptionAccess = (featureKey?: string): SubscriptionAccessSt
         return;
       }
 
-      const { data, error } = await subscriptionService.hasActiveSubscription(user.id);
-      if (!isMounted) return;
+      try {
+        const accessResult = await ensureServiceAccess(user.id);
+        if (!isMounted) return;
 
-      setState({
-        isSubscribed: !!data && !error,
-        isAuthenticated: true,
-        loading: false,
-      });
+        setState({
+          isSubscribed: accessResult.accessGranted,
+          isAuthenticated: true,
+          loading: false,
+        });
+      } catch (error: any) {
+        if (!isMounted) return;
+
+        if (error?.code === 'SUBSCRIPTION_REQUIRED') {
+          setState({ isSubscribed: false, isAuthenticated: true, loading: false });
+          return;
+        }
+
+        setState({ isSubscribed: false, isAuthenticated: true, loading: false });
+      }
     };
 
     void checkSubscription();

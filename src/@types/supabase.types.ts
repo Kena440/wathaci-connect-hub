@@ -105,13 +105,24 @@ export interface Profile {
   accepted_terms: boolean;
   newsletter_opt_in: boolean;
 
+  // Grace period tracking
+  grace_period_access: boolean;
+  grace_period_started_at: string | null;
+  grace_period_expires_at: string | null;
+
   // Timestamps
   created_at: string;
   updated_at: string;
 }
 
-export interface ProfileInsert extends Omit<Profile, 'id' | 'created_at' | 'updated_at'> {
+export interface ProfileInsert extends Omit<
+  Profile,
+  'id' | 'created_at' | 'updated_at' | 'grace_period_access' | 'grace_period_started_at' | 'grace_period_expires_at'
+> {
   id: string;
+  grace_period_access?: boolean;
+  grace_period_started_at?: string | null;
+  grace_period_expires_at?: string | null;
 }
 
 export type ProfileUpdate = Partial<Omit<Profile, 'id' | 'created_at' | 'updated_at'>>;

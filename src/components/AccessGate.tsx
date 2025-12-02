@@ -3,13 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lock, Eye } from 'lucide-react';
 import { supabase } from '@/lib/supabase-enhanced';
-import { subscriptionService } from '@/lib/services';
 import {
   SUBSCRIPTION_BYPASS_FEATURES,
   SUBSCRIPTION_DEBUG_BYPASS_ENABLED,
 } from '@/config/subscriptionDebug';
 import { useNavigate } from 'react-router-dom';
-import { isSubscriptionTemporarilyDisabled } from '@/lib/subscriptionWindow';
+import { ensureServiceAccess } from '@/lib/ensureServiceAccess';
 
 interface AccessGateProps {
   children: React.ReactNode;
@@ -25,12 +24,6 @@ export const AccessGate = ({ children, feature }: AccessGateProps) => {
   useEffect(() => {
     const checkAccess = async () => {
       const normalizedFeature = feature.toLowerCase();
-
-      if (isSubscriptionTemporarilyDisabled()) {
-        setHasAccess(true);
-        setLoading(false);
-        return;
-      }
 
       if (
         SUBSCRIPTION_DEBUG_BYPASS_ENABLED &&
@@ -50,17 +43,17 @@ export const AccessGate = ({ children, feature }: AccessGateProps) => {
           return;
         }
 
-        // Check subscription status using the shared subscription service (V3 alignment)
-        const { data: isSubscribed, error: subscriptionError } = await subscriptionService.hasActiveSubscription(user.id);
-
-        if (subscriptionError) {
-          throw subscriptionError;
-        }
-
-        if (isSubscribed) {
-          setHasAccess(true);
-          setLoading(false);
-          return;
+        try {
+          const accessResult = await ensureServiceAccess(user.id);
+          if (accessResult.accessGranted) {
+            setHasAccess(true);
+            setLoading(false);
+            return;
+          }
+        } catch (error: any) {
+          if (error?.code !== 'SUBSCRIPTION_REQUIRED') {
+            throw error;
+          }
         }
 
         // Check trial status (14 days from profile creation)
