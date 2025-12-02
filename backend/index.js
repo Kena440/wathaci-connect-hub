@@ -84,6 +84,7 @@ const healthRoutes = require('./routes/health');
 const auditRoutes = require('./routes/audit');
 const diagnosticsRoutes = require('./routes/diagnostics');
 const creditPassportRoutes = require('./routes/credit-passports');
+const agentRoutes = require('./routes/agent');
 
 // Health check endpoint
 app.use(['/health', '/api/health'], healthRoutes);
@@ -120,6 +121,7 @@ app.use('/api/email', emailRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/diagnostics', diagnosticsRoutes);
 app.use('/api/credit-passports', creditPassportRoutes);
+app.use('/api/agent', agentRoutes);
 
 
 // Global error handler
