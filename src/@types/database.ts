@@ -39,6 +39,9 @@ export interface BaseProfile {
   profile_completed: boolean;
   accepted_terms: boolean;
   newsletter_opt_in: boolean;
+  grace_period_access?: boolean;
+  grace_period_started_at?: string | null;
+  grace_period_expires_at?: string | null;
   created_at: string;
   updated_at: string;
 }

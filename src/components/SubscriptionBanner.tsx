@@ -6,6 +6,7 @@ import { X, Crown, Zap } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { getPlansForUserType, getUserTypeLabel } from '@/data/subscriptionPlans';
 import { SubscriptionCard } from '@/components/SubscriptionCard';
+import { isSubscriptionTemporarilyDisabled, SUBSCRIPTION_GRACE_LABEL } from '@/lib/subscriptionWindow';
 
 interface SubscriptionBannerProps {
   userType?: string;
@@ -20,8 +21,25 @@ export const SubscriptionBanner = ({
 }: SubscriptionBannerProps) => {
   const [dismissed, setDismissed] = useState(false);
   const { user } = useAppContext();
+  const graceActive = isSubscriptionTemporarilyDisabled();
 
   if (dismissed || !user) return null;
+
+  if (graceActive) {
+    return (
+      <Card className="bg-gradient-to-r from-emerald-50 to-blue-50 border-emerald-200">
+        <CardContent className="p-4 flex flex-col gap-2 text-emerald-900">
+          <div className="flex items-center gap-2 font-semibold">
+            <Crown className="h-5 w-5 text-emerald-600" />
+            Full access unlocked during the grace period
+          </div>
+          <p>
+            🎉 Subscription requirements are paused for all signed-up users until {SUBSCRIPTION_GRACE_LABEL}. Explore the platform freely and keep building momentum.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const plans = userType ? getPlansForUserType(userType) : [];
   const popularPlan = plans.find(plan => plan.popular);

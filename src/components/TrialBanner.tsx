@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Clock, Crown } from 'lucide-react';
 import { supabase } from '@/lib/supabase-enhanced';
 import { useNavigate } from 'react-router-dom';
+import { isSubscriptionTemporarilyDisabled, SUBSCRIPTION_GRACE_LABEL } from '@/lib/subscriptionWindow';
 
 export const TrialBanner = () => {
   const [daysLeft, setDaysLeft] = useState<number | null>(null);
@@ -16,6 +17,11 @@ export const TrialBanner = () => {
 
   const checkTrialStatus = async () => {
     try {
+      if (isSubscriptionTemporarilyDisabled()) {
+        setShowBanner(true);
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -56,26 +62,31 @@ export const TrialBanner = () => {
     }
   };
 
-  if (!showBanner) return null;
+  const graceActive = isSubscriptionTemporarilyDisabled();
+
+  if (!showBanner && !graceActive) return null;
+
+  const bannerText = graceActive
+    ? `🎉 You have full access during the WATHACI Connect grace period until ${SUBSCRIPTION_GRACE_LABEL}.`
+    : daysLeft && daysLeft > 0
+      ? `${daysLeft} days left in your free trial`
+      : 'Your free trial has expired - upgrade to continue';
 
   return (
     <Alert className="mb-4 border-orange-200 bg-orange-50">
       <Clock className="h-4 w-4 text-orange-600" />
       <AlertDescription className="flex items-center justify-between">
-        <span className="text-orange-800">
-          {daysLeft && daysLeft > 0 
-            ? `${daysLeft} days left in your free trial` 
-            : 'Your free trial has expired - upgrade to continue'
-          }
-        </span>
-        <Button 
-          size="sm" 
-          onClick={() => navigate('/subscription-plans')}
-          className="bg-orange-600 hover:bg-orange-700"
-        >
-          <Crown className="w-4 h-4 mr-1" />
-          Upgrade Now
-        </Button>
+        <span className="text-orange-800">{bannerText}</span>
+        {!graceActive && (
+          <Button
+            size="sm"
+            onClick={() => navigate('/subscription-plans')}
+            className="bg-orange-600 hover:bg-orange-700"
+          >
+            <Crown className="w-4 h-4 mr-1" />
+            Upgrade Now
+          </Button>
+        )}
       </AlertDescription>
     </Alert>
   );

@@ -8,6 +8,7 @@ const {
   generateDocument,
   resolveAmount,
 } = require('../services/document-request-service');
+const { ensureServiceAccess } = require('../lib/service-access');
 
 const router = express.Router();
 
@@ -36,6 +37,8 @@ router.post('/pay', async (req, res) => {
   try {
     const body = req.body || {};
     requireFields(body, ['document_type', 'payment_method', 'user_id']);
+
+    await ensureServiceAccess(body.user_id);
 
     const paymentStatus = body.auto_confirm ? 'success' : 'pending';
     const amount = body.amount || resolveAmount(body.document_type);
@@ -87,6 +90,7 @@ router.post('/:id/generate', async (req, res) => {
     if (!userId) {
       return res.status(400).json({ error: 'user_id is required to generate' });
     }
+    await ensureServiceAccess(userId);
     const record = await generateDocument(req.params.id, userId);
     res.json({ request: record });
   } catch (error) {
@@ -112,6 +116,7 @@ router.get('/', async (req, res) => {
     if (!userId) {
       return res.status(400).json({ error: 'user_id is required' });
     }
+    await ensureServiceAccess(userId);
     const records = await listRequestsForUser(userId);
     res.json({ requests: records });
   } catch (error) {

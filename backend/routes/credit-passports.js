@@ -10,6 +10,7 @@ const {
   recordShare,
   markPdfPayment,
 } = require('../services/credit-passport-service');
+const { ensureServiceAccess } = require('../lib/service-access');
 
 const router = express.Router();
 
@@ -39,6 +40,8 @@ router.post('/pay', async (req, res) => {
   try {
     const body = req.body || {};
     requireFields(body, ['user_id', 'company_id', 'payment_method']);
+
+    await ensureServiceAccess(body.user_id);
 
     const paymentStatus = body.auto_confirm ? 'success' : 'pending';
     const amount = body.amount || resolveAmount('generate');
@@ -90,6 +93,7 @@ router.post('/:id/generate', async (req, res) => {
     if (!userId) {
       return res.status(400).json({ error: 'user_id is required to generate' });
     }
+    await ensureServiceAccess(userId);
     const record = await generatePassport(req.params.id, userId);
     res.json({ run: record });
   } catch (error) {
@@ -104,6 +108,7 @@ router.post('/:id/share', async (req, res) => {
     if (!userId) {
       return res.status(400).json({ error: 'user_id is required to share' });
     }
+    await ensureServiceAccess(userId);
 
     const paymentStatus = req.body.payment_status || (req.body.auto_confirm ? 'success' : 'pending');
     if (paymentStatus !== 'success') {
@@ -136,6 +141,8 @@ router.post('/:id/pdf', async (req, res) => {
     if (!userId) {
       return res.status(400).json({ error: 'user_id is required to request PDF' });
     }
+
+    await ensureServiceAccess(userId);
 
     const paymentStatus = req.body.payment_status || (req.body.auto_confirm ? 'success' : 'pending');
     if (paymentStatus !== 'success') {
@@ -179,6 +186,7 @@ router.get('/', async (req, res) => {
     if (!userId) {
       return res.status(400).json({ error: 'user_id is required' });
     }
+    await ensureServiceAccess(userId);
     const records = await listPassportRuns(userId);
     res.json({ runs: records });
   } catch (error) {

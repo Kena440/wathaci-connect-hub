@@ -12,6 +12,7 @@ import type {
   DatabaseResponse
 } from '@/@types/database';
 import { isStrongPassword, passwordStrengthMessage } from '@/utils/password';
+import { getSubscriptionGraceCutoffDate, isSubscriptionTemporarilyDisabled } from '@/lib/subscriptionWindow';
 
 export const OFFLINE_ACCOUNT_METADATA_KEY = '__offline_account';
 export const OFFLINE_PROFILE_METADATA_KEY = '__offline_profile';
@@ -731,6 +732,31 @@ export class ProfileService extends BaseService<Profile> {
     ) as Partial<Profile>;
   }
 
+  private async applyGracePeriodAccess(
+    userId: string,
+    startedAt: string,
+    expiresAt: string,
+  ): Promise<DatabaseResponse<Profile>> {
+    if (!isSubscriptionTemporarilyDisabled()) {
+      return { data: null, error: null } as DatabaseResponse<Profile>;
+    }
+
+    return withErrorHandling(
+      async () =>
+        supabase
+          .from('profiles')
+          .update({
+            grace_period_access: true,
+            grace_period_started_at: startedAt,
+            grace_period_expires_at: expiresAt,
+          })
+          .eq('id', userId)
+          .select('*')
+          .single(),
+      'ProfileService.applyGracePeriodAccess'
+    );
+  }
+
   /**
    * Get profile by user ID with full details
    */
@@ -754,12 +780,22 @@ export class ProfileService extends BaseService<Profile> {
     const { id: _ignoredId, created_at: _ignoredCreatedAt, updated_at: _ignoredUpdatedAt, ...profileFields } =
       sanitizedProfileData;
 
+    const graceActive = isSubscriptionTemporarilyDisabled();
+    const graceExpiresAt = getSubscriptionGraceCutoffDate().toISOString();
+
     const timestamp = new Date().toISOString();
     const profile = {
       id: userId,
       created_at: timestamp,
       updated_at: timestamp,
       profile_completed: profileFields.profile_completed ?? false,
+      ...(graceActive
+        ? {
+            grace_period_access: true,
+            grace_period_started_at: timestamp,
+            grace_period_expires_at: graceExpiresAt,
+          }
+        : {}),
       ...profileFields,
     };
 
@@ -774,6 +810,12 @@ export class ProfileService extends BaseService<Profile> {
     );
 
     if (!creationResult.error) {
+      if (graceActive) {
+        const graceResult = await this.applyGracePeriodAccess(userId, timestamp, graceExpiresAt);
+        if (!graceResult.error && graceResult.data) {
+          return graceResult as DatabaseResponse<Profile>;
+        }
+      }
       return creationResult as DatabaseResponse<Profile>;
     }
 
@@ -804,7 +846,7 @@ export class ProfileService extends BaseService<Profile> {
         );
 
         if (!ensureResult.error) {
-          return withErrorHandling(
+          const profileResult = await withErrorHandling(
             async () =>
               supabase
                 .from('profiles')
@@ -812,7 +854,16 @@ export class ProfileService extends BaseService<Profile> {
                 .eq('id', userId)
                 .single(),
             'ProfileService.ensureProfileExists.fetchProfile'
-          ) as Promise<DatabaseResponse<Profile>>;
+          );
+
+          if (graceActive && !profileResult.error) {
+            const graceResult = await this.applyGracePeriodAccess(userId, timestamp, graceExpiresAt);
+            if (!graceResult.error && graceResult.data) {
+              return graceResult as DatabaseResponse<Profile>;
+            }
+          }
+
+          return profileResult as DatabaseResponse<Profile>;
         }
 
         return ensureResult as DatabaseResponse<Profile>;
@@ -828,7 +879,16 @@ export class ProfileService extends BaseService<Profile> {
       return creationResult as DatabaseResponse<Profile>;
     }
 
-    return this.updateProfile(userId, profileFields);
+    const updateResult = await this.updateProfile(userId, profileFields);
+
+    if (graceActive && !updateResult.error) {
+      const graceResult = await this.applyGracePeriodAccess(userId, timestamp, graceExpiresAt);
+      if (!graceResult.error && graceResult.data) {
+        return graceResult as DatabaseResponse<Profile>;
+      }
+    }
+
+    return updateResult;
   }
 
   /**
