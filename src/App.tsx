@@ -13,6 +13,7 @@ import { ConfigurationError } from "@/components/ConfigurationError";
 import { RouteChangeDebugger } from "@/components/RouteChangeDebugger";
 import { supabaseConfigStatus } from "@/config/appConfig";
 import { getPaymentConfig } from "@/lib/payment-config";
+import CisoWidget from "@/components/CisoWidget";
 import AppLayout from "./components/AppLayout";
 import "./i18n";
 
@@ -497,6 +498,7 @@ const InnerApp = () => {
             {import.meta.env.DEV ? <RouteChangeDebugger /> : null}
             <AppRoutes />
           </BrowserRouter>
+          <CisoWidget />
         </AppProvider>
       </TooltipProvider>
     </QueryClientProvider>
