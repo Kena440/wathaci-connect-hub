@@ -85,6 +85,9 @@ const auditRoutes = require('./routes/audit');
 const diagnosticsRoutes = require('./routes/diagnostics');
 const creditPassportRoutes = require('./routes/credit-passports');
 const agentRoutes = require('./routes/agent');
+const supportRoutes = require('./routes/support');
+const { startInboxMonitor } = require('./services/inbox-monitor');
+const { startSlaMonitor } = require('./services/support-ticket-service');
 
 // Health check endpoint
 app.use(['/health', '/api/health'], healthRoutes);
@@ -107,6 +110,7 @@ app.get('/api', (req, res) => {
       otp: 'POST /api/auth/otp/send, POST /api/auth/otp/verify',
       email: 'GET /api/email/test, GET /api/email/status, POST /api/email/send, POST /api/email/send-otp, POST /api/email/send-verification, POST /api/email/send-password-reset',
       diagnostics: 'POST /api/diagnostics/run, GET /api/diagnostics/:companyId/latest, GET /api/diagnostics/:companyId/history',
+      support: 'POST /api/support/contact',
     },
   });
 });
@@ -122,6 +126,7 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/diagnostics', diagnosticsRoutes);
 app.use('/api/credit-passports', creditPassportRoutes);
 app.use('/api/agent', agentRoutes);
+app.use('/api/support', supportRoutes);
 
 
 // Global error handler
@@ -148,6 +153,10 @@ const PORT = process.env.PORT || 3000;
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+  });
+  startSlaMonitor();
+  startInboxMonitor().catch(error => {
+    console.warn('[InboxMonitor] Failed to start', error.message);
   });
 }
 

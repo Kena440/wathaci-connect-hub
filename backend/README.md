@@ -65,6 +65,34 @@ The Express server automatically loads variables from the project `.env` (and
 `.env.local`) files when they are available, so you can define the credentials
 once at the repository root and reuse them for both the frontend and backend.
 
+## Support inbox monitoring and SLAs
+
+The backend can turn emails sent to `support@wathaci.com` into actionable
+`support_tickets` and keep SLA timers running for both in-app and email
+requests.
+
+- **Inbox polling:** enable with `ENABLE_SUPPORT_INBOX=true` (or
+  `SUPPORT_INBOX_ENABLED=true`) and provide IMAP credentials:
+  - `SUPPORT_INBOX_HOST`, `SUPPORT_INBOX_PORT` (default `993`),
+    `SUPPORT_INBOX_SECURE` (default `true`)
+  - `SUPPORT_INBOX_USERNAME`, `SUPPORT_INBOX_PASSWORD`
+  - Optional: `SUPPORT_INBOX_POLL_MS` (default 120000) and
+    `SUPPORT_INBOX_FOLDER` (default `INBOX`).
+- **Ticket creation:** the `/api/support/contact` route stores a ticket,
+  acknowledges it via email, classifies the category, and logs the first
+  message to `support_ticket_messages`. Incoming emails follow the same path,
+  reusing `[WATHACI Support – Ticket #<id>]` subjects to append messages.
+- **2-hour SLA enforcement:** set `SUPPORT_SLA_MINUTES` (defaults to `120`). The
+  SLA monitor escalates any still-open ticket past its deadline to
+  comma-separated addresses in `SUPPORT_ESCALATION_EMAILS` (or
+  `ADMIN_ALERT_EMAILS`).
+- **Database tables:** `support_tickets`, `support_ticket_messages`,
+  `processed_emails`, and `ciso_logs` are provisioned by running
+  `./backend/supabase/provision.sh` (which now includes `support_schema.sql`).
+- **Email delivery:** acknowledgments, automated replies, and escalations use
+  the existing SMTP settings (`FROM_EMAIL`/`SUPPORT_EMAIL`). Failed sends are
+  logged but never silently ignored.
+
 ### Database schema
 
 Run the SQL files in [`backend/supabase`](./supabase) to provision the required
