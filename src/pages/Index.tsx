@@ -7,6 +7,7 @@ import StatsSection from '@/components/StatsSection';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import { SubscriptionBanner } from '@/components/SubscriptionBanner';
 import { useAppContext } from '@/contexts/AppContext';
+import CisoHelpSection from '@/components/CisoHelpSection';
 
 const Index: React.FC = () => {
   const { user } = useAppContext();
@@ -36,6 +37,7 @@ const Index: React.FC = () => {
               />
             </div>
           )}
+          <CisoHelpSection />
           <ServicesGrid />
           <MarketplacePreview />
           <StatsSection />
