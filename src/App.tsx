@@ -68,6 +68,7 @@ const TestError = lazy(() => import("./pages/TestError"));
 const SMEAssessment = lazy(() =>
   import("./pages/SMEAssessment").then((module) => ({ default: module.SMEAssessment }))
 );
+const PaymentPage = lazy(() => import("./pages/PaymentPage"));
 const InvestorAssessment = lazy(() =>
   import("./pages/InvestorAssessment").then((module) => ({
     default: module.InvestorAssessment,
@@ -194,6 +195,7 @@ export const AppRoutes = () => (
       <Route path="/terms-of-service" element={withAppLayout(<TermsOfService />)} />
       <Route path="/about-us" element={<AboutUs />} />
       <Route path="/test-error" element={withAppLayout(<TestError />, { showFooter: false })} />
+      <Route path="/checkout" element={<PaymentPage />} />
       <Route
         path="/messages"
         element={
