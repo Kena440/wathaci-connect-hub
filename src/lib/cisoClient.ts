@@ -5,11 +5,32 @@ export type CisoMessage = {
   content: string;
 };
 
-export type CisoKnowledgeContext = {
-  role?: string;
+export type CisoContext = {
+  // Who is the user in WATHACI terms?
+  role?:
+    | "sme"
+    | "investor"
+    | "donor"
+    | "government"
+    | "professional"
+    | "admin"
+    | "guest"
+    | "other";
+
+  // Which flow are they in?
+  // Examples: "signup", "checkout", "profile", "global-widget", "matching", "support"
   flow?: string;
+
+  // More fine-grained step inside the flow
+  // e.g. "basic-info", "business-details", "plan-selection-and-payment"
   step?: string;
-  lastError?: string | null;
+
+  // Last error or status code relevant to the conversation, if any
+  lastError?: string;
+
+  // Free-form extra metadata the backend might use later
+  // e.g. { planId, gateway, currency, accountType }
+  extra?: Record<string, unknown>;
 };
 
 export type CisoMode = "user" | "admin";
@@ -150,7 +171,7 @@ if (!SUPABASE_ANON_KEY) {
 
 async function fetchKnowledgeContext(
   userMessages: CisoMessage[],
-  context?: CisoKnowledgeContext,
+  context?: CisoContext,
 ) {
   if (!CISO_KNOWLEDGE_URL) return null;
 
@@ -198,7 +219,7 @@ async function fetchKnowledgeContext(
 export async function callCisoAgent(
   userMessages: CisoMessage[],
   mode: CisoMode = "user",
-  context?: CisoKnowledgeContext,
+  context?: CisoContext,
 ) {
   const systemPrompt =
     mode === "admin" ? CISO_ADMIN_SYSTEM_PROMPT : CISO_USER_SYSTEM_PROMPT;
@@ -224,6 +245,7 @@ export async function callCisoAgent(
       model: "gpt-4.1-mini",
       messages,
       admin: mode === "admin",
+      context,
     }),
   });
 

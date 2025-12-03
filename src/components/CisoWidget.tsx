@@ -27,7 +27,6 @@ const CisoWidget: React.FC = () => {
         role: "guest",
         flow: "inline-widget",
         step: "chat",
-        lastError: null,
       });
       const assistantMessage: CisoMessage = {
         role: "assistant",
