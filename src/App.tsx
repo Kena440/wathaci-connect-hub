@@ -29,6 +29,9 @@ const SignIn = lazy(() =>
 const SignUp = lazy(() =>
   import("./pages/SignUp").then((module) => ({ default: module.SignUp }))
 );
+const SmeSignupPage = lazy(() =>
+  import("./pages/SmeSignupPage").then((module) => ({ default: module.default }))
+);
 const ZaqaSignup = lazy(() =>
   import("./pages/ZaqaSignup").then((module) => ({ default: module.default }))
 );
@@ -166,6 +169,10 @@ export const AppRoutes = () => (
       <Route path="/resources" element={<Resources />} />
       <Route path="/signin" element={withAppLayout(<SignIn />, { showFooter: false })} />
       <Route path="/signup" element={withAppLayout(<SignUp />, { showFooter: false })} />
+      <Route
+        path="/signup/sme"
+        element={withAppLayout(<SmeSignupPage />, { showFooter: false })}
+      />
       <Route path="/signup-zaqa" element={withAppLayout(<ZaqaSignup />, { showFooter: false })} />
       <Route path="/forgot-password" element={withAppLayout(<ForgotPassword />, { showFooter: false })} />
       <Route path="/reset-password" element={withAppLayout(<ResetPassword />, { showFooter: false })} />
