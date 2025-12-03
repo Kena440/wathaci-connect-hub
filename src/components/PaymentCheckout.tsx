@@ -123,7 +123,12 @@ const PaymentCheckout: React.FC = () => {
     ];
 
     try {
-      const reply = await callCisoAgent(messages, "user");
+      const reply = await callCisoAgent(messages, "user", {
+        role: "SME",
+        flow: "checkout",
+        step: "plan-selection-and-payment",
+        lastError: lastPaymentError,
+      });
       setCisoAnswer(reply);
     } catch (err) {
       console.error(err);

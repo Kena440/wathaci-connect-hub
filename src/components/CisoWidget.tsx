@@ -23,7 +23,12 @@ const CisoWidget: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const reply = await callCisoAgent(newMessages, "user");
+      const reply = await callCisoAgent(newMessages, "user", {
+        role: "guest",
+        flow: "inline-widget",
+        step: "chat",
+        lastError: null,
+      });
       const assistantMessage: CisoMessage = {
         role: "assistant",
         content: reply,
