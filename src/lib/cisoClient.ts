@@ -49,18 +49,32 @@ Guardrails:
 - Never print or guess secret keys or passwords.
 `;
 
-const AGENT_URL = import.meta.env.VITE_WATHACI_CISO_AGENT_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const getConfigValue = (viteKey: string, reactKey: string) => {
+  const value = import.meta.env[viteKey as keyof ImportMetaEnv] ??
+    import.meta.env[reactKey as keyof ImportMetaEnv];
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+
+  return undefined;
+};
+
+const AGENT_URL = getConfigValue("VITE_WATHACI_CISO_AGENT_URL", "REACT_APP_WATHACI_CISO_AGENT_URL");
+const SUPABASE_ANON_KEY = getConfigValue("VITE_SUPABASE_ANON_KEY", "REACT_APP_SUPABASE_ANON_KEY");
 
 if (!AGENT_URL) {
   console.warn(
-    "[Ciso] VITE_WATHACI_CISO_AGENT_URL is not set. The Ciso widget cannot reach the agent function.",
+    "[Ciso] VITE_WATHACI_CISO_AGENT_URL (or REACT_APP_WATHACI_CISO_AGENT_URL) is not set. " +
+      "The Ciso widget cannot reach the agent function.",
   );
 }
 
 if (!SUPABASE_ANON_KEY) {
   console.warn(
-    "[Ciso] VITE_SUPABASE_ANON_KEY is not set. The Ciso widget may not work in production.",
+    "[Ciso] VITE_SUPABASE_ANON_KEY (or REACT_APP_SUPABASE_ANON_KEY) is not set. " +
+      "The Ciso widget may not work in production.",
   );
 }
 
