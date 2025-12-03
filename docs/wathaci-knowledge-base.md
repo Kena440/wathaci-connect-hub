@@ -4,6 +4,8 @@ _Last updated: 2025-05-06_
 
 This knowledge base consolidates the essential product context for **WATHACI Connect** and the **Ciso** assistant. It is designed to give teams and automated helpers fast, consistent answers, and to reinforce the platform’s ambition to offer the market’s most user-centric, high-trust matchmaking experience.
 
+For guidance on how to expand and maintain this knowledge base, see **`docs/wathaci-knowledge-operations.md`** (coverage matrix, entry template, update-and-test routine) and track changes in **`docs/wathaci-knowledge-changelog.md`**.
+
 ## Contents
 
 1. [Product overview](#1-product-overview)
