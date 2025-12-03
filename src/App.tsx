@@ -50,7 +50,9 @@ const PartnershipHub = lazy(() =>
     default: module.PartnershipHub,
   }))
 );
+const PaymentPage = lazy(() => import("./pages/PaymentPage"));
 const FundingHub = lazy(() => import("./pages/FundingHub"));
+const AdminCisoConsole = lazy(() => import("./pages/AdminCisoConsole"));
 const ProfileSetup = lazy(() =>
   import("./pages/ProfileSetup").then((module) => ({ default: module.ProfileSetup }))
 );
@@ -181,6 +183,17 @@ export const AppRoutes = () => (
       <Route path="/profile-setup" element={withAppLayout(<ProfileSetup />, { showFooter: false })} />
       <Route path="/profile-review" element={withAppLayout(<ProfileReview />, { showFooter: false })} />
       <Route path="/subscription-plans" element={withAppLayout(<SubscriptionPlans />)} />
+      <Route
+        path="/checkout"
+        element={
+          withAppLayout(
+            <PrivateRoute>
+              <PaymentPage />
+            </PrivateRoute>,
+            { showFooter: false },
+          )
+        }
+      />
       <Route path="/partnership-hub" element={<PartnershipHub />} />
       <Route
         path="/funding-hub"
@@ -390,6 +403,19 @@ export const AppRoutes = () => (
           <PrivateRoute>
             <DocumentGenerators />
           </PrivateRoute>
+        }
+      />
+      <Route
+        path="/admin/ciso"
+        element={
+          withAppLayout(
+            <PrivateRoute>
+              <AccountTypeRoute allowed={["admin", "super_admin"]}>
+                <AdminCisoConsole />
+              </AccountTypeRoute>
+            </PrivateRoute>,
+            { showFooter: false },
+          )
         }
       />
       <Route
