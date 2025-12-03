@@ -1,5 +1,9 @@
 import React, { useState } from "react";
-import { callCisoAgent, type CisoMessage } from "../lib/cisoClient";
+import {
+  callCisoAgent,
+  type CisoContext,
+  type CisoMessage,
+} from "../lib/cisoClient";
 
 type BillingCycle = "monthly" | "annual";
 
@@ -89,7 +93,7 @@ const PaymentCheckout: React.FC = () => {
     setCisoAnswer(null);
 
     const contextPayload = {
-      userRole: "SME",
+      userRole: "sme",
       flow: "checkout",
       step: "plan-selection-and-payment",
       plan: {
@@ -122,13 +126,23 @@ const PaymentCheckout: React.FC = () => {
       },
     ];
 
+    const cisoContext: CisoContext = {
+      role: "sme",
+      flow: "checkout",
+      step: "plan-selection-and-payment",
+      lastError: lastPaymentError || undefined,
+      extra: {
+        planId: selectedPlan.id,
+        planName: selectedPlan.name,
+        currency: selectedPlan.currency,
+        gateway,
+        isTrial,
+        customerEmail: customerEmail || null,
+      },
+    };
+
     try {
-      const reply = await callCisoAgent(messages, "user", {
-        role: "SME",
-        flow: "checkout",
-        step: "plan-selection-and-payment",
-        lastError: lastPaymentError,
-      });
+      const reply = await callCisoAgent(messages, "user", cisoContext);
       setCisoAnswer(reply);
     } catch (err) {
       console.error(err);

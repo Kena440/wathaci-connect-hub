@@ -1,5 +1,9 @@
 import React, { useState } from "react";
-import { callCisoAgent, type CisoMessage } from "@/lib/cisoClient";
+import {
+  callCisoAgent,
+  type CisoContext,
+  type CisoMessage,
+} from "@/lib/cisoClient";
 
 type SignupStep = "basic-info" | "business-details" | "confirm";
 
@@ -57,7 +61,7 @@ const SmeSignupForm: React.FC = () => {
 
     // Build a rich context message for Ciso
     const contextPayload = {
-      userRole: "SME",
+      userRole: "sme",
       flow: "signup",
       step,
       form: {
@@ -85,13 +89,19 @@ const SmeSignupForm: React.FC = () => {
       },
     ];
 
+    const cisoContext: CisoContext = {
+      role: "sme",
+      flow: "signup",
+      step,
+      lastError: signupError || undefined,
+      extra: {
+        country,
+        sector,
+      },
+    };
+
     try {
-      const reply = await callCisoAgent(messages, "user", {
-        role: "SME",
-        flow: "signup",
-        step,
-        lastError: signupError,
-      });
+      const reply = await callCisoAgent(messages, "user", cisoContext);
       setCisoAnswer(reply);
     } catch (err) {
       console.error(err);

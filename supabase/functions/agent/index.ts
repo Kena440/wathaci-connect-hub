@@ -35,9 +35,13 @@ type AgentRequestBody = {
   messages?: ChatMessage[];
   admin?: boolean;
   mode?: string;
-  // optionally in future:
-  // context?: any;
-  // question?: string;
+  context?: {
+    role?: string;
+    flow?: string;
+    step?: string;
+    lastError?: string;
+    extra?: Record<string, unknown>;
+  };
 };
 
 function getLastUserMessageContent(messages: ChatMessage[] | undefined): string {
@@ -77,7 +81,11 @@ function buildKnowledgeSearchQuery(lastUserContent: string): string {
  */
 async function fetchKnowledgeSnippets(
   searchQuery: string,
-  userRole?: string,
+  context?: {
+    role?: string;
+    flow?: string;
+    step?: string;
+  },
 ) {
   if (!supabaseAdmin) {
     console.warn(
@@ -86,13 +94,29 @@ async function fetchKnowledgeSnippets(
     return [] as any[];
   }
 
-  const normalizedRole = (userRole || "").toLowerCase();
+  const normalizedRole = (context?.role || "").toLowerCase();
 
   // Build an audience filter: entries for "all" or this specific role.
   const audiences =
     normalizedRole && normalizedRole !== "all"
       ? ["all", normalizedRole]
       : ["all"];
+
+  // Map flow -> category hint
+  const flow = (context?.flow || "").toLowerCase();
+  let categoryHint: string | null = null;
+
+  if (flow === "signup" || flow === "onboarding") {
+    categoryHint = "signup";
+  } else if (flow === "checkout" || flow === "payments" || flow === "billing") {
+    categoryHint = "payments";
+  } else if (flow === "matching") {
+    categoryHint = "matching";
+  } else if (flow === "support") {
+    categoryHint = "support";
+  } else {
+    categoryHint = null;
+  }
 
   // We use textSearch on the generated search_document column.
   // If searchQuery is empty, we just fetch a generic overview.
@@ -102,6 +126,10 @@ async function fetchKnowledgeSnippets(
     .eq("is_active", true)
     .in("audience", audiences)
     .limit(5);
+
+  if (categoryHint) {
+    query = query.eq("category", categoryHint);
+  }
 
   if (searchQuery && searchQuery.trim().length > 0) {
     query = query.textSearch("search_document", searchQuery, {
@@ -159,7 +187,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = (await req.json()) as AgentRequestBody;
-    const { model, messages, admin, mode } = body;
+    const { model, messages, admin, mode, context } = body;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return new Response(
@@ -200,22 +228,30 @@ Deno.serve(async (req) => {
     const lastUserContent = getLastUserMessageContent(messages);
 
     // 2) Optional: detect user role from the message content
-    // For now we do a simple text scan; later you can pass a structured field in body.context
-    let inferredRole: string | undefined = undefined;
-    const lower = lastUserContent.toLowerCase();
-    if (lower.includes("sme")) inferredRole = "sme";
-    else if (lower.includes("investor")) inferredRole = "investor";
-    else if (lower.includes("donor")) inferredRole = "donor";
-    else if (lower.includes("government")) inferredRole = "government";
-    else if (lower.includes("professional") || lower.includes("freelancer")) {
-      inferredRole = "professional";
+    // Prefer context.role if provided; otherwise, infer from text
+    let roleFromContext = context?.role;
+    if (!roleFromContext || roleFromContext === "guest" || roleFromContext === "other") {
+      const lower = lastUserContent.toLowerCase();
+      if (lower.includes("sme")) roleFromContext = "sme";
+      else if (lower.includes("investor")) roleFromContext = "investor";
+      else if (lower.includes("donor")) roleFromContext = "donor";
+      else if (lower.includes("government")) roleFromContext = "government";
+      else if (lower.includes("professional") || lower.includes("freelancer")) {
+        roleFromContext = "professional";
+      }
     }
+
+    // Merge role back into context object to keep everything together
+    const effectiveContext = {
+      ...context,
+      role: roleFromContext,
+    };
 
     // 3) Build a search query and fetch knowledge snippets
     const searchQuery = buildKnowledgeSearchQuery(lastUserContent);
     const knowledgeSnippets = await fetchKnowledgeSnippets(
       searchQuery,
-      inferredRole,
+      effectiveContext,
     );
 
     // 4) Build final messages array to send to OpenAI
