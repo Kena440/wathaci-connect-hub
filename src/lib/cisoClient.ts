@@ -113,12 +113,75 @@ const AGENT_URL =
   import.meta.env.VITE_WATHACI_CISO_AGENT_URL ||
   "https://nrjcbdrzaxqvomeogptf.functions.supabase.co/agent"; // fallback; adjust if needed
 
+const deriveFunctionsBaseUrl = (supabaseUrl: string | undefined) => {
+  if (!supabaseUrl) return "";
+  const trimmed = supabaseUrl.trim();
+  if (trimmed.includes(".functions.")) return trimmed.replace(/\/$/, "");
+  if (trimmed.includes("supabase.co")) {
+    return trimmed.replace(/\.supabase\.co\/?$/, ".functions.supabase.co");
+  }
+  return `${trimmed.replace(/\/$/, "")}/functions/v1`;
+};
+
+const supabaseFunctionsBaseUrl = deriveFunctionsBaseUrl(
+  import.meta.env.VITE_SUPABASE_URL,
+);
+
+const CISO_KNOWLEDGE_URL =
+  import.meta.env.VITE_WATHACI_CISO_KNOWLEDGE_URL?.trim() ||
+  (supabaseFunctionsBaseUrl
+    ? `${supabaseFunctionsBaseUrl}/ciso-knowledge`
+    : "https://nrjcbdrzaxqvomeogptf.functions.supabase.co/ciso-knowledge");
+
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!SUPABASE_ANON_KEY) {
   console.warn(
     "[Ciso] VITE_SUPABASE_ANON_KEY is not set. The Ciso widget may not work in production.",
   );
+}
+
+async function fetchKnowledgeContext(userMessages: CisoMessage[]) {
+  if (!CISO_KNOWLEDGE_URL) return null;
+
+  try {
+    const res = await fetch(CISO_KNOWLEDGE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_ANON_KEY ?? "",
+        Authorization: SUPABASE_ANON_KEY ? `Bearer ${SUPABASE_ANON_KEY}` : "",
+      },
+      body: JSON.stringify({
+        messages: userMessages,
+      }),
+    });
+
+    if (!res.ok) {
+      console.warn("[Ciso] Knowledge fetch failed", res.status);
+      return null;
+    }
+
+    const data = await res.json();
+    if (!data?.results || data.resultCount === 0) return null;
+
+    const compiled = data.results
+      .map((item: { title: string; snippet: string }) => {
+        const title = item.title?.trim();
+        const snippet = item.snippet?.trim();
+        if (!title && !snippet) return "";
+        return `# ${title}\n${snippet}`.trim();
+      })
+      .filter(Boolean)
+      .join("\n\n");
+
+    return compiled.length > 0
+      ? `Use the following WATHACI knowledge base excerpts when replying.\n${compiled}`
+      : null;
+  } catch (error) {
+    console.warn("[Ciso] Knowledge fetch error", error);
+    return null;
+  }
 }
 
 export async function callCisoAgent(
@@ -128,8 +191,13 @@ export async function callCisoAgent(
   const systemPrompt =
     mode === "admin" ? CISO_ADMIN_SYSTEM_PROMPT : CISO_USER_SYSTEM_PROMPT;
 
+  const knowledgeContext = await fetchKnowledgeContext(userMessages);
+
   const messages: CisoMessage[] = [
     { role: "system", content: systemPrompt },
+    ...(knowledgeContext
+      ? [{ role: "system", content: knowledgeContext } satisfies CisoMessage]
+      : []),
     ...userMessages,
   ];
 
