@@ -25,6 +25,113 @@ const supabaseAdmin = SUPABASE_URL && SERVICE_ROLE_KEY
   })
   : null;
 
+async function toolGetProfileByEmail(
+  params: Record<string, unknown>,
+): Promise<ToolResultEnvelope> {
+  if (!supabaseAdmin) {
+    return {
+      tool: "get_profile_by_email",
+      ok: false,
+      error: "supabaseAdmin not initialised",
+    };
+  }
+
+  const email = (params.email ?? params.userEmail ?? "").toString().trim();
+
+  if (!email) {
+    return {
+      tool: "get_profile_by_email",
+      ok: false,
+      error: "Missing required param: email",
+    };
+  }
+
+  // TODO: Align this body with your actual get-profile function contract
+  // Example assumption: get-profile accepts { email } and returns profile details.
+  const { data, error } = await supabaseAdmin.functions.invoke("get-profile", {
+    body: { email },
+  });
+
+  if (error) {
+    console.error("[agent/tools] get_profile_by_email error:", error);
+    return {
+      tool: "get_profile_by_email",
+      ok: false,
+      error: error.message ?? "Unknown error from get-profile",
+    };
+  }
+
+  return {
+    tool: "get_profile_by_email",
+    ok: true,
+    result: data,
+  };
+}
+
+async function toolCheckLencoPaymentByRef(
+  params: Record<string, unknown>,
+): Promise<ToolResultEnvelope> {
+  if (!supabaseAdmin) {
+    return {
+      tool: "check_lenco_payment_by_ref",
+      ok: false,
+      error: "supabaseAdmin not initialised",
+    };
+  }
+
+  const reference = (params.reference ?? params.ref ?? "").toString().trim();
+
+  if (!reference) {
+    return {
+      tool: "check_lenco_payment_by_ref",
+      ok: false,
+      error: "Missing required param: reference",
+    };
+  }
+
+  // TODO: Align this with your lenco-payments function contract.
+  // For example, you might implement an admin "check" action inside that function.
+  const { data, error } = await supabaseAdmin.functions.invoke(
+    "lenco-payments",
+    {
+      body: {
+        mode: "admin-check",
+        reference,
+      },
+    },
+  );
+
+  if (error) {
+    console.error("[agent/tools] check_lenco_payment_by_ref error:", error);
+    return {
+      tool: "check_lenco_payment_by_ref",
+      ok: false,
+      error: error.message ?? "Unknown error from lenco-payments",
+    };
+  }
+
+  return {
+    tool: "check_lenco_payment_by_ref",
+    ok: true,
+    result: data,
+  };
+}
+
+async function runTool(call: ToolCallEnvelope): Promise<ToolResultEnvelope> {
+  switch (call.tool) {
+    case "get_profile_by_email":
+      return await toolGetProfileByEmail(call.params);
+    case "check_lenco_payment_by_ref":
+      return await toolCheckLencoPaymentByRef(call.params);
+    default:
+      return {
+        tool: call.tool,
+        ok: false,
+        error: `Unknown tool: ${call.tool}`,
+      };
+  }
+}
+
 type ChatMessage = {
   role: "system" | "user" | "assistant";
   content: string;
@@ -43,6 +150,51 @@ type AgentRequestBody = {
     extra?: Record<string, unknown>;
   };
 };
+
+type ToolCallEnvelope = {
+  tool: string;
+  params: Record<string, unknown>;
+};
+
+type ToolResultEnvelope = {
+  tool: string;
+  ok: boolean;
+  result?: unknown;
+  error?: string;
+};
+
+async function callOpenAIChat(
+  apiKey: string,
+  model: string,
+  messages: ChatMessage[],
+) {
+  const upstreamRes = await fetch(
+    "https://api.openai.com/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: 0.2,
+        max_tokens: 512,
+      }),
+    },
+  );
+
+  if (!upstreamRes.ok) {
+    const text = await upstreamRes.text();
+    console.error("[agent] OpenAI upstream error:", upstreamRes.status, text);
+    throw new Error(
+      `Upstream OpenAI error ${upstreamRes.status}: ${text}`,
+    );
+  }
+
+  return await upstreamRes.json();
+}
 
 function getLastUserMessageContent(messages: ChatMessage[] | undefined): string {
   if (!messages || messages.length === 0) return "";
@@ -167,6 +319,38 @@ function formatKnowledgeAsSystemMessage(snippets: any[]): string {
 ${parts.join("\n\n---\n\n")}`;
 }
 
+function extractToolCallFromText(text: string): ToolCallEnvelope | null {
+  if (!text) return null;
+
+  const marker = "TOOL_CALL:";
+  const idx = text.indexOf(marker);
+  if (idx === -1) return null;
+
+  const afterMarker = text.slice(idx + marker.length).trim();
+  if (!afterMarker) return null;
+
+  try {
+    const jsonStart = afterMarker.indexOf("{");
+    if (jsonStart === -1) return null;
+
+    const jsonString = afterMarker.slice(jsonStart);
+    const parsed = JSON.parse(jsonString);
+
+    if (
+      typeof parsed.tool === "string" &&
+      parsed.params &&
+      typeof parsed.params === "object"
+    ) {
+      return parsed as ToolCallEnvelope;
+    }
+
+    return null;
+  } catch (err) {
+    console.error("[agent] Failed to parse TOOL_CALL JSON:", err);
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -203,7 +387,6 @@ Deno.serve(async (req) => {
       admin === true ||
       (typeof mode === "string" && mode.toLowerCase() === "admin");
 
-    // Decide which OpenAI key to use
     const USER_API_KEY = Deno.env.get("WATHACI_CONNECT_OPENAI");
     const ADMIN_API_KEY =
       Deno.env.get("WATHACI_CONNECT_ADMIN_KEY_OPENAI") ?? USER_API_KEY;
@@ -224,11 +407,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 1) Extract last user message content
     const lastUserContent = getLastUserMessageContent(messages);
+    const searchQuery = buildKnowledgeSearchQuery(lastUserContent);
 
-    // 2) Optional: detect user role from the message content
-    // Prefer context.role if provided; otherwise, infer from text
     let roleFromContext = context?.role;
     if (!roleFromContext || roleFromContext === "guest" || roleFromContext === "other") {
       const lower = lastUserContent.toLowerCase();
@@ -241,73 +422,90 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Merge role back into context object to keep everything together
     const effectiveContext = {
       ...context,
       role: roleFromContext,
     };
 
-    // 3) Build a search query and fetch knowledge snippets
-    const searchQuery = buildKnowledgeSearchQuery(lastUserContent);
     const knowledgeSnippets = await fetchKnowledgeSnippets(
       searchQuery,
       effectiveContext,
     );
 
-    // 4) Build final messages array to send to OpenAI
-    const openAiMessages: ChatMessage[] = [...messages];
-
-    // If we found any knowledge, prepend it as a system message BEFORE the existing system prompt
+    const baseMessages: ChatMessage[] = [...messages];
     if (knowledgeSnippets.length > 0) {
       const knowledgeSystemContent = formatKnowledgeAsSystemMessage(
         knowledgeSnippets,
       );
-
-      // Insert at the start, but after any existing system messages if needed
-      // Simplest approach: just unshift a new system message.
-      openAiMessages.unshift({
+      baseMessages.unshift({
         role: "system",
         content: knowledgeSystemContent,
       });
     }
 
-    // 5) Call OpenAI /chat/completions
-    const upstreamRes = await fetch(
-      "https://api.openai.com/v1/chat/completions",
-      {
-        method: "POST",
+    const effectiveModel = model || "gpt-4.1-mini";
+
+    if (!isAdmin) {
+      const data = await callOpenAIChat(
+        OPENAI_API_KEY,
+        effectiveModel,
+        baseMessages,
+      );
+      return new Response(JSON.stringify(data), {
+        status: 200,
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          ...corsHeaders,
         },
-        body: JSON.stringify({
-          model: model || "gpt-4.1-mini",
-          messages: openAiMessages,
-          temperature: 0.2,
-          max_tokens: 512,
-        }),
-      },
-    );
-
-    if (!upstreamRes.ok) {
-      const text = await upstreamRes.text();
-      console.error("[agent] OpenAI upstream error:", upstreamRes.status, text);
-      return new Response(
-        JSON.stringify({
-          error: "Upstream OpenAI error",
-          status: upstreamRes.status,
-          details: text,
-        }),
-        {
-          status: 502,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        },
-      );
+      });
     }
 
-    const data = await upstreamRes.json();
+    const planningData = await callOpenAIChat(
+      OPENAI_API_KEY,
+      effectiveModel,
+      baseMessages,
+    );
 
-    return new Response(JSON.stringify(data), {
+    const firstChoice = planningData?.choices?.[0];
+    const firstAssistantMessage: ChatMessage | undefined =
+      firstChoice?.message;
+
+    const firstContent = firstAssistantMessage?.content ?? "";
+
+    const toolCall = extractToolCallFromText(firstContent);
+
+    if (!toolCall) {
+      return new Response(JSON.stringify(planningData), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
+    }
+
+    const toolResult = await runTool(toolCall);
+
+    const followupMessages: ChatMessage[] = [
+      ...baseMessages,
+      {
+        role: "assistant",
+        content: "TOOL RESULT:\n" + JSON.stringify(toolResult, null, 2),
+      },
+      {
+        role: "user",
+        content:
+          "Using the TOOL RESULT above, explain clearly what you found, highlight any issues or risks, and give specific operational recommendations for WATHACI admins.",
+      },
+    ];
+
+    const finalData = await callOpenAIChat(
+      OPENAI_API_KEY,
+      effectiveModel,
+      followupMessages,
+    );
+
+    return new Response(JSON.stringify(finalData), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
