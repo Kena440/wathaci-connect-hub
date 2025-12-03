@@ -5,6 +5,13 @@ export type CisoMessage = {
   content: string;
 };
 
+export type CisoKnowledgeContext = {
+  role?: string;
+  flow?: string;
+  step?: string;
+  lastError?: string | null;
+};
+
 export type CisoMode = "user" | "admin";
 
 const CISO_USER_SYSTEM_PROMPT = `
@@ -141,7 +148,10 @@ if (!SUPABASE_ANON_KEY) {
   );
 }
 
-async function fetchKnowledgeContext(userMessages: CisoMessage[]) {
+async function fetchKnowledgeContext(
+  userMessages: CisoMessage[],
+  context?: CisoKnowledgeContext,
+) {
   if (!CISO_KNOWLEDGE_URL) return null;
 
   try {
@@ -154,6 +164,7 @@ async function fetchKnowledgeContext(userMessages: CisoMessage[]) {
       },
       body: JSON.stringify({
         messages: userMessages,
+        context,
       }),
     });
 
@@ -187,11 +198,12 @@ async function fetchKnowledgeContext(userMessages: CisoMessage[]) {
 export async function callCisoAgent(
   userMessages: CisoMessage[],
   mode: CisoMode = "user",
+  context?: CisoKnowledgeContext,
 ) {
   const systemPrompt =
     mode === "admin" ? CISO_ADMIN_SYSTEM_PROMPT : CISO_USER_SYSTEM_PROMPT;
 
-  const knowledgeContext = await fetchKnowledgeContext(userMessages);
+  const knowledgeContext = await fetchKnowledgeContext(userMessages, context);
 
   const messages: CisoMessage[] = [
     { role: "system", content: systemPrompt },

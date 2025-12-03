@@ -86,7 +86,12 @@ const SmeSignupForm: React.FC = () => {
     ];
 
     try {
-      const reply = await callCisoAgent(messages, "user");
+      const reply = await callCisoAgent(messages, "user", {
+        role: "SME",
+        flow: "signup",
+        step,
+        lastError: signupError,
+      });
       setCisoAnswer(reply);
     } catch (err) {
       console.error(err);
