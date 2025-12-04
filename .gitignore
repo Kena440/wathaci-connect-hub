@@ -22,6 +22,13 @@ backend/.env
 backend/.env.local
 backend/.env.production
 
+# env files
+.env
+.env.*        # includes .env.local, .env.production, etc.
+backend/.env
+supabase-prod-secrets.env
+supabase-prod-secrets.env.*
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -32,3 +39,5 @@ backend/.env.production
 *.njsproj
 *.sln
 *.sw?
+WATHACI-CONNECT.-V1/
+

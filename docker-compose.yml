@@ -1,0 +1,18 @@
+services:
+  api:
+    build:
+      context: ./backend
+    container_name: wathaci-connect-api
+    env_file:
+      - ./backend/.env
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+
+  wathaci-web:
+    build:
+      context: .
+    container_name: wathaci-connect-web
+    ports:
+      - "4173:80"
+    restart: unless-stopped
