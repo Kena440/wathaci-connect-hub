@@ -28,9 +28,16 @@ const parseAllowedOrigins = (value = '') =>
     .filter(origin => Boolean(origin) && origin !== '*');
 
 const defaultAllowedOrigins = [
+  // Production deployments
   'https://www.wathaci.com',
   'https://wathaci-connect-platform.vercel.app',
   'https://wathaci-connect-platform-amukenas-projects.vercel.app',
+  // Local development (aligned with Vite dev server)
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
+  // Legacy Vite defaults (in case the dev server port changes)
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
 ];
 
 const configuredOrigins = parseAllowedOrigins(
