@@ -91,7 +91,7 @@ export const SignUp = () => {
                 <h2 className="text-2xl font-semibold text-green-900">Account created</h2>
                 <p className="text-base text-green-900">
                   {confirmationRequired
-                    ? "Please check your email to confirm your address before logging in."
+                    ? "Your account is ready. You can sign in now to continue setup."
                     : "You can now sign in and complete your profile setup."}
                 </p>
                 {emailForConfirmation ? (
