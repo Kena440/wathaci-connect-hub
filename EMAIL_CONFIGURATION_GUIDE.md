@@ -35,10 +35,10 @@ The platform uses PrivateEmail hosted by Namecheap for SMTP email delivery.
 
 **Outgoing Server Settings (SMTP):**
 - **Server:** mail.privateemail.com
-- **Port:** 465
+- **Port:** 587
 - **Username:** support@wathaci.com
-- **Connection:** SSL/TLS
-- **Password:** Your account password (stored in environment secrets)
+- **Connection:** STARTTLS (explicit TLS)
+- **Password:** PrivateEmail **app password** (not the mailbox login)
 
 ## Environment Variables
 
@@ -47,9 +47,9 @@ Add the following environment variables to your `.env.local` and `.env.productio
 ```bash
 # Email / SMTP Configuration
 SMTP_HOST="mail.privateemail.com"
-SMTP_PORT="465"
+SMTP_PORT="587" # STARTTLS
 SMTP_USER="support@wathaci.com"
-SMTP_PASSWORD="your-smtp-password"
+SMTP_PASSWORD="<your PrivateEmail app password>"
 SMTP_FROM_EMAIL="support@wathaci.com"
 SMTP_FROM_NAME="Wathaci"
 
@@ -72,7 +72,7 @@ SUPABASE_SMTP_SENDER_NAME="Wathaci"
 [auth.email.smtp]
 enabled = true
 host = "mail.privateemail.com"
-port = 465
+port = 587
 user = "support@wathaci.com"
 pass = "env(SMTP_PASSWORD)"
 admin_email = "support@wathaci.com"
@@ -89,20 +89,26 @@ npm run supabase:start
 1. Log in to your Supabase dashboard
 2. Navigate to: **Project Settings → Authentication → SMTP Settings**
 3. Enable custom SMTP
-4. Configure the following:
+4. Configure the following (use the PrivateEmail **app password**):
    - **Sender email:** support@wathaci.com
    - **Sender name:** Wathaci
    - **Host:** mail.privateemail.com
-   - **Port:** 465
+   - **Port:** 587
    - **Username:** support@wathaci.com
-   - **Password:** [Your SMTP password]
-   - **Enable SSL:** Yes
+   - **Password:** [PrivateEmail app password]
+   - **Enable STARTTLS/SSL:** Enabled (STARTTLS on port 587)
 
 5. Navigate to: **Project Settings → Authentication → Email Templates**
 6. Update each template (Confirmation, Reset Password, Magic Link, etc.) to use:
    - **From:** support@wathaci.com
    - **Reply-to:** support@wathaci.com
    - Include the support footer in all templates
+
+7. In **Authentication → URL Configuration**, allow the application redirect URLs:
+   - `http://localhost:3000`
+   - `https://wathaci-connect-platform-8fy8qoekg-amukenas-projects.vercel.app`
+   - `https://wathaci-connect-platform-8fy8qoekg-amukenas-projects.vercel.app/signin`
+   - `https://app.wathaci.com` and `https://app.wathaci.com/signin` (production)
 
 ## DNS Configuration
 
