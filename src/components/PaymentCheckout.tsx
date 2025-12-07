@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
   callCisoAgent,
+  CisoAgentError,
   type CisoContext,
   type CisoMessage,
 } from "../lib/cisoClient";
@@ -145,10 +146,12 @@ const PaymentCheckout: React.FC = () => {
       const reply = await callCisoAgent(messages, "user", cisoContext);
       setCisoAnswer(reply);
     } catch (err) {
-      console.error(err);
-      setCisoAnswer(
-        "I ran into a problem trying to help with this payment right now. Please try again or email support@wathaci.com.",
-      );
+      const derivedMessage =
+        err instanceof CisoAgentError
+          ? err.userMessage
+          : "Ciso is having trouble replying right now. Please try again or email support@wathaci.com.";
+      console.error("[PaymentCheckout] Ciso error", err);
+      setCisoAnswer(derivedMessage);
     } finally {
       setIsCisoLoading(false);
     }
