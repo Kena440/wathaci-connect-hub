@@ -122,7 +122,16 @@ enabled = true
 # in emails.
 site_url = "env(VITE_SITE_URL)"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000", "http://localhost:3000"]
+# Allow production redirect targets so email confirmation links resolve without 500s
+# when users sign up from app.wathaci.com or the marketing site.
+additional_redirect_urls = [
+  "https://127.0.0.1:3000",
+  "http://localhost:3000",
+  "https://app.wathaci.com/signin",
+  "https://app.wathaci.com",
+  "https://www.wathaci.com",
+  "https://www.wathaci.com/signin"
+]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # Path to JWT signing key. DO NOT commit your signing keys file to git.
