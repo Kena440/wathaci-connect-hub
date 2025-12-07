@@ -146,8 +146,7 @@ export const ZaqaSignup = () => {
         return;
       }
 
-      // Check if email confirmation is required
-      // If session is null but user exists, email confirmation is required
+      // Check if a session is active; if not, prompt the user to sign in manually (no email verification required)
       const requiresConfirmation = !authData.session && authData.user;
       setEmailConfirmationRequired(requiresConfirmation);
 
@@ -493,19 +492,12 @@ export const ZaqaSignup = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               {emailConfirmationRequired ? (
-                <>
-                  <Alert className="border-blue-200 bg-blue-50">
-                    <AlertDescription className="text-sm">
-                      <strong className="font-semibold">Please check your email to confirm your account.</strong>
-                      <br />
-                      We've sent a confirmation link to <strong>{email}</strong>. Click the link in the email
-                      to activate your account, then return here to log in.
-                    </AlertDescription>
-                  </Alert>
-                  <p className="text-sm text-gray-600">
-                    Didn't receive the email? Check your spam folder or contact support if you need assistance.
-                  </p>
-                </>
+                <Alert className="border-blue-200 bg-blue-50">
+                  <AlertDescription className="text-sm">
+                    Your account has been created. You can sign in right away—if you don't see a session yet, log in
+                    with your email and password to continue.
+                  </AlertDescription>
+                </Alert>
               ) : (
                 <Alert className="border-green-200 bg-green-50">
                   <AlertDescription className="text-sm">

@@ -986,15 +986,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     // Show success message
-    // Note: If email confirmation is enabled in Supabase, the session won't be active yet
+    // If Supabase hasn't started a session yet, let the user know they can still sign in right away
     const refreshedState = await refreshUser();
     const sessionActive = !!refreshedState.user;
-    
+
     toast({
       title: "Account created!",
       description: sessionActive
         ? "You're all set! Complete your profile to get started."
-        : "Please check your email to verify your account.",
+        : "Your account is ready. You can sign in right away to continue.",
     });
 
     if (!user) {
