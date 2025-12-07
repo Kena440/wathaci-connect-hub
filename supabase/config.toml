@@ -195,8 +195,9 @@ otp_expiry = 3600
 # For production, configure PrivateEmail SMTP settings
 [auth.email.smtp]
 enabled = true
-host = "mail.privateemail.com"
-port = 465
+# Use StartTLS on 587 to avoid implicit TLS auth errors with PrivateEmail
+host = "smtp.privateemail.com"
+port = 587
 user = "support@wathaci.com"
 pass = "env(SMTP_PASSWORD)"
 admin_email = "support@wathaci.com"
