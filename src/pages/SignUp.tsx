@@ -90,16 +90,14 @@ export const SignUp = () => {
               <div className="space-y-4 rounded-2xl border border-green-100 bg-green-50 p-6">
                 <h2 className="text-2xl font-semibold text-green-900">Account created</h2>
                 <p className="text-base text-green-900">
-                  {confirmationRequired
-                    ? "Your account is ready. You can sign in now to continue setup."
-                    : "You can now sign in and complete your profile setup."}
+                  You can sign in immediately with your email and password to continue setting up your profile.
                 </p>
                 {emailForConfirmation ? (
-                  <p className="text-sm text-green-900">Confirmation sent to: {emailForConfirmation}</p>
+                  <p className="text-sm text-green-900">Registered email: {emailForConfirmation}</p>
                 ) : null}
                 {signInAvailable ? (
                   <Link to="/signin" className="font-semibold text-green-900 underline">
-                    Already have an account? Login
+                    Continue to login
                   </Link>
                 ) : null}
               </div>
