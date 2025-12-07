@@ -35,6 +35,43 @@ export type CisoContext = {
 
 export type CisoMode = "user" | "admin";
 
+export class CisoAgentError extends Error {
+  status?: number;
+  type?: string;
+  traceId?: string;
+  userMessage: string;
+
+  constructor(
+    userMessage: string,
+    options?: { status?: number; type?: string; traceId?: string; cause?: any },
+  ) {
+    super(userMessage);
+    this.name = "CisoAgentError";
+    this.status = options?.status;
+    this.type = options?.type;
+    this.traceId = options?.traceId;
+    this.userMessage = userMessage;
+    if (options?.cause) {
+      (this as any).cause = options.cause;
+    }
+  }
+}
+
+const resolveRuntimeEnv = () => {
+  try {
+    // Avoid static import.meta usage so tests and non-module contexts still load.
+    // eslint-disable-next-line no-new-func
+    return new Function("return import.meta.env")();
+  } catch (err) {
+    return undefined;
+  }
+};
+
+const env =
+  (typeof globalThis !== "undefined" && (globalThis as any).__VITE_ENV__) ||
+  resolveRuntimeEnv() ||
+  ((typeof process !== "undefined" ? (process.env as any) : {}) ?? {});
+
 const CISO_USER_SYSTEM_PROMPT = `
 You are "Ciso", the AI operations and onboarding assistant for the WATHACI Connect platform.
 
@@ -168,7 +205,7 @@ When in doubt:
 `;
 
 const AGENT_URL =
-  import.meta.env.VITE_WATHACI_CISO_AGENT_URL ||
+  env.VITE_WATHACI_CISO_AGENT_URL?.trim() ||
   "https://nrjcbdrzaxqvomeogptf.functions.supabase.co/agent"; // fallback; adjust if needed
 
 const deriveFunctionsBaseUrl = (supabaseUrl: string | undefined) => {
@@ -181,17 +218,18 @@ const deriveFunctionsBaseUrl = (supabaseUrl: string | undefined) => {
   return `${trimmed.replace(/\/$/, "")}/functions/v1`;
 };
 
-const supabaseFunctionsBaseUrl = deriveFunctionsBaseUrl(
-  import.meta.env.VITE_SUPABASE_URL,
-);
+const supabaseFunctionsBaseUrl = deriveFunctionsBaseUrl(env.VITE_SUPABASE_URL);
 
+const normalizedKnowledgeEnv = env.VITE_WATHACI_CISO_KNOWLEDGE_URL?.trim();
 const CISO_KNOWLEDGE_URL =
-  import.meta.env.VITE_WATHACI_CISO_KNOWLEDGE_URL?.trim() ||
-  (supabaseFunctionsBaseUrl
-    ? `${supabaseFunctionsBaseUrl}/ciso-knowledge`
-    : "https://nrjcbdrzaxqvomeogptf.functions.supabase.co/ciso-knowledge");
+  normalizedKnowledgeEnv === "disabled"
+    ? ""
+    : normalizedKnowledgeEnv ||
+      (supabaseFunctionsBaseUrl
+        ? `${supabaseFunctionsBaseUrl}/ciso-knowledge`
+        : "https://nrjcbdrzaxqvomeogptf.functions.supabase.co/ciso-knowledge");
 
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY;
 
 if (!SUPABASE_ANON_KEY) {
   console.warn(
@@ -264,31 +302,98 @@ export async function callCisoAgent(
     ...userMessages,
   ];
 
-  const res = await fetch(AGENT_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: SUPABASE_ANON_KEY ?? "",
-      Authorization: SUPABASE_ANON_KEY ? `Bearer ${SUPABASE_ANON_KEY}` : "",
-    },
-    body: JSON.stringify({
-      model: "gpt-4.1-mini",
-      messages,
-      admin: mode === "admin",
-      context,
-    }),
-  });
+  try {
+    const res = await fetch(AGENT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_ANON_KEY ?? "",
+        Authorization: SUPABASE_ANON_KEY ? `Bearer ${SUPABASE_ANON_KEY}` : "",
+      },
+      body: JSON.stringify({
+        model: "gpt-4.1-mini",
+        messages,
+        admin: mode === "admin",
+        context,
+      }),
+    });
 
-  if (!res.ok) {
-    const text = await res.text();
-    console.error("[Ciso] Agent error:", res.status, text);
-    throw new Error("Ciso agent error");
+    const maybeJson = await res
+      .json()
+      .catch(async () => ({ raw: await res.text() }));
+
+    if (!res.ok || maybeJson?.error) {
+      const status = res.status || 500;
+      const errorType =
+        (maybeJson as any)?.type ||
+        (status === 400
+          ? "validation_error"
+          : status === 401 || status === 403
+            ? "auth_error"
+            : status === 429
+              ? "rate_limit"
+              : status >= 500
+                ? "upstream_error"
+                : "unknown_error");
+
+      const traceId = (maybeJson as any)?.traceId;
+      const serverMessage =
+        (maybeJson as any)?.message || (maybeJson as any)?.error;
+
+      const userMessage = buildUserFacingMessage(errorType, traceId);
+      console.error("[Ciso] Agent error:", {
+        status,
+        errorType,
+        traceId,
+        serverMessage,
+      });
+
+      throw new CisoAgentError(userMessage, {
+        status,
+        type: errorType,
+        traceId,
+      });
+    }
+
+    const reply: string =
+      (maybeJson as any)?.choices?.[0]?.message?.content ??
+      "Sorry, I couldn't generate a reply right now.";
+
+    return reply;
+  } catch (error) {
+    if (error instanceof CisoAgentError) {
+      throw error;
+    }
+
+    const networkMessage = buildUserFacingMessage(
+      (error as any)?.name === "AbortError" ? "timeout" : "network_error",
+    );
+
+    throw new CisoAgentError(networkMessage, {
+      cause: error,
+      type:
+        (error as any)?.name === "AbortError" ? "timeout" : "network_error",
+    });
   }
+}
 
-  const data = await res.json();
-  const reply: string =
-    data?.choices?.[0]?.message?.content ??
-    "Sorry, I couldn't generate a reply right now.";
+function buildUserFacingMessage(type?: string, traceId?: string) {
+  const reference = traceId ? ` (ref: ${traceId})` : "";
 
-  return reply;
+  switch (type) {
+    case "validation_error":
+      return "We could not process that question. Please refine it and try again.";
+    case "config_error":
+      return `Ciso is unavailable because of a configuration issue. Please try again in a few minutes or email support@wathaci.com${reference}.`;
+    case "auth_error":
+      return `We could not securely connect to Ciso right now. Please try again or email support@wathaci.com${reference}.`;
+    case "rate_limit":
+      return "Ciso is handling many requests at once. Please wait a few seconds and try again.";
+    case "timeout":
+      return `Ciso took too long to reply. Please try again shortly${reference}.`;
+    case "network_error":
+      return "We could not reach Ciso. Please check your connection and try again.";
+    default:
+      return `Ciso is having trouble replying right now. Please try again or email support@wathaci.com${reference}.`;
+  }
 }

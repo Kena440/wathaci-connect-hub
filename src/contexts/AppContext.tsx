@@ -841,11 +841,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       let errorMessage = error.message || 'Failed to create account';
 
       // Check for common error patterns and provide helpful messages
-      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+      const normalizedError = errorMessage.toLowerCase();
+
+      if (error.status === 500 || normalizedError.includes('unexpected_failure')) {
+        errorMessage = 'We hit a temporary issue creating your account. Please try again shortly or contact support if this repeats.';
+      } else if (normalizedError.includes('network') || normalizedError.includes('fetch')) {
         errorMessage = 'We couldn\'t reach WATHACI servers right now. Please try again shortly.';
-      } else if (errorMessage.includes('already exists') || errorMessage.includes('already registered')) {
+      } else if (normalizedError.includes('already exists') || normalizedError.includes('already registered')) {
         errorMessage = 'An account with this email already exists. Please sign in instead or use a different email.';
-      } else if (errorMessage.includes('password')) {
+      } else if (normalizedError.includes('password')) {
         errorMessage = 'Password does not meet requirements. Please use a stronger password.';
       }
 
