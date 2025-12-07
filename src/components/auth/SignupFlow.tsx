@@ -40,8 +40,7 @@ export const SignupFlow: React.FC = () => {
         <div className="mt-6 space-y-3 rounded-lg border border-green-200 bg-green-50 p-4 text-green-800">
           <h2 className="text-xl font-semibold">Signup complete</h2>
           <p>
-            If email confirmation is enabled, check your inbox. After logging in you'll be redirected
-            based on your account type.
+            Your account is ready. Sign in with the credentials you just created to continue to your dashboard.
           </p>
           <ul className="list-disc space-y-1 pl-6 text-sm">
             <li>SME → /dashboard/sme</li>

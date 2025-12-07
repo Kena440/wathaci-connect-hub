@@ -133,7 +133,13 @@ export const ZaqaSignup = () => {
 
       if (signUpError) {
         console.error('Sign-up error:', signUpError);
-        setError(withSupportContact(signUpError.message));
+        const normalized = signUpError.message?.toLowerCase?.() || '';
+        const isRateLimited = signUpError.status === 429 || normalized.includes('rate limit');
+        if (isRateLimited) {
+          setError('Too many signup attempts in a short time. Please wait and try again.');
+        } else {
+          setError(withSupportContact(signUpError.message));
+        }
         return;
       }
 

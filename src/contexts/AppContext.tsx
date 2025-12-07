@@ -843,7 +843,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Check for common error patterns and provide helpful messages
       const normalizedError = errorMessage.toLowerCase();
 
-      if (error.status === 500 || normalizedError.includes('unexpected_failure')) {
+      if (error.status === 429 || normalizedError.includes('rate limit')) {
+        errorMessage = 'Too many signup attempts in a short time. Please wait a moment before trying again.';
+      } else if (error.status === 500 || normalizedError.includes('unexpected_failure')) {
         errorMessage = 'We hit a temporary issue creating your account. Please try again shortly or contact support if this repeats.';
       } else if (normalizedError.includes('network') || normalizedError.includes('fetch')) {
         errorMessage = 'We couldn\'t reach WATHACI servers right now. Please try again shortly.';
