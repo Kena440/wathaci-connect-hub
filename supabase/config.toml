@@ -127,6 +127,8 @@ site_url = "env(VITE_SITE_URL)"
 additional_redirect_urls = [
   "https://127.0.0.1:3000",
   "http://localhost:3000",
+  "https://wathaci-connect-platform-8fy8qoekg-amukenas-projects.vercel.app",
+  "https://wathaci-connect-platform-8fy8qoekg-amukenas-projects.vercel.app/signin",
   "https://app.wathaci.com/signin",
   "https://app.wathaci.com",
   "https://www.wathaci.com",
@@ -195,8 +197,8 @@ otp_expiry = 3600
 # For production, configure PrivateEmail SMTP settings
 [auth.email.smtp]
 enabled = true
-# Use StartTLS on 587 to avoid implicit TLS auth errors with PrivateEmail
-host = "smtp.privateemail.com"
+# Use PrivateEmail over STARTTLS on 587. The host must be mail.privateemail.com for successful auth.
+host = "mail.privateemail.com"
 port = 587
 user = "support@wathaci.com"
 pass = "env(SMTP_PASSWORD)"
