@@ -303,36 +303,71 @@ async function callOpenAIChat(
   apiKey: string,
   model: string,
   messages: ChatMessage[],
+  traceId: string,
+  timeoutMs = 25000,
 ) {
-  const upstreamRes = await fetch(
-    "https://api.openai.com/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const upstreamRes = await fetch(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: 0.2,
+          max_tokens: 512,
+        }),
+        signal: controller.signal,
       },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature: 0.2,
-        max_tokens: 512,
-      }),
-    },
-  );
+    );
 
-  if (!upstreamRes.ok) {
-    const text = await upstreamRes.text();
-    console.error("[agent] OpenAI upstream error:", upstreamRes.status, text);
-    throw new Error(`Upstream OpenAI error ${upstreamRes.status}: ${text}`);
+    if (!upstreamRes.ok) {
+      const text = await upstreamRes.text();
+      console.error(
+        `[agent][${traceId}] OpenAI upstream error:`,
+        upstreamRes.status,
+        text,
+      );
+
+      const upstreamError = new Error(
+        `Upstream OpenAI error ${upstreamRes.status}: ${text}`,
+      );
+      (upstreamError as any).status = upstreamRes.status;
+      (upstreamError as any).body = text;
+      throw upstreamError;
+    }
+
+    return await upstreamRes.json();
+  } catch (error) {
+    if ((error as any)?.name === "AbortError") {
+      const timeoutError = new Error("Upstream OpenAI request timed out");
+      (timeoutError as any).name = "AbortError";
+      (timeoutError as any).status = 504;
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return await upstreamRes.json();
 }
 
 // ---- Main handler ----
 
 Deno.serve(async (req) => {
+  const traceId = crypto.randomUUID();
+  const baseHeaders = {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+    "x-trace-id": traceId,
+  };
+
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
@@ -346,15 +381,38 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = (await req.json()) as AgentRequestBody;
+    const body = (await req.json().catch(() => null)) as
+      | AgentRequestBody
+      | null;
+
+    if (!body) {
+      return new Response(
+        JSON.stringify({
+          error: true,
+          type: "validation_error",
+          message: "Invalid JSON payload received.",
+          traceId,
+        }),
+        {
+          status: 400,
+          headers: baseHeaders,
+        },
+      );
+    }
+
     const { model, messages, admin, mode, context } = body;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return new Response(
-        JSON.stringify({ error: "Missing or empty messages array" }),
+        JSON.stringify({
+          error: true,
+          type: "validation_error",
+          message: "Missing or empty messages array",
+          traceId,
+        }),
         {
           status: 400,
-          headers: { "Content-Type": "application/json" },
+          headers: baseHeaders,
         },
       );
     }
@@ -371,14 +429,19 @@ Deno.serve(async (req) => {
 
     if (!OPENAI_API_KEY) {
       console.error(
-        "[agent] Missing OpenAI API key env for mode:",
+        `[agent][${traceId}] Missing OpenAI API key env for mode:`,
         isAdmin ? "admin" : "user",
       );
       return new Response(
-        JSON.stringify({ error: "Server misconfigured: missing OpenAI key" }),
+        JSON.stringify({
+          error: true,
+          type: "config_error",
+          message: "Server misconfigured: missing OpenAI key",
+          traceId,
+        }),
         {
           status: 500,
-          headers: { "Content-Type": "application/json" },
+          headers: baseHeaders,
         },
       );
     }
@@ -432,13 +495,11 @@ Deno.serve(async (req) => {
         OPENAI_API_KEY,
         effectiveModel,
         baseMessages,
+        traceId,
       );
-      return new Response(JSON.stringify(data), {
+      return new Response(JSON.stringify({ traceId, ...data }), {
         status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
+        headers: baseHeaders,
       });
     }
 
@@ -449,6 +510,7 @@ Deno.serve(async (req) => {
       OPENAI_API_KEY,
       effectiveModel,
       baseMessages,
+      traceId,
     );
 
     const firstChoice = planningData?.choices?.[0];
@@ -460,12 +522,9 @@ Deno.serve(async (req) => {
 
     if (!toolCall) {
       // No tool requested
-      return new Response(JSON.stringify(planningData), {
+      return new Response(JSON.stringify({ traceId, ...planningData }), {
         status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
+        headers: baseHeaders,
       });
     }
 
@@ -490,22 +549,44 @@ Deno.serve(async (req) => {
       OPENAI_API_KEY,
       effectiveModel,
       followupMessages,
+      traceId,
     );
 
-    return new Response(JSON.stringify(finalData), {
+    return new Response(JSON.stringify({ traceId, ...finalData }), {
       status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
+      headers: baseHeaders,
     });
   } catch (err) {
-    console.error("[agent] Unexpected error:", err);
+    const error = err as Error & { status?: number; body?: string };
+    const status = error.status ?? 500;
+    const type =
+      error.name === "AbortError"
+        ? "timeout"
+        : status === 401 || status === 403
+          ? "auth_error"
+          : status === 429
+            ? "rate_limit"
+            : "upstream_error";
+
+    console.error(`[agent][${traceId}] Unexpected error:`, {
+      message: error.message,
+      status,
+      body: (error as any).body,
+    });
+
     return new Response(
-      JSON.stringify({ error: "Internal error in agent function" }),
+      JSON.stringify({
+        error: true,
+        type,
+        message:
+          type === "timeout"
+            ? "The model request timed out."
+            : "Internal error in agent function",
+        traceId,
+      }),
       {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
+        status,
+        headers: baseHeaders,
       },
     );
   }

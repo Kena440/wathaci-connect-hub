@@ -1,5 +1,9 @@
 import React, { useState } from "react";
-import { callCisoAgent, CisoMessage } from "../lib/cisoClient";
+import {
+  callCisoAgent,
+  CisoAgentError,
+  CisoMessage,
+} from "../lib/cisoClient";
 
 const CisoWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -34,12 +38,16 @@ const CisoWidget: React.FC = () => {
       };
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (err) {
-      console.error(err);
+      const derivedMessage =
+        err instanceof CisoAgentError
+          ? err.userMessage
+          : "Ciso is having trouble replying right now. Please try again or email support@wathaci.com.";
+
       const errorMessage: CisoMessage = {
         role: "assistant",
-        content:
-          "I ran into a problem trying to respond. Please try again or email support@wathaci.com.",
+        content: derivedMessage,
       };
+      console.error("[CisoWidget] send error", err);
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
