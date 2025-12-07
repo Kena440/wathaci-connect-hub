@@ -71,6 +71,24 @@ function parseSupabaseAuthError(error: AuthError): DetailedAuthError {
     };
   }
 
+  // SMTP/confirmation email failures
+  if (
+    message.includes('confirmation email') ||
+    message.includes('smtp') ||
+    message.includes('authentication failed') ||
+    message.includes('535')
+  ) {
+    return {
+      friendlyMessage:
+        "We couldn't send the confirmation email right now. Please try again in a few minutes or contact support@wathaci.com.",
+      errorCode: 'EMAIL_DELIVERY_FAILED',
+      originalMessage: error.message,
+      category: 'network',
+      suggestedAction: 'Retry later or reach out to support if the issue continues.',
+      shouldReport: true,
+    };
+  }
+
   // Explicit Supabase rate limiting
   if (status === 429 || code === '429' || message.includes('rate limit')) {
     return {
