@@ -381,6 +381,18 @@ function createMockSupabaseClient() {
 
   return {
     auth: {
+      getSession: async () => ({
+        data: {
+          session: currentUser
+            ? {
+                user: currentUser,
+                access_token: 'mock-access-token',
+                token_type: 'bearer',
+              }
+            : null,
+        },
+        error: null,
+      }),
       getUser: async () => ({ data: { user: currentUser }, error: null }),
       signInWithPassword: async ({ email, password }: { email: string; password: string }) => {
         const normalizedEmail = (email || '').toLowerCase();
