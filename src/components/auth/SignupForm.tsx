@@ -159,22 +159,26 @@ export const SignupForm = ({
     const normalizedEmail = values.email.trim().toLowerCase();
     const normalizedMobile = values.mobileNumber?.trim() || null;
 
-    const { error: profileErrorResponse } = await supabase.from("profiles").upsert(
-      {
-        id: userId,
-        email: normalizedEmail,
-        full_name: values.fullName,
-        account_type: selectedAccountType,
-        accepted_terms: true,
-        newsletter_opt_in: Boolean(values.newsletterOptIn),
-        profile_completed: false,
-        phone: normalizedMobile,
-        msisdn: normalizedMobile,
-      },
-      {
-        onConflict: "id",
-      }
-    );
+    const { data, error: profileErrorResponse } = await supabase
+      .from("profiles")
+      .upsert(
+        {
+          id: userId,
+          email: normalizedEmail,
+          full_name: values.fullName,
+          account_type: selectedAccountType,
+          accepted_terms: true,
+          newsletter_opt_in: Boolean(values.newsletterOptIn),
+          profile_completed: false,
+          phone: normalizedMobile,
+          msisdn: normalizedMobile,
+        },
+        {
+          onConflict: "id",
+        }
+      )
+      .select()
+      .single();
 
     if (profileErrorResponse) {
       // Enhanced error logging with detailed context
@@ -187,10 +191,14 @@ export const SignupForm = ({
       // Set user-friendly error message
       const friendlyMessage = getUserFriendlyMessage(profileErrorResponse);
       setProfileError(friendlyMessage);
-      
+
       // Log to legacy system for compatibility
       logSupabaseAuthError("signup-profile", profileErrorResponse);
+
+      return null;
     }
+
+    return data;
   };
 
   const onSubmit = async (values: SignupFormValues) => {
@@ -269,13 +277,15 @@ export const SignupForm = ({
       const requiresConfirmation = !data.session;
 
       if (data.user?.id && data.session) {
-        await handleProfileUpsert(
+        const profile = await handleProfileUpsert(
           data.user.id,
           values,
           normalizedAccountType
         );
 
-        const onboardingPath = getOnboardingStartPath(normalizeAccountType(normalizedAccountType));
+        const onboardingPath = getOnboardingStartPath(
+          normalizeAccountType((profile?.account_type as string | null) ?? normalizedAccountType)
+        );
         clearSignupAttempts();
         onSuccess(normalizedEmail, requiresConfirmation, normalizedMobileNumber || undefined);
         navigate(onboardingPath, { replace: true });
@@ -326,13 +336,15 @@ export const SignupForm = ({
       const requiresEmailConfirmation = !data.session;
 
       if (data.user?.id && data.session) {
-        await handleProfileUpsert(
+        const profile = await handleProfileUpsert(
           data.user.id,
           values,
           normalizedAccountType
         );
 
-        const onboardingPath = getOnboardingStartPath(normalizeAccountType(normalizedAccountType));
+        const onboardingPath = getOnboardingStartPath(
+          normalizeAccountType((profile?.account_type as string | null) ?? normalizedAccountType)
+        );
         clearSignupAttempts();
         onSuccess(normalizedEmail, requiresEmailConfirmation, normalizedMobileNumber || undefined);
         navigate(onboardingPath, { replace: true });

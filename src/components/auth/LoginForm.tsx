@@ -44,7 +44,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
 
       const { data: profile, error: profileError } = await supabaseClient
         .from("profiles")
-        .select("account_type, profile_completed, email")
+        .select("*")
         .eq("id", userId)
         .maybeSingle();
 
@@ -59,13 +59,19 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
       if (!resolvedProfile) {
         const { data: createdProfile, error: createError } = await supabaseClient
           .from("profiles")
-          .insert({
-            id: userId,
-            email: data.user?.email ?? email,
-            account_type: null,
-            profile_completed: false,
-          })
-          .select("account_type, profile_completed, email")
+          .upsert(
+            {
+              id: userId,
+              email: data.user?.email ?? email,
+              full_name:
+                ((data.user?.user_metadata as Record<string, unknown> | undefined)?.full_name as string | undefined) ?? null,
+              account_type:
+                ((data.user?.user_metadata as Record<string, unknown> | undefined)?.account_type as string | undefined) ?? null,
+              profile_completed: false,
+            },
+            { onConflict: "id" }
+          )
+          .select()
           .single();
 
         if (createError) {
