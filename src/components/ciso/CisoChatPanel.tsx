@@ -105,13 +105,15 @@ export function CisoChatPanel({ open, onClose, userId }: CisoChatPanelProps) {
 
         <CardContent className="pt-2 pb-2">
           <ScrollArea className="h-64 pr-2">
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3" role="log" aria-live="polite" aria-label="Chat messages">
               {messages.map((m, idx) => (
                 <div
                   key={idx}
                   className={`flex ${
                     m.from === "user" ? "justify-end" : "justify-start"
                   }`}
+                  role="article"
+                  aria-label={`${m.from === "user" ? "You" : "Ciso"} said`}
                 >
                   <div
                     className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
