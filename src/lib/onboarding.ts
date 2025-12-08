@@ -8,8 +8,9 @@
 import { supabaseClient as supabase } from "./supabaseClient";
 import { normalizeMsisdn, normalizePhoneNumber } from "@/utils/phone";
 import { logger } from "@/lib/logger";
+import type { AccountTypeValue } from "@/data/accountTypes";
 
-export type AccountType = "sme" | "professional" | "donor" | "investor" | "government" | "sole_proprietor";
+export type AccountType = AccountTypeValue | "government" | "sole_proprietor";
 
 export interface ProfileParams {
   account_type: AccountType;
@@ -165,6 +166,18 @@ export async function upsertProfile(params: ProfileParams) {
     accountType: params.account_type,
   });
 
+  const normalizeAccountTypeForDb = (accountType: AccountType): AccountTypeValue => {
+    if (accountType === "government") {
+      return "government_institution";
+    }
+
+    if (accountType === "sole_proprietor") {
+      return "sme";
+    }
+
+    return accountType as AccountTypeValue;
+  };
+
   const {
     data: { user },
     error: userError,
@@ -190,7 +203,7 @@ export async function upsertProfile(params: ProfileParams) {
   // Build the payload
   const payload: any = {
     id: user.id,
-    account_type: params.account_type,
+    account_type: normalizeAccountTypeForDb(params.account_type),
   };
 
   const normalizedMsisdn = normalizeMsisdn(params.msisdn);

@@ -2,25 +2,31 @@ import { logger } from '@/lib/logger';
 
 export type OnboardingAccountType =
   | 'sme'
-  | 'sole_proprietor'
   | 'professional'
   | 'investor'
   | 'donor'
-  | 'government';
+  | 'government_institution';
 
 export const normalizeAccountType = (accountType?: string | null): OnboardingAccountType | null => {
   if (!accountType) return null;
   const normalized = accountType.toString().trim().toLowerCase();
 
+  if (normalized === 'sole_proprietor') {
+    return 'sme';
+  }
+
+  if (normalized === 'government') {
+    return 'government_institution';
+  }
+
   if (
     normalized === 'sme' ||
-    normalized === 'sole_proprietor' ||
     normalized === 'professional' ||
     normalized === 'investor' ||
     normalized === 'donor' ||
-    normalized === 'government'
+    normalized === 'government_institution'
   ) {
-    return normalized;
+    return normalized as OnboardingAccountType;
   }
 
   logger.warn('Unknown account type encountered while normalizing', {
@@ -36,14 +42,13 @@ export const getOnboardingStartPath = (accountType?: string | null): string => {
 
   switch (normalized) {
     case 'sme':
-    case 'sole_proprietor':
       return '/onboarding/sme';
     case 'professional':
       return '/onboarding/professional';
     case 'investor':
     case 'donor':
       return '/onboarding/investor';
-    case 'government':
+    case 'government_institution':
       return '/onboarding/government/needs-assessment';
     default:
       return '/onboarding/account-type';
