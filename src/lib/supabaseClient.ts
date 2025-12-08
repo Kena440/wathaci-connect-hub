@@ -81,8 +81,22 @@ const resolvedConfig = getSupabaseClientConfiguration(clientOptions);
 const supabaseUrl = resolvedConfig?.url ?? fallbackUrl;
 const supabaseAnonKey = resolvedConfig?.anonKey ?? fallbackAnonKey;
 
-const buildClientFromConfig = () =>
-  createClient<Database>(supabaseUrl as string, supabaseAnonKey as string, resolvedConfig?.options ?? clientOptions);
+const maskKey = (key?: string | null): string | undefined => {
+  if (!key || typeof key !== "string") {
+    return undefined;
+  }
+
+  if (key.length <= 10) {
+    return `${key.slice(0, 3)}...`;
+  }
+
+  return `${key.slice(0, 6)}...${key.slice(-4)}`;
+};
+
+const buildClientFromConfig = () => {
+  supabaseConfigStatus.usingFallbackClient = false;
+  return createClient<Database>(supabaseUrl as string, supabaseAnonKey as string, resolvedConfig?.options ?? clientOptions);
+};
 
 const markInvalidConfig = (errorMessage: string) => {
   const debugSnapshot = {
@@ -123,8 +137,23 @@ const buildFallbackClient = () => {
     "Missing Supabase environment configuration: VITE_SUPABASE_URL | VITE_SUPABASE_ANON_KEY";
 
   markInvalidConfig(errorMessage);
+  supabaseConfigStatus.usingFallbackClient = true;
   return fallbackSupabase;
 };
+
+const shouldLogRuntimeConfig =
+  (typeof import.meta !== "undefined" && Boolean((import.meta as any)?.env?.DEV)) ||
+  (typeof process !== "undefined" && process.env?.NODE_ENV !== "production");
+
+if (shouldLogRuntimeConfig) {
+  console.info("[supabase-client] Runtime Supabase configuration", {
+    supabaseUrl,
+    anonKeyPreview: maskKey(supabaseAnonKey ?? undefined),
+    resolvedUrlKey: supabaseConfigStatus.resolvedUrlKey,
+    resolvedAnonKeyKey: supabaseConfigStatus.resolvedAnonKeyKey,
+    usingFallbackClient: supabaseConfigStatus.usingFallbackClient,
+  });
+}
 
 const internalClient =
   !supabaseUrl || !supabaseAnonKey

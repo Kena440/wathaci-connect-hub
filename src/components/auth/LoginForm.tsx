@@ -25,14 +25,40 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
     setError(null);
     setLoading(true);
 
+    const normalizedEmail = email.trim();
+    const passwordLength = password?.length ?? 0;
+
+    if (typeof console !== "undefined") {
+      console.log("[auth] Login attempt", {
+        email: normalizedEmail,
+        passwordLength,
+      });
+    }
+
+    if (!normalizedEmail || passwordLength === 0) {
+      setError(withSupportContact("Please provide both email and password."));
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error: signInError } = await supabaseClient.auth.signInWithPassword({
-        email,
+        email: normalizedEmail,
         password,
       });
 
       if (signInError) {
-        setError(withSupportContact(signInError.message));
+        const friendlyMessage = signInError.message?.toLowerCase().includes("invalid login")
+          ? "Incorrect email or password. Please try again."
+          : signInError.message;
+
+        logger.error("Login failed", signInError, {
+          event: "auth:login:error",
+          email: normalizedEmail,
+          passwordLength,
+        });
+
+        setError(withSupportContact(friendlyMessage));
         return;
       }
 
