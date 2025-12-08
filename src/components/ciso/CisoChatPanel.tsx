@@ -49,12 +49,29 @@ export function CisoChatPanel({ open, onClose, userId }: CisoChatPanelProps) {
       setMessages((prev) => [...prev, { from: "ciso", text: answer }]);
     } catch (err) {
       console.error("Ciso error:", err);
+      let errorMessage: string;
+      // Try to extract structured error info (duck-typing for CisoAgentError)
+      if (
+        err &&
+        typeof err === "object" &&
+        "message" in err &&
+        typeof (err as any).message === "string"
+      ) {
+        errorMessage = (err as any).message;
+        if ("traceId" in err && typeof (err as any).traceId === "string") {
+          errorMessage += ` (Trace ID: ${(err as any).traceId})`;
+        }
+      } else if (typeof err === "string") {
+        errorMessage = err;
+      } else {
+        errorMessage =
+          "I’m having trouble reaching my knowledge base right now. Please try again in a moment or contact support@wathaci.com.";
+      }
       setMessages((prev) => [
         ...prev,
         {
           from: "ciso",
-          text:
-            "I’m having trouble reaching my knowledge base right now. Please try again in a moment or contact support@wathaci.com.",
+          text: errorMessage,
         },
       ]);
     } finally {
