@@ -177,7 +177,23 @@ export const AppRoutes = () => (
       <Route path="/signup-zaqa" element={withAppLayout(<ZaqaSignup />, { showFooter: false })} />
       <Route path="/forgot-password" element={withAppLayout(<ForgotPassword />, { showFooter: false })} />
       <Route path="/reset-password" element={withAppLayout(<ResetPassword />, { showFooter: false })} />
-      <Route path="/get-started" element={withAppLayout(<GetStartedPage />)} />
+      <Route
+        path="/get-started"
+        element={withAppLayout(
+          <PrivateRoute>
+            <GetStartedPage />
+          </PrivateRoute>
+        )}
+      />
+      <Route
+        path="/onboarding/account-type"
+        element={withAppLayout(
+          <PrivateRoute>
+            <GetStartedPage />
+          </PrivateRoute>,
+          { showFooter: false }
+        )}
+      />
       <Route path="/onboarding" element={withAppLayout(<OnboardingLanding />, { showFooter: false })} />
       <Route path="/profile-setup" element={withAppLayout(<ProfileSetup />, { showFooter: false })} />
       <Route path="/profile-review" element={withAppLayout(<ProfileReview />, { showFooter: false })} />
