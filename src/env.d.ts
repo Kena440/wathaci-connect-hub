@@ -3,9 +3,12 @@
 interface ImportMetaEnv {
   readonly VITE_API_BASE_URL?: string;
   readonly REACT_APP_API_BASE_URL?: string;
+  readonly VITE_CISO_AGENT_URL?: string;
+  readonly REACT_APP_CISO_AGENT_URL?: string;
   readonly VITE_WATHACI_CISO_AGENT_URL?: string;
   readonly REACT_APP_WATHACI_CISO_AGENT_URL?: string;
   readonly VITE_WATHACI_CISO_KNOWLEDGE_URL?: string;
+  readonly REACT_APP_WATHACI_CISO_KNOWLEDGE_URL?: string;
   readonly VITE_SUPABASE_ANON_KEY?: string;
   readonly REACT_APP_SUPABASE_ANON_KEY?: string;
   readonly VITE_SUPABASE_URL?: string;
