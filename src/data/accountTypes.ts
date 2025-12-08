@@ -1,13 +1,12 @@
 import type { LucideIcon } from 'lucide-react';
-import { User, Users, Building, TrendingUp, Heart, Landmark } from 'lucide-react';
+import { Users, Building, TrendingUp, Heart, Landmark } from 'lucide-react';
 
 export type AccountTypeValue =
-  | 'sole_proprietor'
-  | 'professional'
   | 'sme'
+  | 'professional'
   | 'investor'
   | 'donor'
-  | 'government';
+  | 'government_institution';
 
 export interface AccountTypeDefinition {
   value: AccountTypeValue;
@@ -19,18 +18,6 @@ export interface AccountTypeDefinition {
 }
 
 export const accountTypes: AccountTypeDefinition[] = [
-  {
-    value: 'sole_proprietor',
-    label: 'Sole Proprietor',
-    description: 'For individual entrepreneurs and micro businesses building their first digital presence.',
-    icon: User,
-    idealFor: [
-      'Freelancers and independent consultants',
-      'Market vendors and small retail businesses',
-      'Founders testing new products or services'
-    ],
-    onboardingFocus: ['Business profile', 'Mobile money payments', 'Marketplace listing']
-  },
   {
     value: 'professional',
     label: 'Professional',
@@ -80,7 +67,7 @@ export const accountTypes: AccountTypeDefinition[] = [
     onboardingFocus: ['Program focus', 'Funding priorities', 'Impact metrics']
   },
   {
-    value: 'government',
+    value: 'government_institution',
     label: 'Government Institution',
     description: 'Enterprise workflows for public sector agencies supporting MSMEs.',
     icon: Landmark,

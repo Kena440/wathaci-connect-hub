@@ -21,11 +21,12 @@ export interface User {
 
 export type AccountType =
   | 'sole_proprietor'
-  | 'professional'
   | 'sme'
+  | 'professional'
   | 'investor'
   | 'donor'
   | 'government'
+  | 'government_institution'
   | 'admin';
 
 // ================================
@@ -35,6 +36,7 @@ export type AccountType =
 export interface BaseProfile {
   id: string;
   email: string;
+  full_name?: string | null;
   account_type: AccountType;
   profile_completed: boolean;
   accepted_terms: boolean;
@@ -50,8 +52,11 @@ export interface PersonalInfo {
   first_name?: string;
   last_name?: string;
   phone: string;
-  msisdn?: string;
   country: string;
+  city?: string;
+  profile_photo_url?: string | null;
+  short_bio?: string | null;
+  msisdn?: string;
   address?: string;
   coordinates?: {
     lat: number;
@@ -528,80 +533,154 @@ export interface SMEReadinessScore {
 
 export interface ProfessionalProfileRow {
   id: string;
-  user_id: string;
-  entity_type: 'individual' | 'firm' | 'company';
-  full_name: string;
-  organisation_name?: string | null;
-  bio?: string | null;
-  primary_expertise: string[];
-  secondary_skills: string[];
+  profile_id: string;
+  display_name: string;
+  is_company: boolean;
+  professional_bio?: string | null;
+  primary_expertise: string[] | null;
+  secondary_skills: string[] | null;
   years_of_experience?: number | null;
   current_organisation?: string | null;
-  qualifications?: string | null;
-  top_sectors: string[];
+  qualifications?: string[] | null;
+  top_sectors_served?: string[] | null;
   notable_projects?: string | null;
-  services_offered: string[];
-  expected_rates?: string | null;
+  services_offered?: string[] | null;
+  rate_type?: string | null;
+  rate_currency?: string | null;
+  rate_min?: number | null;
+  rate_max?: number | null;
+  availability?: string | null;
   location_city?: string | null;
   location_country?: string | null;
   phone?: string | null;
   email?: string | null;
+  website?: string | null;
   linkedin_url?: string | null;
-  website_url?: string | null;
   portfolio_url?: string | null;
-  availability?: 'part_time' | 'full_time' | 'occasional' | null;
-  notes?: string | null;
-  profile_photo_url?: string | null;
-  logo_url?: string | null;
+  languages?: string[] | null;
+  willing_to_travel?: boolean | null;
+  remote_only?: boolean | null;
+  serves_regions?: string[] | null;
+  accepting_new_clients: boolean;
+  tags?: string[] | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
 
 export interface SmeProfileRow {
   id: string;
-  user_id: string;
+  profile_id: string;
   business_name: string;
+  registration_status?: string | null;
   registration_number?: string | null;
-  registration_type?: string | null;
+  legal_form?: string | null;
+  year_established?: number | null;
   sector?: string | null;
-  subsector?: string | null;
-  years_in_operation?: number | null;
-  employee_count?: number | null;
-  turnover_bracket?: string | null;
-  products_overview?: string | null;
-  target_market?: string | null;
+  sub_sector?: string | null;
+  description?: string | null;
+  website?: string | null;
+  primary_products_services?: string | null;
+  employees_full_time?: number | null;
+  employees_part_time?: number | null;
+  annual_turnover_band?: string | null;
+  growth_stage?: string | null;
+  funding_need: boolean;
+  funding_purpose?: string | null;
+  funding_amount_min?: number | null;
+  funding_amount_max?: number | null;
+  impact_focus?: Record<string, unknown> | null;
   location_city?: string | null;
   location_country?: string | null;
-  contact_name?: string | null;
-  contact_phone?: string | null;
-  business_email?: string | null;
-  website_url?: string | null;
-  social_links: string[];
-  main_challenges: string[];
-  support_needs: string[];
-  logo_url?: string | null;
-  photos: string[];
+  markets_served?: string | null;
+  preferred_support_types?: string[] | null;
+  is_visible: boolean;
+  tags?: string[] | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
 
 export interface InvestorProfileRow {
   id: string;
-  user_id: string;
+  profile_id: string;
   organisation_name: string;
   investor_type?: string | null;
+  contact_person_name?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  website?: string | null;
+  hq_country?: string | null;
+  hq_city?: string | null;
+  regions_focus?: string[] | null;
   ticket_size_min?: number | null;
   ticket_size_max?: number | null;
-  preferred_sectors: string[];
-  country_focus: string[];
-  stage_preference: string[];
-  instruments: string[];
-  impact_focus: string[];
-  contact_person?: string | null;
-  contact_role?: string | null;
-  website_url?: string | null;
-  linkedin_url?: string | null;
-  logo_url?: string | null;
+  ticket_currency?: string | null;
+  investment_stage?: string[] | null;
+  instruments?: string[] | null;
+  sectors_focus?: string[] | null;
+  exclusion_list?: string[] | null;
+  impact_focus?: Record<string, unknown> | null;
+  average_horizon_years?: number | null;
+  portfolio_size?: number | null;
+  portfolio_highlights?: string | null;
+  ticket_frequency?: string | null;
+  is_accepting_deals: boolean;
+  deal_filters?: Record<string, unknown> | null;
+  tags?: string[] | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface DonorProfileRow {
+  id: string;
+  profile_id: string;
+  organisation_name: string;
+  donor_type?: string | null;
+  contact_person_name?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  website?: string | null;
+  hq_country?: string | null;
+  hq_city?: string | null;
+  countries_focus?: string[] | null;
+  thematic_focus?: string[] | null;
+  funding_modalities?: string[] | null;
+  typical_grant_min?: number | null;
+  typical_grant_max?: number | null;
+  grant_currency?: string | null;
+  eligible_beneficiaries?: string[] | null;
+  current_programmes?: string | null;
+  open_calls_url?: string | null;
+  application_cycles?: string | null;
+  reporting_requirements_summary?: string | null;
+  impact_themes?: Record<string, unknown> | null;
+  accepting_applications: boolean;
+  tags?: string[] | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface GovernmentInstitutionProfileRow {
+  id: string;
+  profile_id: string;
+  institution_name: string;
+  institution_type?: string | null;
+  mandate_summary?: string | null;
+  ministry_or_parent?: string | null;
+  contact_person_name?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  website?: string | null;
+  hq_address?: string | null;
+  hq_city?: string | null;
+  hq_country?: string | null;
+  sme_relevant_services?: string[] | null;
+  service_portal_url?: string | null;
+  key_programmes?: string | null;
+  regulatory_scope?: string[] | null;
+  target_segments?: string[] | null;
+  response_time_sla?: string | null;
+  office_hours?: string | null;
+  tags?: string[] | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -640,6 +719,16 @@ export interface Database {
         Row: InvestorProfileRow;
         Insert: Partial<InvestorProfileRow>;
         Update: Partial<InvestorProfileRow>;
+      };
+      donor_profiles: {
+        Row: DonorProfileRow;
+        Insert: Partial<DonorProfileRow>;
+        Update: Partial<DonorProfileRow>;
+      };
+      government_institution_profiles: {
+        Row: GovernmentInstitutionProfileRow;
+        Insert: Partial<GovernmentInstitutionProfileRow>;
+        Update: Partial<GovernmentInstitutionProfileRow>;
       };
       sme_readiness_scores: {
         Row: SMEReadinessScore;

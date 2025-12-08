@@ -1,4 +1,11 @@
-export type AccountType = 'sme' | 'professional' | 'investor';
+export type AccountType =
+  | 'sole_proprietor'
+  | 'sme'
+  | 'professional'
+  | 'investor'
+  | 'donor'
+  | 'government'
+  | 'government_institution';
 
 export interface Profile {
   id: string;

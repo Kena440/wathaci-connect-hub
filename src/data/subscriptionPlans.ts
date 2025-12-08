@@ -22,7 +22,7 @@ export const subscriptionPlans: SubscriptionPlan[] = [
     features: ['Platform access', 'Basic matching', 'Email support', '5 connections/month'],
     popular: false,
     lencoAmount: 2500,
-    userTypes: ['sole_proprietor', 'professional'],
+    userTypes: ['professional'],
     category: 'basic'
   },
   {
@@ -34,7 +34,7 @@ export const subscriptionPlans: SubscriptionPlan[] = [
     features: ['Everything in Basic Monthly', '15 connections/month', 'Priority support'],
     popular: true,
     lencoAmount: 6000,
-    userTypes: ['sole_proprietor', 'professional'],
+    userTypes: ['professional'],
     category: 'basic'
   },
 
@@ -74,7 +74,7 @@ export const subscriptionPlans: SubscriptionPlan[] = [
     features: ['White-label solution', 'API access', 'Custom features', 'Account manager'],
     popular: false,
     lencoAmount: 20000,
-    userTypes: ['investor', 'donor', 'government'],
+    userTypes: ['investor', 'donor', 'government_institution'],
     category: 'enterprise'
   },
   {
@@ -86,7 +86,7 @@ export const subscriptionPlans: SubscriptionPlan[] = [
     features: ['Everything in Enterprise Monthly', 'Priority development', 'SLA guarantee'],
     popular: true,
     lencoAmount: 200000,
-    userTypes: ['investor', 'donor', 'government'],
+    userTypes: ['investor', 'donor', 'government_institution'],
     category: 'enterprise'
   }
 ];
@@ -97,12 +97,11 @@ export const getPlansForUserType = (userType: string): SubscriptionPlan[] => {
 
 export const getUserTypeLabel = (userType: string): string => {
   const labels: Record<string, string> = {
-    sole_proprietor: 'Sole Proprietor',
     professional: 'Professional',
     sme: 'Small & Medium Enterprise',
     investor: 'Investor',
     donor: 'Donor',
-    government: 'Government Institution'
+    government_institution: 'Government Institution'
   };
   return labels[userType] || userType;
 };

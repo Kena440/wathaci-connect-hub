@@ -13,12 +13,12 @@
 
 export type AccountType =
   | 'sole_proprietor'
-  | 'SME'
+  | 'sme'
+  | 'professional'
   | 'investor'
   | 'donor'
-  | 'professional'
   | 'government'
-  | 'NGO';
+  | 'government_institution';
 
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 export type TransactionStatus = 'pending' | 'success' | 'failed' | 'cancelled';
