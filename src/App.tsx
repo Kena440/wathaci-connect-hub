@@ -15,6 +15,7 @@ import { getPaymentConfig } from "@/lib/payment-config";
 import CisoWidget from "@/components/CisoWidget";
 import AppLayout from "./components/AppLayout";
 import { RequireAuth, RequireCompletedProfile } from "./components/auth/RequireAuth";
+import PrivateRoute from "./components/PrivateRoute";
 import "./i18n";
 
 const queryClient = new QueryClient();
