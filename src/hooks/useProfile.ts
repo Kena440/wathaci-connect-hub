@@ -1,73 +1,59 @@
-import { useEffect, useMemo } from 'react';
-import { useAppContext } from '@/contexts/AppContext';
-import { logger } from '@/lib/logger';
-
-interface UseProfileOptions {
-  refreshOnMount?: boolean;
-  refreshOnMissing?: boolean;
-}
-
-type AppContextValue = ReturnType<typeof useAppContext>;
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+import type { Profile } from '@/types/profile';
 
 interface UseProfileResult {
-  user: AppContextValue['user'];
-  profile: AppContextValue['profile'];
-  loading: AppContextValue['loading'];
-  refresh: AppContextValue['refreshUser'];
-  needsProfile: boolean;
+  loading: boolean;
+  profile: Profile | null;
+  error: Error | null;
+  refresh: () => Promise<void>;
 }
 
-const defaultOptions: UseProfileOptions = {
-  refreshOnMount: false,
-  refreshOnMissing: true,
-};
+export function useProfile(): UseProfileResult {
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [error, setError] = useState<Error | null>(null);
 
-export const useProfile = (options: UseProfileOptions = {}): UseProfileResult => {
-  const { refreshOnMount, refreshOnMissing } = { ...defaultOptions, ...options };
-  const { user, profile, loading, refreshUser } = useAppContext();
+  const fetchProfile = async () => {
+    setLoading(true);
+    setError(null);
 
-  useEffect(() => {
-    if (!refreshOnMount) {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError) {
+      setError(userError);
+      setLoading(false);
       return;
     }
 
-    const maybePromise = refreshUser();
-
-    if (maybePromise && typeof (maybePromise as PromiseLike<unknown>).catch === 'function') {
-      (maybePromise as PromiseLike<unknown>).catch(error => {
-        logger.error('useProfile failed to refresh on mount', error, {
-          component: 'useProfile',
-        });
-      });
-    }
-  }, [refreshOnMount, refreshUser]);
-
-  useEffect(() => {
-    if (!refreshOnMissing || loading || !user || profile) {
+    if (!user) {
+      setProfile(null);
+      setLoading(false);
       return;
     }
 
-    const maybePromise = refreshUser();
+    const { data, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
 
-    if (maybePromise && typeof (maybePromise as PromiseLike<unknown>).catch === 'function') {
-      (maybePromise as PromiseLike<unknown>).catch(error => {
-        logger.error('useProfile failed to hydrate missing profile', error, {
-          component: 'useProfile',
-          userId: user.id,
-        });
-      });
+    if (profileError) {
+      setError(profileError);
+      setProfile(null);
+    } else {
+      setProfile(data as Profile);
     }
-  }, [refreshOnMissing, loading, profile, refreshUser, user]);
 
-  const needsProfile = useMemo(() => Boolean(user && !profile), [user, profile]);
-
-  return {
-    user,
-    profile,
-    loading,
-    refresh: refreshUser,
-    needsProfile,
+    setLoading(false);
   };
-};
 
-export default useProfile;
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  return { loading, profile, error, refresh: fetchProfile };
+}

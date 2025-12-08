@@ -179,6 +179,17 @@ export const SmeOnboardingPage = () => {
         social_links: data.social_links?.split(',').map((link) => link.trim()).filter(Boolean),
       });
 
+      if (user?.id) {
+        const { error: profileUpdateError } = await supabaseClient
+          .from('profiles')
+          .update({ account_type: 'sme', profile_completed: true })
+          .eq('id', user.id);
+
+        if (profileUpdateError) {
+          console.error('[onboarding] Failed to mark profile complete', profileUpdateError);
+        }
+      }
+
       toast({ title: 'SME profile saved', description: 'Your business details have been recorded.' });
       if (!stayOnPage) {
         navigate('/onboarding/sme/needs-assessment');

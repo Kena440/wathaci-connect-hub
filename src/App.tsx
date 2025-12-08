@@ -7,7 +7,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppProvider } from "@/contexts/AppContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
-import { PrivateRoute } from "./components/PrivateRoute";
 import { AccountTypeRoute } from "./components/AccountTypeRoute";
 import { ConfigurationError } from "@/components/ConfigurationError";
 import { RouteChangeDebugger } from "@/components/RouteChangeDebugger";
@@ -15,6 +14,7 @@ import { supabaseConfigStatus } from "@/config/appConfig";
 import { getPaymentConfig } from "@/lib/payment-config";
 import CisoWidget from "@/components/CisoWidget";
 import AppLayout from "./components/AppLayout";
+import { RequireAuth, RequireCompletedProfile } from "./components/auth/RequireAuth";
 import "./i18n";
 
 const queryClient = new QueryClient();
@@ -94,6 +94,11 @@ const CreditPassport = lazy(() => import("./pages/CreditPassport"));
 const OnboardingLanding = lazy(() =>
   import("./pages/OnboardingLanding").then((module) => ({ default: module.OnboardingLanding }))
 );
+const AccountTypeSelectionPage = lazy(() =>
+  import("./pages/onboarding/AccountTypeSelectionPage").then((module) => ({
+    default: module.AccountTypeSelectionPage,
+  }))
+);
 
 // Onboarding pages
 const SmeNeedsAssessmentPage = lazy(() =>
@@ -160,6 +165,14 @@ const withAppLayout = (element: ReactNode, options: { showFooter?: boolean } = {
   <AppLayout showFooter={options.showFooter ?? true}>{element}</AppLayout>
 );
 
+const withAuth = (element: ReactNode) => <RequireAuth>{element}</RequireAuth>;
+
+const withCompletedProfile = (element: ReactNode) => (
+  <RequireAuth>
+    <RequireCompletedProfile>{element}</RequireCompletedProfile>
+  </RequireAuth>
+);
+
 
 export const AppRoutes = () => (
   <Suspense fallback={<LoadingScreen />}>
@@ -179,17 +192,17 @@ export const AppRoutes = () => (
       <Route path="/reset-password" element={withAppLayout(<ResetPassword />, { showFooter: false })} />
       <Route path="/get-started" element={withAppLayout(<GetStartedPage />)} />
       <Route path="/onboarding" element={withAppLayout(<OnboardingLanding />, { showFooter: false })} />
+      <Route
+        path="/onboarding/account-type"
+        element={withAppLayout(withAuth(<AccountTypeSelectionPage />), { showFooter: false })}
+      />
       <Route path="/profile-setup" element={withAppLayout(<ProfileSetup />, { showFooter: false })} />
       <Route path="/profile-review" element={withAppLayout(<ProfileReview />, { showFooter: false })} />
       <Route path="/subscription-plans" element={withAppLayout(<SubscriptionPlans />)} />
       <Route path="/partnership-hub" element={<PartnershipHub />} />
       <Route
         path="/funding-hub"
-        element={
-          <PrivateRoute>
-            <FundingHub />
-          </PrivateRoute>
-        }
+        element={withCompletedProfile(<FundingHub />)}
       />
       <Route path="/privacy-policy" element={withAppLayout(<PrivacyPolicy />)} />
       <Route path="/terms-of-service" element={withAppLayout(<TermsOfService />)} />
@@ -198,19 +211,13 @@ export const AppRoutes = () => (
       <Route path="/checkout" element={<PaymentPage />} />
       <Route
         path="/messages"
-        element={
-          <PrivateRoute>
-            <Messages />
-          </PrivateRoute>
-        }
+        element={withCompletedProfile(<Messages />)}
       />
       <Route
         path="/sme-assessment"
         element={
           withAppLayout(
-            <PrivateRoute>
-              <SMEAssessment />
-            </PrivateRoute>,
+            withCompletedProfile(<SMEAssessment />),
             { showFooter: false }
           )
         }
@@ -219,9 +226,7 @@ export const AppRoutes = () => (
         path="/investor-assessment"
         element={
           withAppLayout(
-            <PrivateRoute>
-              <InvestorAssessment />
-            </PrivateRoute>,
+            withCompletedProfile(<InvestorAssessment />),
             { showFooter: false }
           )
         }
@@ -230,9 +235,7 @@ export const AppRoutes = () => (
         path="/donor-assessment"
         element={
           withAppLayout(
-            <PrivateRoute>
-              <DonorAssessment />
-            </PrivateRoute>,
+            withCompletedProfile(<DonorAssessment />),
             { showFooter: false }
           )
         }
@@ -241,9 +244,7 @@ export const AppRoutes = () => (
         path="/professional-assessment"
         element={
           withAppLayout(
-            <PrivateRoute>
-              <ProfessionalAssessment />
-            </PrivateRoute>,
+            withCompletedProfile(<ProfessionalAssessment />),
             { showFooter: false }
           )
         }
@@ -252,9 +253,7 @@ export const AppRoutes = () => (
         path="/government-assessment"
         element={
           withAppLayout(
-            <PrivateRoute>
-              <GovernmentAssessment />
-            </PrivateRoute>,
+            withCompletedProfile(<GovernmentAssessment />),
             { showFooter: false }
           )
         }
@@ -265,9 +264,7 @@ export const AppRoutes = () => (
         path="/onboarding/sme/needs-assessment"
         element={
           withAppLayout(
-            <PrivateRoute>
-              <SmeNeedsAssessmentPage />
-            </PrivateRoute>,
+            withAuth(<SmeNeedsAssessmentPage />),
             { showFooter: false }
           )
         }
@@ -276,11 +273,11 @@ export const AppRoutes = () => (
         path="/onboarding/sme"
         element={
           withAppLayout(
-            <PrivateRoute>
+            withAuth(
               <AccountTypeRoute allowed={["sme"]}>
                 <SmeOnboardingPage />
               </AccountTypeRoute>
-            </PrivateRoute>,
+            ),
             { showFooter: false }
           )
         }
@@ -289,9 +286,7 @@ export const AppRoutes = () => (
         path="/onboarding/professional/needs-assessment"
         element={
           withAppLayout(
-            <PrivateRoute>
-              <ProfessionalNeedsAssessmentPage />
-            </PrivateRoute>,
+            withAuth(<ProfessionalNeedsAssessmentPage />),
             { showFooter: false }
           )
         }
@@ -300,11 +295,11 @@ export const AppRoutes = () => (
         path="/onboarding/professional"
         element={
           withAppLayout(
-            <PrivateRoute>
+            withAuth(
               <AccountTypeRoute allowed={["professional"]}>
                 <ProfessionalOnboardingPage />
               </AccountTypeRoute>
-            </PrivateRoute>,
+            ),
             { showFooter: false }
           )
         }
@@ -313,9 +308,7 @@ export const AppRoutes = () => (
         path="/onboarding/donor/needs-assessment"
         element={
           withAppLayout(
-            <PrivateRoute>
-              <DonorNeedsAssessmentPage />
-            </PrivateRoute>,
+            withAuth(<DonorNeedsAssessmentPage />),
             { showFooter: false }
           )
         }
@@ -324,9 +317,7 @@ export const AppRoutes = () => (
         path="/onboarding/investor/needs-assessment"
         element={
           withAppLayout(
-            <PrivateRoute>
-              <InvestorNeedsAssessmentPage />
-            </PrivateRoute>,
+            withAuth(<InvestorNeedsAssessmentPage />),
             { showFooter: false }
           )
         }
@@ -335,11 +326,11 @@ export const AppRoutes = () => (
         path="/onboarding/investor"
         element={
           withAppLayout(
-            <PrivateRoute>
+            withAuth(
               <AccountTypeRoute allowed={["investor", "donor"]}>
                 <InvestorOnboardingPage />
               </AccountTypeRoute>
-            </PrivateRoute>,
+            ),
             { showFooter: false }
           )
         }
@@ -348,9 +339,7 @@ export const AppRoutes = () => (
         path="/onboarding/government/needs-assessment"
         element={
           withAppLayout(
-            <PrivateRoute>
-              <GovernmentNeedsAssessmentPage />
-            </PrivateRoute>,
+            withAuth(<GovernmentNeedsAssessmentPage />),
             { showFooter: false }
           )
         }
@@ -359,19 +348,11 @@ export const AppRoutes = () => (
       {/* SME Readiness feature routes */}
       <Route
         path="/readiness"
-        element={
-          <PrivateRoute>
-            <ReadinessCheck />
-          </PrivateRoute>
-        }
+        element={withCompletedProfile(<ReadinessCheck />)}
       />
       <Route
         path="/readiness/result"
-        element={
-          <PrivateRoute>
-            <ReadinessResult />
-          </PrivateRoute>
-        }
+        element={withCompletedProfile(<ReadinessResult />)}
       />
       
       {/* Compliance Hub route */}
@@ -379,28 +360,18 @@ export const AppRoutes = () => (
         path="/compliance"
         element={
           withAppLayout(
-            <PrivateRoute>
-              <ComplianceDashboard />
-            </PrivateRoute>
+            withCompletedProfile(<ComplianceDashboard />),
           )
         }
       />
 
       <Route
         path="/ai-documents"
-        element={
-          <PrivateRoute>
-            <DocumentGenerators />
-          </PrivateRoute>
-        }
+        element={withCompletedProfile(<DocumentGenerators />)}
       />
       <Route
         path="/credit-passport"
-        element={
-          <PrivateRoute>
-            <CreditPassport />
-          </PrivateRoute>
-        }
+        element={withCompletedProfile(<CreditPassport />)}
       />
 
       <Route path="*" element={withAppLayout(<NotFound />, { showFooter: false })} />

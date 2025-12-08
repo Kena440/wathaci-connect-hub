@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import AccountTypeSelector from "@/components/auth/AccountTypeSelector";
 import SignupForm from "@/components/auth/SignupForm";
@@ -10,6 +10,7 @@ import { getMaintenanceConfig } from "@/config/featureFlags";
 import { BypassModeBanner } from "@/components/BypassModeBanner";
 
 export const SignUp = () => {
+  const navigate = useNavigate();
   const maintenance = getMaintenanceConfig();
   const maintenanceActive = maintenance.enabled;
   const signUpDisabled = maintenanceActive && !maintenance.allowSignUp;
@@ -28,6 +29,10 @@ export const SignUp = () => {
   const handleSignupSuccess = (email: string, requiresEmailConfirmation: boolean) => {
     setEmailForConfirmation(email);
     setConfirmationRequired(requiresEmailConfirmation);
+
+    if (!requiresEmailConfirmation) {
+      navigate("/onboarding/account-type");
+    }
   };
 
   const headline = useMemo(() => "Sign up. It is fast and easy.", []);

@@ -147,6 +147,16 @@ export const InvestorOnboardingPage = () => {
     setLoading(true);
     try {
       await upsertInvestorProfile(data);
+      if (user?.id) {
+        const { error: profileUpdateError } = await supabaseClient
+          .from('profiles')
+          .update({ account_type: 'investor', profile_completed: true })
+          .eq('id', user.id);
+
+        if (profileUpdateError) {
+          console.error('[onboarding] Failed to mark investor profile complete', profileUpdateError);
+        }
+      }
       toast({ title: 'Profile saved', description: 'Your investment preferences have been updated.' });
       if (!stayOnPage) {
         navigate('/onboarding/investor/needs-assessment');
