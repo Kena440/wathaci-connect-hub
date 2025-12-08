@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { type AccountTypeValue } from "@/data/accountTypes";
 import { supabaseClient as supabase } from "@/lib/supabaseClient";
@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { getOnboardingStartPath, normalizeAccountType } from "@/lib/onboardingPaths";
 
 const formSchema = z.object({
   fullName: z
@@ -82,6 +83,7 @@ export const SignupForm = ({
   onSuccess,
   disabled = false,
 }: SignupFormProps) => {
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -272,6 +274,12 @@ export const SignupForm = ({
           values,
           normalizedAccountType
         );
+
+        const onboardingPath = getOnboardingStartPath(normalizeAccountType(normalizedAccountType));
+        clearSignupAttempts();
+        onSuccess(normalizedEmail, requiresConfirmation, normalizedMobileNumber || undefined);
+        navigate(onboardingPath, { replace: true });
+        return;
       }
 
       // Clear signup attempt tracking on success
@@ -323,6 +331,12 @@ export const SignupForm = ({
           values,
           normalizedAccountType
         );
+
+        const onboardingPath = getOnboardingStartPath(normalizeAccountType(normalizedAccountType));
+        clearSignupAttempts();
+        onSuccess(normalizedEmail, requiresEmailConfirmation, normalizedMobileNumber || undefined);
+        navigate(onboardingPath, { replace: true });
+        return;
       }
 
       // Clear signup attempt tracking on success

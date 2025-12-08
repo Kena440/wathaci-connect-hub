@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { normalizeMsisdn } from '@/utils/phone';
 import { isStrongPassword, PASSWORD_MIN_LENGTH, passwordStrengthMessage } from '@/utils/password';
+import { getOnboardingStartPath, normalizeAccountType } from '@/lib/onboardingPaths';
 
 const CREDENTIALS_STORAGE_KEY = 'wathaci-auth-credentials';
 
@@ -176,9 +177,12 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
     }
 
     // Smart redirect based on profile completion status
-    if (!profile || !user.profile_completed) {
-      // User needs to complete profile setup
-      navigate('/profile-setup', { replace: true });
+    const normalizedAccountType = normalizeAccountType(profile?.account_type ?? user.account_type);
+    const onboardingPath = getOnboardingStartPath(normalizedAccountType);
+    const profileIsComplete = profile?.profile_completed ?? user.profile_completed;
+
+    if (!profile || !profileIsComplete) {
+      navigate(onboardingPath, { replace: true });
     } else if (redirectTo) {
       // Use provided redirect destination
       navigate(redirectTo, { replace: true });
