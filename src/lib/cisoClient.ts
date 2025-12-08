@@ -187,31 +187,10 @@ export async function askCiso(
   question: string,
   userId: string | null = null,
 ): Promise<string> {
-  const anonKey = SUPABASE_ANON_KEY;
-
-  if (!anonKey) {
-    console.error("Missing VITE_SUPABASE_ANON_KEY for Ciso.");
-    throw new Error("Configuration error: anon key not set.");
-  }
-
-  const res = await fetch(CISO_FUNCTION_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${anonKey}`,
-    },
-    body: JSON.stringify({
-      question,
-      user_id: userId,
-    }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    console.error("Ciso function error:", res.status, text);
-    throw new Error("Ciso function request failed.");
-  }
-
-  const data = await res.json();
-  return data.answer ?? JSON.stringify(data);
+  return callCisoAgent(
+    [{ role: "user", content: question }],
+    "user",
+    undefined,
+    { accessToken: null } // or get from Supabase client
+  );
 }
