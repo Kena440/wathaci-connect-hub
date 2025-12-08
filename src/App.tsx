@@ -5,14 +5,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
-import { AppProvider } from "@/contexts/AppContext";
+import { AppProvider, useAppContext } from "@/contexts/AppContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { AccountTypeRoute } from "./components/AccountTypeRoute";
 import { ConfigurationError } from "@/components/ConfigurationError";
 import { RouteChangeDebugger } from "@/components/RouteChangeDebugger";
 import { supabaseConfigStatus } from "@/config/appConfig";
 import { getPaymentConfig } from "@/lib/payment-config";
-import CisoWidget from "@/components/CisoWidget";
+import { CisoHelpButton } from "@/components/ciso/CisoHelpButton";
+import { CisoChatPanel } from "@/components/ciso/CisoChatPanel";
 import AppLayout from "./components/AppLayout";
 import { RequireAuth, RequireCompletedProfile } from "./components/auth/RequireAuth";
 import PrivateRoute from "./components/PrivateRoute";
@@ -403,7 +404,6 @@ const App = () => (
 );
 
 const InnerApp = () => {
-  const [cisoOpen, setCisoOpen] = useState(false);
   const paymentConfigSnapshot = useMemo(() => {
     const config = getPaymentConfig();
     const fatalIssues: string[] = [];
@@ -496,10 +496,26 @@ const InnerApp = () => {
             {import.meta.env.DEV ? <RouteChangeDebugger /> : null}
             <AppRoutes />
           </BrowserRouter>
-          <CisoWidget open={cisoOpen} onOpenChange={setCisoOpen} />
+          <CisoAssistantLauncher />
         </AppProvider>
       </TooltipProvider>
     </QueryClientProvider>
+  );
+};
+
+const CisoAssistantLauncher = () => {
+  const [cisoOpen, setCisoOpen] = useState(false);
+  const { user } = useAppContext();
+
+  return (
+    <>
+      <CisoHelpButton onClick={() => setCisoOpen(true)} />
+      <CisoChatPanel
+        open={cisoOpen}
+        onClose={() => setCisoOpen(false)}
+        userId={user?.id ?? null}
+      />
+    </>
   );
 };
 
