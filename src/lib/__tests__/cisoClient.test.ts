@@ -1,12 +1,19 @@
 import { jest } from '@jest/globals';
 
+jest.mock('../supabaseClient', () => ({
+  supabaseClient: {
+    auth: {
+      getSession: jest.fn().mockResolvedValue({ data: { session: null } }),
+    },
+  },
+}));
+
 const originalEnv = { ...process.env };
 
 const setBaseEnv = () => {
   process.env = {
     ...originalEnv,
-    VITE_WATHACI_CISO_AGENT_URL: 'http://localhost:9999/agent',
-    VITE_WATHACI_CISO_KNOWLEDGE_URL: 'disabled',
+    VITE_CISO_AGENT_URL: 'http://localhost:9999/agent',
     VITE_SUPABASE_ANON_KEY: 'anon-key',
   };
 };
@@ -26,9 +33,7 @@ describe('callCisoAgent', () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({
-        choices: [{ message: { content: 'Hello from Ciso' } }],
-      }),
+      json: async () => ({ answer: 'Hello from Ciso' }),
       text: async () => '',
     });
 
