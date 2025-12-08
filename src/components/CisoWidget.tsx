@@ -1,215 +1,174 @@
-import React, { useState } from "react";
-import {
-  callCisoAgent,
-  CisoAgentError,
-  CisoMessage,
-} from "../lib/cisoClient";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { X } from "lucide-react";
+import { supabaseClient } from "@/lib/supabaseClient";
+import type { CisoMessage } from "@/lib/cisoClient";
+import { callCisoAgent } from "@/lib/cisoClient";
+import { cn } from "@/lib/utils";
 
-const CisoWidget: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface CisoWidgetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+const AssistantMessage = ({ message }: { message: CisoMessage }) => {
+  return (
+    <div
+      className={cn(
+        "flex",
+        message.role === "user" ? "justify-end" : "justify-start",
+      )}
+    >
+      <div
+        className={cn(
+          "max-w-[85%] rounded-lg px-3 py-2 text-sm",
+          message.role === "user"
+            ? "bg-emerald-600 text-white"
+            : "bg-white text-slate-800 border border-slate-200",
+        )}
+      >
+        {message.content}
+      </div>
+    </div>
+  );
+};
+
+const CisoWidget = ({ open, onOpenChange }: CisoWidgetProps) => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<CisoMessage[]>([]);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  const toggleOpen = () => setIsOpen((prev) => !prev);
+  useEffect(() => {
+    supabaseClient.auth
+      .getSession()
+      .then(({ data }) => setAccessToken(data.session?.access_token ?? null))
+      .catch(() => setAccessToken(null));
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const timeout = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 50);
+    return () => clearTimeout(timeout);
+  }, [messages, open]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    const trimmed = input.trim();
+    if (!trimmed) return;
 
-    const userMessage: CisoMessage = {
-      role: "user",
-      content: input.trim(),
-    };
-
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    const userMessage: CisoMessage = { role: "user", content: trimmed };
+    const nextMessages = [...messages, userMessage];
+    setMessages(nextMessages);
     setInput("");
     setIsLoading(true);
 
     try {
-      const reply = await callCisoAgent(newMessages, "user", {
-        role: "guest",
-        flow: "inline-widget",
-        step: "chat",
+      const reply = await callCisoAgent(nextMessages, "user", undefined, {
+        accessToken,
       });
-      const assistantMessage: CisoMessage = {
-        role: "assistant",
-        content: reply,
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
+      const assistant: CisoMessage = { role: "assistant", content: reply };
+      setMessages((prev) => [...prev, assistant]);
     } catch (err) {
-      const derivedMessage =
-        err instanceof CisoAgentError
-          ? err.userMessage
-          : "Ciso is having trouble replying right now. Please try again or email support@wathaci.com.";
-
-      const errorMessage: CisoMessage = {
+      const fallback: CisoMessage = {
         role: "assistant",
-        content: derivedMessage,
+        content:
+          "Ciso is experiencing a connection issue. Please try again in a moment.",
       };
       console.error("[CisoWidget] send error", err);
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, fallback]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = (
-    e,
+    event,
   ) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
       handleSend();
     }
   };
 
+  const launcher = useMemo(
+    () => (
+      <button
+        onClick={() => onOpenChange(true)}
+        className="fixed left-4 bottom-4 z-50 bg-white shadow-lg border px-4 py-2 rounded-full text-sm font-medium"
+      >
+        @Ask Ciso for Help
+      </button>
+    ),
+    [onOpenChange],
+  );
+
   return (
     <>
-      <button
-        type="button"
-        onClick={toggleOpen}
-        className="
-          fixed
-          bottom-4
-          right-4
-          z-50
-          flex
-          items-center
-          justify-center
-          h-14
-          w-14
-          rounded-full
-          bg-emerald-600
-          text-white
-          shadow-lg
-          hover:bg-emerald-700
-          focus:outline-none
-        "
-        aria-label="Ask Ciso for help"
-      >
-        <span className="text-lg font-bold">C</span>
-      </button>
+      {launcher}
 
-      {isOpen && (
-        <div
-          className="
-            fixed
-            bottom-20
-            right-4
-            z-50
-            w-80
-            max-w-full
-            bg-white
-            shadow-2xl
-            rounded-xl
-            border
-            border-gray-200
-            flex
-            flex-col
-            overflow-hidden
-          "
-        >
-          <div className="flex items-center justify-between px-3 py-2 bg-emerald-600 text-white">
-            <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold">
-                C
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold">@Ask Ciso for help</span>
-                <span className="text-[11px] text-emerald-100">
-                  Onboarding • Payments • Profiles
-                </span>
-              </div>
+      {open ? (
+        <div className="fixed inset-x-4 sm:left-auto sm:right-4 bottom-20 sm:bottom-24 z-50 w-auto sm:w-[380px] max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+          <div className="flex items-start justify-between px-4 py-3 bg-emerald-600 text-white">
+            <div className="flex flex-col">
+              <span className="font-semibold">@Ask Ciso for Help</span>
+              <span className="text-xs text-white/80">Fast answers from Wathaci</span>
             </div>
             <button
               type="button"
-              onClick={toggleOpen}
-              className="text-xs hover:text-gray-200"
+              onClick={() => onOpenChange(false)}
+              aria-label="Close Ciso chat"
+              className="ml-3 rounded-full p-1 text-white transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-600"
             >
-              ✕
+              <X className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
 
-          <div className="flex-1 px-3 py-2 space-y-2 overflow-y-auto text-sm bg-gray-50">
+          <div className="flex max-h-[70vh] flex-col gap-3 overflow-y-auto p-4 sm:max-h-[420px] bg-slate-50">
             {messages.length === 0 && (
-              <p className="text-xs text-gray-500">
-                Hi, I&apos;m Ciso. Ask me about sign-ups, profiles, payments, or how
-                WATHACI Connect works.
+              <p className="text-xs text-slate-600">
+                Hi, I&apos;m Ciso. Ask about Wathaci onboarding, payments, or anything else.
               </p>
             )}
 
-            {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`flex ${
-                  msg.role === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
-                <div
-                  className={`
-                    max-w-[80%] rounded-lg px-2.5 py-1.5 text-xs
-                    ${
-                      msg.role === "user"
-                        ? "bg-emerald-600 text-white"
-                        : "bg-white text-gray-800 border border-gray-200"
-                    }
-                  `}
-                >
-                  {msg.content}
-                </div>
-              </div>
+            {messages.map((message, index) => (
+              <AssistantMessage key={`${message.role}-${index}`} message={message} />
             ))}
 
             {isLoading && (
-              <p className="text-xs text-gray-400 italic">Ciso is typing…</p>
+              <p className="text-xs text-gray-500 italic">Ciso is typing…</p>
             )}
+
+            <div ref={messagesEndRef} />
           </div>
 
-          <div className="border-t border-gray-200 bg-white px-3 py-2">
+          <div className="border-t border-slate-200 bg-white px-3 py-2">
+            <label className="sr-only" htmlFor="ciso-chat-input">
+              Ask Ciso a question
+            </label>
             <textarea
-              rows={2}
-              className="
-                w-full
-                resize-none
-                text-xs
-                border
-                border-gray-300
-                rounded-md
-                px-2
-                py-1
-                focus:outline-none
-                focus:ring-1
-                focus:ring-emerald-500
-                focus:border-emerald-500
-              "
-              placeholder="Type your question here…"
+              id="ciso-chat-input"
+              rows={3}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(event) => setInput(event.target.value)}
               onKeyDown={handleKeyDown}
+              placeholder="Ask about onboarding, payments, or how Wathaci works..."
+              className="w-full resize-none rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
             />
-            <div className="flex justify-end mt-1">
+            <div className="mt-2 flex justify-end">
               <button
                 type="button"
                 onClick={handleSend}
                 disabled={isLoading || !input.trim()}
-                className="
-                  text-xs
-                  px-3
-                  py-1
-                  rounded
-                  bg-emerald-600
-                  text-white
-                  hover:bg-emerald-700
-                  disabled:bg-gray-300
-                  disabled:cursor-not-allowed
-                "
+                className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
-                Send
+                {isLoading ? "Sending..." : "Send"}
               </button>
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </>
   );
 };
