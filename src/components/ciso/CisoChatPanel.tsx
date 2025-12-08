@@ -113,7 +113,7 @@ export function CisoChatPanel({ open, onClose, userId }: CisoChatPanelProps) {
                     m.from === "user" ? "justify-end" : "justify-start"
                   }`}
                   role="article"
-                  aria-label={`${m.from === "user" ? "You" : "Ciso"} said`}
+                  aria-label={`Message from ${m.from === "user" ? "You" : "Ciso"}`}
                 >
                   <div
                     className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
