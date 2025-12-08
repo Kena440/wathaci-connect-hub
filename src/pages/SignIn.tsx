@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import AuthForm from '@/components/AuthForm';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getMaintenanceConfig } from '@/config/featureFlags';
@@ -6,17 +6,26 @@ import { getMaintenanceConfig } from '@/config/featureFlags';
 import { BypassModeBanner } from '@/components/BypassModeBanner';
 
 export const SignIn = () => {
+  const [searchParams] = useSearchParams();
   const maintenance = getMaintenanceConfig();
   const maintenanceActive = maintenance.enabled;
   const signInDisabled = maintenanceActive && !maintenance.allowSignIn;
   const signUpAvailable = !maintenanceActive || maintenance.allowSignUp;
+  const passwordResetSuccess = searchParams.get('reset_success') === '1';
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-orange-50 via-white to-green-50 p-6">
       <div className="w-full max-w-md rounded-2xl bg-white/90 p-8 shadow-xl ring-1 ring-orange-100/60 backdrop-blur">
         {/* TEMPORARY BYPASS MODE: remove after auth errors are fixed */}
         <BypassModeBanner className="mb-6" />
-        
+
+        {passwordResetSuccess && (
+          <Alert className="mb-6">
+            <AlertTitle>Password updated</AlertTitle>
+            <AlertDescription>Your password has been reset. Please sign in with your new password.</AlertDescription>
+          </Alert>
+        )}
+
         {maintenanceActive && (
           <Alert variant="warning" className="mb-6">
             <AlertTitle>{maintenance.bannerTitle}</AlertTitle>

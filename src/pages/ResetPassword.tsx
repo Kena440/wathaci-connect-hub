@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, Lock, CheckCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,8 +30,9 @@ type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 const ResetPassword = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [checkingSession, setCheckingSession] = useState(true);
+  const [sessionReady, setSessionReady] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -51,28 +52,41 @@ const ResetPassword = () => {
 
     const initialiseSession = async () => {
       setCheckingSession(true);
+      setSessionReady(false);
 
       try {
+        const type = searchParams.get('type');
+        const code = searchParams.get('code');
         const hash = typeof window !== 'undefined' ? window.location.hash : '';
 
-        if (hash.includes('type=recovery')) {
-          const { error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
-          if (error) {
-            if (!isMounted) {
-              return;
-            }
-            setSessionError(
-              'This password reset link is invalid or has expired. Please request a new one.',
-            );
-            setCheckingSession(false);
+        const cleanUrl = () => {
+          if (typeof window === 'undefined') {
             return;
           }
 
-          if (typeof window !== 'undefined') {
-            const url = new URL(window.location.href);
-            url.hash = '';
-            window.history.replaceState({}, document.title, url.toString());
+          const url = new URL(window.location.href);
+          url.searchParams.delete('type');
+          url.searchParams.delete('code');
+          url.hash = '';
+          window.history.replaceState({}, document.title, url.toString());
+        };
+
+        if (type === 'recovery' && code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) {
+            throw new Error('This password reset link is invalid or has expired. Please request a new one.');
           }
+
+          cleanUrl();
+        } else if (hash.includes('type=recovery')) {
+          const { error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
+          if (error) {
+            throw new Error('This password reset link is invalid or has expired. Please request a new one.');
+          }
+
+          cleanUrl();
+        } else {
+          throw new Error('Invalid or missing password reset link. Please request a new one.');
         }
 
         const { data, error } = await supabase.auth.getUser();
@@ -81,17 +95,21 @@ const ResetPassword = () => {
         }
 
         if (error || !data?.user) {
-          setSessionError('We could not validate your session. Please request a new reset link.');
-          setCheckingSession(false);
-          return;
+          throw new Error('We could not validate your session. Please request a new reset link.');
         }
 
         setSessionError(null);
+        setSessionReady(true);
       } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Something went wrong while preparing your password reset. Please try again.';
         if (!isMounted) {
           return;
         }
-        setSessionError('Something went wrong while preparing your password reset. Please try again.');
+        setSessionReady(false);
+        setSessionError(message);
       } finally {
         if (isMounted) {
           setCheckingSession(false);
@@ -104,7 +122,7 @@ const ResetPassword = () => {
     return () => {
       isMounted = false;
     };
-  }, [location]);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!success) {
@@ -112,7 +130,7 @@ const ResetPassword = () => {
     }
 
     const timeout = window.setTimeout(() => {
-      navigate('/signin');
+      navigate('/signin?reset_success=1', { replace: true });
     }, 3000);
 
     return () => {
@@ -164,6 +182,20 @@ const ResetPassword = () => {
               <div className="flex flex-col items-center justify-center gap-4 py-10 text-gray-600">
                 <Loader2 className="h-8 w-8 animate-spin" aria-hidden="true" />
                 <p>Preparing your password reset…</p>
+              </div>
+            ) : !sessionReady && sessionError ? (
+              <div className="space-y-6 text-center">
+                <div className="flex justify-center">
+                  <Alert variant="destructive" className="max-w-md text-left">
+                    <AlertDescription>{sessionError}</AlertDescription>
+                  </Alert>
+                </div>
+                <Button asChild className="w-full">
+                  <Link to="/forgot-password">Request a new reset link</Link>
+                </Button>
+                <Button variant="ghost" asChild className="w-full">
+                  <Link to="/signin">Back to sign in</Link>
+                </Button>
               </div>
             ) : success ? (
               <div className="space-y-6 text-center">
@@ -241,7 +273,7 @@ const ResetPassword = () => {
                 <Button
                   type="submit"
                   className="w-full bg-gradient-to-r from-emerald-600 to-orange-600 hover:from-emerald-700 hover:to-orange-700 text-white py-3"
-                  disabled={submitting || !!sessionError}
+                  disabled={submitting || !sessionReady}
                 >
                   {submitting ? 'Updating password…' : 'Update password'}
                 </Button>
