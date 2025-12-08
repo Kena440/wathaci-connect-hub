@@ -336,6 +336,17 @@ export const ProfessionalOnboardingPage = () => {
         current_organisation: data.entity_type === 'individual' ? data.current_organisation || null : data.current_organisation || data.organisation_name || null,
       });
 
+      if (user?.id) {
+        const { error: profileUpdateError } = await supabaseClient
+          .from('profiles')
+          .update({ account_type: 'professional', profile_completed: true })
+          .eq('id', user.id);
+
+        if (profileUpdateError) {
+          console.error('[onboarding] Failed to mark professional profile complete', profileUpdateError);
+        }
+      }
+
       toast({
         title: 'Your professional profile has been saved.',
         description: 'SMEs will soon be able to discover and work with you.',
