@@ -25,32 +25,57 @@ const sanitizeEnvValue = (value: unknown): string | undefined => {
   return trimmed.replace(/^['"`]+|['"`]+$/g, "").trim();
 };
 
-const readRuntimeEnv = (key: "VITE_SUPABASE_URL" | "VITE_SUPABASE_ANON_KEY"): string | undefined => {
+const SUPABASE_URL_ENV_KEYS = [
+  "VITE_SUPABASE_URL",
+  "VITE_SUPABASE_PROJECT_URL",
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "PUBLIC_SUPABASE_URL",
+  "SUPABASE_URL",
+  "SUPABASE_PROJECT_URL",
+] as const;
+
+const SUPABASE_KEY_ENV_KEYS = [
+  "VITE_SUPABASE_ANON_KEY",
+  "VITE_SUPABASE_KEY",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  "PUBLIC_SUPABASE_ANON_KEY",
+  "SUPABASE_ANON_KEY",
+  "SUPABASE_KEY",
+] as const;
+
+const readRuntimeEnv = (keys: readonly string[]): string | undefined => {
   const metaEnv = typeof import.meta !== "undefined" ? (import.meta as any)?.env : undefined;
-  const direct = sanitizeEnvValue(metaEnv?.[key]);
-  if (direct) {
-    return direct;
+
+  for (const key of keys) {
+    const direct = sanitizeEnvValue(metaEnv?.[key]);
+    if (direct) {
+      return direct;
+    }
   }
 
   if (typeof process !== "undefined" && process.env) {
-    const processValue = sanitizeEnvValue(process.env[key]);
-    if (processValue) {
-      return processValue;
+    for (const key of keys) {
+      const processValue = sanitizeEnvValue(process.env[key]);
+      if (processValue) {
+        return processValue;
+      }
     }
   }
 
   if (typeof globalThis !== "undefined") {
-    const runtimeValue = sanitizeEnvValue((globalThis as any)?.__APP_CONFIG__?.[key]);
-    if (runtimeValue) {
-      return runtimeValue;
+    for (const key of keys) {
+      const runtimeValue = sanitizeEnvValue((globalThis as any)?.__APP_CONFIG__?.[key]);
+      if (runtimeValue) {
+        return runtimeValue;
+      }
     }
   }
 
   return undefined;
 };
 
-const fallbackUrl = readRuntimeEnv("VITE_SUPABASE_URL");
-const fallbackAnonKey = readRuntimeEnv("VITE_SUPABASE_ANON_KEY");
+const fallbackUrl = readRuntimeEnv(SUPABASE_URL_ENV_KEYS);
+const fallbackAnonKey = readRuntimeEnv(SUPABASE_KEY_ENV_KEYS);
 
 const resolvedConfig = getSupabaseClientConfiguration(clientOptions);
 const supabaseUrl = resolvedConfig?.url ?? fallbackUrl;
