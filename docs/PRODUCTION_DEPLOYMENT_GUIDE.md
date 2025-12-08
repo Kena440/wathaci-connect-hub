@@ -220,7 +220,7 @@ location / {
 If deploying to a new domain:
 1. Update DNS records to point to hosting platform
 2. Wait for DNS propagation (can take up to 48 hours)
-3. Verify DNS with: `nslookup app.wathaci.com`
+3. Verify DNS with: `nslookup wathaci.com`
 
 ### Step 5: Configure SSL/HTTPS
 

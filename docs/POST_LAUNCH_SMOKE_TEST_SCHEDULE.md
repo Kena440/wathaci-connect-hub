@@ -6,7 +6,7 @@ Immediately after a production release, run the following smoke checks to confir
 ## Schedule & Assignments
 | Time (relative) | Check | Owner | Procedure |
 | --- | --- | --- | --- |
-| T0 + 5 min | HTTPS availability | Priya Natarajan | Use the status dashboard or run `curl -I https://app.wathaci.com` to verify a 200/301 response. Confirm certificate validity and that the response time is below 500 ms. |
+| T0 + 5 min | HTTPS availability | Priya Natarajan | Use the status dashboard or run `curl -I https://wathaci.com` to verify a 200/301 response. Confirm certificate validity and that the response time is below 500 ms. |
 | T0 + 10 min | Webhook trigger path | Mateo Ruiz | From the staging workspace, send the `order.created` test payload to production via the admin console. Confirm the webhook endpoint returns HTTP 202 and that the downstream fulfillment service logs the event. |
 
 ## Monitoring During Stabilization Window

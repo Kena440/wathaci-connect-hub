@@ -52,7 +52,7 @@ Eliminate guessing by testing the mailbox outside Supabase:
 Use exactly the host/port/TLS combination that succeeds here in Supabase Auth.
 
 ## 4) Retest hosted signup end-to-end
-1. From the frontend (`http://localhost:3000` or `https://www.wathaci.com`), perform a fresh signup with a new email, e.g. `smtp.test+1@wathaci.com`.
+1. From the frontend (`http://localhost:3000` or `https://wathaci.com`), perform a fresh signup with a new email, e.g. `smtp.test+1@wathaci.com`.
 2. Alternatively, use the Auth REST endpoint directly:
    ```bash
    SUPABASE_URL="https://nrjcbdrzaxqvomeogptf.supabase.co"

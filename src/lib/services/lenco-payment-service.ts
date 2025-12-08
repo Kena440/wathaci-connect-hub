@@ -19,9 +19,17 @@ import {
 import { logger } from '../logger';
 import { supabase } from '../supabase-enhanced';
 
-const FALLBACK_APP_ORIGIN = 'https://localhost.test';
+const DEFAULT_APP_ORIGIN = 'https://wathaci.com';
+const ORIGIN_ENV_KEYS = ['VITE_APP_BASE_URL', 'VITE_SITE_URL', 'VITE_PUBLIC_SITE_URL'];
 
 const getRuntimeOrigin = (): string => {
+  for (const key of ORIGIN_ENV_KEYS) {
+    const value = typeof import.meta !== 'undefined' ? (import.meta as any)?.env?.[key] : undefined;
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
   if (typeof window !== 'undefined' && window.location?.origin) {
     return window.location.origin;
   }
@@ -30,7 +38,7 @@ const getRuntimeOrigin = (): string => {
     return (globalThis as any).__APP_URL__ as string;
   }
 
-  return FALLBACK_APP_ORIGIN;
+  return DEFAULT_APP_ORIGIN;
 };
 
 const persistPaymentReference = (reference: string) => {

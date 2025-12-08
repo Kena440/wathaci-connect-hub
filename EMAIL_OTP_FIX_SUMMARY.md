@@ -120,9 +120,9 @@ VITE_EMAIL_CONFIRMATION_REDIRECT_URL="http://127.0.0.1:3000/signin"
 
 ### Production
 ```bash
-VITE_APP_BASE_URL="https://app.wathaci.com"
-VITE_SITE_URL="https://app.wathaci.com"
-VITE_EMAIL_CONFIRMATION_REDIRECT_URL="https://app.wathaci.com/signin"
+VITE_APP_BASE_URL="https://wathaci.com"
+VITE_SITE_URL="https://wathaci.com"
+VITE_EMAIL_CONFIRMATION_REDIRECT_URL="https://wathaci.com/auth/callback"
 SMTP_PASSWORD="[your-smtp-password-here]"
 ```
 

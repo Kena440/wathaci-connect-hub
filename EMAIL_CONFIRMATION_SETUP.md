@@ -23,14 +23,14 @@ Add these variables to your environment files (`.env.local` for development, `.e
 ```bash
 # Email Confirmation Redirect URLs
 # URL to redirect users after they click the email confirmation link
-VITE_EMAIL_CONFIRMATION_REDIRECT_URL="https://app.wathaci.com/signin"
+VITE_EMAIL_CONFIRMATION_REDIRECT_URL="https://wathaci.com/auth/callback"
 
 # Alternative: use a path-only redirect (will use the app's base URL)
-# VITE_EMAIL_CONFIRMATION_REDIRECT_PATH="/signin"
+# VITE_EMAIL_CONFIRMATION_REDIRECT_PATH="/auth/callback"
 
 # Application Base URL (used to construct absolute redirect URLs)
-VITE_APP_BASE_URL="https://app.wathaci.com"
-VITE_SITE_URL="https://app.wathaci.com"
+VITE_APP_BASE_URL="https://wathaci.com"
+VITE_SITE_URL="https://wathaci.com"
 ```
 
 ### 2. Supabase Configuration
@@ -93,15 +93,15 @@ The app uses a helper function (`getEmailConfirmationRedirectUrl()`) to construc
 
 1. **Absolute URL**: `VITE_EMAIL_CONFIRMATION_REDIRECT_URL`
    - Use this if you want to specify a complete URL
-   - Example: `https://app.wathaci.com/signin`
+  - Example: `https://wathaci.com/auth/callback`
 
 2. **Path + Base URL**: `VITE_EMAIL_CONFIRMATION_REDIRECT_PATH` + `VITE_APP_BASE_URL`
    - Use this if you want to specify just the path
-   - Example: `/signin` + `https://app.wathaci.com` = `https://app.wathaci.com/signin`
+  - Example: `/auth/callback` + `https://wathaci.com` = `https://wathaci.com/auth/callback`
 
 3. **Fallback Path + Base URL**: Default path (`/signin`) + `VITE_APP_BASE_URL`
    - Used when no specific redirect is configured
-   - Example: `/signin` + `https://app.wathaci.com` = `https://app.wathaci.com/signin`
+  - Example: `/auth/callback` + `https://wathaci.com` = `https://wathaci.com/auth/callback`
 
 ### Base URL Resolution
 
