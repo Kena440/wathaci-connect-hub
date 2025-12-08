@@ -42,13 +42,9 @@ const Header = () => {
 
   // Helper function to get display name for profile button
   const getDisplayName = () => {
-    const primaryName = [profile?.first_name, profile?.last_name]
-      .map((part) => (typeof part === 'string' ? part.trim() : ''))
-      .filter(Boolean)
-      .join(' ');
-
-    if (primaryName) {
-      return primaryName.split(' ')[0];
+    const firstName = typeof profile?.first_name === 'string' ? profile.first_name.trim() : '';
+    if (firstName) {
+      return firstName.split(' ')[0];
     }
 
     const fallbackFullName = typeof profile?.full_name === 'string' ? profile.full_name.trim() : '';
@@ -146,7 +142,7 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
             
-            {loading ? (
+            {loading && user ? (
               <div className="w-20 h-9 bg-orange-200 animate-pulse rounded"></div>
             ) : user ? (
               <DropdownMenu>
@@ -254,7 +250,7 @@ const Header = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                {loading ? (
+                {loading && user ? (
                   <div className="w-full h-9 bg-orange-200 animate-pulse rounded"></div>
                 ) : user ? (
                   <>

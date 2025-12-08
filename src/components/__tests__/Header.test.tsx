@@ -58,6 +58,19 @@ describe('Header', () => {
     expect(screen.getByText('signIn')).toBeInTheDocument();
   });
 
+  it('keeps sign in button visible while auth status is loading and unauthenticated', () => {
+    mockUseAppContext.mockReturnValue({
+      user: null,
+      profile: null,
+      signOut: jest.fn(),
+      loading: true,
+    });
+
+    renderHeader();
+
+    expect(screen.getByText('signIn')).toBeInTheDocument();
+  });
+
   it('shows sign out option for authenticated users', async () => {
     mockUseAppContext.mockReturnValue({
       user: { email: 'user@example.com', profile_completed: true },
