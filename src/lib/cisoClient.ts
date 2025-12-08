@@ -1,3 +1,4 @@
+import { supabaseConfigStatus } from "@/config/appConfig";
 import { supabaseClient } from "./supabaseClient";
 
 export type CisoMessage = {
@@ -54,6 +55,17 @@ const resolveRuntimeEnv = () => {
   }
 };
 
+const sanitizeEnvValue = (value: unknown): string | undefined => {
+  if (typeof value !== "string") return undefined;
+
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.toLowerCase() === "undefined" || trimmed.toLowerCase() === "null") {
+    return undefined;
+  }
+
+  return trimmed.replace(/^['"`]+|['"`]+$/g, "").trim();
+};
+
 const env =
   (typeof globalThis !== "undefined" && (globalThis as any).__VITE_ENV__) ||
   resolveRuntimeEnv() ||
@@ -66,8 +78,39 @@ const AGENT_URL =
   env.REACT_APP_WATHACI_CISO_AGENT_URL?.trim() ||
   "https://nrjcbdrzaxqvomeogptf.functions.supabase.co/ciso-agent";
 
-const SUPABASE_ANON_KEY =
-  env.VITE_SUPABASE_ANON_KEY ?? env.REACT_APP_SUPABASE_ANON_KEY;
+const SUPABASE_ANON_KEY = (() => {
+  const resolvedAnonKey = sanitizeEnvValue(supabaseConfigStatus.resolvedAnonKey);
+  if (resolvedAnonKey) {
+    return resolvedAnonKey;
+  }
+
+  const runtimeConfig =
+    (typeof globalThis !== "undefined" ? (globalThis as any)?.__APP_CONFIG__ : undefined) ?? {};
+
+  const candidates = [
+    env?.VITE_SUPABASE_ANON_KEY,
+    env?.VITE_SUPABASE_KEY,
+    env?.SUPABASE_ANON_KEY,
+    env?.SUPABASE_KEY,
+    env?.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    env?.PUBLIC_SUPABASE_ANON_KEY,
+    env?.REACT_APP_SUPABASE_ANON_KEY,
+    env?.REACT_APP_SUPABASE_KEY,
+    (runtimeConfig as any)?.VITE_SUPABASE_ANON_KEY,
+    (runtimeConfig as any)?.VITE_SUPABASE_KEY,
+    (runtimeConfig as any)?.SUPABASE_ANON_KEY,
+    (runtimeConfig as any)?.SUPABASE_KEY,
+  ];
+
+  for (const candidate of candidates) {
+    const sanitized = sanitizeEnvValue(candidate);
+    if (sanitized) {
+      return sanitized;
+    }
+  }
+
+  return undefined;
+})();
 
 const deriveUserQuery = (messages: CisoMessage[]): string => {
   if (!messages || messages.length === 0) return "";
@@ -110,6 +153,13 @@ export async function callCisoAgent(
   const authToken = options?.accessToken ?? session?.data.session?.access_token;
   const userId = session?.data.session?.user.id ?? "anonymous";
   const query = deriveUserQuery(userMessages);
+
+  if (!authToken && !SUPABASE_ANON_KEY) {
+    throw new CisoAgentError(
+      "Ciso is unavailable because required Supabase credentials are missing. Please set VITE_SUPABASE_ANON_KEY (or its aliases) and try again.",
+      { type: "config_error" },
+    );
+  }
 
   try {
     const res = await fetch(AGENT_URL, {
