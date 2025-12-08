@@ -62,7 +62,7 @@ const env =
 const AGENT_URL =
   env.VITE_CISO_AGENT_URL?.trim() ||
   env.VITE_WATHACI_CISO_AGENT_URL?.trim() ||
-  "https://nrjcbdrzaxqvomeogptf.functions.supabase.co/agent";
+  "https://nrjcbdrzaxqvomeogptf.functions.supabase.co/ciso-agent";
 
 const SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY;
 
