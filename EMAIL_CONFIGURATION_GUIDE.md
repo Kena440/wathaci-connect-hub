@@ -108,7 +108,7 @@ npm run supabase:start
    - `http://localhost:3000`
    - `https://wathaci-connect-platform-8fy8qoekg-amukenas-projects.vercel.app`
    - `https://wathaci-connect-platform-8fy8qoekg-amukenas-projects.vercel.app/signin`
-   - `https://app.wathaci.com` and `https://app.wathaci.com/signin` (production)
+   - `https://wathaci.com` and `https://wathaci.com/signin` (production)
 
 ## DNS Configuration
 

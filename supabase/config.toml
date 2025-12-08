@@ -123,16 +123,18 @@ enabled = true
 site_url = "env(VITE_SITE_URL)"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 # Allow production redirect targets so email confirmation links resolve without 500s
-# when users sign up from app.wathaci.com or the marketing site.
+# when users sign up from wathaci.com or the marketing site.
 additional_redirect_urls = [
   "https://127.0.0.1:3000",
   "http://localhost:3000",
   "https://wathaci-connect-platform-8fy8qoekg-amukenas-projects.vercel.app",
   "https://wathaci-connect-platform-8fy8qoekg-amukenas-projects.vercel.app/signin",
-  "https://app.wathaci.com/signin",
-  "https://app.wathaci.com",
-  "https://www.wathaci.com",
-  "https://www.wathaci.com/signin"
+  "https://wathaci.com",
+  "https://wathaci.com/signin",
+  "https://wathaci.com/signup",
+  "https://wathaci.com/reset-password",
+  "https://wathaci.com/account",
+  "https://wathaci.com/auth/callback"
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600

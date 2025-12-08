@@ -63,13 +63,13 @@ test('CORS headers are properly set for allowed origins', async () => {
     // Test with origin header
     const res = await fetch(`http://localhost:${port}/health`, {
       headers: {
-        'Origin': 'https://www.wathaci.com',
+        'Origin': 'https://wathaci.com',
       },
     });
 
     // CORS should allow configured origins
     const allowOriginHeader = res.headers.get('access-control-allow-origin');
-    assert.ok(allowOriginHeader === '*' || allowOriginHeader === 'https://www.wathaci.com');
+    assert.ok(allowOriginHeader === '*' || allowOriginHeader === 'https://wathaci.com');
     
     const allowMethodsHeader = res.headers.get('access-control-allow-methods');
     assert.ok(allowMethodsHeader?.includes('GET'));
@@ -87,7 +87,7 @@ test('OPTIONS request returns proper CORS headers', async () => {
     const res = await fetch(`http://localhost:${port}/users`, {
       method: 'OPTIONS',
       headers: {
-        'Origin': 'https://www.wathaci.com',
+        'Origin': 'https://wathaci.com',
       },
     });
     
@@ -117,7 +117,7 @@ test('User registration endpoint is accessible from frontend', async () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Origin': 'https://www.wathaci.com',
+          'Origin': 'https://wathaci.com',
         },
         body: JSON.stringify(userData),
       });
@@ -150,7 +150,7 @@ test('OTP send endpoint is accessible from frontend', async () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Origin': 'https://www.wathaci.com',
+          'Origin': 'https://wathaci.com',
         },
         body: JSON.stringify(otpRequest),
       });
@@ -180,7 +180,7 @@ test('Log endpoint accepts frontend logs', async () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Origin': 'https://www.wathaci.com',
+          'Origin': 'https://wathaci.com',
         },
         body: JSON.stringify(logEntry),
       });
@@ -201,7 +201,7 @@ test('Payment readiness endpoint is accessible', async () => {
   try {
       const res = await fetch(`http://localhost:${port}/api/payment/readiness`, {
         headers: {
-          'Origin': 'https://www.wathaci.com',
+          'Origin': 'https://wathaci.com',
         },
       });
     

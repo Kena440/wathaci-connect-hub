@@ -123,6 +123,7 @@ const offlineAccounts: OfflineAccount[] = [
 ];
 
 const FALLBACK_EMAIL_REDIRECT_PATH = '/signin';
+const DEFAULT_APP_BASE_URL = 'https://wathaci.com';
 
 const APP_BASE_URL_KEYS = [
   'VITE_APP_BASE_URL',
@@ -177,6 +178,11 @@ const getRuntimeBaseUrl = (): string | undefined => {
         return normalized;
       }
     }
+  }
+
+  const defaultBase = normalizeBaseUrl(DEFAULT_APP_BASE_URL);
+  if (defaultBase) {
+    return defaultBase;
   }
 
   if (typeof window !== 'undefined' && window.location?.origin) {

@@ -49,16 +49,16 @@ Authentication must succeed (no `535`). Send a test email to confirm deliverabil
 
 ## 3) Verify redirect and site URLs
 
-In **Authentication → URL Configuration**, ensure all production URLs are whitelisted so `redirect_to=https://app.wathaci.com/signin` does not get rejected:
+In **Authentication → URL Configuration**, ensure all production URLs are whitelisted so `redirect_to=https://wathaci.com/auth/callback` does not get rejected:
 
-- `https://www.wathaci.com`
-- `https://app.wathaci.com`
-- `https://app.wathaci.com/signin`
+- `https://wathaci.com`
+- `https://wathaci.com`
+- `https://wathaci.com/auth/callback`
 - Optionally `http://localhost:3000` for local testing.
 
 ## 4) Re-test production signup
 
-1. From `https://www.wathaci.com`, sign up with a fresh email (e.g., `prod.test+1@wathaci.com`).
-2. Confirm the `/auth/v1/signup?redirect_to=https%3A%2F%2Fapp.wathaci.com%2Fsignin` call returns 200 (no 500 or `unexpected_failure`).
-3. Ensure the confirmation email arrives from `support@wathaci.com` and the link redirects successfully to `https://app.wathaci.com/signin`.
+1. From `https://wathaci.com`, sign up with a fresh email (e.g., `prod.test+1@wathaci.com`).
+2. Confirm the `/auth/v1/signup?redirect_to=https%3A%2F%2Fwathaci.com%2Fauth%2Fcallback` call returns 200 (no 500 or `unexpected_failure`).
+3. Ensure the confirmation email arrives from `support@wathaci.com` and the link redirects successfully to `https://wathaci.com/auth/callback`.
 4. Back in **Logs → Auth**, filter recent `/signup` events and verify there are no new `500: Error sending confirmation email` entries and no `535 5.7.8` errors.

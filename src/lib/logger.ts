@@ -4,6 +4,24 @@ export interface LogContext {
   [key: string]: any;
 }
 
+const DEFAULT_SITE_ORIGIN = 'https://wathaci.com';
+const ORIGIN_ENV_KEYS = ['VITE_APP_BASE_URL', 'VITE_SITE_URL', 'VITE_PUBLIC_SITE_URL'];
+
+const resolveBaseOrigin = (): string => {
+  for (const key of ORIGIN_ENV_KEYS) {
+    const value = typeof import.meta !== 'undefined' ? (import.meta as any)?.env?.[key] : undefined;
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+
+  return DEFAULT_SITE_ORIGIN;
+};
+
 function sendToMonitoringService(log: any) {
   try {
     const isBrowserEnvironment =
@@ -13,7 +31,7 @@ function sendToMonitoringService(log: any) {
       return;
     }
 
-    const endpoint = new URL('/api/logs', window.location.origin);
+    const endpoint = new URL('/api/logs', resolveBaseOrigin());
 
     fetch(endpoint, {
       method: 'POST',

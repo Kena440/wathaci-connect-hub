@@ -10,6 +10,8 @@
  * Tries multiple environment variables and falls back to window.location.origin
  */
 const getAppBaseUrl = (): string | undefined => {
+  const defaultBaseUrl = 'https://wathaci.com';
+
   // Try various environment variable names
   const envKeys = [
     'VITE_APP_BASE_URL',
@@ -25,6 +27,11 @@ const getAppBaseUrl = (): string | undefined => {
         return trimmed;
       }
     }
+  }
+
+  // Prefer the canonical domain when no environment variable is provided
+  if (defaultBaseUrl) {
+    return defaultBaseUrl;
   }
 
   // Fallback to window.location.origin if available

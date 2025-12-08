@@ -29,7 +29,7 @@ const parseAllowedOrigins = (value = '') =>
 
 const defaultAllowedOrigins = [
   // Production deployments
-  'https://www.wathaci.com',
+  'https://wathaci.com',
   'https://wathaci-connect-platform.vercel.app',
   'https://wathaci-connect-platform-amukenas-projects.vercel.app',
   // Local development (aligned with Vite dev server)
