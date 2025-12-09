@@ -503,10 +503,18 @@ export interface GovernmentAssessment {
 // ============================================================================
 
 export interface ProfessionalProfileRecord {
-  id: string;
+  id?: string;
   user_id: string;
+  profile_id?: string | null;
+  account_type?: string | null;
+  email: string | null;
+  msisdn?: string | null;
+  full_name: string | null;
+  profile_slug?: string | null;
+  is_active: boolean;
+  is_profile_complete: boolean;
+  approval_status: string;
   entity_type: 'individual' | 'firm' | 'company';
-  full_name: string;
   organisation_name: string | null;
   bio: string | null;
   primary_expertise: string[];
@@ -521,7 +529,6 @@ export interface ProfessionalProfileRecord {
   location_city: string | null;
   location_country: string | null;
   phone: string | null;
-  email: string | null;
   linkedin_url: string | null;
   website_url: string | null;
   portfolio_url: string | null;
@@ -542,8 +549,17 @@ export type ProfessionalProfileUpdate = Partial<
 >;
 
 export interface SmeProfileRecord {
-  id: string;
+  id?: string;
   user_id: string;
+  profile_id?: string | null;
+  account_type?: string | null;
+  email?: string | null;
+  msisdn?: string | null;
+  full_name?: string | null;
+  profile_slug?: string | null;
+  is_active: boolean;
+  is_profile_complete: boolean;
+  approval_status: string;
   business_name: string;
   registration_number: string | null;
   registration_type: string | null;
@@ -573,8 +589,17 @@ export type SmeProfileInsert = Omit<SmeProfileRecord, 'id' | 'created_at' | 'upd
 export type SmeProfileUpdate = Partial<Omit<SmeProfileRecord, 'id' | 'created_at' | 'updated_at'>>;
 
 export interface InvestorProfileRecord {
-  id: string;
+  id?: string;
   user_id: string;
+  profile_id?: string | null;
+  account_type?: string | null;
+  email?: string | null;
+  msisdn?: string | null;
+  full_name?: string | null;
+  profile_slug?: string | null;
+  is_active: boolean;
+  is_profile_complete: boolean;
+  approval_status: string;
   organisation_name: string;
   investor_type: string | null;
   ticket_size_min: number | null;
