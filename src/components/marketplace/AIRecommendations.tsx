@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, TrendingUp, Users, Clock } from 'lucide-react';
-import { supabaseClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase-enhanced';
 import { buildMarketplaceRecommendations } from '@/data/marketplace';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 

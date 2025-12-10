@@ -44,10 +44,14 @@ describe('supabase client environment handling', () => {
       createClient,
     }));
 
-    const { supabaseClient } = await import('../supabaseClient');
+    const { supabase } = await import('../supabase-enhanced');
 
-    expect(createClient).not.toHaveBeenCalled();
-    expect(typeof supabaseClient).toBe('object');
+    expect(createClient).toHaveBeenCalledWith(
+      'http://localhost',
+      'public-anon-key',
+      expect.objectContaining({ auth: expect.any(Object) })
+    );
+    expect(typeof supabase).toBe('object');
   });
 
   it('falls back to legacy VITE_SUPABASE_KEY configuration', async () => {

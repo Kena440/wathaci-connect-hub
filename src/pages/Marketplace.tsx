@@ -15,7 +15,7 @@ import { ComplianceGate } from '@/components/marketplace/ComplianceGate';
 import { SubscriptionBanner } from '@/components/SubscriptionBanner';
 import { LencoPayment } from '@/components/LencoPayment';
 import { PaymentStatusTracker } from '@/components/PaymentStatusTracker';
-import { supabaseClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase-enhanced';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { SUPPORT_EMAIL } from '@/lib/supportEmail';

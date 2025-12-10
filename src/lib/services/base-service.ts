@@ -3,8 +3,7 @@
  * and utilities that other service classes can extend.
  */
 
-import { supabaseClient } from '@/lib/supabaseClient';
-import { withErrorHandling } from '@/lib/supabase-enhanced';
+import { supabase, withErrorHandling } from '@/lib/supabase-enhanced';
 import type { DatabaseResponse, PaginatedResponse, PaginationParams } from '@/@types/database';
 
 export abstract class BaseService<T = any> {
@@ -20,7 +19,7 @@ export abstract class BaseService<T = any> {
   async findById(id: string, select: string = '*'): Promise<DatabaseResponse<T>> {
     return withErrorHandling(
       async () =>
-        supabaseClient
+        supabase
           .from(this.tableName)
           .select(select)
           .eq('id', id)
@@ -43,7 +42,7 @@ export abstract class BaseService<T = any> {
         const from = (page - 1) * limit;
         const to = from + limit - 1;
 
-        let query = supabaseClient
+        let query = supabase
           .from(this.tableName)
           .select(select, { count: 'exact' })
           .range(from, to)
@@ -93,7 +92,7 @@ export abstract class BaseService<T = any> {
   async create(data: Partial<T>): Promise<DatabaseResponse<T>> {
     return withErrorHandling(
       async () =>
-        supabaseClient
+        supabase
           .from(this.tableName)
           .insert(data)
           .select()
@@ -108,7 +107,7 @@ export abstract class BaseService<T = any> {
   async update(id: string, data: Partial<T>): Promise<DatabaseResponse<T>> {
     return withErrorHandling(
       async () =>
-        supabaseClient
+        supabase
           .from(this.tableName)
           .update({ ...data, updated_at: new Date().toISOString() })
           .eq('id', id)
@@ -124,7 +123,7 @@ export abstract class BaseService<T = any> {
   async upsert(data: Partial<T>): Promise<DatabaseResponse<T>> {
     return withErrorHandling(
       async () =>
-        supabaseClient
+        supabase
           .from(this.tableName)
           .upsert(data)
           .select()
@@ -139,7 +138,7 @@ export abstract class BaseService<T = any> {
   async delete(id: string): Promise<DatabaseResponse<void>> {
     return withErrorHandling(
       async () => {
-        const result = await supabaseClient
+        const result = await supabase
           .from(this.tableName)
           .delete()
           .eq('id', id);
@@ -156,7 +155,7 @@ export abstract class BaseService<T = any> {
   async softDelete(id: string): Promise<DatabaseResponse<T>> {
     return withErrorHandling(
       async () =>
-        supabaseClient
+        supabase
           .from(this.tableName)
           .update({
             deleted_at: new Date().toISOString(),
@@ -175,7 +174,7 @@ export abstract class BaseService<T = any> {
   async exists(id: string): Promise<DatabaseResponse<boolean>> {
     return withErrorHandling(
       async () => {
-        const result = await supabaseClient
+        const result = await supabase
           .from(this.tableName)
           .select('id')
           .eq('id', id)
@@ -196,7 +195,7 @@ export abstract class BaseService<T = any> {
   async count(filters: Record<string, any> = {}): Promise<DatabaseResponse<number>> {
     return withErrorHandling(
       async () => {
-        let query = supabaseClient
+        let query = supabase
           .from(this.tableName)
           .select('*', { count: 'exact', head: true });
 

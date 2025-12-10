@@ -4,7 +4,7 @@
  */
 
 import { getPlatformFeePercentage } from '../payment-config';
-import { supabaseClient } from '../supabaseClient';
+import { supabase } from '../supabase-enhanced';
 
 export interface PaymentAnalytics {
   totalRevenue: number;
@@ -333,7 +333,7 @@ export class PaymentAnalyticsService {
   ): Promise<PaymentHistoryItem[]> {
     const { start, end } = this.getDateRangeBounds(startDate, endDate);
 
-    let query = supabaseClient
+    let query = supabase
       .from('payments')
       .select(
         'id, reference, amount, currency, status, payment_method, provider, description, created_at, paid_at, user_id, metadata'
@@ -461,7 +461,7 @@ export class PaymentAnalyticsService {
 
     const { start } = this.getDateRangeBounds(startDate, startDate);
 
-    const { data: priorPayments, error } = await supabaseClient
+    const { data: priorPayments, error } = await supabase
       .from('payments')
       .select('user_id')
       .in('user_id', uniqueUserIds)

@@ -1,6 +1,5 @@
 import { BaseService } from './base-service';
-import { supabaseClient } from '@/lib/supabaseClient';
-import { withErrorHandling } from '@/lib/supabase-enhanced';
+import { supabase, withErrorHandling } from '@/lib/supabase-enhanced';
 import type { ResourcePurchase, DatabaseResponse } from '@/@types/database';
 
 export class ResourcePurchaseService extends BaseService<ResourcePurchase> {
@@ -11,7 +10,7 @@ export class ResourcePurchaseService extends BaseService<ResourcePurchase> {
   async hasPurchased(userId: string, resourceId: number): Promise<DatabaseResponse<boolean>> {
     return withErrorHandling(
       async () => {
-        const { data, error } = await supabaseClient
+        const { data, error } = await supabase
           .from(this.tableName)
           .select('id')
           .eq('user_id', userId)

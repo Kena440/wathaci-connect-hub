@@ -1,5 +1,5 @@
 import { logger } from '../logger';
-import { supabaseClient } from '../supabaseClient';
+import { supabase } from '../supabase-enhanced';
 
 export interface TransferRecipientRequest {
   walletNumber: string;
@@ -54,7 +54,7 @@ class LencoTransferRecipientService {
     }
 
     try {
-      const { data, error } = await supabaseClient.functions.invoke('lenco-transfer-recipient', {
+      const { data, error } = await supabase.functions.invoke('lenco-transfer-recipient', {
         body: {
           walletNumber: sanitizedWalletNumber,
         },
