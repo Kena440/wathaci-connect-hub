@@ -749,25 +749,26 @@ function createMockSupabaseClient() {
   } as const;
 }
 
-const forcedMockSupabaseClient = supabaseConfigStatus.usingFallbackClient && !allowMockSupabaseClient;
-const supabaseConfigWarning = missingSupabaseConfig ? missingConfigMessage : undefined;
+const supabaseConfigWarning =
+  supabaseConfigStatus.hasValidConfig ? undefined : supabaseConfigStatus.errorMessage ?? missingConfigMessage;
 
-const supabaseClient: SupabaseClientLike = sharedSupabaseClient;
+const shouldUseMockClient = supabaseConfigStatus.usingFallbackClient && allowMockSupabaseClient;
+const supabase: SupabaseClientLike = shouldUseMockClient ? createMockSupabaseClient() : sharedSupabaseClient;
 
 export const supabaseAuthConfigStatus = {
   hasValidConfig: supabaseConfigStatus.hasValidConfig,
-  supabaseUrl: supabaseConfigStatus.resolvedUrl ?? supabaseUrl,
-  supabaseAnonKey: supabaseConfigStatus.resolvedAnonKey ?? supabaseKey,
+  supabaseUrl: supabaseConfigStatus.resolvedUrl,
+  supabaseAnonKey: supabaseConfigStatus.resolvedAnonKey,
   usingMockClient: supabaseConfigStatus.usingFallbackClient,
   allowMockSupabaseClient,
   missingUrlKeys: supabaseConfigStatus.missingUrlKeys ?? SUPABASE_URL_ENV_KEYS,
   missingKeyKeys: supabaseConfigStatus.missingAnonKeys ?? SUPABASE_KEY_ENV_KEYS,
   isProductionEnvironment,
-  forcedMockSupabaseClient,
+  forcedMockSupabaseClient: supabaseConfigStatus.usingFallbackClient && !allowMockSupabaseClient,
   configWarning: supabaseConfigWarning,
 };
 
-export const supabase = supabaseClient;
+export { supabase };
 
 /**
  * Test basic connectivity to Supabase
