@@ -12,7 +12,7 @@ jest.mock('@/lib/supabase-enhanced', () => ({
   },
 }));
 
-import { supabase } from '@/lib/supabase-enhanced';
+import { supabaseClient } from '@/lib/supabaseClient';
 const mockGetUser = supabase.auth.getUser as jest.Mock;
 const mockFrom = supabase.from as jest.Mock;
 

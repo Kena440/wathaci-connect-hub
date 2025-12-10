@@ -15,7 +15,7 @@ jest.mock('@/lib/supabase-enhanced', () => {
   };
 });
 
-import { supabase } from '@/lib/supabase-enhanced';
+import { supabaseClient } from '@/lib/supabaseClient';
 jest.mock('@/lib/services', () => ({
   userService: {
     searchUsers: jest.fn(),

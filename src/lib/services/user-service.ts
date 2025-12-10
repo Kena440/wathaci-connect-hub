@@ -3,7 +3,8 @@
  */
 
 import { BaseService } from './base-service';
-import { supabase, withErrorHandling, resolveEnvValue, supabaseAuthConfigStatus } from '@/lib/supabase-enhanced';
+import { supabaseClient } from '@/lib/supabaseClient';
+import { withErrorHandling, resolveEnvValue, supabaseAuthConfigStatus } from '@/lib/supabase-enhanced';
 import type {
   User,
   Profile,
@@ -352,7 +353,7 @@ export class UserService extends BaseService<User> {
   async getCurrentUser(): Promise<DatabaseResponse<User | null>> {
     return withErrorHandling(
       async () => {
-        const { data: { user }, error } = await supabase.auth.getUser();
+        const { data: { user }, error } = await supabaseClient.auth.getUser();
         
         if (error) {
           return { data: null, error };
@@ -392,7 +393,7 @@ export class UserService extends BaseService<User> {
             };
           }
 
-          const { data, error } = await supabase.auth.signInWithPassword({
+          const { data, error } = await supabaseClient.auth.signInWithPassword({
             email,
             password,
           });
@@ -441,7 +442,7 @@ export class UserService extends BaseService<User> {
         try {
           const emailRedirectTo = getEmailRedirectTo();
 
-          const { error } = await supabase.auth.signInWithOtp({
+          const { error } = await supabaseClient.auth.signInWithOtp({
             email,
             options: {
               shouldCreateUser: false,
@@ -483,7 +484,7 @@ export class UserService extends BaseService<User> {
     return withErrorHandling(
       async () => {
         try {
-          const { data, error } = await supabase.auth.verifyOtp({
+          const { data, error } = await supabaseClient.auth.verifyOtp({
             email,
             token,
             type: 'email',
@@ -563,7 +564,7 @@ export class UserService extends BaseService<User> {
             ...(Object.keys(signUpOptions).length ? { options: signUpOptions } : {}),
           };
 
-          const { data, error } = await supabase.auth.signUp(signUpPayload);
+          const { data, error } = await supabaseClient.auth.signUp(signUpPayload);
 
           if (error) {
             return { data: null, error };
@@ -615,7 +616,7 @@ export class UserService extends BaseService<User> {
             pathKeys: PASSWORD_RESET_REDIRECT_PATH_KEYS,
           });
 
-          const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+          const { error } = await supabaseClient.auth.resetPasswordForEmail(normalizedEmail, {
             ...(emailRedirectTo ? { redirectTo: emailRedirectTo } : {}),
           });
 
@@ -660,7 +661,7 @@ export class UserService extends BaseService<User> {
     return withErrorHandling(
       async () => {
         try {
-          const { data, error } = await supabase.auth.updateUser({ password });
+          const { data, error } = await supabaseClient.auth.updateUser({ password });
 
           if (error) {
             if (isNetworkError(error)) {
@@ -704,7 +705,7 @@ export class UserService extends BaseService<User> {
   async signOut(): Promise<DatabaseResponse<void>> {
     return withErrorHandling(
       async () => {
-        const { error } = await supabase.auth.signOut();
+        const { error } = await supabaseClient.auth.signOut();
         return { data: undefined, error };
       },
       'UserService.signOut'
@@ -717,7 +718,7 @@ export class UserService extends BaseService<User> {
   async searchUsers(query: string): Promise<DatabaseResponse<Array<{ id: string; full_name: string; email: string }>>> {
     return withErrorHandling(
       async () =>
-        supabase
+        supabaseClient
           .from('profiles')
           .select('id, full_name, email')
           .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
@@ -749,7 +750,7 @@ export class ProfileService extends BaseService<Profile> {
 
     return withErrorHandling(
       async () =>
-        supabase
+        supabaseClient
           .from('profiles')
           .update({
             grace_period_access: true,
@@ -769,7 +770,7 @@ export class ProfileService extends BaseService<Profile> {
   async getByUserId(userId: string): Promise<DatabaseResponse<Profile>> {
     return withErrorHandling(
       async () =>
-        supabase
+        supabaseClient
           .from('profiles')
           .select('*')
           .eq('id', userId)
@@ -807,7 +808,7 @@ export class ProfileService extends BaseService<Profile> {
 
     const creationResult = await withErrorHandling(
       async () =>
-        supabase
+        supabaseClient
           .from('profiles')
           .insert(profile)
           .select()
@@ -841,7 +842,7 @@ export class ProfileService extends BaseService<Profile> {
       if (msisdn) {
         const ensureResult = await withErrorHandling(
           async () =>
-            supabase.rpc('ensure_profile_exists', {
+            supabaseClient.rpc('ensure_profile_exists', {
               p_user_id: userId,
               p_email: profile.email ?? null,
               p_full_name: profile.full_name ?? profile.company ?? null,
@@ -854,8 +855,8 @@ export class ProfileService extends BaseService<Profile> {
         if (!ensureResult.error) {
           const profileResult = await withErrorHandling(
             async () =>
-              supabase
-                .from('profiles')
+              supabaseClient
+          .from('profiles')
                 .select('*')
                 .eq('id', userId)
                 .single(),
@@ -928,7 +929,7 @@ export class ProfileService extends BaseService<Profile> {
   async searchProfiles(filters: ProfileFilters = {}) {
     return withErrorHandling(
       async () => {
-        let query = supabase
+        let query = supabaseClient
           .from('profiles')
           .select(`
             *,
@@ -1046,7 +1047,7 @@ export class ProfileService extends BaseService<Profile> {
   async getProfileWithSubscription(userId: string) {
     return withErrorHandling(
       async () =>
-        supabase
+        supabaseClient
           .from('profiles')
           .select(`
           *,
@@ -1071,7 +1072,7 @@ export class ProfileService extends BaseService<Profile> {
   async isProfileComplete(userId: string): Promise<DatabaseResponse<boolean>> {
     return withErrorHandling(
       async () => {
-        const { data: profile, error } = await supabase
+        const { data: profile, error } = await supabaseClient
           .from('profiles')
           .select('profile_completed, account_type, first_name, last_name, phone, country')
           .eq('id', userId)
@@ -1100,7 +1101,7 @@ export class ProfileService extends BaseService<Profile> {
   async getProfileCompletionPercentage(userId: string): Promise<DatabaseResponse<number>> {
     return withErrorHandling(
       async () => {
-        const { data: profile, error } = await supabase
+        const { data: profile, error } = await supabaseClient
           .from('profiles')
           .select('*')
           .eq('id', userId)

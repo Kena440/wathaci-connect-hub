@@ -4,7 +4,7 @@ import { SMENeedsAssessment } from '@/components/SMENeedsAssessment';
 import { AssessmentResults } from '@/components/AssessmentResults';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase-enhanced';
+import { supabaseClient } from '@/lib/supabaseClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle, TrendingUp } from 'lucide-react';

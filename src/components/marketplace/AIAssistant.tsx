@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Send, Bot, User, X } from 'lucide-react';
-import { supabase } from '@/lib/supabase-enhanced';
+import { supabaseClient } from '@/lib/supabaseClient';
 import { generateAssistantResponse } from '@/data/marketplace';
 import { supabaseConfigStatus } from '@/config/appConfig';
 

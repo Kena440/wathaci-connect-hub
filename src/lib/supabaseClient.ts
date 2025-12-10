@@ -2,13 +2,13 @@ import { createClient, type SupabaseClientOptions } from "@supabase/supabase-js"
 
 import type { Database } from "@/@types/database";
 import { getSupabaseClientConfiguration, supabaseConfigStatus } from "@/config/appConfig";
-import { supabase as fallbackSupabase } from "./supabase-enhanced";
 
 const clientOptions: SupabaseClientOptions<"public"> = {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    storageKey: "wathaci-auth",
   },
 };
 
@@ -138,7 +138,35 @@ const buildFallbackClient = () => {
 
   markInvalidConfig(errorMessage);
   supabaseConfigStatus.usingFallbackClient = true;
-  return fallbackSupabase;
+
+  const notConfiguredError = new Error(errorMessage);
+
+  const mockAuth = {
+    signInWithPassword: async () => ({ data: null, error: notConfiguredError }),
+    signUp: async () => ({ data: null, error: notConfiguredError }),
+    signOut: async () => ({ error: notConfiguredError }),
+    getSession: async () => ({ data: { session: null }, error: notConfiguredError }),
+    getUser: async () => ({ data: { user: null }, error: notConfiguredError }),
+    onAuthStateChange: () => ({
+      data: {
+        subscription: { unsubscribe: () => undefined },
+      },
+      error: notConfiguredError,
+    }),
+  };
+
+  const mockClient: Partial<ReturnType<typeof createClient<Database>>> = {
+    auth: mockAuth as any,
+    rpc: async () => ({ data: null, error: notConfiguredError }),
+    from: () => ({
+      select: async () => ({ data: null, error: notConfiguredError }),
+      insert: async () => ({ data: null, error: notConfiguredError }),
+      update: async () => ({ data: null, error: notConfiguredError }),
+      delete: async () => ({ data: null, error: notConfiguredError }),
+    }) as any,
+  };
+
+  return mockClient as ReturnType<typeof createClient<Database>>;
 };
 
 const shouldLogRuntimeConfig =
