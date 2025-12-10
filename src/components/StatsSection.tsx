@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase-enhanced';
+import { supabaseClient } from '@/lib/supabaseClient';
 import { Building2, Users, Briefcase, TrendingUp, Heart, DollarSign, Target, Award, Globe } from 'lucide-react';
 
 interface Stats {

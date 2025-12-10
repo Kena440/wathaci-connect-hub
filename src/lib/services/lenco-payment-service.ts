@@ -17,7 +17,7 @@ import {
   getPlatformFeePercentage
 } from '../payment-config';
 import { logger } from '../logger';
-import { supabase } from '../supabase-enhanced';
+import { supabaseClient } from '../supabaseClient';
 
 const DEFAULT_APP_ORIGIN = 'https://wathaci.com';
 const ORIGIN_ENV_KEYS = ['VITE_APP_BASE_URL', 'VITE_SITE_URL', 'VITE_PUBLIC_SITE_URL'];
@@ -381,7 +381,7 @@ export class LencoPaymentService {
     }
 
     try {
-      const { data: response, error } = await supabase.functions.invoke('lenco-payment', {
+      const { data: response, error } = await supabaseClient.functions.invoke('lenco-payment', {
         body: {
           action,
           ...data

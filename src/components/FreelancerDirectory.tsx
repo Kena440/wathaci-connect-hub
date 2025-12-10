@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Star, MapPin, Clock, Search, Filter, Linkedin } from 'lucide-react';
 import PriceNegotiation from '@/components/PriceNegotiation';
-import { supabase } from '@/lib/supabase-enhanced';
+import { supabaseClient } from '@/lib/supabaseClient';
 
 interface Freelancer {
   id: string;
