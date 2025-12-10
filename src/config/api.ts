@@ -4,14 +4,17 @@
  * Centralizes API base URL configuration for the application.
  * Uses VITE_API_BASE_URL (or REACT_APP_API_BASE_URL) from environment variables.
  * 
- * In development: defaults to http://localhost:3000
- * In production: MUST be set to the live API endpoint (e.g., https://api.wathaci.com)
+ * In development: defaults to http://localhost:4000 (backend server port)
+ * In production: defaults to https://wathaci-connect-platform2.vercel.app (Vercel backend)
  */
 
 /**
  * Get the API base URL from environment variables
  * 
  * Supports both VITE_API_BASE_URL and REACT_APP_API_BASE_URL for backward compatibility.
+ * 
+ * Development: defaults to http://localhost:4000 (backend server port)
+ * Production: defaults to https://wathaci-connect-platform2.vercel.app (Vercel backend)
  * 
  * @returns The API base URL without trailing slash
  */
@@ -21,16 +24,12 @@ const getApiBaseUrl = (): string => {
   const reactUrl = import.meta.env.REACT_APP_API_BASE_URL?.trim();
   const envUrl = viteUrl ?? reactUrl;
 
-  // In production, API base URL must be explicitly configured
-  if (import.meta.env.MODE === 'production' && !envUrl) {
-    throw new Error(
-      'API base URL is required in production mode. ' +
-      'Please set VITE_API_BASE_URL (or REACT_APP_API_BASE_URL) to your live backend API URL (e.g., https://wathaci-connect-platform2.vercel.app)'
-    );
-  }
+  // Use environment-specific defaults if not explicitly configured
+  const defaultUrl = import.meta.env.DEV 
+    ? 'http://localhost:4000'  // Local development backend
+    : 'https://wathaci-connect-platform2.vercel.app';  // Production Vercel backend
 
-  // Default to localhost in development when unset
-  const baseUrl = envUrl ?? 'http://localhost:3000';
+  const baseUrl = envUrl ?? defaultUrl;
 
   // Remove trailing slash for consistency
   return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
