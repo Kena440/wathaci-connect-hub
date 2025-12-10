@@ -3,7 +3,7 @@
  * Handles payment security, fraud detection, and compliance
  */
 
-import { supabase } from '../supabase-enhanced';
+import { supabaseClient } from '../supabaseClient';
 
 export interface SecurityCheck {
   type: 'fraud' | 'compliance' | 'validation';
@@ -345,7 +345,7 @@ export class PaymentSecurityService {
   private async getDailyTransactionTotal(userId: string, date: string): Promise<number> {
     const { start, end } = this.getDayBounds(date);
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('payments')
       .select('amount, status')
       .eq('user_id', userId)
@@ -372,7 +372,7 @@ export class PaymentSecurityService {
   private async getRecentTransactionCount(userId: string, timeWindow: number): Promise<number> {
     const windowStart = new Date(Date.now() - timeWindow).toISOString();
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('payments')
       .select('id')
       .eq('user_id', userId)
@@ -386,7 +386,7 @@ export class PaymentSecurityService {
   }
 
   private async getUserTypicalLocations(userId: string): Promise<string[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('payments')
       .select('metadata')
       .eq('user_id', userId)
@@ -455,7 +455,7 @@ export class PaymentSecurityService {
   private async getUserPaymentHistory(userId: string): Promise<Array<{ amount: number; method: string }>> {
     const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('payments')
       .select('amount, payment_method, status')
       .eq('user_id', userId)

@@ -2,7 +2,8 @@
  * Supabase client configuration
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { supabaseClient as supabaseBrowserClient } from './supabaseClient';
+import type { SupabaseClient as SupabaseBrowserClient } from './supabaseClient';
 import type { MarketplaceService } from '@/data/marketplace';
 import {
   marketplaceProducts as datasetProducts,
@@ -16,7 +17,7 @@ import {
 } from '@/data/marketplace';
 import { SUPPORT_EMAIL } from './supportEmail';
 
-type SupabaseClientLike = ReturnType<typeof createClient> | ReturnType<typeof createMockSupabaseClient>;
+type SupabaseClientLike = SupabaseBrowserClient | ReturnType<typeof createMockSupabaseClient>;
 
 const sanitizeEnvValue = (value: unknown): string | undefined => {
   if (typeof value !== 'string') {
@@ -752,16 +753,7 @@ function createMockSupabaseClient() {
 const forcedMockSupabaseClient = missingSupabaseConfig && !allowMockSupabaseClient;
 const supabaseConfigWarning = missingSupabaseConfig ? missingConfigMessage : undefined;
 
-const supabaseClient: SupabaseClientLike =
-  supabaseUrl && supabaseKey
-    ? createClient(supabaseUrl, supabaseKey, {
-        auth: {
-          autoRefreshToken: true,
-          persistSession: true,
-          detectSessionInUrl: true
-        }
-      })
-    : createMockSupabaseClient();
+const supabaseClient: SupabaseClientLike = supabaseBrowserClient || createMockSupabaseClient();
 
 export const supabaseAuthConfigStatus = {
   hasValidConfig: !missingSupabaseConfig,

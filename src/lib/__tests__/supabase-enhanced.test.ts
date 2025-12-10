@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 
-describe('supabase-enhanced environment handling', () => {
+describe('supabase client environment handling', () => {
   const originalEnv = { ...process.env };
 
   beforeEach(() => {
@@ -25,7 +25,7 @@ describe('supabase-enhanced environment handling', () => {
       createClient,
     }));
 
-    await import('../supabase-enhanced');
+    await import('../supabaseClient');
 
     expect(createClient).toHaveBeenCalledWith(
       'https://example.supabase.co',
@@ -44,10 +44,10 @@ describe('supabase-enhanced environment handling', () => {
       createClient,
     }));
 
-    const { supabase } = await import('../supabase-enhanced');
+    const { supabaseClient } = await import('../supabaseClient');
 
     expect(createClient).not.toHaveBeenCalled();
-    expect(typeof supabase).toBe('object');
+    expect(typeof supabaseClient).toBe('object');
   });
 
   it('falls back to legacy VITE_SUPABASE_KEY configuration', async () => {
@@ -60,7 +60,7 @@ describe('supabase-enhanced environment handling', () => {
       createClient,
     }));
 
-    await import('../supabase-enhanced');
+    await import('../supabaseClient');
 
     expect(createClient).toHaveBeenCalledWith(
       'https://legacy.supabase.co',
