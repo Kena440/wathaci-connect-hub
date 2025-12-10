@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase-enhanced';
+import { supabaseClient } from '@/lib/supabaseClient';
 import { ProfileForm } from '@/components/ProfileForm';
 import { DueDiligenceUpload } from '@/components/DueDiligenceUpload';
 import { useToast } from '@/hooks/use-toast';

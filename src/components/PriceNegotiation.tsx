@@ -9,7 +9,7 @@ import { DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { LencoPayment } from './LencoPayment';
 import { NegotiationHistory } from './NegotiationHistory';
 import ZRATaxCalculator from './ZRATaxCalculator';
-import { supabase } from '@/lib/supabase-enhanced';
+import { supabaseClient } from '@/lib/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
 import { MessageCircle, DollarSign, CheckCircle, History } from 'lucide-react';
 

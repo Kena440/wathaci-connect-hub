@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lock, Eye } from 'lucide-react';
-import { supabase } from '@/lib/supabase-enhanced';
+import { supabaseClient } from '@/lib/supabaseClient';
 import {
   SUBSCRIPTION_BYPASS_FEATURES,
   SUBSCRIPTION_DEBUG_BYPASS_ENABLED,

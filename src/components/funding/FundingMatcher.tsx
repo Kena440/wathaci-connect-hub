@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/lib/supabase-enhanced';
+import { supabaseClient } from '@/lib/supabaseClient';
 import { Search, TrendingUp, DollarSign, Clock, Loader2 } from 'lucide-react';
 
 interface FundingMatcherProps {
