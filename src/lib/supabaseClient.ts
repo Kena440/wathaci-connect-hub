@@ -2,13 +2,13 @@ import { createClient, type SupabaseClientOptions } from "@supabase/supabase-js"
 
 import type { Database } from "@/@types/database";
 import { getSupabaseClientConfiguration, supabaseConfigStatus } from "@/config/appConfig";
-import { supabase as fallbackSupabase } from "./supabase-enhanced";
 
 const clientOptions: SupabaseClientOptions<"public"> = {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    storageKey: "wathaci-auth",
   },
 };
 
@@ -131,16 +131,6 @@ const markInvalidConfig = (errorMessage: string) => {
   supabaseConfigStatus.errorMessage = errorMessage;
 };
 
-const buildFallbackClient = () => {
-  const errorMessage =
-    supabaseConfigStatus.errorMessage?.trim() ||
-    "Missing Supabase environment configuration: VITE_SUPABASE_URL | VITE_SUPABASE_ANON_KEY";
-
-  markInvalidConfig(errorMessage);
-  supabaseConfigStatus.usingFallbackClient = true;
-  return fallbackSupabase;
-};
-
 const shouldLogRuntimeConfig =
   (typeof import.meta !== "undefined" && Boolean((import.meta as any)?.env?.DEV)) ||
   (typeof process !== "undefined" && process.env?.NODE_ENV !== "production");
@@ -157,7 +147,20 @@ if (shouldLogRuntimeConfig) {
 
 const internalClient =
   !supabaseUrl || !supabaseAnonKey
-    ? buildFallbackClient()
+    ? (() => {
+        const errorMessage =
+          supabaseConfigStatus.errorMessage?.trim() ||
+          "Missing Supabase environment configuration: VITE_SUPABASE_URL | VITE_SUPABASE_ANON_KEY";
+
+        markInvalidConfig(errorMessage);
+        supabaseConfigStatus.usingFallbackClient = true;
+
+        return createClient<Database>(
+          supabaseUrl || "http://localhost",
+          supabaseAnonKey || "public-anon-key",
+          clientOptions,
+        );
+      })()
     : buildClientFromConfig();
 
 export type SupabaseClient = typeof internalClient;

@@ -2,7 +2,7 @@
  * Supabase client configuration
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { supabaseClient as sharedSupabaseClient, supabaseConfigStatus } from './supabaseClient';
 import type { MarketplaceService } from '@/data/marketplace';
 import {
   marketplaceProducts as datasetProducts,
@@ -16,7 +16,7 @@ import {
 } from '@/data/marketplace';
 import { SUPPORT_EMAIL } from './supportEmail';
 
-type SupabaseClientLike = ReturnType<typeof createClient> | ReturnType<typeof createMockSupabaseClient>;
+type SupabaseClientLike = typeof sharedSupabaseClient | ReturnType<typeof createMockSupabaseClient>;
 
 const sanitizeEnvValue = (value: unknown): string | undefined => {
   if (typeof value !== 'string') {
@@ -749,28 +749,19 @@ function createMockSupabaseClient() {
   } as const;
 }
 
-const forcedMockSupabaseClient = missingSupabaseConfig && !allowMockSupabaseClient;
+const forcedMockSupabaseClient = supabaseConfigStatus.usingFallbackClient && !allowMockSupabaseClient;
 const supabaseConfigWarning = missingSupabaseConfig ? missingConfigMessage : undefined;
 
-const supabaseClient: SupabaseClientLike =
-  supabaseUrl && supabaseKey
-    ? createClient(supabaseUrl, supabaseKey, {
-        auth: {
-          autoRefreshToken: true,
-          persistSession: true,
-          detectSessionInUrl: true
-        }
-      })
-    : createMockSupabaseClient();
+const supabaseClient: SupabaseClientLike = sharedSupabaseClient;
 
 export const supabaseAuthConfigStatus = {
-  hasValidConfig: !missingSupabaseConfig,
-  supabaseUrl,
-  supabaseAnonKey: supabaseKey,
-  usingMockClient: missingSupabaseConfig,
+  hasValidConfig: supabaseConfigStatus.hasValidConfig,
+  supabaseUrl: supabaseConfigStatus.resolvedUrl ?? supabaseUrl,
+  supabaseAnonKey: supabaseConfigStatus.resolvedAnonKey ?? supabaseKey,
+  usingMockClient: supabaseConfigStatus.usingFallbackClient,
   allowMockSupabaseClient,
-  missingUrlKeys: SUPABASE_URL_ENV_KEYS,
-  missingKeyKeys: SUPABASE_KEY_ENV_KEYS,
+  missingUrlKeys: supabaseConfigStatus.missingUrlKeys ?? SUPABASE_URL_ENV_KEYS,
+  missingKeyKeys: supabaseConfigStatus.missingAnonKeys ?? SUPABASE_KEY_ENV_KEYS,
   isProductionEnvironment,
   forcedMockSupabaseClient,
   configWarning: supabaseConfigWarning,
