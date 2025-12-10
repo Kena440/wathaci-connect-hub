@@ -150,37 +150,136 @@ CREATE TRIGGER on_auth_user_created
   EXECUTE FUNCTION public.handle_new_user();
 
 -- Backfill helper to repair any existing auth.users rows missing profiles.
-CREATE OR REPLACE FUNCTION public.backfill_missing_profiles()
-RETURNS void
+-- Updated to return a result set so later migrations don’t hit return-type conflicts.
+DROP FUNCTION IF EXISTS public.backfill_missing_profiles();
+
+CREATE FUNCTION public.backfill_missing_profiles()
+RETURNS TABLE (
+  user_id uuid,
+  email text,
+  backfill_status text,
+  error_message text
+)
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_now timestamptz := timezone('utc', now());
+  v_user RECORD;
+  v_email text;
+  v_account_type text;
+  v_full_name text;
+  v_phone text;
+  v_company text;
 BEGIN
-  INSERT INTO public.profiles (id, email, full_name, account_type, phone, company_name, created_at, updated_at)
-  SELECT
-    u.id,
-    COALESCE(NULLIF(u.email, ''), NULLIF(u.raw_user_meta_data->>'email', ''), NULLIF(u.raw_user_meta_data->>'user_email', '')),
-    COALESCE(
-      NULLIF(u.raw_user_meta_data->>'full_name', ''),
-      NULLIF(trim(both ' ' FROM concat_ws(' ', u.raw_user_meta_data->>'first_name', u.raw_user_meta_data->>'last_name')), ''),
-      ''
-    ),
-    COALESCE((u.raw_user_meta_data->>'account_type')::public.account_type_enum, 'sme'::public.account_type_enum),
-    COALESCE(NULLIF(u.phone, ''), NULLIF(u.raw_user_meta_data->>'phone', ''), NULLIF(u.raw_user_meta_data->>'msisdn', '')),
-    COALESCE(NULLIF(u.raw_user_meta_data->>'company_name', ''), NULLIF(u.raw_user_meta_data->>'business_name', '')),
-    v_now,
-    v_now
-  FROM auth.users u
-  LEFT JOIN public.profiles p ON p.id = u.id
-  WHERE p.id IS NULL
-  ON CONFLICT (id) DO NOTHING;
+  FOR v_user IN
+    SELECT u.id, u.email, u.phone, u.raw_user_meta_data, u.created_at
+    FROM auth.users u
+    LEFT JOIN public.profiles p ON p.id = u.id
+    WHERE p.id IS NULL
+    ORDER BY u.created_at
+  LOOP
+    -- Extract metadata
+    v_email := COALESCE(
+      NULLIF(v_user.email, ''),
+      'backfill-' || v_user.id::text || '@invalid.example'
+    );
+
+    v_account_type := COALESCE(
+      v_user.raw_user_meta_data->>'account_type',
+      'sole_proprietor'
+    );
+
+    v_full_name := COALESCE(
+      v_user.raw_user_meta_data->>'full_name',
+      TRIM(
+        COALESCE(v_user.raw_user_meta_data->>'first_name', '') || ' ' ||
+        COALESCE(v_user.raw_user_meta_data->>'last_name', '')
+      )
+    );
+    IF v_full_name = '' THEN
+      v_full_name := NULL;
+    END IF;
+
+    v_phone := COALESCE(
+      v_user.phone,
+      v_user.raw_user_meta_data->>'phone'
+    );
+
+    v_company := COALESCE(
+      v_user.raw_user_meta_data->>'company_name',
+      v_user.raw_user_meta_data->>'business_name'
+    );
+
+    BEGIN
+      -- Insert profile
+      INSERT INTO public.profiles (
+        id,
+        email,
+        full_name,
+        account_type,
+        phone,
+        business_name,
+        created_at,
+        updated_at
+      )
+      VALUES (
+        v_user.id,
+        v_email,
+        NULLIF(v_full_name, ''),
+        v_account_type,
+        NULLIF(v_phone, ''),
+        NULLIF(v_company, ''),
+        v_user.created_at,
+        timezone('utc', now())
+      );
+
+      -- Log backfill event
+      PERFORM public.log_user_event(
+        v_user.id,
+        'profile_backfilled',
+        v_email,
+        jsonb_build_object(
+          'source', 'backfill_function',
+          'original_created_at', v_user.created_at
+        )
+      );
+
+      user_id := v_user.id;
+      email := v_email;
+      backfill_status := 'success';
+      error_message := NULL;
+      RETURN NEXT;
+
+    EXCEPTION
+      WHEN OTHERS THEN
+        -- Log error
+        PERFORM public.log_user_event(
+          v_user.id,
+          'profile_backfill_error',
+          v_email,
+          jsonb_build_object(
+            'error', SQLERRM,
+            'sqlstate', SQLSTATE,
+            'source', 'backfill_function'
+          )
+        );
+
+        user_id := v_user.id;
+        email := v_email;
+        backfill_status := 'error';
+        error_message := SQLERRM;
+        RETURN NEXT;
+    END;
+  END LOOP;
+
+  RETURN;
 END;
 $$;
 
-COMMENT ON FUNCTION public.backfill_missing_profiles() IS 'Creates profiles for any auth.users rows that are missing them.';
+COMMENT ON FUNCTION public.backfill_missing_profiles() IS
+  'Creates or repairs profiles for auth.users rows that are missing them, returning per-user status and error info.';
+
 
 -- Materialize a view that classifies signup audit rows and highlights missing auth/profiles rows.
 CREATE OR REPLACE VIEW public.signup_profile_mismatches AS

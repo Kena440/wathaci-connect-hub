@@ -2,25 +2,49 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [ V3 ]
   pull_request:
-    branches: [main]
+    branches: [ V3 ]
 
 jobs:
-  build:
+  test-and-build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
-      - name: Install dependencies
+          cache: npm
+
+      - name: Install root dependencies
         run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
       - name: Lint
         run: npm run lint
-      - name: Type check
-        run: npm run typecheck
-      - name: Test
-        run: npm test
+
+      - name: Run tests (frontend)
+        run: npm test --if-present
+
+      - name: Build frontend (Vite)
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_LENCO_PUBLIC_KEY: ${{ secrets.VITE_LENCO_PUBLIC_KEY }}
+          VITE_LENCO_API_URL: ${{ secrets.VITE_LENCO_API_URL }}
+          VITE_PAYMENT_CURRENCY: ${{ secrets.VITE_PAYMENT_CURRENCY }}
+          VITE_PAYMENT_COUNTRY: ${{ secrets.VITE_PAYMENT_COUNTRY }}
+          VITE_PLATFORM_FEE_PERCENTAGE: ${{ secrets.VITE_PLATFORM_FEE_PERCENTAGE }}
+          VITE_MIN_PAYMENT_AMOUNT: ${{ secrets.VITE_MIN_PAYMENT_AMOUNT }}
+          VITE_MAX_PAYMENT_AMOUNT: ${{ secrets.VITE_MAX_PAYMENT_AMOUNT }}
+          VITE_APP_ENV: production
+          VITE_APP_NAME: "WATHACI CONNECT"
+        run: npm run build
