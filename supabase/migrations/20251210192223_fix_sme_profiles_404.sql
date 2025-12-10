@@ -112,12 +112,22 @@ BEGIN
     ALTER COLUMN created_at SET DEFAULT timezone('utc', now()),
     ALTER COLUMN updated_at SET DEFAULT timezone('utc', now());
 
+  -- Update NULL values before setting NOT NULL constraints
+  UPDATE public.sme_profiles SET account_type = 'sme' WHERE account_type IS NULL;
+  UPDATE public.sme_profiles SET is_active = true WHERE is_active IS NULL;
+  UPDATE public.sme_profiles SET is_profile_complete = false WHERE is_profile_complete IS NULL;
+  UPDATE public.sme_profiles SET approval_status = 'pending' WHERE approval_status IS NULL;
+  UPDATE public.sme_profiles SET created_at = timezone('utc', now()) WHERE created_at IS NULL;
+  UPDATE public.sme_profiles SET updated_at = timezone('utc', now()) WHERE updated_at IS NULL;
+  UPDATE public.sme_profiles SET business_name = 'Unnamed Business' WHERE business_name IS NULL;
+
   -- Make required columns NOT NULL
   ALTER TABLE public.sme_profiles
     ALTER COLUMN account_type SET NOT NULL,
     ALTER COLUMN is_active SET NOT NULL,
     ALTER COLUMN is_profile_complete SET NOT NULL,
     ALTER COLUMN approval_status SET NOT NULL,
+    ALTER COLUMN business_name SET NOT NULL,
     ALTER COLUMN created_at SET NOT NULL,
     ALTER COLUMN updated_at SET NOT NULL;
 END$$;
@@ -133,8 +143,10 @@ BEGIN
     ALTER TABLE public.sme_profiles ADD CONSTRAINT sme_profiles_user_id_key UNIQUE (user_id);
   END IF;
 EXCEPTION
-  WHEN duplicate_table THEN
+  WHEN duplicate_object THEN
     NULL; -- Constraint already exists
+  WHEN OTHERS THEN
+    RAISE NOTICE 'Could not add unique constraint on user_id: %', SQLERRM;
 END$$;
 
 -- Ensure user_id is the primary key

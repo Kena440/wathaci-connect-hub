@@ -112,6 +112,14 @@ BEGIN
     ALTER COLUMN created_at SET DEFAULT timezone('utc', now()),
     ALTER COLUMN updated_at SET DEFAULT timezone('utc', now());
 
+  -- Update NULL values before setting NOT NULL constraints
+  UPDATE public.professional_profiles SET account_type = 'professional' WHERE account_type IS NULL;
+  UPDATE public.professional_profiles SET is_active = true WHERE is_active IS NULL;
+  UPDATE public.professional_profiles SET is_profile_complete = false WHERE is_profile_complete IS NULL;
+  UPDATE public.professional_profiles SET approval_status = 'pending' WHERE approval_status IS NULL;
+  UPDATE public.professional_profiles SET created_at = timezone('utc', now()) WHERE created_at IS NULL;
+  UPDATE public.professional_profiles SET updated_at = timezone('utc', now()) WHERE updated_at IS NULL;
+
   -- Set NOT NULL where required
   ALTER TABLE public.professional_profiles
     ALTER COLUMN account_type SET NOT NULL,
@@ -133,7 +141,10 @@ BEGIN
     ALTER TABLE public.professional_profiles ADD CONSTRAINT professional_profiles_user_id_key UNIQUE (user_id);
   END IF;
 EXCEPTION
-  WHEN duplicate_table THEN NULL;
+  WHEN duplicate_object THEN
+    NULL; -- Constraint already exists
+  WHEN OTHERS THEN
+    RAISE NOTICE 'Could not add unique constraint on user_id: %', SQLERRM;
 END$$;
 
 DO $$
@@ -157,7 +168,8 @@ BEGIN
     ALTER TABLE public.professional_profiles ADD PRIMARY KEY (user_id);
   END IF;
 EXCEPTION
-  WHEN OTHERS THEN NULL;
+  WHEN OTHERS THEN
+    RAISE NOTICE 'Could not set primary key on user_id: %', SQLERRM;
 END$$;
 
 CREATE INDEX IF NOT EXISTS professional_profiles_user_id_idx ON public.professional_profiles(user_id);
@@ -278,6 +290,14 @@ BEGIN
     ALTER COLUMN created_at SET DEFAULT timezone('utc', now()),
     ALTER COLUMN updated_at SET DEFAULT timezone('utc', now());
 
+  -- Update NULL values before setting NOT NULL constraints
+  UPDATE public.investor_profiles SET account_type = 'investor' WHERE account_type IS NULL;
+  UPDATE public.investor_profiles SET is_active = true WHERE is_active IS NULL;
+  UPDATE public.investor_profiles SET is_profile_complete = false WHERE is_profile_complete IS NULL;
+  UPDATE public.investor_profiles SET approval_status = 'pending' WHERE approval_status IS NULL;
+  UPDATE public.investor_profiles SET created_at = timezone('utc', now()) WHERE created_at IS NULL;
+  UPDATE public.investor_profiles SET updated_at = timezone('utc', now()) WHERE updated_at IS NULL;
+
   ALTER TABLE public.investor_profiles
     ALTER COLUMN account_type SET NOT NULL,
     ALTER COLUMN is_active SET NOT NULL,
@@ -297,7 +317,10 @@ BEGIN
     ALTER TABLE public.investor_profiles ADD CONSTRAINT investor_profiles_user_id_key UNIQUE (user_id);
   END IF;
 EXCEPTION
-  WHEN duplicate_table THEN NULL;
+  WHEN duplicate_object THEN
+    NULL; -- Constraint already exists
+  WHEN OTHERS THEN
+    RAISE NOTICE 'Could not add unique constraint on user_id: %', SQLERRM;
 END$$;
 
 DO $$
@@ -321,7 +344,8 @@ BEGIN
     ALTER TABLE public.investor_profiles ADD PRIMARY KEY (user_id);
   END IF;
 EXCEPTION
-  WHEN OTHERS THEN NULL;
+  WHEN OTHERS THEN
+    RAISE NOTICE 'Could not set primary key on user_id: %', SQLERRM;
 END$$;
 
 CREATE INDEX IF NOT EXISTS investor_profiles_user_id_idx ON public.investor_profiles(user_id);

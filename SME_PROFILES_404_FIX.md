@@ -15,13 +15,15 @@ The application was encountering a PostgREST error when trying to POST to `/rest
 
 The error was caused by schema inconsistencies in the profile tables due to conflicting migrations:
 
-1. **Migration `20260611120000_account_type_profile_schemas.sql`** (June 2026 - future dated):
+1. **Migration `20260611120000_account_type_profile_schemas.sql`** (June 2026 - **incorrectly future-dated**):
    - Created `sme_profiles` with `id` as PRIMARY KEY
    - Used `profile_id` as foreign key to `profiles(id)`
+   - This future date caused migration ordering issues
 
-2. **Migration `20260720120000_add_missing_profile_tables_and_columns_for_existing_account_types.sql`** (July 2026 - future dated):
+2. **Migration `20260720120000_add_missing_profile_tables_and_columns_for_existing_account_types.sql`** (July 2026 - **incorrectly future-dated**):
    - Attempted to recreate the same tables with `user_id` as PRIMARY KEY
    - Created conflicting schema definitions
+   - Also has incorrect future timestamp
 
 3. **Frontend Code**:
    - Uses `user_id` to query and insert profile data
