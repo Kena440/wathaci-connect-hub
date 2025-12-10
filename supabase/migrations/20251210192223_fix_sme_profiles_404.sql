@@ -174,8 +174,7 @@ BEGIN
   END IF;
 EXCEPTION
   WHEN OTHERS THEN
-    -- If there's any error, just continue
-    NULL;
+    RAISE NOTICE 'Could not set primary key on user_id: %', SQLERRM;
 END$$;
 
 -- Create indexes

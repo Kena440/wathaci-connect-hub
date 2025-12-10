@@ -4,6 +4,17 @@
 
 BEGIN;
 
+-- Ensure updated_at trigger function exists
+CREATE OR REPLACE FUNCTION public.set_current_timestamp_updated_at()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.updated_at = timezone('utc', now());
+  RETURN NEW;
+END;
+$$;
+
 -- =============================================================================
 -- PROFESSIONAL PROFILES
 -- =============================================================================
