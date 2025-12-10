@@ -53,7 +53,7 @@ The application is deployed as two separate Vercel projects:
 **Environment Variables** (Set in Vercel Project Settings):
 ```bash
 VITE_API_BASE_URL="https://wathaci-connect-platform2.vercel.app"
-VITE_SUPABASE_URL="https://nrjcbdrzaxqvomeogptf.supabase.co"
+VITE_SUPABASE_URL="https://your-project-ref.supabase.co"
 VITE_SUPABASE_ANON_KEY="<your-supabase-anon-key>"
 VITE_MIN_PAYMENT_AMOUNT="5"
 VITE_MAX_PAYMENT_AMOUNT="50000"
@@ -111,7 +111,7 @@ backend/
 **Environment Variables** (Set in Vercel Project Settings):
 ```bash
 # Supabase
-SUPABASE_URL="https://nrjcbdrzaxqvomeogptf.supabase.co"
+SUPABASE_URL="https://your-project-ref.supabase.co"
 SUPABASE_SERVICE_ROLE_KEY="<your-service-role-key>"
 
 # Lenco Payment Gateway
