@@ -48,7 +48,6 @@ export class CisoAgentError extends Error {
 
 const resolveRuntimeEnv = () => {
   try {
-    // eslint-disable-next-line no-new-func
     return new Function("return import.meta.env")();
   } catch (err) {
     return undefined;
