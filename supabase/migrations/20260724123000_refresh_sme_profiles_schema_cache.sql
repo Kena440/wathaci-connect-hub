@@ -12,6 +12,8 @@ END;
 $$;
 
 -- Recreate/ensure sme_profiles with the expected schema
+-- user_id is the canonical primary key (aligned with auth.users.id)
+-- id is retained only for legacy references; new code should rely on user_id and should not introduce new dependencies on id
 CREATE TABLE IF NOT EXISTS public.sme_profiles (
   user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   id uuid DEFAULT gen_random_uuid(),
@@ -51,18 +53,18 @@ CREATE TABLE IF NOT EXISTS public.sme_profiles (
 
 -- Align any older tables to the expected shape
 ALTER TABLE public.sme_profiles
-  ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  ADD COLUMN IF NOT EXISTS user_id uuid,
   ADD COLUMN IF NOT EXISTS id uuid DEFAULT gen_random_uuid(),
-  ADD COLUMN IF NOT EXISTS profile_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
-  ADD COLUMN IF NOT EXISTS account_type text NOT NULL DEFAULT 'sme',
+  ADD COLUMN IF NOT EXISTS profile_id uuid,
+  ADD COLUMN IF NOT EXISTS account_type text DEFAULT 'sme',
   ADD COLUMN IF NOT EXISTS email text,
   ADD COLUMN IF NOT EXISTS msisdn text,
   ADD COLUMN IF NOT EXISTS full_name text,
   ADD COLUMN IF NOT EXISTS profile_slug text,
-  ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true,
-  ADD COLUMN IF NOT EXISTS is_profile_complete boolean NOT NULL DEFAULT false,
-  ADD COLUMN IF NOT EXISTS approval_status text NOT NULL DEFAULT 'pending',
-  ADD COLUMN IF NOT EXISTS business_name text,
+  ADD COLUMN IF NOT EXISTS is_active boolean DEFAULT true,
+  ADD COLUMN IF NOT EXISTS is_profile_complete boolean DEFAULT false,
+  ADD COLUMN IF NOT EXISTS approval_status text DEFAULT 'pending',
+  ADD COLUMN IF NOT EXISTS business_name text DEFAULT 'Unnamed Business',
   ADD COLUMN IF NOT EXISTS registration_number text,
   ADD COLUMN IF NOT EXISTS registration_type text,
   ADD COLUMN IF NOT EXISTS sector text,
@@ -83,26 +85,93 @@ ALTER TABLE public.sme_profiles
   ADD COLUMN IF NOT EXISTS support_needs text[],
   ADD COLUMN IF NOT EXISTS logo_url text,
   ADD COLUMN IF NOT EXISTS photos text[],
-  ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
-  ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT timezone('utc', now());
+  ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT timezone('utc', now()),
+  ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT timezone('utc', now());
+
+UPDATE public.sme_profiles
+SET business_name = 'Unnamed Business'
+WHERE business_name IS NULL;
+
+ALTER TABLE public.sme_profiles
+  ALTER COLUMN business_name SET DEFAULT 'Unnamed Business',
+  ALTER COLUMN business_name SET NOT NULL;
+
+UPDATE public.sme_profiles SET account_type = 'sme' WHERE account_type IS NULL;
+UPDATE public.sme_profiles SET is_active = true WHERE is_active IS NULL;
+UPDATE public.sme_profiles SET is_profile_complete = false WHERE is_profile_complete IS NULL;
+UPDATE public.sme_profiles SET approval_status = 'pending' WHERE approval_status IS NULL;
+UPDATE public.sme_profiles SET created_at = timezone('utc', now()) WHERE created_at IS NULL;
+UPDATE public.sme_profiles SET updated_at = timezone('utc', now()) WHERE updated_at IS NULL;
+
+ALTER TABLE public.sme_profiles
+  ALTER COLUMN account_type SET DEFAULT 'sme',
+  ALTER COLUMN account_type SET NOT NULL,
+  ALTER COLUMN is_active SET DEFAULT true,
+  ALTER COLUMN is_active SET NOT NULL,
+  ALTER COLUMN is_profile_complete SET DEFAULT false,
+  ALTER COLUMN is_profile_complete SET NOT NULL,
+  ALTER COLUMN approval_status SET DEFAULT 'pending',
+  ALTER COLUMN approval_status SET NOT NULL,
+  ALTER COLUMN created_at SET DEFAULT timezone('utc', now()),
+  ALTER COLUMN created_at SET NOT NULL,
+  ALTER COLUMN updated_at SET DEFAULT timezone('utc', now()),
+  ALTER COLUMN updated_at SET NOT NULL;
 
 -- Backfill user_id if legacy rows still rely on profile_id
 UPDATE public.sme_profiles
-SET user_id = profile_id
-WHERE user_id IS NULL AND profile_id IS NOT NULL;
+SET user_id = p.id
+FROM public.profiles p
+JOIN auth.users u ON u.id = p.id -- profiles.id matches auth.users.id
+WHERE public.sme_profiles.user_id IS NULL
+  AND public.sme_profiles.profile_id = p.id;
+
+DELETE FROM public.sme_profiles sp
+WHERE sp.user_id IS NULL
+  OR NOT EXISTS (SELECT 1 FROM auth.users u WHERE u.id = sp.user_id);
 
 ALTER TABLE public.sme_profiles ALTER COLUMN user_id SET NOT NULL;
 
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'sme_profiles_user_id_key'
+    SELECT 1 FROM pg_constraint WHERE conname = 'sme_profiles_user_id_fkey'
   ) THEN
-    ALTER TABLE public.sme_profiles ADD CONSTRAINT sme_profiles_user_id_key UNIQUE (user_id);
+    ALTER TABLE public.sme_profiles
+      ADD CONSTRAINT sme_profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
   END IF;
 END$$;
 
-CREATE INDEX IF NOT EXISTS sme_profiles_user_id_idx ON public.sme_profiles(user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'sme_profiles_profile_id_fkey'
+  ) THEN
+    ALTER TABLE public.sme_profiles
+      ADD CONSTRAINT sme_profiles_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+  END IF;
+END$$;
+
+DO $$
+BEGIN
+  -- If user_id is not already the primary key, enforce uniqueness and index
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint c
+    WHERE c.conrelid = 'public.sme_profiles'::regclass
+      AND c.contype = 'p'
+      AND c.conkey = ARRAY[
+        (SELECT attnum FROM pg_attribute WHERE attrelid = 'public.sme_profiles'::regclass AND attname = 'user_id')
+      ]
+  ) THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_constraint WHERE conname = 'sme_profiles_user_id_key'
+    ) THEN
+      ALTER TABLE public.sme_profiles ADD CONSTRAINT sme_profiles_user_id_key UNIQUE (user_id);
+    END IF;
+
+    CREATE INDEX IF NOT EXISTS sme_profiles_user_id_idx ON public.sme_profiles(user_id);
+  END IF;
+END$$;
 
 DO $$
 BEGIN
