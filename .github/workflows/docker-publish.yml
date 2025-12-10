@@ -1,0 +1,64 @@
+name: Build and publish Docker images
+
+on:
+  push:
+    branches: [ V3 ]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_OWNER: ${{ github.repository_owner }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ---------- Frontend image ----------
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/wathaci-connect-frontend:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/wathaci-connect-frontend:${{ github.sha }}
+          build-args: |
+            VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
+            VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
+            VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+            VITE_LENCO_PUBLIC_KEY=${{ secrets.VITE_LENCO_PUBLIC_KEY }}
+            VITE_LENCO_API_URL=${{ secrets.VITE_LENCO_API_URL }}
+            VITE_PAYMENT_CURRENCY=${{ secrets.VITE_PAYMENT_CURRENCY }}
+            VITE_PAYMENT_COUNTRY=${{ secrets.VITE_PAYMENT_COUNTRY }}
+            VITE_PLATFORM_FEE_PERCENTAGE=${{ secrets.VITE_PLATFORM_FEE_PERCENTAGE }}
+            VITE_MIN_PAYMENT_AMOUNT=${{ secrets.VITE_MIN_PAYMENT_AMOUNT }}
+            VITE_MAX_PAYMENT_AMOUNT=${{ secrets.VITE_MAX_PAYMENT_AMOUNT }}
+            VITE_APP_ENV=production
+            VITE_APP_NAME="WATHACI CONNECT"
+
+      # ---------- Backend image ----------
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/wathaci-connect-backend:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/wathaci-connect-backend:${{ github.sha }}

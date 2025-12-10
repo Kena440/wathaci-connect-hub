@@ -58,16 +58,31 @@ CREATE TABLE IF NOT EXISTS public.payments (
   updated_at timestamptz DEFAULT timezone('utc', now())
 );
 
+-- Ensure all expected columns exist even if payments table pre-dates this migration
 ALTER TABLE public.payments
+  ADD COLUMN IF NOT EXISTS provider_payment_id text,
   ADD COLUMN IF NOT EXISTS provider_reference text,
   ADD COLUMN IF NOT EXISTS lenco_transaction_id text;
 
-CREATE UNIQUE INDEX IF NOT EXISTS payments_provider_reference_unique_idx
-  ON public.payments(provider_payment_id)
-  WHERE provider_payment_id IS NOT NULL;
+-- Only create the index if the column now exists
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name   = 'payments'
+      AND column_name  = 'provider_payment_id'
+  ) THEN
+    CREATE UNIQUE INDEX IF NOT EXISTS payments_provider_reference_unique_idx
+      ON public.payments(provider_payment_id)
+      WHERE provider_payment_id IS NOT NULL;
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS payments_user_status_idx
   ON public.payments(user_id, status);
+
 
 -- Subscriptions table
 CREATE TABLE IF NOT EXISTS public.subscriptions (

@@ -35,8 +35,8 @@ CREATE POLICY otp_verifications_user_access ON public.otp_verifications
 -- Note: This is implicit as service_role bypasses RLS
 
 -- Add comment for documentation
-COMMENT ON TABLE public.otp_verifications IS 
-  'Stores OTP verification codes for phone number verification via SMS and WhatsApp. ' ||
-  'Codes are hashed using SHA-256 before storage for security.';
+-- Add comment for documentation
+COMMENT ON TABLE public.otp_verifications IS
+  'Stores OTP verification codes for phone number verification via SMS and WhatsApp. Used for SMS and WhatsApp OTP flows and related verification logic.';
 
 COMMIT;

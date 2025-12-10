@@ -1,13 +1,22 @@
+# Ignore heavy folders
 node_modules
-npm-debug.log
-yarn.lock
-Dockerfile
-.dockerignore
-.git
-.gitignore
-.env
-.vscode
-.idea
 dist
 coverage
 .playwright
+
+# Ignore editor settings
+.vscode
+.idea
+
+# Ignore Git files
+.git
+.gitignore
+
+# DO NOT ignore Docker build files
+# Dockerfile
+# .dockerignore
+
+# Include env files so Vite can read them during build
+# (these are frontend-only and safe for public build)
+# .env
+# .env.*
