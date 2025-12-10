@@ -29,10 +29,10 @@ const getApiBaseUrl = (): string => {
     ? 'http://localhost:4000'  // Local development backend
     : 'https://wathaci-connect-platform2.vercel.app';  // Production Vercel backend
 
-  const baseUrl = envUrl ?? defaultUrl;
+  const resolvedBaseUrl = envUrl ?? defaultUrl;
 
   // Remove trailing slash for consistency
-  return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  return resolvedBaseUrl.endsWith('/') ? resolvedBaseUrl.slice(0, -1) : resolvedBaseUrl;
 };
 
 /**

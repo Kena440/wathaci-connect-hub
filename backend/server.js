@@ -14,8 +14,8 @@
 require('dotenv').config();
 
 const app = require('./index');
-const { startSlaMonitor } = require('./services/support-ticket-service');
 const { startInboxMonitor } = require('./services/inbox-monitor');
+const { startSlaMonitor } = require('./services/support-ticket-service');
 
 const PORT = process.env.PORT || 4000;
 
@@ -25,7 +25,7 @@ app.listen(PORT, () => {
 });
 
 // Start background services for local development
-startSlaMonitor();
 startInboxMonitor().catch(error => {
   console.warn('[InboxMonitor] Failed to start', error.message);
 });
+startSlaMonitor();

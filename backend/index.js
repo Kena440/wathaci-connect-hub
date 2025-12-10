@@ -95,8 +95,6 @@ const diagnosticsRoutes = require('./routes/diagnostics');
 const creditPassportRoutes = require('./routes/credit-passports');
 const agentRoutes = require('./routes/agent');
 const supportRoutes = require('./routes/support');
-const { startInboxMonitor } = require('./services/inbox-monitor');
-const { startSlaMonitor } = require('./services/support-ticket-service');
 
 // Health check endpoint
 app.use(['/health', '/api/health'], healthRoutes);
