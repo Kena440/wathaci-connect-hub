@@ -37,9 +37,7 @@ ALTER TABLE public.registrations ENABLE ROW LEVEL SECURITY;
 -- Service role bypasses RLS by default
 
 -- Add comment for documentation
-COMMENT ON TABLE public.registrations IS 
-  'Stores initial user registrations from the backend API. ' ||
-  'This table tracks users who have started the registration process ' ||
-  'before completing full authentication setup.';
+COMMENT ON TABLE public.registrations IS
+  'Stores initial user registrations from the backend API. Used to capture early onboarding data and status flags before profile completion.';
 
 COMMIT;

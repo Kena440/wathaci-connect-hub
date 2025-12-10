@@ -2,12 +2,43 @@ BEGIN;
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
 
-ALTER TABLE IF EXISTS public.profiles
-  ADD COLUMN IF NOT EXISTS msisdn text;
+-- Ensure the profiles table exists before altering or inserting into it
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'profiles'
+  ) THEN
+    CREATE TABLE public.profiles (
+      id uuid PRIMARY KEY,
+      email text,
+      full_name text,
+      msisdn text,
+      profile_type text DEFAULT 'customer',
+      created_at timestamptz DEFAULT now(),
+      updated_at timestamptz DEFAULT now()
+    );
+  END IF;
+END $$;
 
-ALTER TABLE IF EXISTS public.profiles
-  ADD COLUMN IF NOT EXISTS profile_type text;
+-- Add columns safely
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'profiles'
+  ) THEN
+    ALTER TABLE public.profiles
+      ADD COLUMN IF NOT EXISTS msisdn text;
 
+    ALTER TABLE public.profiles
+      ADD COLUMN IF NOT EXISTS profile_type text;
+  END IF;
+END $$;
+
+-- Safe definition of ensure_profile_exists function
 CREATE OR REPLACE FUNCTION public.ensure_profile_exists(
   p_user_id uuid,
   p_email text,
@@ -18,7 +49,7 @@ CREATE OR REPLACE FUNCTION public.ensure_profile_exists(
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
-AS $$
+AS $BODY$
 BEGIN
   INSERT INTO public.profiles (id, email, full_name, msisdn, profile_type)
   VALUES (p_user_id, p_email, p_full_name, p_msisdn, COALESCE(p_profile_type, 'customer'))
@@ -33,6 +64,6 @@ BEGIN
       profile_type = COALESCE(public.profiles.profile_type, EXCLUDED.profile_type, 'customer'),
       updated_at = now();
 END;
-$$;
+$BODY$;
 
 COMMIT;

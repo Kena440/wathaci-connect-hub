@@ -454,20 +454,40 @@ GRANT EXECUTE ON FUNCTION public.investigate_blocked_actor(text) TO service_role
 GRANT EXECUTE ON FUNCTION public.detect_blocking_anomalies(integer) TO service_role;
 
 -- ============================================================================
--- STEP 6: Create indexes for performance
+-- STEP 6: Create indexes for performance (safe version for Supabase local/remote)
 -- ============================================================================
 
--- Index on audit_log_entries for blocked signup queries
--- Note: This is a partial index to keep it small and fast
-CREATE INDEX IF NOT EXISTS audit_log_entries_blocked_username_idx 
-  ON auth.audit_log_entries ((payload->>'actor_username'))
-  WHERE payload->>'actor_username' LIKE '%[blocked]%';
+DO $block$
+DECLARE
+  v_owner text;
+BEGIN
+  -- Determine table owner
+  SELECT r.rolname
+  INTO v_owner
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  JOIN pg_roles r      ON r.oid = c.relowner
+  WHERE n.nspname = 'auth'
+    AND c.relname = 'audit_log_entries';
 
-CREATE INDEX IF NOT EXISTS audit_log_entries_blocked_action_created_idx 
-  ON auth.audit_log_entries ((payload->>'action'), created_at DESC)
-  WHERE payload->>'actor_username' LIKE '%[blocked]%';
+  -- Only create indexes if the current user owns the table
+  IF v_owner = current_user THEN
 
-COMMIT;
+    EXECUTE $sql$
+      CREATE INDEX IF NOT EXISTS audit_log_entries_blocked_username_idx 
+        ON auth.audit_log_entries ((payload->>'actor_username'))
+        WHERE payload->>'actor_username' LIKE '%[blocked]%';
+    $sql$;
+
+    EXECUTE $sql$
+      CREATE INDEX IF NOT EXISTS audit_log_entries_blocked_action_created_idx 
+        ON auth.audit_log_entries ((payload->>'action'), created_at DESC)
+        WHERE payload->>'actor_username' LIKE '%[blocked]%';
+    $sql$;
+
+  END IF;
+END;
+$block$;
 
 -- ============================================================================
 -- Usage Examples (for documentation)

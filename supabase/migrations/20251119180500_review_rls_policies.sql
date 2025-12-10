@@ -1,333 +1,440 @@
 -- ============================================================================
--- Review and Update All RLS Policies for Production
+-- Review and Update RLS Policies for Core Tables (Safe, Idempotent)
 -- ============================================================================
--- This migration ensures all tables have proper RLS policies configured
--- for production use. It reviews existing policies and adds missing ones.
+-- This migration replaces earlier broad RLS configuration with a safe,
+-- table-aware version. Every block:
+--   * checks that the table exists before touching it
+--   * drops only policies that it owns (by name)
+--   * is idempotent and re-runnable
 -- ============================================================================
 
 BEGIN;
 
 -- ============================================================================
--- PROFILES TABLE RLS
+-- PROFILES
 -- ============================================================================
-
--- Ensure RLS is enabled
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-
--- Drop and recreate policies for consistency
-DROP POLICY IF EXISTS "Profiles are viewable by owners" ON public.profiles;
-DROP POLICY IF EXISTS "Profiles are insertable by owners" ON public.profiles;
-DROP POLICY IF EXISTS "Profiles are updatable by owners" ON public.profiles;
-DROP POLICY IF EXISTS "profiles_select_own" ON public.profiles;
-DROP POLICY IF EXISTS "profiles_insert_own" ON public.profiles;
-DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
-DROP POLICY IF EXISTS "profiles_service_role" ON public.profiles;
-
--- Create clean, consistent policies
-CREATE POLICY "profiles_select_own"
-  ON public.profiles
-  FOR SELECT
-  USING (auth.uid() = id);
-
-CREATE POLICY "profiles_insert_own"
-  ON public.profiles
-  FOR INSERT
-  WITH CHECK (auth.uid() = id);
-
-CREATE POLICY "profiles_update_own"
-  ON public.profiles
-  FOR UPDATE
-  USING (auth.uid() = id)
-  WITH CHECK (auth.uid() = id);
-
--- Service role has full access
-CREATE POLICY "profiles_service_role"
-  ON public.profiles
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
-
--- ============================================================================
--- ASSESSMENT TABLES RLS (All follow same pattern)
--- ============================================================================
-
--- SME Needs Assessments
-ALTER TABLE public.sme_needs_assessments ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "SME assessments are viewable by owners" ON public.sme_needs_assessments;
-DROP POLICY IF EXISTS "SME assessments are manageable by owners" ON public.sme_needs_assessments;
-DROP POLICY IF EXISTS "SME assessments managed by service role" ON public.sme_needs_assessments;
-
-CREATE POLICY "sme_assessments_own"
-  ON public.sme_needs_assessments
-  FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "sme_assessments_service_role"
-  ON public.sme_needs_assessments
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
-
--- Professional Needs Assessments
-ALTER TABLE public.professional_needs_assessments ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Professional assessments are viewable by owners" ON public.professional_needs_assessments;
-DROP POLICY IF EXISTS "Professional assessments are manageable by owners" ON public.professional_needs_assessments;
-DROP POLICY IF EXISTS "Professional assessments managed by service role" ON public.professional_needs_assessments;
-
-CREATE POLICY "professional_assessments_own"
-  ON public.professional_needs_assessments
-  FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "professional_assessments_service_role"
-  ON public.professional_needs_assessments
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
-
--- Investor Needs Assessments
-ALTER TABLE public.investor_needs_assessments ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Investor assessments are viewable by owners" ON public.investor_needs_assessments;
-DROP POLICY IF EXISTS "Investor assessments are manageable by owners" ON public.investor_needs_assessments;
-DROP POLICY IF EXISTS "Investor assessments managed by service role" ON public.investor_needs_assessments;
-
-CREATE POLICY "investor_assessments_own"
-  ON public.investor_needs_assessments
-  FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "investor_assessments_service_role"
-  ON public.investor_needs_assessments
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
-
--- Donor Needs Assessments
-ALTER TABLE public.donor_needs_assessments ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Donor assessments are viewable by owners" ON public.donor_needs_assessments;
-DROP POLICY IF EXISTS "Donor assessments are manageable by owners" ON public.donor_needs_assessments;
-DROP POLICY IF EXISTS "Donor assessments managed by service role" ON public.donor_needs_assessments;
-
-CREATE POLICY "donor_assessments_own"
-  ON public.donor_needs_assessments
-  FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "donor_assessments_service_role"
-  ON public.donor_needs_assessments
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
-
--- Government Needs Assessments
-ALTER TABLE public.government_needs_assessments ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Government assessments are viewable by owners" ON public.government_needs_assessments;
-DROP POLICY IF EXISTS "Government assessments are manageable by owners" ON public.government_needs_assessments;
-DROP POLICY IF EXISTS "Government assessments managed by service role" ON public.government_needs_assessments;
-
-CREATE POLICY "government_assessments_own"
-  ON public.government_needs_assessments
-  FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "government_assessments_service_role"
-  ON public.government_needs_assessments
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
-
--- ============================================================================
--- SUBSCRIPTION_PLANS TABLE RLS
--- ============================================================================
-
-ALTER TABLE public.subscription_plans ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Subscription plans are viewable" ON public.subscription_plans;
-DROP POLICY IF EXISTS "Subscription plans managed by service role" ON public.subscription_plans;
-
--- Anyone can read subscription plans
-CREATE POLICY "subscription_plans_select_all"
-  ON public.subscription_plans
-  FOR SELECT
-  USING (true);
-
--- Only service role can modify
-CREATE POLICY "subscription_plans_service_role"
-  ON public.subscription_plans
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
-
--- ============================================================================
--- USER_SUBSCRIPTIONS TABLE RLS
--- ============================================================================
-
-ALTER TABLE public.user_subscriptions ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "User subscriptions are viewable by owners" ON public.user_subscriptions;
-DROP POLICY IF EXISTS "User subscriptions are manageable by owners" ON public.user_subscriptions;
-DROP POLICY IF EXISTS "User subscriptions managed by service role" ON public.user_subscriptions;
-
-CREATE POLICY "user_subscriptions_own"
-  ON public.user_subscriptions
-  FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "user_subscriptions_service_role"
-  ON public.user_subscriptions
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
-
--- ============================================================================
--- TRANSACTIONS TABLE RLS
--- ============================================================================
-
-ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Transactions are viewable by owners" ON public.transactions;
-DROP POLICY IF EXISTS "Transactions are manageable by owners" ON public.transactions;
-DROP POLICY IF EXISTS "Transactions managed by service role" ON public.transactions;
-
-CREATE POLICY "transactions_own"
-  ON public.transactions
-  FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "transactions_service_role"
-  ON public.transactions
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
-
--- ============================================================================
--- PAYMENTS TABLE RLS
--- ============================================================================
-
-ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Payments are viewable by owners" ON public.payments;
-DROP POLICY IF EXISTS "Payments are manageable by owners" ON public.payments;
-DROP POLICY IF EXISTS "Payments managed by service role" ON public.payments;
-
-CREATE POLICY "payments_own"
-  ON public.payments
-  FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "payments_service_role"
-  ON public.payments
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
-
--- ============================================================================
--- WEBHOOK_LOGS TABLE RLS
--- ============================================================================
-
-ALTER TABLE public.webhook_logs ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Webhook logs managed by service role" ON public.webhook_logs;
-
--- Only service role can access webhook logs
-CREATE POLICY "webhook_logs_service_role"
-  ON public.webhook_logs
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
-
--- ============================================================================
--- AUDIT_LOGS TABLE RLS (from previous migration)
--- ============================================================================
-
--- Policies should already exist from 20251119180000_add_audit_logs.sql
--- Verify they exist
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename = 'audit_logs'
-      AND polname = 'audit_logs_select_own'
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'profiles'
   ) THEN
-    CREATE POLICY "audit_logs_select_own"
-      ON public.audit_logs
+    -- Make sure RLS is on
+    ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+    -- Clean up policies we control
+    DROP POLICY IF EXISTS profiles_owner_select ON public.profiles;
+    DROP POLICY IF EXISTS profiles_owner_modify ON public.profiles;
+    DROP POLICY IF EXISTS profiles_service_role_all ON public.profiles;
+
+    -- Owner: can view own profile
+    CREATE POLICY profiles_owner_select
+      ON public.profiles
       FOR SELECT
-      USING (auth.uid() = user_id);
+      TO authenticated
+      USING (id = auth.uid());
+
+    -- Owner: can update own profile
+    CREATE POLICY profiles_owner_modify
+      ON public.profiles
+      FOR UPDATE
+      TO authenticated
+      USING (id = auth.uid())
+      WITH CHECK (id = auth.uid());
+
+    -- Backend / service_role: full access
+    CREATE POLICY profiles_service_role_all
+      ON public.profiles
+      FOR ALL
+      TO service_role
+      USING (true)
+      WITH CHECK (true);
+  ELSE
+    RAISE NOTICE 'Skipping RLS for public.profiles; table does not exist.';
+  END IF;
+END;
+$$;
+
+-- ============================================================================
+-- PROFILE_ERRORS
+-- ============================================================================
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'profile_errors'
+  ) THEN
+    ALTER TABLE public.profile_errors ENABLE ROW LEVEL SECURITY;
+
+    DROP POLICY IF EXISTS profile_errors_service_role_all ON public.profile_errors;
+    DROP POLICY IF EXISTS profile_errors_gov_view ON public.profile_errors;
+
+    -- Service role: full access
+    CREATE POLICY profile_errors_service_role_all
+      ON public.profile_errors
+      FOR ALL
+      TO service_role
+      USING (true)
+      WITH CHECK (true);
+
+    -- Governance / admin viewers: any profile with account_type = 'government'
+    CREATE POLICY profile_errors_gov_view
+      ON public.profile_errors
+      FOR SELECT
+      TO authenticated
+      USING (
+        EXISTS (
+          SELECT 1
+          FROM public.profiles p
+          WHERE p.id = auth.uid()
+            AND p.account_type = 'government'
+        )
+      );
+  ELSE
+    RAISE NOTICE 'Skipping RLS for public.profile_errors; table does not exist.';
+  END IF;
+END;
+$$;
+
+-- ============================================================================
+-- USER_EVENTS
+-- ============================================================================
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'user_events'
+  ) THEN
+    ALTER TABLE public.user_events ENABLE ROW LEVEL SECURITY;
+
+    DROP POLICY IF EXISTS user_events_owner_select ON public.user_events;
+    DROP POLICY IF EXISTS user_events_owner_insert ON public.user_events;
+    DROP POLICY IF EXISTS user_events_service_role_all ON public.user_events;
+
+    CREATE POLICY user_events_owner_select
+      ON public.user_events
+      FOR SELECT
+      TO authenticated
+      USING (user_id = auth.uid());
+
+    CREATE POLICY user_events_owner_insert
+      ON public.user_events
+      FOR INSERT
+      TO authenticated
+      WITH CHECK (user_id = auth.uid());
+
+    CREATE POLICY user_events_service_role_all
+      ON public.user_events
+      FOR ALL
+      TO service_role
+      USING (true)
+      WITH CHECK (true);
+  ELSE
+    RAISE NOTICE 'Skipping RLS for public.user_events; table does not exist.';
+  END IF;
+END;
+$$;
+
+-- ============================================================================
+-- PAYMENT_EVENTS
+-- ============================================================================
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'payment_events'
+  ) THEN
+    ALTER TABLE public.payment_events ENABLE ROW LEVEL SECURITY;
+
+    DROP POLICY IF EXISTS payment_events_owner_select ON public.payment_events;
+    DROP POLICY IF EXISTS payment_events_owner_insert ON public.payment_events;
+    DROP POLICY IF EXISTS payment_events_service_role_all ON public.payment_events;
+
+    CREATE POLICY payment_events_owner_select
+      ON public.payment_events
+      FOR SELECT
+      TO authenticated
+      USING (user_id = auth.uid());
+
+    CREATE POLICY payment_events_owner_insert
+      ON public.payment_events
+      FOR INSERT
+      TO authenticated
+      WITH CHECK (user_id = auth.uid());
+
+    CREATE POLICY payment_events_service_role_all
+      ON public.payment_events
+      FOR ALL
+      TO service_role
+      USING (true)
+      WITH CHECK (true);
+  ELSE
+    RAISE NOTICE 'Skipping RLS for public.payment_events; table does not exist.';
+  END IF;
+END;
+$$;
+
+-- ============================================================================
+-- SME / PROFESSIONAL / INVESTOR / DONOR / GOVERNMENT NEEDS ASSESSMENTS
+-- Each table is optional; if present, we enforce owner + service_role patterns.
+-- ============================================================================
+
+DO $$
+BEGIN
+  -- SME
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'sme_needs_assessments'
+  ) THEN
+    ALTER TABLE public.sme_needs_assessments ENABLE ROW LEVEL SECURITY;
+
+    DROP POLICY IF EXISTS sme_assessments_owner_select ON public.sme_needs_assessments;
+    DROP POLICY IF EXISTS sme_assessments_owner_upsert ON public.sme_needs_assessments;
+    DROP POLICY IF EXISTS sme_assessments_service_role_all ON public.sme_needs_assessments;
+
+    CREATE POLICY sme_assessments_owner_select
+      ON public.sme_needs_assessments
+      FOR SELECT
+      TO authenticated
+      USING (user_id = auth.uid());
+
+    CREATE POLICY sme_assessments_owner_upsert
+      ON public.sme_needs_assessments
+      FOR ALL
+      TO authenticated
+      USING (user_id = auth.uid())
+      WITH CHECK (user_id = auth.uid());
+
+    CREATE POLICY sme_assessments_service_role_all
+      ON public.sme_needs_assessments
+      FOR ALL
+      TO service_role
+      USING (true)
+      WITH CHECK (true);
+  ELSE
+    RAISE NOTICE 'Skipping RLS for public.sme_needs_assessments; table does not exist.';
   END IF;
 
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename = 'audit_logs'
-      AND polname = 'audit_logs_service_role'
+  -- Professional
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'professional_needs_assessments'
   ) THEN
-    CREATE POLICY "audit_logs_service_role"
+    ALTER TABLE public.professional_needs_assessments ENABLE ROW LEVEL SECURITY;
+
+    DROP POLICY IF EXISTS professional_assessments_owner_select ON public.professional_needs_assessments;
+    DROP POLICY IF EXISTS professional_assessments_owner_upsert ON public.professional_needs_assessments;
+    DROP POLICY IF EXISTS professional_assessments_service_role_all ON public.professional_needs_assessments;
+
+    CREATE POLICY professional_assessments_owner_select
+      ON public.professional_needs_assessments
+      FOR SELECT
+      TO authenticated
+      USING (user_id = auth.uid());
+
+    CREATE POLICY professional_assessments_owner_upsert
+      ON public.professional_needs_assessments
+      FOR ALL
+      TO authenticated
+      USING (user_id = auth.uid())
+      WITH CHECK (user_id = auth.uid());
+
+    CREATE POLICY professional_assessments_service_role_all
+      ON public.professional_needs_assessments
+      FOR ALL
+      TO service_role
+      USING (true)
+      WITH CHECK (true);
+  ELSE
+    RAISE NOTICE 'Skipping RLS for public.professional_needs_assessments; table does not exist.';
+  END IF;
+
+  -- Investor
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'investor_needs_assessments'
+  ) THEN
+    ALTER TABLE public.investor_needs_assessments ENABLE ROW LEVEL SECURITY;
+
+    DROP POLICY IF EXISTS investor_assessments_owner_select ON public.investor_needs_assessments;
+    DROP POLICY IF EXISTS investor_assessments_owner_upsert ON public.investor_needs_assessments;
+    DROP POLICY IF EXISTS investor_assessments_service_role_all ON public.investor_needs_assessments;
+
+    CREATE POLICY investor_assessments_owner_select
+      ON public.investor_needs_assessments
+      FOR SELECT
+      TO authenticated
+      USING (user_id = auth.uid());
+
+    CREATE POLICY investor_assessments_owner_upsert
+      ON public.investor_needs_assessments
+      FOR ALL
+      TO authenticated
+      USING (user_id = auth.uid())
+      WITH CHECK (user_id = auth.uid());
+
+    CREATE POLICY investor_assessments_service_role_all
+      ON public.investor_needs_assessments
+      FOR ALL
+      TO service_role
+      USING (true)
+      WITH CHECK (true);
+  ELSE
+    RAISE NOTICE 'Skipping RLS for public.investor_needs_assessments; table does not exist.';
+  END IF;
+
+  -- Donor
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'donor_needs_assessments'
+  ) THEN
+    ALTER TABLE public.donor_needs_assessments ENABLE ROW LEVEL SECURITY;
+
+    DROP POLICY IF EXISTS donor_assessments_owner_select ON public.donor_needs_assessments;
+    DROP POLICY IF EXISTS donor_assessments_owner_upsert ON public.donor_needs_assessments;
+    DROP POLICY IF EXISTS donor_assessments_service_role_all ON public.donor_needs_assessments;
+
+    CREATE POLICY donor_assessments_owner_select
+      ON public.donor_needs_assessments
+      FOR SELECT
+      TO authenticated
+      USING (user_id = auth.uid());
+
+    CREATE POLICY donor_assessments_owner_upsert
+      ON public.donor_needs_assessments
+      FOR ALL
+      TO authenticated
+      USING (user_id = auth.uid())
+      WITH CHECK (user_id = auth.uid());
+
+    CREATE POLICY donor_assessments_service_role_all
+      ON public.donor_needs_assessments
+      FOR ALL
+      TO service_role
+      USING (true)
+      WITH CHECK (true);
+  ELSE
+    RAISE NOTICE 'Skipping RLS for public.donor_needs_assessments; table does not exist.';
+  END IF;
+
+  -- Government
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'government_needs_assessments'
+  ) THEN
+    ALTER TABLE public.government_needs_assessments ENABLE ROW LEVEL SECURITY;
+
+    DROP POLICY IF EXISTS government_assessments_owner_select ON public.government_needs_assessments;
+    DROP POLICY IF EXISTS government_assessments_owner_upsert ON public.government_needs_assessments;
+    DROP POLICY IF EXISTS government_assessments_service_role_all ON public.government_needs_assessments;
+
+    CREATE POLICY government_assessments_owner_select
+      ON public.government_needs_assessments
+      FOR SELECT
+      TO authenticated
+      USING (user_id = auth.uid());
+
+    CREATE POLICY government_assessments_owner_upsert
+      ON public.government_needs_assessments
+      FOR ALL
+      TO authenticated
+      USING (user_id = auth.uid())
+      WITH CHECK (user_id = auth.uid());
+
+    CREATE POLICY government_assessments_service_role_all
+      ON public.government_needs_assessments
+      FOR ALL
+      TO service_role
+      USING (true)
+      WITH CHECK (true);
+  ELSE
+    RAISE NOTICE 'Skipping RLS for public.government_needs_assessments; table does not exist.';
+  END IF;
+END;
+$$;
+
+-- ============================================================================
+-- WEBHOOK_LOGS
+-- ============================================================================
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'webhook_logs'
+  ) THEN
+    ALTER TABLE public.webhook_logs ENABLE ROW LEVEL SECURITY;
+
+    DROP POLICY IF EXISTS webhook_logs_service_role_all ON public.webhook_logs;
+
+    CREATE POLICY webhook_logs_service_role_all
+      ON public.webhook_logs
+      FOR ALL
+      TO service_role
+      USING (true)
+      WITH CHECK (true);
+  ELSE
+    RAISE NOTICE 'Skipping RLS for public.webhook_logs; table does not exist.';
+  END IF;
+END;
+$$;
+
+-- ============================================================================
+-- AUDIT_LOGS
+-- ============================================================================
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'audit_logs'
+  ) THEN
+    ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+
+    DROP POLICY IF EXISTS audit_logs_service_role_all ON public.audit_logs;
+
+    CREATE POLICY audit_logs_service_role_all
       ON public.audit_logs
       FOR ALL
       TO service_role
       USING (true)
       WITH CHECK (true);
+  ELSE
+    RAISE NOTICE 'Skipping RLS for public.audit_logs; table does not exist.';
   END IF;
-END $$;
+END;
+$$;
 
 -- ============================================================================
--- USER_ROLES TABLE RLS (from previous migration)
+-- USER_ROLES
 -- ============================================================================
-
--- Policies should already exist from 20251119180100_add_user_roles.sql
--- Verify they exist
 DO $$
 BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename = 'user_roles'
-      AND polname = 'user_roles_select_own'
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'user_roles'
   ) THEN
-    CREATE POLICY "user_roles_select_own"
+    ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+
+    DROP POLICY IF EXISTS user_roles_owner_select ON public.user_roles;
+    DROP POLICY IF EXISTS user_roles_service_role_all ON public.user_roles;
+
+    CREATE POLICY user_roles_owner_select
       ON public.user_roles
       FOR SELECT
-      USING (auth.uid() = user_id);
-  END IF;
+      TO authenticated
+      USING (user_id = auth.uid());
 
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public'
-      AND tablename = 'user_roles'
-      AND polname = 'user_roles_service_role'
-  ) THEN
-    CREATE POLICY "user_roles_service_role"
+    CREATE POLICY user_roles_service_role_all
       ON public.user_roles
       FOR ALL
       TO service_role
       USING (true)
       WITH CHECK (true);
+  ELSE
+    RAISE NOTICE 'Skipping RLS for public.user_roles; table does not exist.';
   END IF;
-END $$;
+END;
+$$;
 
 COMMIT;

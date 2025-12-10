@@ -10,14 +10,16 @@ DO $$
 DECLARE
   constraint_name_var text;
 BEGIN
-  -- Find the unique constraint on the email column
   SELECT conname INTO constraint_name_var
   FROM pg_constraint
   WHERE conrelid = 'public.registrations'::regclass
     AND contype = 'u'
-    AND conkey = ARRAY[(SELECT attnum FROM pg_attribute WHERE attrelid = 'public.registrations'::regclass AND attname = 'email')];
-  
-  -- Drop the constraint if it exists
+    AND conkey = ARRAY[
+      (SELECT attnum FROM pg_attribute 
+       WHERE attrelid = 'public.registrations'::regclass 
+         AND attname = 'email')
+    ];
+
   IF constraint_name_var IS NOT NULL THEN
     EXECUTE format('ALTER TABLE public.registrations DROP CONSTRAINT %I', constraint_name_var);
     RAISE NOTICE 'Dropped constraint: %', constraint_name_var;
@@ -28,13 +30,11 @@ END $$;
 DROP INDEX IF EXISTS public.registrations_email_idx;
 
 -- Step 3: Create a case-insensitive unique index on lower(email)
--- This ensures emails are unique regardless of case (Test@Example.com == test@example.com)
 CREATE UNIQUE INDEX IF NOT EXISTS registrations_email_lower_unique_idx 
   ON public.registrations (lower(email));
 
--- Step 4: Add comment for documentation
-COMMENT ON INDEX public.registrations_email_lower_unique_idx IS 
-  'Ensures email uniqueness in a case-insensitive manner. ' ||
-  'Prevents duplicate registrations like Test@Example.com and test@example.com.';
+-- Step 4: Add proper comment (no concatenation)
+COMMENT ON INDEX public.registrations_email_lower_unique_idx IS
+  'Ensures email uniqueness in a case-insensitive manner. Prevents duplicates like Test@Example.com vs test@example.com.';
 
 COMMIT;
