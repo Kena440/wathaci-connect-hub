@@ -209,7 +209,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
   }, [disabled, disabledReason]);
 
   const isFormDisabled = disabled || isSubmitting;
-  const passwordPerfLoggingEnabled = (process.env.NODE_ENV ?? 'development') !== 'production';
+  const passwordPerfLoggingEnabled = useMemo(() => process.env.NODE_ENV !== 'production', []);
 
   const passwordValidationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queuePasswordValidation = useCallback(
@@ -236,11 +236,17 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
           console.time(validationLabel);
         }
         // trigger() runs the zod resolver; debounce to avoid blocking INP.
-        trigger('password').finally(() => {
-          if (passwordPerfLoggingEnabled) {
-            console.timeEnd(validationLabel);
-          }
-        });
+        trigger('password')
+          .catch((error) => {
+            if (passwordPerfLoggingEnabled) {
+              console.warn('[password-validation]', error);
+            }
+          })
+          .finally(() => {
+            if (passwordPerfLoggingEnabled) {
+              console.timeEnd(validationLabel);
+            }
+          });
       }, PASSWORD_VALIDATION_DEBOUNCE_MS);
     },
     [isFormDisabled, mode, passwordPerfLoggingEnabled, trigger]
