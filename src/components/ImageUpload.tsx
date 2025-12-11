@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Upload, X } from 'lucide-react';
-import { supabaseClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase-enhanced';
 import { useToast } from '@/hooks/use-toast';
 
 interface ImageUploadProps {

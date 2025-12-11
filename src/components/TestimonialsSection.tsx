@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Star } from 'lucide-react';
-import { supabaseClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase-enhanced';
 
 interface Testimonial {
   id: string;

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { TrendingUp, DollarSign, BarChart3, Lightbulb } from 'lucide-react';
-import { supabaseClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase-enhanced';
 import { generatePricingAnalysis } from '@/data/marketplace';
 
 interface PricingSuggestion {

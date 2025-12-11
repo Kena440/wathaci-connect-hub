@@ -1,5 +1,5 @@
 import { lencoTransferRecipientService } from '../lenco-transfer-recipient-service';
-import { supabaseClient } from '../../supabaseClient';
+import { supabase } from '../../supabase-enhanced';
 
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
@@ -42,8 +42,8 @@ jest.mock('../../logger', () => ({
 }));
 
 describe('LencoTransferRecipientService', () => {
-  const originalInvoke = supabaseClient.functions.invoke;
-  const invokeSpy = jest.spyOn(supabaseClient.functions, 'invoke');
+  const originalInvoke = supabase.functions.invoke;
+  const invokeSpy = jest.spyOn(supabase.functions, 'invoke');
 
   beforeEach(() => {
     invokeSpy.mockClear();

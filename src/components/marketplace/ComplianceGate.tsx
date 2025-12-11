@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { supabaseClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase-enhanced';
 import { Shield, AlertTriangle, CheckCircle, FileText, Upload } from 'lucide-react';
 
 interface ComplianceGateProps {

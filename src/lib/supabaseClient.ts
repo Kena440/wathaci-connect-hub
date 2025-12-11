@@ -131,44 +131,6 @@ const markInvalidConfig = (errorMessage: string) => {
   supabaseConfigStatus.errorMessage = errorMessage;
 };
 
-const buildFallbackClient = () => {
-  const errorMessage =
-    supabaseConfigStatus.errorMessage?.trim() ||
-    "Missing Supabase environment configuration: VITE_SUPABASE_URL | VITE_SUPABASE_ANON_KEY";
-
-  markInvalidConfig(errorMessage);
-  supabaseConfigStatus.usingFallbackClient = true;
-
-  const notConfiguredError = new Error(errorMessage);
-
-  const mockAuth = {
-    signInWithPassword: async () => ({ data: null, error: notConfiguredError }),
-    signUp: async () => ({ data: null, error: notConfiguredError }),
-    signOut: async () => ({ error: notConfiguredError }),
-    getSession: async () => ({ data: { session: null }, error: notConfiguredError }),
-    getUser: async () => ({ data: { user: null }, error: notConfiguredError }),
-    onAuthStateChange: () => ({
-      data: {
-        subscription: { unsubscribe: () => undefined },
-      },
-      error: notConfiguredError,
-    }),
-  };
-
-  const mockClient: Partial<ReturnType<typeof createClient<Database>>> = {
-    auth: mockAuth as any,
-    rpc: async () => ({ data: null, error: notConfiguredError }),
-    from: () => ({
-      select: async () => ({ data: null, error: notConfiguredError }),
-      insert: async () => ({ data: null, error: notConfiguredError }),
-      update: async () => ({ data: null, error: notConfiguredError }),
-      delete: async () => ({ data: null, error: notConfiguredError }),
-    }) as any,
-  };
-
-  return mockClient as ReturnType<typeof createClient<Database>>;
-};
-
 const shouldLogRuntimeConfig =
   (typeof import.meta !== "undefined" && Boolean((import.meta as any)?.env?.DEV)) ||
   (typeof process !== "undefined" && process.env?.NODE_ENV !== "production");
@@ -185,7 +147,20 @@ if (shouldLogRuntimeConfig) {
 
 const internalClient =
   !supabaseUrl || !supabaseAnonKey
-    ? buildFallbackClient()
+    ? (() => {
+        const errorMessage =
+          supabaseConfigStatus.errorMessage?.trim() ||
+          "Missing Supabase environment configuration: VITE_SUPABASE_URL | VITE_SUPABASE_ANON_KEY";
+
+        markInvalidConfig(errorMessage);
+        supabaseConfigStatus.usingFallbackClient = true;
+
+        return createClient<Database>(
+          supabaseUrl || "http://localhost",
+          supabaseAnonKey || "public-anon-key",
+          clientOptions,
+        );
+      })()
     : buildClientFromConfig();
 
 export type SupabaseClient = typeof internalClient;

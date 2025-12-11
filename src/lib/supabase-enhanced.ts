@@ -2,8 +2,7 @@
  * Supabase client configuration
  */
 
-import { supabaseClient as supabaseBrowserClient } from './supabaseClient';
-import type { SupabaseClient as SupabaseBrowserClient } from './supabaseClient';
+import { supabaseClient as sharedSupabaseClient, supabaseConfigStatus } from './supabaseClient';
 import type { MarketplaceService } from '@/data/marketplace';
 import {
   marketplaceProducts as datasetProducts,
@@ -17,7 +16,7 @@ import {
 } from '@/data/marketplace';
 import { SUPPORT_EMAIL } from './supportEmail';
 
-type SupabaseClientLike = SupabaseBrowserClient | ReturnType<typeof createMockSupabaseClient>;
+type SupabaseClientLike = typeof sharedSupabaseClient | ReturnType<typeof createMockSupabaseClient>;
 
 const sanitizeEnvValue = (value: unknown): string | undefined => {
   if (typeof value !== 'string') {
@@ -750,25 +749,26 @@ function createMockSupabaseClient() {
   } as const;
 }
 
-const forcedMockSupabaseClient = missingSupabaseConfig && !allowMockSupabaseClient;
-const supabaseConfigWarning = missingSupabaseConfig ? missingConfigMessage : undefined;
+const supabaseConfigWarning =
+  supabaseConfigStatus.hasValidConfig ? undefined : supabaseConfigStatus.errorMessage ?? missingConfigMessage;
 
-const supabaseClient: SupabaseClientLike = supabaseBrowserClient || createMockSupabaseClient();
+const shouldUseMockClient = supabaseConfigStatus.usingFallbackClient && allowMockSupabaseClient;
+const supabase: SupabaseClientLike = shouldUseMockClient ? createMockSupabaseClient() : sharedSupabaseClient;
 
 export const supabaseAuthConfigStatus = {
-  hasValidConfig: !missingSupabaseConfig,
-  supabaseUrl,
-  supabaseAnonKey: supabaseKey,
-  usingMockClient: missingSupabaseConfig,
+  hasValidConfig: supabaseConfigStatus.hasValidConfig,
+  supabaseUrl: supabaseConfigStatus.resolvedUrl,
+  supabaseAnonKey: supabaseConfigStatus.resolvedAnonKey,
+  usingMockClient: supabaseConfigStatus.usingFallbackClient,
   allowMockSupabaseClient,
-  missingUrlKeys: SUPABASE_URL_ENV_KEYS,
-  missingKeyKeys: SUPABASE_KEY_ENV_KEYS,
+  missingUrlKeys: supabaseConfigStatus.missingUrlKeys ?? SUPABASE_URL_ENV_KEYS,
+  missingKeyKeys: supabaseConfigStatus.missingAnonKeys ?? SUPABASE_KEY_ENV_KEYS,
   isProductionEnvironment,
-  forcedMockSupabaseClient,
+  forcedMockSupabaseClient: supabaseConfigStatus.usingFallbackClient && !allowMockSupabaseClient,
   configWarning: supabaseConfigWarning,
 };
 
-export const supabase = supabaseClient;
+export { supabase };
 
 /**
  * Test basic connectivity to Supabase

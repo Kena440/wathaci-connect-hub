@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
-import { supabaseClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase-enhanced';
 import { useAppContext } from '../contexts/AppContext';
 
 interface Notification {

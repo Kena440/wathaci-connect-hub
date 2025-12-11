@@ -26,7 +26,7 @@ import {
   Lightbulb
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabaseClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase-enhanced';
 import { useAppContext } from '@/contexts/AppContext';
 
 // Assessment form validation schema

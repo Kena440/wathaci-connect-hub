@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ServiceProviderCard } from './ServiceProviderCard';
-import { supabaseClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase-enhanced';
 import { Search, Filter, Grid, List, Loader2, Users, Building, BookOpen, ShoppingCart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {

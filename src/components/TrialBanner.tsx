@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Clock, Crown } from 'lucide-react';
-import { supabaseClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase-enhanced';
 import { useNavigate } from 'react-router-dom';
 import { isSubscriptionTemporarilyDisabled, SUBSCRIPTION_GRACE_LABEL } from '@/lib/subscriptionWindow';
 
