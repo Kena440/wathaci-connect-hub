@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, type FocusEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -120,12 +120,16 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
   const [authCompleted, setAuthCompleted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordValue, setPasswordValue] = useState('');
+  const passwordValidationTimeoutRef = useRef<number | undefined>();
 
   const storedCredentials = useMemo(() => (mode === 'signin' ? getStoredCredentials() : null), [mode]);
 
   const {
     register,
     handleSubmit,
+    trigger,
+    watch,
     formState: { errors, isSubmitting },
     reset,
   } = useForm<SignInValues | SignUpValues>({
@@ -140,6 +144,72 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
           }
         : undefined,
   });
+
+  const watchedPassword = watch('password');
+
+  useEffect(() => {
+    setPasswordValue(watchedPassword ?? '');
+  }, [watchedPassword]);
+
+  useEffect(() => {
+    return () => {
+      if (passwordValidationTimeoutRef.current) {
+        window.clearTimeout(passwordValidationTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const runPasswordValidation = async (value: string) => {
+    console.time('password-validation-total');
+    console.time('password-validation-resolver');
+    // Zod validation via react-hook-form resolver previously ran synchronously on every keystroke,
+    // which was causing INP spikes. We now schedule it and measure its cost.
+    await trigger('password');
+    console.timeEnd('password-validation-resolver');
+    console.timeEnd('password-validation-total');
+    return value;
+  };
+
+  const queuePasswordValidation = (value: string) => {
+    if (passwordValidationTimeoutRef.current) {
+      window.clearTimeout(passwordValidationTimeoutRef.current);
+    }
+
+    // Debounce validation so typing stays responsive; heavy resolver work runs after paint.
+    passwordValidationTimeoutRef.current = window.setTimeout(() => {
+      void runPasswordValidation(value);
+    }, 200);
+  };
+
+  const passwordField = register('password');
+
+  const handlePasswordChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+
+    console.time('password-change-total');
+
+    console.time('password-change-update-state');
+    setPasswordValue(value);
+    passwordField.onChange(event);
+    console.timeEnd('password-change-update-state');
+
+    console.time('password-change-queue-validation');
+    queuePasswordValidation(value);
+    console.timeEnd('password-change-queue-validation');
+
+    console.timeEnd('password-change-total');
+  };
+
+  const handlePasswordBlur = (event: FocusEvent<HTMLInputElement>) => {
+    passwordField.onBlur(event);
+
+    if (passwordValidationTimeoutRef.current) {
+      window.clearTimeout(passwordValidationTimeoutRef.current);
+    }
+
+    // Force-run validation on blur so we still show timely errors without blocking typing.
+    void runPasswordValidation(event.target.value);
+  };
 
   const handleSuccess = () => {
     if (onSuccess) {
@@ -285,7 +355,11 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
             type={showPassword ? 'text' : 'password'}
             autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
             disabled={isFormDisabled}
-            {...register('password')}
+            name={passwordField.name}
+            ref={passwordField.ref}
+            value={passwordValue}
+            onChange={handlePasswordChange}
+            onBlur={handlePasswordBlur}
           />
           <button
             type="button"
