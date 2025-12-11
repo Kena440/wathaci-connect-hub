@@ -209,14 +209,14 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
   }, [disabled, disabledReason]);
 
   const isFormDisabled = disabled || isSubmitting;
-  const passwordPerfLoggingEnabled = import.meta.env.DEV;
+  const passwordPerfLoggingEnabled = process.env.NODE_ENV !== 'production';
 
   const passwordValidationTimer = useRef<number | null>(null);
   const queuePasswordValidation = useCallback(
     (value: string) => {
       if (!value || isFormDisabled) {
         if (passwordValidationTimer.current !== null) {
-          window.clearTimeout(passwordValidationTimer.current);
+          clearTimeout(passwordValidationTimer.current);
           passwordValidationTimer.current = null;
         }
         return;
@@ -227,10 +227,10 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
       // keypress, which blocked input handling in Chrome (~270ms). Debounce so
       // the next paint happens before we run the resolver.
       if (passwordValidationTimer.current !== null) {
-        window.clearTimeout(passwordValidationTimer.current);
+        clearTimeout(passwordValidationTimer.current);
       }
 
-      passwordValidationTimer.current = window.setTimeout(() => {
+      passwordValidationTimer.current = setTimeout(() => {
         const validationLabel = `password-validation-${mode}`;
         if (passwordPerfLoggingEnabled) {
           console.time(validationLabel);
@@ -249,7 +249,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
   useEffect(() => {
     return () => {
       if (passwordValidationTimer.current !== null) {
-        window.clearTimeout(passwordValidationTimer.current);
+        clearTimeout(passwordValidationTimer.current);
       }
     };
   }, []);
