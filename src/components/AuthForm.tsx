@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,6 +14,7 @@ import { isStrongPassword, PASSWORD_MIN_LENGTH, passwordStrengthMessage } from '
 import { getOnboardingStartPath, normalizeAccountType } from '@/lib/onboardingPaths';
 
 const CREDENTIALS_STORAGE_KEY = 'wathaci-auth-credentials';
+const PASSWORD_VALIDATION_DEBOUNCE_MS = 180;
 
 const baseSchema = z.object({
   email: z
@@ -126,11 +127,15 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
   const {
     register,
     handleSubmit,
+    trigger,
     formState: { errors, isSubmitting },
     reset,
   } = useForm<SignInValues | SignUpValues>({
     resolver: zodResolver(mode === 'signup' ? signUpSchema : signInSchema),
     mode: 'onBlur',
+    // Avoid revalidating the whole schema on every keypress; revalidate on blur
+    // and use a debounced trigger for password strength/length checks.
+    reValidateMode: 'onBlur',
     defaultValues:
       mode === 'signin' && storedCredentials
         ? {
@@ -204,6 +209,66 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
   }, [disabled, disabledReason]);
 
   const isFormDisabled = disabled || isSubmitting;
+  const passwordPerfLoggingEnabled = process.env.NODE_ENV !== 'production';
+
+  const passwordValidationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queuePasswordValidation = useCallback(
+    (value: string) => {
+      if (!value || isFormDisabled) {
+        if (passwordValidationTimer.current !== null) {
+          clearTimeout(passwordValidationTimer.current);
+          passwordValidationTimer.current = null;
+        }
+        return;
+      }
+
+      // Debounce expensive schema validation to keep typing responsive.
+      // Previously, react-hook-form revalidated the full Zod schema on every
+      // keypress, which blocked input handling in Chrome (~270ms). Debounce so
+      // the next paint happens before we run the resolver.
+      if (passwordValidationTimer.current !== null) {
+        clearTimeout(passwordValidationTimer.current);
+      }
+
+      passwordValidationTimer.current = setTimeout(() => {
+        const validationLabel = `password-validation-${mode}`;
+        if (passwordPerfLoggingEnabled) {
+          console.time(validationLabel);
+        }
+        // trigger() runs the zod resolver; debounce to avoid blocking INP.
+        trigger('password').finally(() => {
+          if (passwordPerfLoggingEnabled) {
+            console.timeEnd(validationLabel);
+          }
+        });
+      }, PASSWORD_VALIDATION_DEBOUNCE_MS);
+    },
+    [isFormDisabled, mode, passwordPerfLoggingEnabled, trigger]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (passwordValidationTimer.current !== null) {
+        clearTimeout(passwordValidationTimer.current);
+      }
+    };
+  }, []);
+
+  const passwordField = register('password');
+  const handlePasswordChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const label = `password-change-total-${mode}`;
+      if (passwordPerfLoggingEnabled) {
+        console.time(label);
+      }
+      passwordField.onChange(event);
+      queuePasswordValidation(event.target.value);
+      if (passwordPerfLoggingEnabled) {
+        console.timeEnd(label);
+      }
+    },
+    [mode, passwordField, passwordPerfLoggingEnabled, queuePasswordValidation]
+  );
 
   const onSubmit = async (values: SignInValues | SignUpValues) => {
     if (disabled) {
@@ -285,7 +350,8 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
             type={showPassword ? 'text' : 'password'}
             autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
             disabled={isFormDisabled}
-            {...register('password')}
+            {...passwordField}
+            onChange={handlePasswordChange}
           />
           <button
             type="button"
