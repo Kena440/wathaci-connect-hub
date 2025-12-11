@@ -209,7 +209,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
   }, [disabled, disabledReason]);
 
   const isFormDisabled = disabled || isSubmitting;
-  const passwordPerfLoggingEnabled = typeof console !== 'undefined' && import.meta.env.DEV;
+  const passwordPerfLoggingEnabled = import.meta.env.DEV;
 
   const passwordValidationTimer = useRef<number | null>(null);
   const queuePasswordValidation = useCallback(
@@ -233,12 +233,12 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
       passwordValidationTimer.current = window.setTimeout(() => {
         const validationLabel = `password-validation-${mode}`;
         if (passwordPerfLoggingEnabled) {
-          console.time?.(validationLabel);
+          console.time(validationLabel);
         }
         // trigger() runs the zod resolver; debounce to avoid blocking INP.
         trigger('password').finally(() => {
           if (passwordPerfLoggingEnabled) {
-            console.timeEnd?.(validationLabel);
+            console.timeEnd(validationLabel);
           }
         });
       }, PASSWORD_VALIDATION_DEBOUNCE_MS);
@@ -259,12 +259,12 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
     (event: ChangeEvent<HTMLInputElement>) => {
       const label = `password-change-total-${mode}`;
       if (passwordPerfLoggingEnabled) {
-        console.time?.(label);
+        console.time(label);
       }
       passwordField.onChange(event);
       queuePasswordValidation(event.target.value);
       if (passwordPerfLoggingEnabled) {
-        console.timeEnd?.(label);
+        console.timeEnd(label);
       }
     },
     [mode, passwordField, passwordPerfLoggingEnabled, queuePasswordValidation]
