@@ -209,7 +209,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
   }, [disabled, disabledReason]);
 
   const isFormDisabled = disabled || isSubmitting;
-  const passwordPerfLoggingEnabled = useMemo(() => process.env.NODE_ENV !== 'production', []);
+  const passwordPerfLoggingEnabled = process.env.NODE_ENV !== 'production';
 
   const passwordValidationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queuePasswordValidation = useCallback(
@@ -236,17 +236,11 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
           console.time(validationLabel);
         }
         // trigger() runs the zod resolver; debounce to avoid blocking INP.
-        trigger('password')
-          .catch((error) => {
-            if (passwordPerfLoggingEnabled) {
-              console.warn('[password-validation]', error);
-            }
-          })
-          .finally(() => {
-            if (passwordPerfLoggingEnabled) {
-              console.timeEnd(validationLabel);
-            }
-          });
+        trigger('password').finally(() => {
+          if (passwordPerfLoggingEnabled) {
+            console.timeEnd(validationLabel);
+          }
+        });
       }, PASSWORD_VALIDATION_DEBOUNCE_MS);
     },
     [isFormDisabled, mode, passwordPerfLoggingEnabled, trigger]
@@ -260,7 +254,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
     };
   }, []);
 
-  const passwordField = useMemo(() => register('password'), [register]);
+  const passwordField = register('password');
   const handlePasswordChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const label = `password-change-total-${mode}`;
