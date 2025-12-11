@@ -1,39 +1,66 @@
 /**
- * Twilio Client Configuration
- * 
- * Initializes and exports a Twilio client for sending SMS and WhatsApp messages.
- * 
- * Required Environment Variables:
- * - TWILIO_ACCOUNT_SID: Your Twilio Account SID
- * - TWILIO_AUTH_TOKEN: Your Twilio Auth Token
- * 
+ * Twilio Client Configuration (Safe / Non-Crashing Version)
+ *
+ * This module:
+ * - Tries to require the 'twilio' package.
+ * - If the module is missing, logs a warning and keeps the app running.
+ * - If credentials are missing, logs a warning and disables OTP.
+ * - If everything is present, exposes a working Twilio client.
+ *
+ * Required Environment Variables (for real OTP usage):
+ * - TWILIO_ACCOUNT_SID
+ * - TWILIO_AUTH_TOKEN
+ *
  * Optional Environment Variables:
- * - TWILIO_PHONE_NUMBER: Your Twilio phone number for SMS (E.164 format)
- * - TWILIO_WHATSAPP_FROM: Your Twilio WhatsApp-enabled number (format: whatsapp:+1234567890)
+ * - TWILIO_PHONE_NUMBER    (default SMS from number)
+ * - TWILIO_WHATSAPP_FROM   (default WhatsApp from number, e.g. "whatsapp:+1415...")
  */
 
-const Twilio = require('twilio');
+let Twilio = null;
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
+// Try to load the module, but don't crash if it's missing
+try {
+  Twilio = require('twilio');
+} catch (error) {
+  console.warn(
+    '[TwilioClient] "twilio" module is not installed. OTP via Twilio will be disabled.',
+    `Error: ${error.message}`
+  );
+}
 
-// Initialize Twilio client if credentials are available
+const {
+  TWILIO_ACCOUNT_SID,
+  TWILIO_AUTH_TOKEN,
+  TWILIO_PHONE_NUMBER,
+  TWILIO_WHATSAPP_FROM,
+} = process.env;
+
 let twilioClient = null;
 
-if (accountSid && authToken) {
+if (!Twilio) {
+  // Module isn't installed: we already logged this above.
+  twilioClient = null;
+} else if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
+  console.warn(
+    '[TwilioClient] Twilio credentials (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN) not configured. OTP via Twilio will be disabled.'
+  );
+  twilioClient = null;
+} else {
   try {
-    twilioClient = Twilio(accountSid, authToken);
+    twilioClient = Twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
     console.log('[TwilioClient] Twilio client initialized successfully');
   } catch (error) {
-    console.error('[TwilioClient] Failed to initialize Twilio client:', error.message);
+    console.error(
+      '[TwilioClient] Failed to initialize Twilio client:',
+      error.message
+    );
+    twilioClient = null;
   }
-} else {
-  console.warn('[TwilioClient] Twilio credentials not configured. OTP functionality will not be available.');
 }
 
 /**
  * Get the Twilio client instance
- * @returns {import('twilio').Twilio | null} Twilio client or null if not configured
+ * @returns {import('twilio').Twilio | null} Twilio client or null if not available
  */
 function getTwilioClient() {
   return twilioClient;
@@ -44,7 +71,7 @@ function getTwilioClient() {
  * @returns {boolean} True if Twilio client is available
  */
 function isTwilioConfigured() {
-  return twilioClient !== null;
+  return !!twilioClient;
 }
 
 /**
@@ -52,7 +79,7 @@ function isTwilioConfigured() {
  * @returns {string | null} Phone number or null if not configured
  */
 function getTwilioPhoneNumber() {
-  return process.env.TWILIO_PHONE_NUMBER || null;
+  return TWILIO_PHONE_NUMBER || null;
 }
 
 /**
@@ -60,7 +87,7 @@ function getTwilioPhoneNumber() {
  * @returns {string | null} WhatsApp sender or null if not configured
  */
 function getTwilioWhatsAppFrom() {
-  return process.env.TWILIO_WHATSAPP_FROM || null;
+  return TWILIO_WHATSAPP_FROM || null;
 }
 
 module.exports = {
