@@ -209,9 +209,9 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
   }, [disabled, disabledReason]);
 
   const isFormDisabled = disabled || isSubmitting;
-  const passwordPerfLoggingEnabled = process.env.NODE_ENV !== 'production';
+  const passwordPerfLoggingEnabled = (process.env.NODE_ENV ?? 'development') !== 'production';
 
-  const passwordValidationTimer = useRef<number | null>(null);
+  const passwordValidationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queuePasswordValidation = useCallback(
     (value: string) => {
       if (!value || isFormDisabled) {
@@ -254,7 +254,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
     };
   }, []);
 
-  const passwordField = register('password');
+  const passwordField = useMemo(() => register('password'), [register]);
   const handlePasswordChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const label = `password-change-total-${mode}`;
