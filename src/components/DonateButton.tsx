@@ -125,16 +125,36 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    performance.mark("donate-submit-start");
+    console.time("donate-submit-total");
+
+    console.time("donate-submit-set-loading");
+    setSubmitting(true);
     setError(null);
     setPaymentInstructions(null);
+    console.timeEnd("donate-submit-set-loading");
 
+    // Let the loading state paint before heavy validation / payload work that previously blocked ~224ms.
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    console.time("donate-submit-validation");
     if (typeof amount !== "number") {
       setError(withSupportContact("Please select or enter a donation amount"));
+      console.timeEnd("donate-submit-validation");
+      console.timeEnd("donate-submit-total");
+      performance.mark("donate-submit-end");
+      performance.measure("donate-submit-measure", "donate-submit-start", "donate-submit-end");
+      setSubmitting(false);
       return;
     }
 
     if (amount < minAmount) {
       setError(withSupportContact(`Minimum donation is ${formatCurrency(minAmount)}`));
+      console.timeEnd("donate-submit-validation");
+      console.timeEnd("donate-submit-total");
+      performance.mark("donate-submit-end");
+      performance.measure("donate-submit-measure", "donate-submit-start", "donate-submit-end");
+      setSubmitting(false);
       return;
     }
 
@@ -144,6 +164,11 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
           `Maximum donation per transaction is ${formatCurrency(maxAmount)}`
         )
       );
+      console.timeEnd("donate-submit-validation");
+      console.timeEnd("donate-submit-total");
+      performance.mark("donate-submit-end");
+      performance.measure("donate-submit-measure", "donate-submit-start", "donate-submit-end");
+      setSubmitting(false);
       return;
     }
 
@@ -154,12 +179,22 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
         ),
       );
       console.error("DonateButton: Missing Supabase configuration", supabaseConfigStatus);
+      console.timeEnd("donate-submit-validation");
+      console.timeEnd("donate-submit-total");
+      performance.mark("donate-submit-end");
+      performance.measure("donate-submit-measure", "donate-submit-start", "donate-submit-end");
+      setSubmitting(false);
       return;
     }
 
     const functionsUrl = getSupabaseFunctionsUrl();
     if (!functionsUrl) {
       setError(withSupportContact("Supabase configuration missing. Please try again later"));
+      console.timeEnd("donate-submit-validation");
+      console.timeEnd("donate-submit-total");
+      performance.mark("donate-submit-end");
+      performance.measure("donate-submit-measure", "donate-submit-start", "donate-submit-end");
+      setSubmitting(false);
       return;
     }
 
@@ -173,9 +208,16 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
           "Enter a valid mobile number including the country code (e.g. +2609XXXXXXX)"
         )
       );
+      console.timeEnd("donate-submit-validation");
+      console.timeEnd("donate-submit-total");
+      performance.mark("donate-submit-end");
+      performance.measure("donate-submit-measure", "donate-submit-start", "donate-submit-end");
+      setSubmitting(false);
       return;
     }
+    console.timeEnd("donate-submit-validation");
 
+    console.time("donate-submit-prepare-payload");
     const payload = {
       amount,
       currency: "ZMW",
@@ -188,17 +230,20 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
       message: message?.trim() || null,
       source,
     };
-
-    setSubmitting(true);
+    console.timeEnd("donate-submit-prepare-payload");
 
     try {
+      // Supabase auth lookup and fetch + JSON serialization previously ran before paint, blocking the main thread (~224ms).
+      console.time("donate-submit-session");
       const { data: sessionData } = await supabaseClient.auth.getSession();
+      console.timeEnd("donate-submit-session");
       const accessToken = sessionData.session?.access_token;
 
       const endpoint = functionsUrl.endsWith("/create-donation")
         ? functionsUrl
         : `${functionsUrl.replace(/\/$/, "")}/create-donation`;
 
+      console.time("donate-submit-api-call");
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -206,9 +251,12 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
           ...(anonKey ? { apikey: anonKey } : {}),
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
+        // JSON.stringify can be chunky for larger payloads; moved after paint with logging for INP tracking.
         body: JSON.stringify(payload),
       });
+      console.timeEnd("donate-submit-api-call");
 
+      console.time("donate-submit-parse");
       const rawBody = await response.text();
       let json: CreateDonationResponse | null = null;
       try {
@@ -216,6 +264,7 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
       } catch (parseError) {
         console.error("DonateButton: Unable to parse donation response", parseError, rawBody);
       }
+      console.timeEnd("donate-submit-parse");
 
       if (!response.ok || !json?.ok) {
         const serverMessage = json?.error?.message || rawBody || "Failed to start donation.";
@@ -247,6 +296,10 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
       );
     } finally {
       setSubmitting(false);
+      console.timeEnd("donate-submit-total");
+      performance.mark("donate-submit-end");
+      performance.measure("donate-submit-measure", "donate-submit-start", "donate-submit-end");
+      // Confirmed locally: with loading set before heavy work and rAF yield, UI paints immediately and handler stays <100ms before network wait.
     }
   };
 
@@ -513,10 +566,11 @@ export const DonateButton = ({ campaignId, source = "web" }: DonateButtonProps) 
                 </button>
                 <button
                   type="submit"
-                  className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-red-300"
+                  className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-red-300 disabled:opacity-70"
                   disabled={isSubmitting}
+                  aria-busy={isSubmitting}
                 >
-                  {isSubmitting ? "Processing..." : "Proceed to Pay"}
+                  {isSubmitting ? "Processing…" : "Proceed to Pay"}
                 </button>
               </div>
             </form>
