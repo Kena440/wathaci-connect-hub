@@ -14,6 +14,7 @@ import { isStrongPassword, PASSWORD_MIN_LENGTH, passwordStrengthMessage } from '
 import { getOnboardingStartPath, normalizeAccountType } from '@/lib/onboardingPaths';
 
 const CREDENTIALS_STORAGE_KEY = 'wathaci-auth-credentials';
+const PASSWORD_VALIDATION_DEBOUNCE_MS = 180;
 
 const baseSchema = z.object({
   email: z
@@ -208,14 +209,15 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
   }, [disabled, disabledReason]);
 
   const isFormDisabled = disabled || isSubmitting;
+  const passwordPerfLoggingEnabled = typeof console !== 'undefined' && import.meta.env.DEV;
 
-  const passwordValidationTimer = useRef<number | undefined>(undefined);
+  const passwordValidationTimer = useRef<number | null>(null);
   const queuePasswordValidation = useCallback(
     (value: string) => {
       if (!value || isFormDisabled) {
-        if (passwordValidationTimer.current) {
+        if (passwordValidationTimer.current !== null) {
           window.clearTimeout(passwordValidationTimer.current);
-          passwordValidationTimer.current = undefined;
+          passwordValidationTimer.current = null;
         }
         return;
       }
@@ -224,23 +226,29 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
       // Previously, react-hook-form revalidated the full Zod schema on every
       // keypress, which blocked input handling in Chrome (~270ms). Debounce so
       // the next paint happens before we run the resolver.
-      if (passwordValidationTimer.current) {
+      if (passwordValidationTimer.current !== null) {
         window.clearTimeout(passwordValidationTimer.current);
       }
 
       passwordValidationTimer.current = window.setTimeout(() => {
         const validationLabel = `password-validation-${mode}`;
-        console.time?.(validationLabel);
+        if (passwordPerfLoggingEnabled) {
+          console.time?.(validationLabel);
+        }
         // trigger() runs the zod resolver; debounce to avoid blocking INP.
-        trigger('password').finally(() => console.timeEnd?.(validationLabel));
-      }, 180);
+        trigger('password').finally(() => {
+          if (passwordPerfLoggingEnabled) {
+            console.timeEnd?.(validationLabel);
+          }
+        });
+      }, PASSWORD_VALIDATION_DEBOUNCE_MS);
     },
-    [isFormDisabled, mode, trigger]
+    [isFormDisabled, mode, passwordPerfLoggingEnabled, trigger]
   );
 
   useEffect(() => {
     return () => {
-      if (passwordValidationTimer.current) {
+      if (passwordValidationTimer.current !== null) {
         window.clearTimeout(passwordValidationTimer.current);
       }
     };
@@ -250,12 +258,16 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
   const handlePasswordChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const label = `password-change-total-${mode}`;
-      console.time?.(label);
+      if (passwordPerfLoggingEnabled) {
+        console.time?.(label);
+      }
       passwordField.onChange(event);
       queuePasswordValidation(event.target.value);
-      console.timeEnd?.(label);
+      if (passwordPerfLoggingEnabled) {
+        console.timeEnd?.(label);
+      }
     },
-    [mode, passwordField, queuePasswordValidation]
+    [mode, passwordField, passwordPerfLoggingEnabled, queuePasswordValidation]
   );
 
   const onSubmit = async (values: SignInValues | SignUpValues) => {
