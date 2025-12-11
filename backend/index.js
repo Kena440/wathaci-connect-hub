@@ -18,6 +18,7 @@ try {
   rateLimit = () => (req, res, next) => next();
 }
 
+// Route modules
 const userRoutes = require('./routes/users');
 const logRoutes = require('./routes/logs');
 const paymentRoutes = require('./routes/payment');
@@ -32,10 +33,65 @@ const creditPassportRoutes = require('./routes/credit-passports');
 const agentRoutes = require('./routes/agent');
 const supportRoutes = require('./routes/support');
 
+// Health helpers
+const { getTwilioHealth } = require('./lib/twilioClient');
+
+const {
+  getEmailHealth,
+  isEmailConfigured,
+} = require('./services/email-service');
+
+const {
+  getSupabaseHealth,
+  isSupabaseAdminConfigured,
+} = require('./lib/supabaseAdmin');
+
 const app = express();
 
+/**
+ * Root route: simple ping
+ */
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'Wathaci Backend',
+    message: 'Backend is running successfully',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+/**
+ * Integrated health route: Supabase + Email + Twilio
+ */
+app.get('/health', (req, res) => {
+  const twilio = getTwilioHealth();
+  const email = getEmailHealth();
+  const supabase = getSupabaseHealth();
+
+  // Supabase + Email are required for "ok"
+  // Twilio is optional but reported
+  const overallHealthy =
+    isSupabaseAdminConfigured() &&
+    isEmailConfigured();
+
+  res.status(overallHealthy ? 200 : 503).json({
+    status: overallHealthy ? 'ok' : 'degraded',
+    service: 'Wathaci Backend',
+    timestamp: new Date().toISOString(),
+    components: {
+      supabaseAdmin: supabase,
+      email,
+      twilio,
+    },
+  });
+});
+
+// Log payment readiness on startup
 logPaymentReadiness();
 
+/**
+ * CORS configuration
+ */
 const parseAllowedOrigins = (value = '') =>
   value
     .split(',')
@@ -51,13 +107,16 @@ const defaultAllowedOrigins = [
   'https://www.wathaci.com',
   'https://wathaci.com',
   'https://wathaci-connect-platform.vercel.app',
-  'https://wathaci-connect-platform-amukenas-projects.vercel.app'
+  'https://wathaci-connect-platform-amukenas-projects.vercel.app',
 ];
 
 const configuredOrigins = parseAllowedOrigins(
   process.env.ALLOWED_ORIGINS ?? process.env.CORS_ALLOWED_ORIGINS
 );
-const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...configuredOrigins]));
+
+const allowedOrigins = Array.from(
+  new Set([...defaultAllowedOrigins, ...configuredOrigins])
+);
 
 app.use(
   cors({
@@ -67,10 +126,13 @@ app.use(
       }
       return callback(new Error(`Not allowed by CORS: ${origin}`));
     },
-    credentials: true
+    credentials: true,
   })
 );
 
+/**
+ * JSON body parsing with rawBody retained for webhooks, etc.
+ */
 app.use(
   express.json({
     limit: '1mb',
@@ -80,30 +142,26 @@ app.use(
       } else {
         req.rawBody = '';
       }
-    }
+    },
   })
 );
 
+/**
+ * Logging, security, rate limiting
+ */
 app.use(morgan('dev'));
 app.use(helmet());
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100
+  max: 100,
 });
+
 app.use(limiter);
 
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    service: 'wathaci-connect-backend',
-    supabaseConfigured: !!process.env.SUPABASE_URL,
-    lencoConfigured: !!process.env.LENCO_API_URL,
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
-
+/**
+ * API index / documentation
+ */
 app.get('/api', (req, res) => {
   res.status(200).json({
     name: 'WATHACI CONNECT API',
@@ -116,16 +174,21 @@ app.get('/api', (req, res) => {
       documents:
         'GET /api/documents, GET /api/documents/:id, POST /api/documents/pay, POST /api/documents/:id/confirm-payment, POST /api/documents/:id/generate',
       credit_passports:
-        'GET /api/credit-passports, GET /api/credit-passports/:id, POST /api/credit-passports/pay, POST /api/credit-passports/:id/confirm-payment, POST /api/credit-passports/:id/generate, POST /api/credit-passports/:id/share, POST /api/credit-passports/:id/pdf',
+        'GET /api/credit-passports, GET /api/credit-passports/:id, POST /api/credit-passports/pay, POST /api/credit-passports/:id/share, POST /api/credit-passports/:id/pdf',
       resolve: 'POST /resolve/lenco-merchant',
       otp: 'POST /api/auth/otp/send, POST /api/auth/otp/verify',
-      email: 'GET /api/email/test, GET /api/email/status, POST /api/email/send, POST /api/email/send-otp, POST /api/email/send-verification, POST /api/email/send-password-reset',
-      diagnostics: 'POST /api/diagnostics/run, GET /api/diagnostics/:companyId/latest, GET /api/diagnostics/:companyId/history',
-      support: 'POST /api/support/contact'
-    }
+      email:
+        'GET /api/email/test, GET /api/email/status, POST /api/email/send, POST /api/email/send-otp, POST /api/email/send-verification, POST /api/email/send-password-reset',
+      diagnostics:
+        'POST /api/diagnostics/run, GET /api/diagnostics/:companyId/latest, GET /api/diagnostics/:companyId/history',
+      support: 'POST /api/support/contact',
+    },
   });
 });
 
+/**
+ * Route mounting
+ */
 app.use('/api/health', healthRoutes);
 app.use(['/users', '/api/users'], userRoutes);
 app.use('/api/logs', logRoutes);
@@ -140,12 +203,15 @@ app.use('/api/credit-passports', creditPassportRoutes);
 app.use('/api/agent', agentRoutes);
 app.use('/api/support', supportRoutes);
 
+/**
+ * Global error handler
+ */
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', {
     message: err.message,
     stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
     url: req.url,
-    method: req.method
+    method: req.method,
   });
 
   if (res.headersSent) {
@@ -153,7 +219,10 @@ app.use((err, req, res, next) => {
   }
 
   res.status(err.status || 500).json({
-    error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message
+    error:
+      process.env.NODE_ENV === 'production'
+        ? 'Internal server error'
+        : err.message,
   });
 });
 
