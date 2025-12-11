@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -126,11 +126,15 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
   const {
     register,
     handleSubmit,
+    trigger,
     formState: { errors, isSubmitting },
     reset,
   } = useForm<SignInValues | SignUpValues>({
     resolver: zodResolver(mode === 'signup' ? signUpSchema : signInSchema),
     mode: 'onBlur',
+    // Avoid revalidating the whole schema on every keypress; revalidate on blur
+    // and use a debounced trigger for password strength/length checks.
+    reValidateMode: 'onBlur',
     defaultValues:
       mode === 'signin' && storedCredentials
         ? {
@@ -204,6 +208,55 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
   }, [disabled, disabledReason]);
 
   const isFormDisabled = disabled || isSubmitting;
+
+  const passwordValidationTimer = useRef<number | undefined>(undefined);
+  const queuePasswordValidation = useCallback(
+    (value: string) => {
+      if (!value || isFormDisabled) {
+        if (passwordValidationTimer.current) {
+          window.clearTimeout(passwordValidationTimer.current);
+          passwordValidationTimer.current = undefined;
+        }
+        return;
+      }
+
+      // Debounce expensive schema validation to keep typing responsive.
+      // Previously, react-hook-form revalidated the full Zod schema on every
+      // keypress, which blocked input handling in Chrome (~270ms). Debounce so
+      // the next paint happens before we run the resolver.
+      if (passwordValidationTimer.current) {
+        window.clearTimeout(passwordValidationTimer.current);
+      }
+
+      passwordValidationTimer.current = window.setTimeout(() => {
+        const validationLabel = `password-validation-${mode}`;
+        console.time?.(validationLabel);
+        // trigger() runs the zod resolver; debounce to avoid blocking INP.
+        trigger('password').finally(() => console.timeEnd?.(validationLabel));
+      }, 180);
+    },
+    [isFormDisabled, mode, trigger]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (passwordValidationTimer.current) {
+        window.clearTimeout(passwordValidationTimer.current);
+      }
+    };
+  }, []);
+
+  const passwordField = register('password');
+  const handlePasswordChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const label = `password-change-total-${mode}`;
+      console.time?.(label);
+      passwordField.onChange(event);
+      queuePasswordValidation(event.target.value);
+      console.timeEnd?.(label);
+    },
+    [mode, passwordField, queuePasswordValidation]
+  );
 
   const onSubmit = async (values: SignInValues | SignUpValues) => {
     if (disabled) {
@@ -285,7 +338,8 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
             type={showPassword ? 'text' : 'password'}
             autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
             disabled={isFormDisabled}
-            {...register('password')}
+            {...passwordField}
+            onChange={handlePasswordChange}
           />
           <button
             type="button"
