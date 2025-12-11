@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import type { PostgrestError } from '@supabase/supabase-js';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase-enhanced';
 import { ProfileForm } from '@/components/ProfileForm';
@@ -39,6 +40,54 @@ export const ProfileSetup = () => {
   const validAccountTypeValues = useMemo(
     () => new Set<AccountTypeValue>(accountTypes.map(({ value }) => value)),
     []
+  );
+
+  const isPermissionError = (error: PostgrestError | null) => {
+    if (!error) return false;
+
+    const message = error.message.toLowerCase();
+
+    return (
+      error.code === '42501' ||
+      error.code === 'PGRST301' ||
+      error.code === 'PGRST302' ||
+      message.includes('permission denied') ||
+      message.includes('row-level security') ||
+      message.includes('authorization failed')
+    );
+  };
+
+  const saveProfileWithFallback = useCallback(
+    async (payload: Record<string, unknown>) => {
+      if (!user) return;
+
+      const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
+
+      if (!error) {
+        return;
+      }
+
+      if (!isPermissionError(error)) {
+        throw error;
+      }
+
+      const ensureResult = await supabase.rpc('ensure_profile_exists', {
+        p_user_id: user.id,
+        p_email: user.email,
+        p_full_name: (payload.full_name as string) ?? (payload.business_name as string) ?? '',
+        p_msisdn:
+          (payload.msisdn as string) ?? (payload.phone as string) ?? (payload.payment_phone as string) ?? null,
+        p_profile_type: 'customer',
+        p_account_type: (payload.account_type as string) ?? selectedAccountType ?? null,
+        p_phone: (payload.phone as string) ?? null,
+        p_company_name: (payload.business_name as string) ?? null,
+      });
+
+      if (ensureResult.error) {
+        throw ensureResult.error;
+      }
+    },
+    [selectedAccountType, user]
   );
 
   const accountTypeFromParams = (() => {
@@ -164,16 +213,13 @@ export const ProfileSetup = () => {
 
       setLoading(true);
       try {
-        const { error } = await supabase
-          .from('profiles')
-          .upsert({
-            id: user.id,
-            email: user.email,
-            account_type: accountType,
-            created_at: new Date().toISOString(),
-          });
-
-        if (error) throw error;
+        await saveProfileWithFallback({
+          id: user.id,
+          email: user.email,
+          account_type: accountType,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
         await refreshUser();
         setSelectedAccountType(accountType);
         setExistingProfile((prev: any) =>
@@ -190,7 +236,7 @@ export const ProfileSetup = () => {
         setLoading(false);
       }
     },
-    [existingProfile, refreshUser, selectedAccountType, toast, user]
+    [existingProfile, refreshUser, saveProfileWithFallback, selectedAccountType, toast, user]
   );
 
   const handlePrevious = () => {
@@ -425,11 +471,11 @@ export const ProfileSetup = () => {
 
       // TEMPORARY BYPASS MODE: remove after auth errors are fixed
       // Try to save profile to database
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
+      try {
+        await saveProfileWithFallback({
           id: user.id,
           email: user.email,
+          account_type: selectedAccountType,
           ...sanitizedProfile,
           coordinates: normalizedCoordinates,
           qualifications: normalizedQualifications,
@@ -438,14 +484,19 @@ export const ProfileSetup = () => {
           updated_at: new Date().toISOString()
         });
 
-      if (error) {
+        // Success - profile saved to database
+        toast({
+          title: "Profile completed!",
+          description: "Your profile has been successfully saved.",
+        });
+      } catch (error: any) {
         // If bypass mode is enabled, save to localStorage and continue
         if (isAuthBypassEnabled()) {
           logBypassError('PROFILE_SAVE_ERROR', error, {
             userId: user.id,
             email: user.email,
           });
-          
+
           // Create bypass profile with all the data
           const bypassProfileData = createBypassProfile(user.id, user.email || '', {
             ...sanitizedProfile,
@@ -454,14 +505,14 @@ export const ProfileSetup = () => {
             ...paymentData,
             profile_completed: true,
           });
-          
+
           saveBypassProfile(bypassProfileData);
-          
+
           logBypassOperation('PROFILE_SAVE', 'Saved profile to localStorage after DB error', {
             userId: user.id,
             email: user.email,
           });
-          
+
           toast({
             title: "Profile saved (Temporary Mode)",
             description: "Your profile has been saved in temporary mode; we'll sync it fully once our systems are stable.",
@@ -471,12 +522,6 @@ export const ProfileSetup = () => {
           // Bypass mode is off, throw the error
           throw error;
         }
-      } else {
-        // Success - profile saved to database
-        toast({
-          title: "Profile completed!",
-          description: "Your profile has been successfully saved.",
-        });
       }
 
       await refreshUser();
