@@ -585,8 +585,8 @@ export interface ProfessionalProfileRow {
 }
 
 export interface SmeProfileRow {
-  id?: string;
   user_id: string;
+  id?: string | null;
   profile_id?: string | null;
   account_type?: string | null;
   email?: string | null;
@@ -597,41 +597,21 @@ export interface SmeProfileRow {
   is_profile_complete: boolean;
   approval_status: string;
   business_name: string;
-  registration_status?: string | null;
   registration_number?: string | null;
   registration_type?: string | null;
-  legal_form?: string | null;
-  year_established?: number | null;
+  sector?: string | null;
+  subsector?: string | null;
   years_in_operation?: number | null;
   employee_count?: number | null;
-  sector?: string | null;
-  sub_sector?: string | null;
-  subsector?: string | null;
-  description?: string | null;
+  turnover_bracket?: string | null;
   products_overview?: string | null;
   target_market?: string | null;
-  website?: string | null;
-  website_url?: string | null;
-  primary_products_services?: string | null;
-  employees_full_time?: number | null;
-  employees_part_time?: number | null;
-  annual_turnover_band?: string | null;
-  turnover_bracket?: string | null;
-  growth_stage?: string | null;
-  funding_need?: boolean | null;
-  funding_purpose?: string | null;
-  funding_amount_min?: number | null;
-  funding_amount_max?: number | null;
-  impact_focus?: Record<string, unknown> | null;
   location_city?: string | null;
   location_country?: string | null;
-  markets_served?: string | null;
-  preferred_support_types?: string[] | null;
-  is_visible?: boolean | null;
-  tags?: string[] | null;
   contact_name?: string | null;
   contact_phone?: string | null;
   business_email?: string | null;
+  website_url?: string | null;
   social_links?: string[] | null;
   main_challenges?: string[] | null;
   support_needs?: string[] | null;
