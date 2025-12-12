@@ -40,11 +40,11 @@ export interface SmeProfilePayload {
   turnover_bracket?: string | null;
   products_overview?: string | null;
   target_market?: string | null;
-  location_city?: string | null;
-  location_country?: string | null;
-  contact_name?: string | null;
-  contact_phone?: string | null;
-  business_email?: string | null;
+  location_city: string;
+  location_country: string;
+  contact_name: string;
+  contact_phone: string;
+  business_email: string;
   website_url?: string | null;
   social_links?: string[];
   main_challenges?: string[];
@@ -63,12 +63,17 @@ export interface InvestorProfilePayload {
   stage_preference?: string[];
   instruments?: string[];
   impact_focus?: string[];
-  contact_person?: string | null;
+  contact_person: string;
   contact_role?: string | null;
   website_url?: string | null;
   linkedin_url?: string | null;
   logo_url?: string | null;
 }
+
+const sanitizeText = (value?: string | null) => {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+};
 
 const BUCKET_ID = "profile-media";
 
@@ -167,6 +172,11 @@ export async function upsertProfessionalProfile(payload: ProfessionalProfilePayl
     .single();
 
   if (error) {
+    console.error("[profile-onboarding] professional_profiles upsert failed", {
+      table: "professional_profiles",
+      error,
+      payloadKeys: Object.keys(sanitizedPayload),
+    });
     throw new Error(error.message || "Unable to save professional profile.");
   }
 
@@ -190,10 +200,27 @@ export async function getSmeProfile() {
 
 export async function upsertSmeProfile(payload: SmeProfilePayload) {
   const user = await requireUser();
+  const sanitizedPayload = {
+    ...payload,
+    registration_number: sanitizeText(payload.registration_number),
+    registration_type: sanitizeText(payload.registration_type),
+    sector: sanitizeText(payload.sector),
+    subsector: sanitizeText(payload.subsector),
+    turnover_bracket: sanitizeText(payload.turnover_bracket),
+    products_overview: sanitizeText(payload.products_overview),
+    target_market: sanitizeText(payload.target_market),
+    contact_name: payload.contact_name.trim(),
+    contact_phone: payload.contact_phone.trim(),
+    business_email: payload.business_email.trim(),
+    location_city: payload.location_city.trim(),
+    location_country: payload.location_country.trim(),
+    website_url: sanitizeText(payload.website_url),
+    logo_url: sanitizeText(payload.logo_url),
+  };
   const { data, error } = await supabaseClient
     .from("sme_profiles")
     .upsert({
-      ...payload,
+      ...sanitizedPayload,
       social_links: payload.social_links ?? [],
       main_challenges: payload.main_challenges ?? [],
       support_needs: payload.support_needs ?? [],
@@ -205,6 +232,11 @@ export async function upsertSmeProfile(payload: SmeProfilePayload) {
     .single();
 
   if (error) {
+    console.error("[profile-onboarding] sme_profiles upsert failed", {
+      table: "sme_profiles",
+      error,
+      payloadKeys: Object.keys(payload),
+    });
     throw new Error(error.message || "Unable to save SME profile");
   }
 
@@ -228,10 +260,19 @@ export async function getInvestorProfile() {
 
 export async function upsertInvestorProfile(payload: InvestorProfilePayload) {
   const user = await requireUser();
+  const sanitizedPayload = {
+    ...payload,
+    investor_type: sanitizeText(payload.investor_type),
+    contact_person: payload.contact_person.trim(),
+    contact_role: sanitizeText(payload.contact_role),
+    website_url: sanitizeText(payload.website_url),
+    linkedin_url: sanitizeText(payload.linkedin_url),
+    logo_url: sanitizeText(payload.logo_url),
+  };
   const { data, error } = await supabaseClient
     .from("investor_profiles")
     .upsert({
-      ...payload,
+      ...sanitizedPayload,
       preferred_sectors: payload.preferred_sectors ?? [],
       country_focus: payload.country_focus ?? [],
       stage_preference: payload.stage_preference ?? [],
@@ -244,6 +285,11 @@ export async function upsertInvestorProfile(payload: InvestorProfilePayload) {
     .single();
 
   if (error) {
+    console.error("[profile-onboarding] investor_profiles upsert failed", {
+      table: "investor_profiles",
+      error,
+      payloadKeys: Object.keys(payload),
+    });
     throw new Error(error.message || "Unable to save investor profile");
   }
 

@@ -258,6 +258,11 @@ export async function upsertProfile(params: ProfileParams) {
     .single();
 
   if (error) {
+    console.error("[onboarding] profiles upsert failed", {
+      table: "profiles",
+      error,
+      payloadKeys: Object.keys(payload),
+    });
     logger.error("Profile upsert failed", error, {
       component: "onboarding",
       event: "onboarding:profile:upsert:error",
