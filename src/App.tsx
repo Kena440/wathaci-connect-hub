@@ -161,6 +161,7 @@ const ComplianceDashboard = lazy(() =>
     default: module.ComplianceDashboard,
   }))
 );
+const Copilot = lazy(() => import("./pages/Copilot"));
 
 const withAppLayout = (element: ReactNode, options: { showFooter?: boolean } = {}) => (
   <AppLayout showFooter={options.showFooter ?? true}>{element}</AppLayout>
@@ -217,6 +218,7 @@ export const AppRoutes = () => (
       <Route path="/profile-review" element={withAppLayout(<ProfileReview />, { showFooter: false })} />
       <Route path="/subscription-plans" element={withAppLayout(<SubscriptionPlans />)} />
       <Route path="/partnership-hub" element={<PartnershipHub />} />
+      <Route path="/copilot" element={withAppLayout(withAuth(<Copilot />))} />
       <Route
         path="/funding-hub"
         element={withCompletedProfile(<FundingHub />)}
