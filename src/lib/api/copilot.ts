@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from './api/client';
+import { apiGet, apiPost } from '@/lib/api/client';
 import { supabaseClient } from '@/lib/supabaseClient';
 
 const authHeaders = async () => {
