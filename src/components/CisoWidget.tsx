@@ -60,16 +60,35 @@ const CisoWidget = ({ open, onOpenChange }: CisoWidgetProps) => {
 
     const userMessage: CisoMessage = { role: "user", content: trimmed };
     const nextMessages = [...messages, userMessage];
-    setMessages(nextMessages);
+    setMessages([...nextMessages, { role: "assistant", content: "" }]);
     setInput("");
     setIsLoading(true);
 
     try {
       const reply = await callCisoAgent(nextMessages, "user", undefined, {
         accessToken,
+        onToken: (token) => {
+          setMessages((prev) => {
+            const updated = [...prev];
+            const lastIndex = updated.length - 1;
+            if (lastIndex >= 0 && updated[lastIndex]?.role === "assistant") {
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                content: `${updated[lastIndex].content}${token}`,
+              };
+            }
+            return updated;
+          });
+        },
       });
-      const assistant: CisoMessage = { role: "assistant", content: reply };
-      setMessages((prev) => [...prev, assistant]);
+      setMessages((prev) => {
+        const updated = [...prev];
+        const lastIndex = updated.length - 1;
+        if (lastIndex >= 0 && updated[lastIndex]?.role === "assistant") {
+          updated[lastIndex] = { ...updated[lastIndex], content: reply };
+        }
+        return updated;
+      });
     } catch (err) {
       const fallback: CisoMessage = {
         role: "assistant",
@@ -77,7 +96,15 @@ const CisoWidget = ({ open, onOpenChange }: CisoWidgetProps) => {
           "Ciso is experiencing a connection issue. Please try again in a moment.",
       };
       console.error("[CisoWidget] send error", err);
-      setMessages((prev) => [...prev, fallback]);
+      setMessages((prev) => {
+        const updated = [...prev];
+        if (updated[updated.length - 1]?.role === "assistant") {
+          updated[updated.length - 1] = fallback;
+        } else {
+          updated.push(fallback);
+        }
+        return updated;
+      });
     } finally {
       setIsLoading(false);
     }

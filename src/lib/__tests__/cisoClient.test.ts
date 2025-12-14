@@ -8,6 +8,10 @@ jest.mock('../supabaseClient', () => ({
   },
 }));
 
+jest.mock('@/config/appConfig', () => ({
+  supabaseConfigStatus: { resolvedAnonKey: 'anon-key' },
+}));
+
 const originalEnv = { ...process.env };
 
 const setBaseEnv = () => {
@@ -34,6 +38,7 @@ describe('callCisoAgent', () => {
       ok: true,
       status: 200,
       json: async () => ({ answer: 'Hello from Ciso' }),
+      headers: { get: () => 'application/json' },
       text: async () => '',
     });
 
@@ -59,6 +64,7 @@ describe('callCisoAgent', () => {
         message: 'model unavailable',
         traceId: 'trace-123',
       }),
+      headers: { get: () => 'application/json' },
       text: async () => '',
     });
 

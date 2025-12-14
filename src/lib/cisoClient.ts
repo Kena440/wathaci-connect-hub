@@ -24,6 +24,12 @@ export type CisoContext = {
 
 export type CisoMode = "user" | "admin";
 
+type CallOptions = {
+  accessToken?: string | null;
+  onToken?: (token: string) => void;
+  signal?: AbortSignal;
+};
+
 export class CisoAgentError extends Error {
   status?: number;
   type?: string;
@@ -146,7 +152,7 @@ export async function callCisoAgent(
   userMessages: CisoMessage[],
   mode: CisoMode = "user",
   context?: CisoContext,
-  options?: { accessToken?: string | null },
+  options?: CallOptions,
 ) {
   const session = await supabaseClient.auth.getSession().catch(() => null);
   const authToken = options?.accessToken ?? session?.data.session?.access_token;
@@ -160,11 +166,14 @@ export async function callCisoAgent(
     );
   }
 
+  const wantsStream = typeof options?.onToken === "function";
+
   try {
-    const res = await fetch(AGENT_URL, {
+    const res = await fetch(wantsStream ? `${AGENT_URL}?stream=1` : AGENT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Accept: wantsStream ? "text/event-stream,application/json" : "application/json",
         Authorization:
           authToken?.trim()
             ? `Bearer ${authToken}`
@@ -179,11 +188,116 @@ export async function callCisoAgent(
         mode,
         context,
       }),
+      signal: options?.signal,
     });
+
+    const contentType = res.headers.get("content-type") ?? "";
+
+    if (wantsStream && res.ok && contentType.includes("text/event-stream")) {
+      if (!res.body) {
+        throw new CisoAgentError("Ciso sent an empty response stream.", { type: "network_error" });
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let finalAnswer = "";
+      let traceId: string | undefined;
+      let isDone = false;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const events = buffer.split("\n\n");
+        buffer = events.pop() ?? "";
+
+        for (const event of events) {
+          const lines = event.split("\n");
+          let eventName = "message";
+          let data = "";
+
+          for (const line of lines) {
+            if (line.startsWith("event:")) {
+              eventName = line.replace("event:", "").trim();
+            } else if (line.startsWith("data:")) {
+              data += line.replace("data:", "").trim();
+            }
+          }
+
+          if (!data) continue;
+
+          if (eventName === "meta") {
+            try {
+              const parsed = JSON.parse(data);
+              traceId = parsed.traceId;
+            } catch (err) {
+              console.warn("[callCisoAgent] Failed to parse meta event", err);
+            }
+            continue;
+          }
+
+          if (eventName === "token") {
+            try {
+              const parsed = JSON.parse(data);
+              const token = typeof parsed === "string" ? parsed : parsed.token;
+              if (token) {
+                finalAnswer += token;
+                options?.onToken?.(token);
+              }
+            } catch (err) {
+              console.warn("[callCisoAgent] Failed to parse token event", err);
+            }
+            continue;
+          }
+
+          if (eventName === "done") {
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed?.answer) {
+                finalAnswer = parsed.answer;
+              }
+              traceId = parsed?.traceId ?? traceId;
+            } catch (err) {
+              console.warn("[callCisoAgent] Failed to parse done event", err);
+            }
+            isDone = true;
+            break;
+          }
+
+          if (eventName === "error") {
+            const trace = (() => {
+              try {
+                const parsed = JSON.parse(data);
+                return parsed?.traceId;
+              } catch {
+                return undefined;
+              }
+            })();
+            throw new CisoAgentError(buildUserFacingMessage("upstream_error", trace), {
+              type: "upstream_error",
+              traceId: trace,
+            });
+          }
+        }
+
+        if (isDone) break;
+      }
+
+      if (!finalAnswer) {
+        throw new CisoAgentError(buildUserFacingMessage("upstream_error", traceId), {
+          traceId,
+          type: "upstream_error",
+        });
+      }
+
+      return finalAnswer;
+    }
 
     const payload = await res.json().catch(async () => ({ raw: await res.text() }));
 
-    if (!res.ok || payload?.error) {
+    if (!res.ok || (payload as any)?.error) {
       const status = res.status || 500;
       const errorType =
         (payload as any)?.type ||

@@ -91,7 +91,7 @@ const PaymentCheckout: React.FC = () => {
     if (!cisoQuestion.trim()) return;
 
     setIsCisoLoading(true);
-    setCisoAnswer(null);
+    setCisoAnswer("");
 
     const contextPayload = {
       userRole: "sme",
@@ -143,7 +143,9 @@ const PaymentCheckout: React.FC = () => {
     };
 
     try {
-      const reply = await callCisoAgent(messages, "user", cisoContext);
+      const reply = await callCisoAgent(messages, "user", cisoContext, {
+        onToken: (token) => setCisoAnswer((prev) => `${prev ?? ""}${token}`),
+      });
       setCisoAnswer(reply);
     } catch (err) {
       const derivedMessage =

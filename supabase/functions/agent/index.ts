@@ -37,6 +37,8 @@ const supabaseAdmin = SUPABASE_URL && SERVICE_ROLE_KEY
 
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY ?? "" });
 
+const encoder = new TextEncoder();
+
 const baseSystemPrompt = `
 You are Ciso, the AI assistant for Wathaci. Use the Wathaci tone: helpful, smart, simple, professional.
 Provide short but accurate answers. When the user asks about Wathaci-specific topics, prefer the knowledge base context if provided.
@@ -99,11 +101,58 @@ const buildKnowledgeContext = (matches: any[]) => {
   return `Use the following Wathaci knowledge base excerpts when replying. Keep answers concise and grounded in this context when it is relevant.\n${snippets}`;
 };
 
+const buildHeaders = (traceId: string) => ({
+  "Content-Type": "application/json",
+  "Access-Control-Allow-Origin": "*",
+  "x-trace-id": traceId,
+});
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const callOpenAIWithRetry = async (
+  request: Parameters<typeof openai.chat.completions.create>[0],
+  traceId: string,
+  attempts = 2,
+) => {
+  let lastError: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await openai.chat.completions.create(request);
+    } catch (error) {
+      lastError = error;
+      const delay = 250 * (i + 1);
+      console.warn(`[agent][${traceId}] OpenAI call failed (attempt ${i + 1}/${attempts})`, error);
+      await sleep(delay);
+    }
+  }
+  throw lastError ?? new Error(`[agent][${traceId}] OpenAI call failed`);
+};
+
+const streamOpenAIWithRetry = async (
+  request: Parameters<typeof openai.chat.completions.create>[0],
+  traceId: string,
+  attempts = 2,
+) => {
+  let lastError: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await openai.chat.completions.create({ ...request, stream: true });
+    } catch (error) {
+      lastError = error;
+      const delay = 250 * (i + 1);
+      console.warn(`[agent][${traceId}] OpenAI stream failed (attempt ${i + 1}/${attempts})`, error);
+      await sleep(delay);
+    }
+  }
+  throw lastError ?? new Error(`[agent][${traceId}] OpenAI stream failed`);
+};
+
 const callOpenAI = async (
   query: string,
   messages: ChatMessage[] | undefined,
   knowledgeContext: string | null,
   model: string,
+  traceId: string,
 ) => {
   const finalMessages: ChatMessage[] = [
     { role: "system", content: baseSystemPrompt },
@@ -112,22 +161,145 @@ const callOpenAI = async (
     { role: "user", content: query },
   ];
 
-  const completion = await openai.chat.completions.create({
+  const completion = await callOpenAIWithRetry({
     model,
     messages: finalMessages,
     temperature: 0.3,
-  });
+  }, traceId);
 
   return completion.choices?.[0]?.message?.content ?? "";
 };
 
+const buildRequestContext = async (
+  body: AgentRequestBody,
+  traceId: string,
+) => {
+  const query = (body.query ?? getLastUserMessageContent(body.messages))?.trim();
+  if (!query) {
+    return { error: { status: 400, type: "validation_error", message: "Missing query" as const } };
+  }
+
+  if (!OPENAI_API_KEY) {
+    return {
+      error: { status: 500, type: "config_error", message: "Server misconfigured: missing OpenAI key" as const },
+    };
+  }
+
+  if (body.messages && body.messages.length > 40) {
+    return {
+      error: {
+        status: 400,
+        type: "validation_error",
+        message: "Too many messages in history. Please trim and try again." as const,
+      },
+    };
+  }
+
+  if (query && query.length > 4000) {
+    return {
+      error: { status: 400, type: "validation_error", message: "Query too long. Please shorten your question." as const },
+    };
+  }
+
+  let knowledgeMatches: any[] = [];
+  let knowledgeContext: string | null = null;
+
+  try {
+    const embedding = await embedQuery(query, traceId);
+    knowledgeMatches = await searchKnowledge(embedding, traceId);
+    const usefulMatches = knowledgeMatches.filter((match) => {
+      const score = match.similarity ?? match.score ?? 0;
+      return score >= SIMILARITY_THRESHOLD;
+    });
+
+    if (usefulMatches.length > 0) {
+      knowledgeContext = buildKnowledgeContext(usefulMatches);
+    }
+  } catch (error) {
+    console.error(`[agent][${traceId}] Knowledge lookup failed`, error);
+  }
+
+  return {
+    query,
+    knowledgeContext,
+    knowledgeMatches,
+  };
+};
+
+const streamResponse = async (
+  body: AgentRequestBody,
+  traceId: string,
+  headers: Record<string, string>,
+) => {
+  const context = await buildRequestContext(body, traceId);
+
+  if ("error" in context && context.error) {
+    return new Response(
+      JSON.stringify({ ...context.error, traceId, error: true }),
+      { status: context.error.status, headers },
+    );
+  }
+
+  const model = body.model || "gpt-4.1-mini";
+  const stream = await streamOpenAIWithRetry({
+    model,
+    messages: [
+      { role: "system", content: baseSystemPrompt },
+      ...(context.knowledgeContext ? [{ role: "system", content: context.knowledgeContext }] : []),
+      ...(body.messages ?? []),
+      { role: "user", content: context.query ?? "" },
+    ],
+    temperature: 0.3,
+  }, traceId);
+
+  const readable = new ReadableStream({
+    async start(controller) {
+      let answer = "";
+      const source = context.knowledgeContext ? "knowledge_base" : "openai";
+      controller.enqueue(encoder.encode(`event: meta\ndata: ${JSON.stringify({ traceId, source })}\n\n`));
+
+      try {
+        for await (const chunk of stream) {
+          const token = chunk.choices?.[0]?.delta?.content ?? "";
+          if (token) {
+            answer += token;
+            controller.enqueue(encoder.encode(`event: token\ndata: ${JSON.stringify({ token })}\n\n`));
+          }
+        }
+
+        controller.enqueue(
+          encoder.encode(
+            `event: done\ndata: ${JSON.stringify({ answer, traceId, source, knowledgeMatches: context.knowledgeMatches })}\n\n`,
+          ),
+        );
+      } catch (error) {
+        console.error(`[agent][${traceId}] Streaming failure`, error);
+        controller.enqueue(
+          encoder.encode(
+            `event: error\ndata: ${JSON.stringify({ message: "Streaming failed", traceId })}\n\n`,
+          ),
+        );
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(readable, {
+    status: 200,
+    headers: {
+      ...headers,
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+    },
+  });
+};
+
 Deno.serve(async (req) => {
   const traceId = crypto.randomUUID();
-  const baseHeaders = {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
-    "x-trace-id": traceId,
-  } as const;
+  const baseHeaders = buildHeaders(traceId);
+  const url = new URL(req.url);
 
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -138,6 +310,19 @@ Deno.serve(async (req) => {
         "Access-Control-Allow-Methods": "POST, OPTIONS",
       },
     });
+  }
+
+  if (url.pathname.endsWith("/health")) {
+    return new Response(
+      JSON.stringify({
+        status: OPENAI_API_KEY && SUPABASE_URL && SERVICE_ROLE_KEY ? "ok" : "degraded",
+        openaiConfigured: Boolean(OPENAI_API_KEY),
+        supabaseConfigured: Boolean(SUPABASE_URL && SERVICE_ROLE_KEY),
+        traceId,
+        timestamp: new Date().toISOString(),
+      }),
+      { status: 200, headers: baseHeaders },
+    );
   }
 
   try {
@@ -154,77 +339,38 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (req.method !== "POST") {
+      return new Response(
+        JSON.stringify({ error: true, type: "validation_error", message: "Only POST allowed", traceId }),
+        { status: 405, headers: baseHeaders },
+      );
+    }
+
     const body = (await req.json().catch(() => ({}))) as AgentRequestBody;
-    const query = (body.query ?? getLastUserMessageContent(body.messages))?.trim();
+    const wantsStream =
+      req.headers.get("accept")?.includes("text/event-stream") || url.searchParams.get("stream") === "1";
 
-    if (!query) {
+    if (wantsStream) {
+      return await streamResponse(body, traceId, baseHeaders as Record<string, string>);
+    }
+
+    const context = await buildRequestContext(body, traceId);
+
+    if ("error" in context && context.error) {
       return new Response(
-        JSON.stringify({
-          error: true,
-          type: "validation_error",
-          message: "Missing query",
-          traceId,
-        }),
-        { status: 400, headers: baseHeaders },
+        JSON.stringify({ ...context.error, traceId, error: true }),
+        { status: context.error.status, headers: baseHeaders },
       );
     }
 
-    if (!OPENAI_API_KEY) {
-      return new Response(
-        JSON.stringify({
-          error: true,
-          type: "config_error",
-          message: "Server misconfigured: missing OpenAI key",
-          traceId,
-        }),
-        { status: 500, headers: baseHeaders },
-      );
-    }
-
-    if (body.messages && body.messages.length > 40) {
-      return new Response(
-        JSON.stringify({
-          error: true,
-          type: "validation_error",
-          message: "Too many messages in history. Please trim and try again.",
-          traceId,
-        }),
-        { status: 400, headers: baseHeaders },
-      );
-    }
-
-    if (query && query.length > 4000) {
-      return new Response(
-        JSON.stringify({
-          error: true,
-          type: "validation_error",
-          message: "Query too long. Please shorten your question.",
-          traceId,
-        }),
-        { status: 400, headers: baseHeaders },
-      );
-    }
-
-    let knowledgeMatches: any[] = [];
-    let knowledgeContext: string | null = null;
-
-    try {
-      const embedding = await embedQuery(query, traceId);
-      knowledgeMatches = await searchKnowledge(embedding, traceId);
-      const usefulMatches = knowledgeMatches.filter((match) => {
-        const score = match.similarity ?? match.score ?? 0;
-        return score >= SIMILARITY_THRESHOLD;
-      });
-
-      if (usefulMatches.length > 0) {
-        knowledgeContext = buildKnowledgeContext(usefulMatches);
-      }
-    } catch (error) {
-      console.error(`[agent][${traceId}] Knowledge lookup failed`, error);
-    }
-
-    const model = body.model || "gpt-4.1";
-    const answer = await callOpenAI(query, body.messages, knowledgeContext, model);
+    const model = body.model || "gpt-4.1-mini";
+    const answer = await callOpenAI(
+      context.query ?? "",
+      body.messages,
+      context.knowledgeContext,
+      model,
+      traceId,
+    );
 
     if (!answer) {
       return new Response(
@@ -242,8 +388,8 @@ Deno.serve(async (req) => {
       JSON.stringify({
         answer,
         traceId,
-        source: knowledgeContext ? "knowledge_base" : "openai",
-        knowledgeMatches: knowledgeContext ? knowledgeMatches : [],
+        source: context.knowledgeContext ? "knowledge_base" : "openai",
+        knowledgeMatches: context.knowledgeContext ? context.knowledgeMatches : [],
       }),
       { status: 200, headers: baseHeaders },
     );
