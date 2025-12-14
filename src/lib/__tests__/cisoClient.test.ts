@@ -13,7 +13,7 @@ const originalEnv = { ...process.env };
 const setBaseEnv = () => {
   process.env = {
     ...originalEnv,
-    VITE_CISO_AGENT_URL: 'http://localhost:9999/ciso-agent',
+    VITE_CISO_AGENT_URL: 'http://localhost:9999/agent',
     VITE_SUPABASE_ANON_KEY: 'anon-key',
   };
 };
@@ -44,7 +44,7 @@ describe('callCisoAgent', () => {
 
     expect(reply).toBe('Hello from Ciso');
     expect(global.fetch).toHaveBeenCalledWith(
-      'http://localhost:9999/ciso-agent',
+      'http://localhost:9999/agent',
       expect.any(Object),
     );
   });

@@ -1,4 +1,8 @@
 // supabase/functions/agent/index.ts
+// Primary Ciso entrypoint: accepts chat payloads from the frontend, enriches with knowledge
+// base matches, calls OpenAI, and returns an answer. Frontend calls this via
+// https://<project>.functions.supabase.co/agent with Authorization: Bearer <user or anon token>.
+// Required env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY.
 import OpenAI from "https://esm.sh/openai@4.67.1";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -137,6 +141,19 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get("Authorization")?.trim();
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({
+          error: true,
+          type: "auth_error",
+          message: "Authorization header missing. Include your Supabase access token or anon key.",
+          traceId,
+        }),
+        { status: 401, headers: baseHeaders },
+      );
+    }
+
     const body = (await req.json().catch(() => ({}))) as AgentRequestBody;
     const query = (body.query ?? getLastUserMessageContent(body.messages))?.trim();
 
@@ -161,6 +178,30 @@ Deno.serve(async (req) => {
           traceId,
         }),
         { status: 500, headers: baseHeaders },
+      );
+    }
+
+    if (body.messages && body.messages.length > 40) {
+      return new Response(
+        JSON.stringify({
+          error: true,
+          type: "validation_error",
+          message: "Too many messages in history. Please trim and try again.",
+          traceId,
+        }),
+        { status: 400, headers: baseHeaders },
+      );
+    }
+
+    if (query && query.length > 4000) {
+      return new Response(
+        JSON.stringify({
+          error: true,
+          type: "validation_error",
+          message: "Query too long. Please shorten your question.",
+          traceId,
+        }),
+        { status: 400, headers: baseHeaders },
       );
     }
 

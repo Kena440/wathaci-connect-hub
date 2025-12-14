@@ -118,6 +118,34 @@ This interactive script will:
 - Validate the configuration
 - Provide testing instructions
 
+## Ciso Agent – How It Works and How to Debug
+
+**Canonical path:** `https://<project-ref>.functions.supabase.co/agent` (Supabase Edge Function). Frontend calls this URL via `VITE_CISO_AGENT_URL` and always sends `Authorization: Bearer <supabase access token | anon key>`.
+
+**Flow:**
+- Frontend components (`CisoWidget`, onboarding/payment forms) call `callCisoAgent` in `src/lib/cisoClient.ts`.
+- The client forwards the chat payload to the Supabase Edge Function `functions/agent/index.ts`, which enriches the prompt using the knowledge base RPC and then calls OpenAI.
+- The function responds with `{ answer, traceId, source }`; structured errors include `type` and `traceId` for debugging.
+
+**Key environment variables:**
+- Frontend: `VITE_CISO_AGENT_URL` (defaults to `/agent` function), `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
+- Edge Function: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`, optional `CISO_KB_THRESHOLD`, `CISO_KB_MATCH_COUNT`.
+
+**Health checks:**
+- Backend Express: `/health` for core services, `/api/agent/health` for onboarding agent.
+- Ciso Edge Function: send `POST /functions/v1/agent` with `{ "query": "ping" }` and a valid Supabase token; a 200 response confirms OpenAI + knowledge base connectivity.
+
+**Common issues & fixes:**
+- `401 Unauthorized` → ensure the Authorization header includes a Supabase user token or anon key; `VITE_SUPABASE_ANON_KEY` must be configured in the frontend.
+- `config_error` → set `OPENAI_API_KEY` and Supabase service-role key in the Edge Function secrets.
+- `validation_error` → queries must be present and under 4000 characters; keep message history under 40 items.
+- Rate limits → the Express backend now trusts proxies and applies a dedicated limiter to `/api/agent`.
+
+**Debug steps:**
+1) Confirm env vars locally (`npm run config:validate`) and in Supabase/Vercel settings.
+2) Call the Edge Function directly with `curl -H "Authorization: Bearer <anon-key>" -d '{"query":"hello"}' https://<project>.functions.supabase.co/agent`.
+3) Check Supabase function logs for `[agent][trace-id]` entries; OpenAI errors will be surfaced there.
+
 ## AI Onboarding & Payments Agent (Ciso)
 
 The Ciso agent orchestrates end-to-end signup, profile completion, and payments via dedicated API routes exposed by the Express backend:

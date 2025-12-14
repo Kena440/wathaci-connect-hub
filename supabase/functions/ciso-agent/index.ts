@@ -1,4 +1,8 @@
 // supabase/functions/ciso-agent/index.ts
+// Legacy compatibility wrapper for the Ciso AI agent. This function now proxies requests to the
+// canonical agent endpoint at /functions/v1/agent so we only maintain a single implementation.
+// Required env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY. Optional:
+// CISO_AGENT_FORWARD_URL to override the proxy target.
 // Deno runtime
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -8,6 +12,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
+const PROXY_TARGET = Deno.env.get("CISO_AGENT_FORWARD_URL")?.trim();
 
 // Optional: name of RPC / table for KB search
 const CISO_MATCH_RPC = Deno.env.get("CISO_MATCH_RPC") ?? "match_ciso_documents";
@@ -153,7 +158,35 @@ serve(async (req) => {
   }
 
   try {
-    const body = (await req.json()) as ChatRequest | null;
+    const origin = new URL(req.url).origin;
+    const proxyTarget = PROXY_TARGET || `${origin}/agent`;
+    const rawBody = await req.text();
+
+    // First try to forward to the canonical agent implementation
+    try {
+      const proxied = await fetch(proxyTarget, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: req.headers.get("Authorization") ?? "",
+          "x-ciso-proxy": "ciso-agent",
+        },
+        body: rawBody,
+      });
+
+      const proxiedBody = await proxied.text();
+      return new Response(proxiedBody, {
+        status: proxied.status,
+        headers: {
+          "Content-Type": proxied.headers.get("content-type") ?? "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    } catch (proxyError) {
+      console.error("[ciso-agent] Proxy to /agent failed, falling back to legacy handler", proxyError);
+    }
+
+    const body = rawBody ? ((JSON.parse(rawBody) as ChatRequest | null)) : null;
     const query = body?.query?.trim();
 
     if (!query) {
