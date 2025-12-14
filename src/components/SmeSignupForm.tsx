@@ -58,7 +58,7 @@ const SmeSignupForm: React.FC = () => {
     if (!cisoQuestion.trim()) return;
 
     setIsCisoLoading(true);
-    setCisoAnswer(null);
+    setCisoAnswer("");
 
     // Build a rich context message for Ciso
     const contextPayload = {
@@ -102,7 +102,9 @@ const SmeSignupForm: React.FC = () => {
     };
 
     try {
-      const reply = await callCisoAgent(messages, "user", cisoContext);
+      const reply = await callCisoAgent(messages, "user", cisoContext, {
+        onToken: (token) => setCisoAnswer((prev) => `${prev ?? ""}${token}`),
+      });
       setCisoAnswer(reply);
     } catch (err) {
       const derivedMessage =
