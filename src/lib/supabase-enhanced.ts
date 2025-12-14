@@ -226,6 +226,52 @@ function createMockSupabaseClient() {
         updated_at: new Date().toISOString()
       }
     ],
+    business_stats: [
+      {
+        id: 'stat_businesses',
+        stat_type: 'businesses',
+        stat_value: 125,
+        label: 'SMEs Supported',
+        description: 'Small and medium enterprises empowered through the platform',
+        is_active: true,
+        order_index: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 'stat_professionals',
+        stat_type: 'professionals',
+        stat_value: 240,
+        label: 'Business Professionals',
+        description: 'Operators and SME leads onboarded',
+        is_active: true,
+        order_index: 2,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 'stat_freelancers',
+        stat_type: 'freelancers',
+        stat_value: 310,
+        label: 'Independent Freelancers',
+        description: 'Service providers available for projects',
+        is_active: true,
+        order_index: 3,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 'stat_investors',
+        stat_type: 'investors',
+        stat_value: 42,
+        label: 'Active Investors',
+        description: 'Funding partners engaged with the ecosystem',
+        is_active: true,
+        order_index: 4,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ],
     marketplace_orders: [],
     get marketplace_services() {
       return getMarketplaceCatalog();
