@@ -101,13 +101,9 @@ const TestimonialsSection = () => {
         )}
 
         <div className="text-center mt-12">
-          <div className="flex justify-center items-center space-x-8 opacity-60">
-            <div className="text-2xl font-bold text-gray-500">PACRA</div>
-            <div className="text-2xl font-bold text-gray-500">ZRA</div>
-            <div className="text-2xl font-bold text-gray-500">SEC</div>
-            <div className="text-2xl font-bold text-gray-500">BOZ</div>
+          <div className="coming-soon-placeholder text-gray-600 text-lg font-semibold">
+            Trusted Partners — Coming Soon
           </div>
-          <p className="text-sm text-gray-500 mt-2">Trusted partners in regulatory compliance</p>
         </div>
       </div>
     </section>
