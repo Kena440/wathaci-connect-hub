@@ -50,4 +50,9 @@ router.post('/payments/webhook', asyncHandler(async (req, res) => {
   res.status(200).json({ received: true });
 }));
 
+router.get('/health', (req, res) => {
+  const health = agent.getHealth();
+  res.status(health.status === 'ok' ? 200 : 503).json(health);
+});
+
 module.exports = router;
