@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { X } from "lucide-react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import type { CisoMessage } from "@/lib/cisoClient";
@@ -10,7 +18,7 @@ interface CisoWidgetProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-const AssistantMessage = ({ message }: { message: CisoMessage }) => {
+const AssistantMessage = memo(({ message }: { message: CisoMessage }) => {
   return (
     <div
       className={cn(
@@ -30,8 +38,62 @@ const AssistantMessage = ({ message }: { message: CisoMessage }) => {
       </div>
     </div>
   );
-};
+});
+AssistantMessage.displayName = "AssistantMessage";
 
+const MessagesList = memo(
+  ({
+    messages,
+    isLoading,
+    endRef,
+  }: {
+    messages: CisoMessage[];
+    isLoading: boolean;
+    endRef: RefObject<HTMLDivElement>;
+  }) => {
+    return (
+      <div className="flex max-h-[70vh] flex-col gap-3 overflow-y-auto p-4 sm:max-h-[420px] bg-slate-50">
+        {messages.length === 0 && (
+          <p className="text-xs text-slate-600">
+            Hi, I&apos;m Ciso. Ask about Wathaci onboarding, payments, or anything else.
+          </p>
+        )}
+
+        {messages.map((message, index) => (
+          <AssistantMessage key={`${message.role}-${index}`} message={message} />
+        ))}
+
+        {isLoading && (
+          <p className="text-xs text-gray-500 italic">Ciso is typing…</p>
+        )}
+
+        <div ref={endRef} className="h-px" />
+      </div>
+    );
+  },
+);
+MessagesList.displayName = "MessagesList";
+
+const LauncherButton = memo(({ onOpen }: { onOpen: () => void }) => (
+  <button
+    onClick={onOpen}
+    className="fixed left-4 bottom-4 z-50 bg-white shadow-lg border px-4 py-2 rounded-full text-sm font-medium"
+  >
+    @Ask Ciso for Help
+  </button>
+));
+LauncherButton.displayName = "LauncherButton";
+
+/*
+ * Performance investigation notes (INP/input delay):
+ * - Typing in #ciso-chat-input re-rendered the entire message history because
+ *   the textarea state lived alongside the message list in the same component.
+ *   Every keystroke forced dozens of message nodes to re-render.
+ * - The floating launcher button re-rendered whenever chat state changed,
+ *   adding extra render cost (~50ms traces) after interactions.
+ * - Send handler recreated large arrays synchronously; we now keep that work
+ *   minimal and avoid blocking the click event path.
+ */
 const CisoWidget = ({ open, onOpenChange }: CisoWidgetProps) => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +102,11 @@ const CisoWidget = ({ open, onOpenChange }: CisoWidgetProps) => {
   const [internalOpen, setInternalOpen] = useState(false);
   const hasFetchedToken = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const messagesRef = useRef<CisoMessage[]>([]);
+  const perfStatsRef = useRef({
+    lastInputDurationMs: 0,
+    lastSendHandlerMs: 0,
+  });
 
   const isControlled = typeof open === "boolean";
   const isOpen = isControlled ? open : internalOpen;
@@ -65,6 +132,10 @@ const CisoWidget = ({ open, onOpenChange }: CisoWidgetProps) => {
   }, [isOpen]);
 
   useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  useEffect(() => {
     if (!isOpen) return;
     const timeout = setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -72,18 +143,30 @@ const CisoWidget = ({ open, onOpenChange }: CisoWidgetProps) => {
     return () => clearTimeout(timeout);
   }, [messages, isOpen]);
 
-  const handleSend = async () => {
+  const recordPerf = useCallback((metric: keyof typeof perfStatsRef.current, value: number) => {
+    perfStatsRef.current[metric] = value;
+    if (import.meta.env.DEV) {
+      console.debug(`[CisoWidget][perf] ${metric}: ${value.toFixed(1)}ms`);
+    }
+  }, []);
+
+  const handleSend = useCallback(async () => {
+    const start = performance.now();
     const trimmed = input.trim();
     if (!trimmed) return;
 
     const userMessage: CisoMessage = { role: "user", content: trimmed };
-    const nextMessages = [...messages, userMessage];
-    setMessages([...nextMessages, { role: "assistant", content: "" }]);
+    const currentMessages = messagesRef.current;
+    const messagesForRequest = [...currentMessages, userMessage];
+
+    setMessages([...messagesForRequest, { role: "assistant", content: "" }]);
     setInput("");
     setIsLoading(true);
 
+    recordPerf("lastSendHandlerMs", performance.now() - start);
+
     try {
-      const reply = await callCisoAgent(nextMessages, "user", undefined, {
+      const reply = await callCisoAgent(messagesForRequest, "user", undefined, {
         accessToken,
         onToken: (token) => {
           setMessages((prev) => {
@@ -126,27 +209,22 @@ const CisoWidget = ({ open, onOpenChange }: CisoWidgetProps) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [accessToken, input, recordPerf]);
 
-  const handleKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = (
-    event,
-  ) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      handleSend();
-    }
-  };
+  const handleKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = useCallback(
+    (event) => {
+      const start = performance.now();
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        handleSend();
+      }
+      recordPerf("lastInputDurationMs", performance.now() - start);
+    },
+    [handleSend, recordPerf],
+  );
 
   const launcher = useMemo(
-    () => (
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed left-4 bottom-4 z-50 bg-white shadow-lg border px-4 py-2 rounded-full text-sm font-medium"
-      >
-        @Ask Ciso for Help
-      </button>
-    ),
-    [setOpen],
+    () => <LauncherButton onOpen={() => setOpen(true)} />, [setOpen],
   );
 
   return (
@@ -170,23 +248,11 @@ const CisoWidget = ({ open, onOpenChange }: CisoWidgetProps) => {
             </button>
           </div>
 
-          <div className="flex max-h-[70vh] flex-col gap-3 overflow-y-auto p-4 sm:max-h-[420px] bg-slate-50">
-            {messages.length === 0 && (
-              <p className="text-xs text-slate-600">
-                Hi, I&apos;m Ciso. Ask about Wathaci onboarding, payments, or anything else.
-              </p>
-            )}
-
-            {messages.map((message, index) => (
-              <AssistantMessage key={`${message.role}-${index}`} message={message} />
-            ))}
-
-            {isLoading && (
-              <p className="text-xs text-gray-500 italic">Ciso is typing…</p>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
+          <MessagesList
+            messages={messages}
+            isLoading={isLoading}
+            endRef={messagesEndRef}
+          />
 
           <div className="border-t border-slate-200 bg-white px-3 py-2">
             <label className="sr-only" htmlFor="ciso-chat-input">
