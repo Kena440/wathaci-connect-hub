@@ -19,6 +19,7 @@ interface Testimonial {
 const TestimonialsSection = () => {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTestimonials();
@@ -26,6 +27,8 @@ const TestimonialsSection = () => {
 
   const fetchTestimonials = async () => {
     try {
+      setError(null);
+
       const { data, error } = await supabase
         .from('testimonials')
         .select('*')
@@ -33,11 +36,16 @@ const TestimonialsSection = () => {
         .eq('featured', true)
         .order('created_at', { ascending: false })
         .limit(6);
-      
-      if (error) throw error;
+
+      if (error) {
+        console.error('Error fetching testimonials:', error);
+        setError('Unable to load testimonials right now.');
+        return;
+      }
       setTestimonials(data || []);
     } catch (error) {
       console.error('Error fetching testimonials:', error);
+      setError('Unable to load testimonials right now.');
     } finally {
       setLoading(false);
     }
@@ -61,6 +69,11 @@ const TestimonialsSection = () => {
         {loading ? (
           <div className="text-center py-12">
             <p className="text-gray-500">Loading testimonials...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-red-600 text-lg font-semibold">{error}</p>
+            <p className="text-gray-400 mt-2">Please try again shortly.</p>
           </div>
         ) : testimonials.length === 0 ? (
           <div className="text-center py-12">
