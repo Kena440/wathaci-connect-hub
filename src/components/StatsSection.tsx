@@ -16,7 +16,7 @@ interface Stats {
 }
 
 const StatsSection = () => {
-  const [stats, setStats] = useState<Stats>({
+  const initialStats: Stats = {
     smes: 0,
     professionals: 0,
     freelancers: 0,
@@ -27,33 +27,47 @@ const StatsSection = () => {
     jobsCreated: 0,
     countriesServed: 0,
     successStories: 0
-  });
+  };
+
+  const [stats, setStats] = useState<Stats>(initialStats);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchImpactStats();
   }, []);
 
+  const fetchBusinessStats = async () => {
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('business_stats request timeout')), 5000);
+    });
+
+    const statsPromise = supabase
+      .from('business_stats')
+      .select('*')
+      .eq('is_active', true)
+      .order('order_index');
+
+    const { data, error } = await Promise.race([
+      statsPromise,
+      timeoutPromise
+    ]) as any;
+
+    if (error) {
+      throw error;
+    }
+
+    return data || [];
+  };
+
   const fetchImpactStats = async () => {
     try {
-      // Add timeout to prevent long loading states
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout')), 5000);
-      });
+      let businessStats: any[] = [];
 
-      // Fetch business stats from database with timeout
-      const statsPromise = supabase
-        .from('business_stats')
-        .select('*')
-        .eq('is_active', true)
-        .order('order_index');
-
-      const { data: businessStats, error } = await Promise.race([
-        statsPromise,
-        timeoutPromise
-      ]) as any;
-
-      if (error) throw error;
+      try {
+        businessStats = await fetchBusinessStats();
+      } catch (businessStatsError) {
+        console.warn('business_stats relation unavailable, falling back to derived counts only', businessStatsError);
+      }
 
       const toNumber = (value: unknown) => {
         if (typeof value === 'number') return value;
@@ -61,14 +75,12 @@ const StatsSection = () => {
         return 0;
       };
 
-      // Convert business stats to our format using numeric values
       const statsMap =
         businessStats?.reduce((acc: Record<string, number>, stat: any) => {
           acc[stat.stat_type] = toNumber(stat.stat_value);
           return acc;
         }, {} as Record<string, number>) || {};
 
-      // Fetch user type counts as fallback with timeout protection
       const userQueries = await Promise.allSettled([
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_type', 'sole_proprietor'),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_type', 'professional'),
@@ -78,7 +90,7 @@ const StatsSection = () => {
       ]);
 
       const [smesResult, professionalsResult, freelancersResult, investorsResult, donorsResult] = userQueries;
-      
+
       const smesCount = smesResult.status === 'fulfilled' ? smesResult.value.count : 0;
       const professionalsCount = professionalsResult.status === 'fulfilled' ? professionalsResult.value.count : 0;
       const freelancersCount = freelancersResult.status === 'fulfilled' ? freelancersResult.value.count : 0;
@@ -99,18 +111,7 @@ const StatsSection = () => {
       });
     } catch (error) {
       console.error('Error fetching impact stats:', error);
-      setStats({
-        smes: 0,
-        professionals: 0,
-        freelancers: 0,
-        investors: 0,
-        donors: 0,
-        totalFunding: 0,
-        projectsCompleted: 0,
-        jobsCreated: 0,
-        countriesServed: 0,
-        successStories: 0
-      });
+      setStats(initialStats);
     } finally {
       setLoading(false);
     }

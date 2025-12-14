@@ -100,14 +100,17 @@ printf "\n🔎 Running Supabase schema verification checks...\n\n"
 check_table "public.profiles"
 check_table "public.payments"
 check_table "public.webhook_logs"
+check_table "public.business_stats"
 
 check_trigger "public.payments" "set_timestamp"
 check_trigger "public.profiles" "set_timestamp"
+check_trigger "public.business_stats" "business_stats_set_updated_at"
 
 check_policy "public.payments" "Payments are viewable by owners"
 check_policy "public.payments" "Payments are manageable by owners"
 check_policy "public.payments" "Payments managed by service role"
 check_policy "public.webhook_logs" "Webhook logs managed by service role"
+check_policy "public.business_stats" "Allow anon read active business stats"
 
 check_column "public.payments" "lenco_transaction_id"
 check_column "public.payments" "lenco_access_code"
@@ -115,6 +118,10 @@ check_column "public.payments" "lenco_authorization_url"
 check_column "public.payments" "gateway_response"
 check_column "public.payments" "metadata"
 check_column "public.payments" "paid_at"
+check_column "public.business_stats" "stat_type"
+check_column "public.business_stats" "stat_value"
+check_column "public.business_stats" "is_active"
+check_column "public.business_stats" "order_index"
 
 if (( ${#failures[@]} > 0 )); then
   printf "\n❗ Schema verification completed with %s failure(s).\n" "${#failures[@]}" >&2
