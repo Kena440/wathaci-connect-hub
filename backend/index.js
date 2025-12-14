@@ -49,6 +49,10 @@ const {
 
 const app = express();
 
+// Trust first proxy so rate-limit + IP detection work correctly behind Vercel/NGINX
+// See: https://expressjs.com/en/guide/behind-proxies.html
+app.set('trust proxy', 1);
+
 /**
  * Root route: simple ping
  */
@@ -158,6 +162,14 @@ const limiter = rateLimit({
   max: 100,
 });
 
+// Dedicated limiter for AI/agent traffic to avoid noisy neighbours blocking chat requests
+const agentLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.use(limiter);
 
 /**
@@ -201,7 +213,7 @@ app.use('/api/email', emailRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/diagnostics', diagnosticsRoutes);
 app.use('/api/credit-passports', creditPassportRoutes);
-app.use('/api/agent', agentRoutes);
+app.use('/api/agent', agentLimiter, agentRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/copilot', copilotRoutes);
 
