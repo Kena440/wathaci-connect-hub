@@ -29,6 +29,33 @@ class WathaciOnboardingAgent {
     }
   }
 
+  getHealth() {
+    const supabaseUrl =
+      process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_PROJECT_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+
+    const requiredEnv = [];
+    if (!supabaseUrl) requiredEnv.push('SUPABASE_URL');
+    if (!serviceKey) requiredEnv.push('SUPABASE_SERVICE_ROLE_KEY');
+
+    const status = requiredEnv.length === 0 && isSupabaseConfigured() ? 'ok' : 'degraded';
+
+    return {
+      status,
+      supabase: {
+        configured: isSupabaseConfigured(),
+        urlPresent: Boolean(supabaseUrl),
+        serviceRolePresent: Boolean(serviceKey),
+      },
+      paymentProvider: {
+        name: this.paymentProvider?.name ?? 'unknown',
+      },
+      gracePeriodActive: isGracePeriodActive(),
+      missing: requiredEnv,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   async logEvent(entry) {
     if (!isSupabaseConfigured()) {
       console.error('[AgentLog]', entry);
