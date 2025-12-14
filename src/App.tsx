@@ -1,4 +1,4 @@
-import { ReactNode, Suspense, lazy, useEffect, useMemo, useState } from "react";
+import { ReactNode, Suspense, lazy, useEffect, useMemo } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -405,7 +405,6 @@ const App = () => (
 );
 
 const InnerApp = () => {
-  const [cisoOpen, setCisoOpen] = useState(false);
   const paymentConfigSnapshot = useMemo(() => {
     const config = getPaymentConfig();
     const fatalIssues: string[] = [];
@@ -498,7 +497,7 @@ const InnerApp = () => {
             {import.meta.env.DEV ? <RouteChangeDebugger /> : null}
             <AppRoutes />
           </BrowserRouter>
-          <CisoWidget open={cisoOpen} onOpenChange={setCisoOpen} />
+          <CisoWidget />
         </AppProvider>
       </TooltipProvider>
     </QueryClientProvider>
