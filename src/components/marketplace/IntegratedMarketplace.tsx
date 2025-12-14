@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useDeferredValue } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,7 +45,7 @@ const providerLinks: Record<MarketplaceService['providerType'], { label: string;
 export const IntegratedMarketplace = ({ onAddToCart, onOrderNow }: IntegratedMarketplaceProps) => {
   const [services, setServices] = useState<MarketplaceService[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedProviderType, setSelectedProviderType] = useState('all');
   const [selectedLocation, setSelectedLocation] = useState('all');
@@ -53,6 +53,7 @@ export const IntegratedMarketplace = ({ onAddToCart, onOrderNow }: IntegratedMar
   const [viewMode, setViewMode] = useState('grid');
   const [selectedService, setSelectedService] = useState<MarketplaceService | null>(null);
   const { toast } = useToast();
+  const deferredSearch = useDeferredValue(searchInput);
 
   const categories = [
     'all', 'technology', 'marketing', 'design', 'business',
@@ -182,16 +183,31 @@ export const IntegratedMarketplace = ({ onAddToCart, onOrderNow }: IntegratedMar
     void loadServices();
   }, [loadServices]);
 
-  const filteredServices = useMemo(
+  const searchableServices = useMemo(
     () =>
-      services.filter((service) =>
-        service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        service.provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        service.skills.some((skill) => skill.toLowerCase().includes(searchTerm.toLowerCase()))
-      ),
-    [searchTerm, services]
+      services.map((service) => ({
+        service,
+        titleLower: service.title.toLowerCase(),
+        descriptionLower: service.description.toLowerCase(),
+        providerLower: service.provider.toLowerCase(),
+        skillsLower: service.skills.map((skill) => skill.toLowerCase()),
+      })),
+    [services]
   );
+
+  const filteredServices = useMemo(() => {
+    const term = deferredSearch.trim().toLowerCase();
+    if (!term) return services;
+
+    return searchableServices
+      .filter((entry) =>
+        entry.titleLower.includes(term) ||
+        entry.descriptionLower.includes(term) ||
+        entry.providerLower.includes(term) ||
+        entry.skillsLower.some((skill) => skill.includes(term))
+      )
+      .map((entry) => entry.service);
+  }, [deferredSearch, searchableServices, services]);
 
   const getProviderTypeStats = () => {
     const stats = services.reduce<Record<string, number>>((acc, service) => {
@@ -344,8 +360,8 @@ export const IntegratedMarketplace = ({ onAddToCart, onOrderNow }: IntegratedMar
               <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
               <Input
                 placeholder="Search services..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="pl-10"
               />
             </div>
