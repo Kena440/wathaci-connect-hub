@@ -15,6 +15,7 @@ import { getOnboardingStartPath, normalizeAccountType } from '@/lib/onboardingPa
 
 const CREDENTIALS_STORAGE_KEY = 'wathaci-auth-credentials';
 const PASSWORD_VALIDATION_DEBOUNCE_MS = 180;
+const AUTH_REQUEST_TIMEOUT_MS = 20000;
 
 const baseSchema = z.object({
   email: z
@@ -119,6 +120,8 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
   const [formError, setFormError] = useState<string | null>(null);
   const [maintenanceNotice, setMaintenanceNotice] = useState<string | null>(disabled ? disabledReason ?? null : null);
   const [authCompleted, setAuthCompleted] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -208,7 +211,8 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
     }
   }, [disabled, disabledReason]);
 
-  const isFormDisabled = disabled || isSubmitting;
+  const submissionBusy = isSubmitting || isProcessing;
+  const isFormDisabled = disabled || submissionBusy;
   const passwordPerfLoggingEnabled = process.env.NODE_ENV !== 'production';
 
   const passwordValidationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -254,6 +258,14 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
     };
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
   const passwordField = register('password');
   const handlePasswordChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -271,6 +283,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
   );
 
   const onSubmit = async (values: SignInValues | SignUpValues) => {
+    // Flow summary: UI submit → AppContext.signIn/signUp → userService → Supabase auth → refreshUser → redirect via effect
     if (disabled) {
       setMaintenanceNotice(disabledReason ?? 'Authentication is temporarily unavailable.');
       return;
@@ -278,35 +291,56 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
 
     setFormError(null);
     setMaintenanceNotice(null);
+    setIsProcessing(true);
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
 
     try {
       const normalizedEmail = values.email.trim().toLowerCase();
 
-      if (mode === 'signin') {
-        const signInValues = values as SignInValues;
-        await signIn(normalizedEmail, signInValues.password);
+      const authTimeoutPromise = new Promise<never>((_, reject) => {
+        timeoutRef.current = setTimeout(() => {
+          reject(new Error('This is taking longer than expected. Please check your connection and try again.'));
+        }, AUTH_REQUEST_TIMEOUT_MS);
+      });
 
-        if (signInValues.rememberPassword) {
-          saveCredentials(normalizedEmail);
+      const authPromise = (async () => {
+        console.info('[auth-form] submission started', { mode, email: normalizedEmail });
+        if (mode === 'signin') {
+          const signInValues = values as SignInValues;
+          await signIn(normalizedEmail, signInValues.password);
+
+          if (signInValues.rememberPassword) {
+            saveCredentials(normalizedEmail);
+          } else {
+            clearStoredCredentials();
+          }
         } else {
-          clearStoredCredentials();
+          const typed = values as SignUpValues;
+          const phone = normalizePhone(typed.phone) ?? typed.phone.trim();
+          const fullName = typed.fullName.trim();
+          await signUp(normalizedEmail, typed.password, {
+            full_name: fullName,
+            phone,
+            msisdn: phone,
+            mobile_number: phone,
+            payment_phone: phone,
+            payment_method: phone ? 'phone' : undefined,
+            use_same_phone: phone ? true : undefined,
+            accepted_terms: typed.acceptedTerms,
+            newsletter_opt_in: typed.newsletterOptIn ?? false,
+          });
         }
-      } else {
-        const typed = values as SignUpValues;
-        const phone = normalizePhone(typed.phone) ?? typed.phone.trim();
-        const fullName = typed.fullName.trim();
-        await signUp(normalizedEmail, typed.password, {
-          full_name: fullName,
-          phone,
-          msisdn: phone,
-          mobile_number: phone,
-          payment_phone: phone,
-          payment_method: phone ? 'phone' : undefined,
-          use_same_phone: phone ? true : undefined,
-          accepted_terms: typed.acceptedTerms,
-          newsletter_opt_in: typed.newsletterOptIn ?? false,
-        });
-      }
+      })();
+
+      authPromise.catch((error) => {
+        // Avoid unhandled rejections if the timeout wins the race
+        console.error('[auth-form] auth promise settled after timeout', error);
+      });
+
+      await Promise.race([authPromise, authTimeoutPromise]);
 
       reset();
       // Set flag to trigger smart redirect after profile loads
@@ -317,6 +351,12 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
         ? String(error.message)
         : 'Something went wrong. Please try again.';
       setFormError(message);
+    } finally {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      setIsProcessing(false);
     }
   };
 
@@ -491,7 +531,7 @@ export const AuthForm = ({ mode, redirectTo, onSuccess, disabled = false, disabl
       <Button type="submit" className="w-full" disabled={isFormDisabled || authCompleted}>
         {authCompleted
           ? 'Redirecting…'
-          : isSubmitting
+          : submissionBusy
           ? 'Processing…'
           : disabled
           ? 'Temporarily unavailable'

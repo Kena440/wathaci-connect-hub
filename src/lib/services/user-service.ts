@@ -321,6 +321,8 @@ const getOfflineAccount = (email: string, password: string): OfflineAccount | nu
   };
 };
 
+const AUTH_REQUEST_TIMEOUT_MS = 20000;
+
 const isNetworkError = (error: any): boolean => {
   if (!error) return false;
   const message = typeof error.message === 'string' ? error.message.toLowerCase() : '';
@@ -331,6 +333,30 @@ const isNetworkError = (error: any): boolean => {
     message.includes('network error') ||
     message.includes('econnrefused')
   );
+};
+
+const withAuthTimeout = async <T>(promise: Promise<T>, context: string): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(
+      () => reject(new Error(`${context} request timed out. Please try again.`)),
+      AUTH_REQUEST_TIMEOUT_MS
+    );
+  });
+
+  // Prevent unhandled rejections if the timeout fires first
+  promise.catch((error) => {
+    console.error(`[UserService] ${context} promise settled after timeout`, error);
+  });
+
+  try {
+    return (await Promise.race([promise, timeoutPromise])) as T;
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
 };
 
 const mapAuthUserToUser = (authUser: any): User => ({
@@ -352,7 +378,10 @@ export class UserService extends BaseService<User> {
   async getCurrentUser(): Promise<DatabaseResponse<User | null>> {
     return withErrorHandling(
       async () => {
-        const { data: { user }, error } = await supabase.auth.getUser();
+        const { data: { user }, error } = await withAuthTimeout(
+          supabase.auth.getUser(),
+          'getCurrentUser'
+        );
         
         if (error) {
           return { data: null, error };
@@ -392,10 +421,13 @@ export class UserService extends BaseService<User> {
             };
           }
 
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
+          const { data, error } = await withAuthTimeout(
+            supabase.auth.signInWithPassword({
+              email,
+              password,
+            }),
+            'signIn'
+          );
 
           if (error) {
             if (isNetworkError(error)) {
