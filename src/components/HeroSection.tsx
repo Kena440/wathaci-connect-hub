@@ -1,8 +1,9 @@
+import { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Users, TrendingUp, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const HeroSection = () => {
+const HeroSectionComponent = () => {
   return (
     <section className="relative overflow-hidden py-20">
       <div
@@ -108,6 +109,7 @@ const HeroSection = () => {
     </section>
   );
 };
+const HeroSection = memo(HeroSectionComponent);
 
 export { HeroSection };
 export default HeroSection;

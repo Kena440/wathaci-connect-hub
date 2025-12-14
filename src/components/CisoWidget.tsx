@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import type { CisoMessage } from "@/lib/cisoClient";
@@ -6,8 +6,8 @@ import { callCisoAgent } from "@/lib/cisoClient";
 import { cn } from "@/lib/utils";
 
 interface CisoWidgetProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const AssistantMessage = ({ message }: { message: CisoMessage }) => {
@@ -37,22 +37,40 @@ const CisoWidget = ({ open, onOpenChange }: CisoWidgetProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<CisoMessage[]>([]);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const hasFetchedToken = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
+  const isControlled = typeof open === "boolean";
+  const isOpen = isControlled ? open : internalOpen;
+
+  const setOpen = useCallback(
+    (nextOpen: boolean) => {
+      if (!isControlled) {
+        setInternalOpen(nextOpen);
+      }
+      onOpenChange?.(nextOpen);
+    },
+    [isControlled, onOpenChange],
+  );
+
   useEffect(() => {
+    if (!isOpen || hasFetchedToken.current) return;
+
+    hasFetchedToken.current = true;
     supabaseClient.auth
       .getSession()
       .then(({ data }) => setAccessToken(data.session?.access_token ?? null))
       .catch(() => setAccessToken(null));
-  }, []);
+  }, [isOpen]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!isOpen) return;
     const timeout = setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 50);
     return () => clearTimeout(timeout);
-  }, [messages, open]);
+  }, [messages, isOpen]);
 
   const handleSend = async () => {
     const trimmed = input.trim();
@@ -122,20 +140,20 @@ const CisoWidget = ({ open, onOpenChange }: CisoWidgetProps) => {
   const launcher = useMemo(
     () => (
       <button
-        onClick={() => onOpenChange(true)}
+        onClick={() => setOpen(true)}
         className="fixed left-4 bottom-4 z-50 bg-white shadow-lg border px-4 py-2 rounded-full text-sm font-medium"
       >
         @Ask Ciso for Help
       </button>
     ),
-    [onOpenChange],
+    [setOpen],
   );
 
   return (
     <>
       {launcher}
 
-      {open ? (
+      {isOpen ? (
         <div className="fixed inset-x-4 sm:left-auto sm:right-4 bottom-20 sm:bottom-24 z-50 w-auto sm:w-[380px] max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
           <div className="flex items-start justify-between px-4 py-3 bg-emerald-600 text-white">
             <div className="flex flex-col">
@@ -144,7 +162,7 @@ const CisoWidget = ({ open, onOpenChange }: CisoWidgetProps) => {
             </div>
             <button
               type="button"
-              onClick={() => onOpenChange(false)}
+              onClick={() => setOpen(false)}
               aria-label="Close Ciso chat"
               className="ml-3 rounded-full p-1 text-white transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-600"
             >
