@@ -132,21 +132,24 @@ const StatsSection = () => {
       value: loading ? '...' : formatCurrency(stats.totalFunding),
       label: 'Total Funding Raised',
       color: 'text-green-600',
-      description: 'Capital mobilized for SME growth'
+      description: 'Capital mobilized for SME growth',
+      hidden: true
     },
     {
       icon: Target,
       value: loading ? '...' : stats.projectsCompleted.toLocaleString(),
       label: 'Projects Completed',
       color: 'text-blue-600',
-      description: 'Successful business initiatives'
+      description: 'Successful business initiatives',
+      hidden: true
     },
     {
       icon: Users,
       value: loading ? '...' : stats.jobsCreated.toLocaleString(),
       label: 'Jobs Created',
       color: 'text-purple-600',
-      description: 'Employment opportunities generated'
+      description: 'Employment opportunities generated',
+      hidden: true
     },
     {
       icon: Building2,
@@ -197,7 +200,7 @@ const StatsSection = () => {
       color: 'text-teal-600',
       description: 'Regional impact reach'
     }
-  ];
+  ].filter(stat => !stat.hidden);
 
   return (
     <section className="py-16 bg-gradient-to-r from-orange-50 to-green-50">
