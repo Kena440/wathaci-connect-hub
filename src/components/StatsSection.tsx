@@ -1,207 +1,112 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase-enhanced';
-import { Building2, Users, Briefcase, TrendingUp, Heart, DollarSign, Target, Award, Globe } from 'lucide-react';
+import {
+  Building2,
+  Users,
+  Briefcase,
+  TrendingUp,
+  Heart,
+  DollarSign,
+  Target,
+  Award,
+  Globe
+} from 'lucide-react';
 
-interface Stats {
-  smes: number;
-  professionals: number;
-  freelancers: number;
-  investors: number;
-  donors: number;
-  totalFunding: number;
-  projectsCompleted: number;
-  jobsCreated: number;
-  countriesServed: number;
-  successStories: number;
-}
+type BusinessStat = {
+  metric_key: string;
+  label: string;
+  value: number;
+  unit?: string | null;
+  description?: string | null;
+};
+
+const iconMap: Record<string, { icon: React.ComponentType<{ className?: string }>; color: string }> = {
+  total_funding_zmw: { icon: DollarSign, color: 'text-green-600' },
+  projects_completed: { icon: Target, color: 'text-blue-600' },
+  jobs_supported: { icon: Users, color: 'text-purple-600' },
+  smes_supported: { icon: Building2, color: 'text-orange-600' },
+  professionals: { icon: Briefcase, color: 'text-amber-600' },
+  freelancers_active: { icon: Target, color: 'text-cyan-600' },
+  investors: { icon: TrendingUp, color: 'text-indigo-600' },
+  donors: { icon: Heart, color: 'text-red-600' },
+  success_stories: { icon: Award, color: 'text-yellow-600' },
+  countries_served: { icon: Globe, color: 'text-teal-600' },
+  total_users: { icon: Users, color: 'text-gray-700' }
+};
 
 const StatsSection = () => {
-  const initialStats: Stats = {
-    smes: 0,
-    professionals: 0,
-    freelancers: 0,
-    investors: 0,
-    donors: 0,
-    totalFunding: 0,
-    projectsCompleted: 0,
-    jobsCreated: 0,
-    countriesServed: 0,
-    successStories: 0
-  };
-
-  const [stats, setStats] = useState<Stats>(initialStats);
+  const [businessStats, setBusinessStats] = useState<BusinessStat[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchImpactStats();
   }, []);
 
-  const fetchBusinessStats = async () => {
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('business_stats request timeout')), 5000);
-    });
-
-    const statsPromise = supabase
-      .from('business_stats')
-      .select('*')
-      .eq('is_active', true)
-      .order('order_index');
-
-    const { data, error } = await Promise.race([
-      statsPromise,
-      timeoutPromise
-    ]) as any;
-
-    if (error) {
-      throw error;
-    }
-
-    return data || [];
-  };
-
   const fetchImpactStats = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      let businessStats: any[] = [];
+      const { data, error: fetchError } = await supabase
+        .from('business_stats')
+        .select('metric_key,label,value,unit,description,order_index,is_active')
+        .eq('is_active', true)
+        .order('order_index', { ascending: true });
 
-      try {
-        businessStats = await fetchBusinessStats();
-      } catch (businessStatsError) {
-        console.warn('business_stats relation unavailable, falling back to derived counts only', businessStatsError);
+      if (fetchError) {
+        throw fetchError;
       }
 
-      const toNumber = (value: unknown) => {
-        if (typeof value === 'number') return value;
-        if (typeof value === 'string') return Number(value) || 0;
-        return 0;
-      };
-
-      const statsMap =
-        businessStats?.reduce((acc: Record<string, number>, stat: any) => {
-          acc[stat.stat_type] = toNumber(stat.stat_value);
-          return acc;
-        }, {} as Record<string, number>) || {};
-
-      const userQueries = await Promise.allSettled([
-        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_type', 'sole_proprietor'),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_type', 'professional'),
-        supabase.from('freelancers').select('id', { count: 'exact', head: true }),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_type', 'investor'),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_type', 'donor')
-      ]);
-
-      const [smesResult, professionalsResult, freelancersResult, investorsResult, donorsResult] = userQueries;
-
-      const smesCount = smesResult.status === 'fulfilled' ? smesResult.value.count : 0;
-      const professionalsCount = professionalsResult.status === 'fulfilled' ? professionalsResult.value.count : 0;
-      const freelancersCount = freelancersResult.status === 'fulfilled' ? freelancersResult.value.count : 0;
-      const investorsCount = investorsResult.status === 'fulfilled' ? investorsResult.value.count : 0;
-      const donorsCount = donorsResult.status === 'fulfilled' ? donorsResult.value.count : 0;
-
-      setStats({
-        smes: smesCount || statsMap.businesses || 0,
-        professionals: professionalsCount || statsMap.professionals || 0,
-        freelancers: freelancersCount || statsMap.freelancers || 0,
-        investors: investorsCount || statsMap.investors || 0,
-        donors: donorsCount || statsMap.donors || 0,
-        totalFunding: statsMap.funding || 0,
-        projectsCompleted: statsMap.transactions || 0,
-        jobsCreated: statsMap.jobs_created || 0,
-        countriesServed: statsMap.countries_served || 0,
-        successStories: statsMap.success_stories || 0
-      });
-    } catch (error) {
-      console.error('Error fetching impact stats:', error);
-      setStats(initialStats);
+      setBusinessStats(data || []);
+    } catch (err) {
+      console.error('Error fetching impact stats:', err);
+      setBusinessStats([]);
+      setError('Impact metrics are updating. Please check back soon.');
     } finally {
       setLoading(false);
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1)}M`;
+  const formatValue = (stat: BusinessStat) => {
+    const numericValue = Number(stat.value || 0);
+    const unit = (stat.unit || '').toLowerCase();
+
+    if (stat.metric_key === 'total_funding_zmw' || unit === 'zmw') {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'ZMW',
+        maximumFractionDigits: 0
+      }).format(numericValue);
     }
-    if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(0)}K`;
-    }
-    return `$${amount.toLocaleString()}`;
+
+    return new Intl.NumberFormat('en-US').format(numericValue);
   };
 
-  const impactStats = [
-    {
-      icon: DollarSign,
-      value: loading ? '...' : formatCurrency(stats.totalFunding),
-      label: 'Total Funding Raised',
-      color: 'text-green-600',
-      description: 'Capital mobilized for SME growth',
-      hidden: true
-    },
-    {
-      icon: Target,
-      value: loading ? '...' : stats.projectsCompleted.toLocaleString(),
-      label: 'Projects Completed',
-      color: 'text-blue-600',
-      description: 'Successful business initiatives',
-      hidden: true
-    },
-    {
-      icon: Users,
-      value: loading ? '...' : stats.jobsCreated.toLocaleString(),
-      label: 'Jobs Created',
-      color: 'text-purple-600',
-      description: 'Employment opportunities generated',
-      hidden: true
-    },
-    {
-      icon: Building2,
-      value: loading ? '...' : stats.smes.toLocaleString(),
-      label: 'SMEs Supported',
-      color: 'text-orange-600',
-      description: 'Small businesses empowered'
-    },
-    {
-      icon: Briefcase,
-      value: loading ? '...' : stats.professionals.toLocaleString(),
-      label: 'Business Professionals',
-      color: 'text-amber-600',
-      description: 'Operators and SME leads onboarded'
-    },
-    {
-      icon: Target,
-      value: loading ? '...' : stats.freelancers.toLocaleString(),
-      label: 'Independent Freelancers',
-      color: 'text-cyan-600',
-      description: 'Service providers available for projects'
-    },
-    {
-      icon: TrendingUp,
-      value: loading ? '...' : stats.investors.toLocaleString(),
-      label: 'Active Investors',
-      color: 'text-indigo-600',
-      description: 'Funding partners engaged'
-    },
-    {
-      icon: Heart,
-      value: loading ? '...' : stats.donors.toLocaleString(),
-      label: 'Donors & Supporters',
-      color: 'text-red-600',
-      description: 'Community champions'
-    },
-    {
-      icon: Award,
-      value: loading ? '...' : stats.successStories.toLocaleString(),
-      label: 'Success Stories',
-      color: 'text-yellow-600',
-      description: 'Projects with verified outcomes'
-    },
-    {
-      icon: Globe,
-      value: loading ? '...' : stats.countriesServed.toString(),
-      label: 'Countries Served',
-      color: 'text-teal-600',
-      description: 'Regional impact reach'
-    }
-  ].filter(stat => !stat.hidden);
+  const skeletonCards = Array.from({ length: 4 }).map((_, index) => (
+    <div
+      key={`skeleton-${index}`}
+      className="animate-pulse text-center bg-white p-6 rounded-xl shadow-lg border border-gray-100"
+    >
+      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4" />
+      <div className="h-8 bg-gray-200 rounded w-24 mx-auto mb-2" />
+      <div className="h-4 bg-gray-100 rounded w-32 mx-auto mb-1" />
+      <div className="h-3 bg-gray-100 rounded w-40 mx-auto" />
+    </div>
+  ));
+
+  const hasStats = businessStats.length > 0;
+
+  const impactStats = hasStats
+    ? businessStats.map(stat => {
+        const iconConfig = iconMap[stat.metric_key] || { icon: Users, color: 'text-gray-700' };
+        return {
+          ...stat,
+          valueLabel: formatValue(stat),
+          icon: iconConfig.icon,
+          color: iconConfig.color
+        };
+      })
+    : [];
 
   return (
     <section className="py-16 bg-gradient-to-r from-orange-50 to-green-50">
@@ -218,25 +123,36 @@ const StatsSection = () => {
           </div>
 
           <div className="grid md:grid-cols-4 gap-6">
-            {impactStats.map((stat, index) => {
+            {loading && !hasStats && skeletonCards}
+
+            {!loading && hasStats && impactStats.map(stat => {
               const IconComponent = stat.icon;
               return (
-                <div key={index} className="text-center bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                <div
+                  key={stat.metric_key}
+                  className="text-center bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                >
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
                     <IconComponent className={`w-8 h-8 ${stat.color}`} />
                   </div>
                   <div className="text-3xl font-bold text-gray-900 mb-2">
-                    {stat.value}
+                    {stat.valueLabel}
                   </div>
                   <div className="text-gray-800 font-semibold mb-1">
                     {stat.label}
                   </div>
                   <div className="text-sm text-gray-500">
-                    {stat.description}
+                    {stat.description || 'Live impact metric'}
                   </div>
                 </div>
               );
             })}
+
+            {!loading && !hasStats && (
+              <div className="col-span-full text-center text-gray-700 bg-white p-6 rounded-xl border border-gray-100">
+                {error || 'Impact metrics are updating. Please check back soon.'}
+              </div>
+            )}
           </div>
 
           <div className="mt-12 text-center bg-white p-8 rounded-xl shadow-lg">
