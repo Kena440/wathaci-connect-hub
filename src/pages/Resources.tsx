@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -139,6 +140,44 @@ const Resources = () => {
   const [selectedWebinar, setSelectedWebinar] = useState<(typeof webinars)[number] | null>(null);
   const { user } = useAppContext();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+
+  const availableCategories = useMemo(
+    () => ['all-categories', ...Array.from(new Set(resources.map(resource => resource.category)))],
+    []
+  );
+
+  useEffect(() => {
+    const qParam = searchParams.get('q') ?? '';
+    const tagsParam = searchParams.get('tags');
+    const categoryParam = searchParams.get('category');
+
+    const tags = tagsParam ? tagsParam.split(',').filter(Boolean) : [];
+    const combinedTerm = qParam || tags.join(' ');
+    const normalizedCategory = categoryParam?.toLowerCase();
+
+    if (combinedTerm) {
+      setSearchTerm(combinedTerm);
+    }
+
+    if (normalizedCategory) {
+      const matchingCategory = availableCategories.find(
+        category => category.toLowerCase() === normalizedCategory
+      );
+
+      if (matchingCategory) {
+        setSelectedCategory(matchingCategory);
+      }
+    } else if (tags.length) {
+      const matchingCategoryFromTags = availableCategories.find(category =>
+        tags.some(tag => category.toLowerCase() === tag.toLowerCase())
+      );
+
+      if (matchingCategoryFromTags) {
+        setSelectedCategory(matchingCategoryFromTags);
+      }
+    }
+  }, [availableCategories, searchParams]);
 
   const filteredResources = resources.filter(resource => {
     const matchesSearch = resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

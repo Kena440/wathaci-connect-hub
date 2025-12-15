@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -84,6 +84,7 @@ const Marketplace = () => {
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAppContext();
+  const [searchParams] = useSearchParams();
 
   const total = useMemo(
     () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
@@ -127,6 +128,28 @@ const Marketplace = () => {
       setLiveLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    const qParam = searchParams.get('q') ?? '';
+    const tagsParam = searchParams.get('tags');
+    const categoryParam = searchParams.get('category');
+
+    const tags = tagsParam ? tagsParam.split(',').filter(Boolean) : [];
+    const categories = [categoryParam, ...tags].filter(Boolean) as string[];
+    const combinedQuery = qParam || tags.join(' ');
+
+    if (combinedQuery) {
+      setSearchQuery(combinedQuery);
+    }
+
+    if (categories.length) {
+      setSearchFilters({ categories });
+    }
+
+    if (combinedQuery || categories.length) {
+      setActiveTab('browse');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     void loadProducts();
