@@ -27,6 +27,7 @@ import {
   type MarketplaceService,
   runMarketplaceSearch
 } from '@/data/marketplace';
+import SeoMeta from '@/components/SeoMeta';
 
 type CartItemType = 'product' | 'service';
 
@@ -234,6 +235,41 @@ const Marketplace = () => {
 
   return (
     <AppLayout>
+      <SeoMeta
+        title="Marketplace for professional services in Zambia | Wathaci Connect"
+        description="Browse business advisory services, SME compliance support, investor engagement tools, and funding readiness offers on the Wathaci Connect marketplace for Zambia and Africa."
+        keywords={[
+          'Marketplace for professional services',
+          'Business advisory services',
+          'SME compliance support',
+          'Consultancy services for SMEs',
+          'Funding and investment matching',
+          'Zambia business innovation'
+        ]}
+        canonicalPath="/marketplace"
+        structuredData={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            name: 'Wathaci Connect Marketplace',
+            description:
+              'Professional services marketplace offering business advisory, compliance support, and investment readiness solutions for Zambian SMEs.',
+            url: 'https://wathaci.com/marketplace'
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'ItemList',
+            name: 'Zambian business platform offers',
+            itemListElement: fallbackProducts.map((product, index) => ({
+              '@type': 'ListItem',
+              position: index + 1,
+              name: product.name,
+              description: product.description,
+              url: 'https://wathaci.com/marketplace'
+            }))
+          }
+        ]}
+      />
       <div className="min-h-screen bg-gray-50 relative">
         <div
           aria-hidden="true"
@@ -249,8 +285,8 @@ const Marketplace = () => {
         />
         <div className="relative z-10 py-16 text-white">
           <div className="max-w-6xl mx-auto px-6 text-center">
-            <h1 className="text-5xl font-bold mb-4">AI-Powered Marketplace</h1>
-            <p className="text-xl mb-8">Discover services from freelancers, partners, and resources with intelligent AI analysis</p>
+            <h1 className="text-5xl font-bold mb-4">Zambian marketplace for professional services</h1>
+            <p className="text-xl mb-8">Discover business advisory services, SME compliance support, and investment readiness partners powered by our AI opportunity matching engine.</p>
 
             <div className="flex justify-center gap-4 mb-8 flex-wrap">
               <Button

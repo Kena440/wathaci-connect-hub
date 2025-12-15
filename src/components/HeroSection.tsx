@@ -18,19 +18,18 @@ const HeroSectionComponent = () => {
           <div className="mb-8">
             <img
               src="https://d64gsuwffb70l.cloudfront.net/686a39ec793daf0c658a746a_1753699300137_a4fb9790.png"
-              alt="WATHACI CONNECT"
+              alt="Wathaci Connect Zambian business platform logo"
               loading="lazy"
               decoding="async"
               className="h-32 w-auto mx-auto drop-shadow-2xl"
             />
           </div>
           <h1 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
-            Empowering Zambian
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-green-600"> Business Excellence</span>
+            Zambia's SME growth platform for
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-green-600"> business opportunities & investment</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Connect with professional services, find skilled freelancers, and access resources
-            designed specifically for Zambian businesses. Your gateway to growth and success.
+            Wathaci Connect is the entrepreneur support hub for Zambia and Africa—combining business advisory services, SME compliance support, strategic partnerships facilitation, and a funding and investment matching engine to accelerate growth.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/onboarding">
@@ -47,9 +46,17 @@ const HeroSectionComponent = () => {
             </Link>
             <Link to="/marketplace">
               <Button variant="outline" size="lg" className="border-2 border-green-600 text-green-700 hover:bg-green-50 px-8 py-3 text-lg">
-                Explore Marketplace
+                Explore SME marketplace
               </Button>
             </Link>
+          </div>
+          <div className="mt-6 flex flex-col gap-2 text-gray-700 text-sm sm:text-base">
+            <p>
+              Looking for a <Link className="text-green-700 underline" to="/onboarding/sme">digital platform for SME compliance and growth</Link> or to <Link className="text-green-700 underline" to="/onboarding/investor">connect entrepreneurs with investors in Zambia</Link>? Our opportunity matching engine routes you to the right pathway.
+            </p>
+            <p>
+              Professionals can <Link className="text-orange-700 underline" to="/onboarding/professional">offer consultancy services for SMEs</Link> while donors and partners discover <Link className="text-orange-700 underline" to="/funding-hub">business opportunities in Zambia</Link> aligned to impact goals.
+            </p>
           </div>
         </div>
 

@@ -56,7 +56,7 @@ export const SignUp = () => {
           <div className="lg:col-span-2">
             <img
               src="https://d64gsuwffb70l.cloudfront.net/686a39ec793daf0c658a746a_1753699300137_a4fb9790.png"
-              alt="Wathaci Connect"
+              alt="Wathaci Connect SME growth platform icon"
               className="h-14 w-auto"
               loading="lazy"
               decoding="async"
