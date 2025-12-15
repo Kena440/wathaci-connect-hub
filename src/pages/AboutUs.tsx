@@ -102,14 +102,14 @@ export default function AboutUs() {
               </p>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Our mission</h2>
+                  <h2 className="text-xl font-semibold text-gray-900">Our Mission</h2>
                   <p className="text-sm text-gray-700 mt-2">
                     Strengthen the Zambian SME ecosystem by making business advisory, compliance support, and capital matching
                     easy to access for every entrepreneur and professional.
                   </p>
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">What makes us different</h2>
+                  <h2 className="text-xl font-semibold text-gray-900">What Makes Us Different</h2>
                   <p className="text-sm text-gray-700 mt-2">
                     A single platform where professionals monetise expertise, SMEs complete readiness checklists, and donors or investors
                     find verifiable pipeline opportunities in Zambia.

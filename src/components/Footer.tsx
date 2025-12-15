@@ -11,7 +11,7 @@ const Footer = () => {
             <Link to="/" className="inline-block cursor-pointer group">
               <img
                 src="https://d64gsuwffb70l.cloudfront.net/686a39ec793daf0c658a746a_1753699300137_a4fb9790.png"
-                alt="WATHACI CONNECT"
+                alt="Wathaci Connect"
                 loading="lazy"
                 decoding="async"
                 className="h-18 w-auto brightness-0 invert drop-shadow-lg group-hover:scale-105 transition-transform duration-200"
@@ -90,7 +90,7 @@ const Footer = () => {
 
         <div className="border-t border-gray-700 mt-8 pt-8 text-center">
           <p className="text-gray-400 text-sm">
-            © 2024 WATHACI CONNECT. All rights reserved. | Transforming Zambian Business Excellence
+            © 2024 Wathaci Connect. All rights reserved. | Transforming Zambian Business Excellence
           </p>
         </div>
       </div>
