@@ -11,7 +11,7 @@ import { RouteChangeDebugger } from "@/components/RouteChangeDebugger";
 import { supabaseConfigStatus } from "@/config/appConfig";
 import { getPaymentConfig } from "@/lib/payment-config";
 import CisoWidget from "@/components/CisoWidget";
-import AppRoutes from "./AppRoutes";
+import { AppRoutes } from "./AppRoutes";
 import "./i18n";
 const queryClient = new QueryClient();
 

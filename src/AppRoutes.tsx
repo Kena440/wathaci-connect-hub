@@ -373,5 +373,3 @@ export const AppRoutes = () => (
     </Routes>
   </Suspense>
 );
-
-export default AppRoutes;
