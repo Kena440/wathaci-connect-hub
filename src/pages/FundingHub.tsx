@@ -9,6 +9,7 @@ import { useSubscriptionAccess } from '@/hooks/useSubscriptionAccess';
 import SeoMeta from '@/components/SeoMeta';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
+import { Link } from 'react-router-dom';
 
 const FundingHub = () => {
   const { isSubscribed } = useSubscriptionAccess('funding hub');
@@ -85,6 +86,20 @@ const FundingHub = () => {
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">For SMEs</h2>
                   <p>Match with funding that fits your stage, build investor-grade documents, and respond to opportunities quickly.</p>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50/80 p-4 shadow-sm">
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">Partnerships support funding success</p>
+                    <p className="text-sm text-gray-700">
+                      Build consortia and implementation partnerships that strengthen applications. Visit the Partnership Hub to find collaborators.
+                    </p>
+                  </div>
+                  <Link to="/partnership-hub" className="text-sm font-semibold text-emerald-800 underline">
+                    Explore Partnership Hub
+                  </Link>
                 </div>
               </div>
 
