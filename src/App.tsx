@@ -64,7 +64,7 @@ const ProfileReview = lazy(() =>
     default: module.ProfileReview,
   }))
 );
-const FreelancerHub = lazy(() => import("./pages/FreelancerHub"));
+const FreelancersPage = lazy(() => import("./pages/Freelancers"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const Messages = lazy(() => import("./pages/Messages"));
@@ -181,7 +181,8 @@ export const AppRoutes = () => (
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/marketplace" element={<Marketplace />} />
-      <Route path="/freelancer-hub" element={<FreelancerHub />} />
+      <Route path="/freelancer-hub" element={<FreelancersPage />} />
+      <Route path="/freelancers" element={<FreelancersPage />} />
       <Route path="/professionals" element={<ProfessionalsPage />} />
       <Route path="/smes" element={<SmesPage />} />
       <Route path="/investors" element={<InvestorsPage />} />

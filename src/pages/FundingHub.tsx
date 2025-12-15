@@ -88,6 +88,18 @@ const FundingHub = () => {
                 </div>
               </div>
 
+              <div className="mb-6 rounded-lg border border-indigo-200 bg-white/80 p-4 shadow-sm">
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-indigo-800">Need help applying?</p>
+                    <p className="text-gray-700">Find a grant writer or finance expert to prepare your submission.</p>
+                  </div>
+                  <Button asChild variant="outline" className="border-indigo-600 text-indigo-700 hover:bg-indigo-50">
+                    <a href="/freelancers?category=Finance">Find a grant writer</a>
+                  </Button>
+                </div>
+              </div>
+
               {!isAuthenticated && (
                 <div className="mb-6 rounded-lg border border-orange-200 bg-white/80 p-4 text-left shadow-sm">
                   <h3 className="text-lg font-semibold text-gray-900">Browse First, Sign In to Act</h3>

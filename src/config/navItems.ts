@@ -7,7 +7,7 @@ export type NavItem = {
 export const NAV_ITEMS: NavItem[] = [
   { id: 'home', label: 'home', href: '/' },
   { id: 'marketplace', label: 'marketplace', href: '/marketplace' },
-  { id: 'freelancerHub', label: 'freelancerHub', href: '/freelancer-hub' },
+  { id: 'freelancerHub', label: 'freelancerHub', href: '/freelancers' },
   { id: 'resources', label: 'resources', href: '/resources' },
   { id: 'partnershipHub', label: 'partnershipHub', href: '/partnership-hub' },
   { id: 'fundingHub', label: 'fundingHub', href: '/funding-hub' },

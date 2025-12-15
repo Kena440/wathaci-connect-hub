@@ -44,7 +44,7 @@ const quickLinks = [
   {
     title: 'Freelancer Hub',
     description: 'Match with vetted professionals, negotiate terms, and collaborate instantly.',
-    path: '/freelancer-hub',
+    path: '/freelancers',
     icon: Users,
     accent: 'from-blue-50 via-white to-blue-100'
   },

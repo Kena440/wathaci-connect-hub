@@ -138,6 +138,15 @@ export const PartnershipHub = () => {
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-6 py-16 bg-white">
+        <div className="mb-6 flex flex-col gap-2 rounded-xl border border-indigo-200 bg-indigo-50 p-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-indigo-800">Need proposal support or partnership advisory?</p>
+            <p className="text-gray-700">Find a partner-ready consultant in the freelancer directory.</p>
+          </div>
+          <Button asChild variant="outline" className="border-indigo-600 text-indigo-700 hover:bg-indigo-100">
+            <a href="/freelancers?category=Advisory">Browse professionals</a>
+          </Button>
+        </div>
         <Tabs defaultValue="overview" className="space-y-8">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>

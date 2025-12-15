@@ -25,7 +25,7 @@ jest.mock('../pages/SubscriptionPlans', () => createLazyMock('Subscription Plans
 jest.mock('../pages/PartnershipHub', () => createLazyMock('Partnership Hub Page', 'PartnershipHub'));
 jest.mock('../pages/ProfileSetup', () => createLazyMock('Profile Setup Page', 'ProfileSetup'));
 jest.mock('../components/ProfileReview', () => createLazyMock('Profile Review Page', 'ProfileReview'));
-jest.mock('../pages/FreelancerHub', () => createLazyMock('Freelancer Hub Page'));
+jest.mock('../pages/Freelancers', () => createLazyMock('Freelancers Page'));
 jest.mock('../pages/PrivacyPolicy', () => createLazyMock('Privacy Policy Page'));
 jest.mock('../pages/TermsOfService', () => createLazyMock('Terms Of Service Page'));
 jest.mock('../pages/Messages', () => createLazyMock('Messages Page'));
@@ -41,7 +41,8 @@ import { AppRoutes } from '../App';
 const publicRoutes = [
   { path: '/', text: 'Home Page' },
   { path: '/marketplace', text: 'Marketplace Page' },
-  { path: '/freelancer-hub', text: 'Freelancer Hub Page' },
+  { path: '/freelancer-hub', text: 'Freelancers Page' },
+  { path: '/freelancers', text: 'Freelancers Page' },
   { path: '/resources', text: 'Resources Page' },
   { path: '/signin', text: 'Sign In Page' },
   { path: '/signup', text: 'Sign Up Page' },

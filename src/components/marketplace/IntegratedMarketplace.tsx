@@ -27,7 +27,7 @@ interface IntegratedMarketplaceProps {
 const providerLinks: Record<MarketplaceService['providerType'], { label: string; path: string; accent: string }> = {
   freelancer: {
     label: 'Visit Freelancer Hub',
-    path: '/freelancer-hub',
+    path: '/freelancers',
     accent: 'text-blue-600 hover:text-blue-700'
   },
   partnership: {

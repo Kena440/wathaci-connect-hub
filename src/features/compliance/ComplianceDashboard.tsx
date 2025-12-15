@@ -235,6 +235,18 @@ export const ComplianceDashboard = () => {
           </Card>
         )}
 
+        <Card className="mb-6 bg-white border-green-200">
+          <CardContent className="pt-5 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-green-700">Need hands-on compliance help?</p>
+              <p className="text-gray-700">Invite a verified compliance specialist from the freelancer marketplace.</p>
+            </div>
+            <Button asChild variant="outline" className="border-green-600 text-green-700 hover:bg-green-50">
+              <a href="/freelancers?category=Compliance">Find compliance specialists</a>
+            </Button>
+          </CardContent>
+        </Card>
+
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <Button
