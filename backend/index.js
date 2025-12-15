@@ -33,6 +33,7 @@ const creditPassportRoutes = require('./routes/credit-passports');
 const agentRoutes = require('./routes/agent');
 const supportRoutes = require('./routes/support');
 const copilotRoutes = require('./routes/copilot');
+const fundingRoutes = require('./routes/funding');
 
 // Health helpers
 const { getTwilioHealth } = require('./lib/twilioClient');
@@ -216,6 +217,7 @@ app.use('/api/credit-passports', creditPassportRoutes);
 app.use('/api/agent', agentLimiter, agentRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/copilot', copilotRoutes);
+app.use('/api/funding', fundingRoutes);
 
 /**
  * Global error handler
