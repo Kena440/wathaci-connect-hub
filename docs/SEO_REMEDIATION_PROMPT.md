@@ -31,11 +31,11 @@ You are the lead SEO, web performance, and content specialist tasked with fixing
 
 ## On-page SEO fixes
 1. **Meta Title & Description**
-   - Keep the existing title if accurate; otherwise craft <70-char titles with primary keyword. Rewrite meta descriptions to 120–150 chars, action-oriented, keyword-rich, and unique per page.
+   - Keep the existing title if accurate; otherwise craft titles under 70 characters with a primary keyword. Rewrite meta descriptions to 120–150 chars, action-oriented, keyword-rich, and unique per page.
 2. **Headings (H1–H6)**
    - Ensure exactly one H1 per page that states the page’s core intent and includes a primary keyword. Build a logical heading hierarchy (H2/H3) covering services, benefits, testimonials, FAQs, and CTAs.
 3. **Content Depth & Text-to-Code Ratio**
-   - Expand thin pages to **≥800–1,200 words** of high-quality, original content tailored to Zambian business services (WATHACI’s focus). Include keyword-rich sections, bullet lists, and internal links. Improve text-to-code ratio by reducing unnecessary markup/scripts.
+   - Expand thin pages to **≥800-1,200 words** of high-quality, original content tailored to Zambian business services (WATHACI’s focus). Include keyword-rich sections, bullet lists, and internal links. Improve text-to-code ratio by reducing unnecessary markup/scripts.
 4. **Internal Linking**
    - Add contextual internal links to priority pages (services, pricing, contact, blog). Ensure anchor text is descriptive and avoids duplication.
 5. **Alt Text & Media**
