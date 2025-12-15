@@ -1,49 +1,40 @@
 import { render, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import StatsSection from '../StatsSection';
+import ImpactGrowthSection from '../ImpactGrowthSection';
 
-jest.mock('@/lib/supabase-enhanced', () => {
-  const sampleStats = [
-    { metric_key: 'total_funding_zmw', label: 'Total Funding Processed', value: 78000, unit: 'ZMW' },
-    { metric_key: 'smes_supported', label: 'SMEs Supported', value: 125, unit: 'organizations' },
-    { metric_key: 'professionals', label: 'Business Professionals', value: 240, unit: 'people' },
-    { metric_key: 'freelancers_active', label: 'Independent Freelancers', value: 310, unit: 'people' }
-  ];
+const sampleMetrics = [
+  { id: '1', label: 'SMEs Supported', value: 125, suffix: 'orgs', is_public: true, sort_order: 1 },
+  { id: '2', label: 'Professionals', value: 240, suffix: 'people', is_public: true, sort_order: 2 },
+  { id: '3', label: 'Investors', value: 35, suffix: null, is_public: true, sort_order: 3 },
+];
+
+jest.mock('@/lib/supabaseClient', () => {
+  const order = async () => ({ data: sampleMetrics, error: null });
+  const eq = () => ({ order });
+  const select = () => ({ eq });
   const from = (table: string) => {
-    if (table === 'business_stats') {
-      return {
-        select: () => ({
-          eq: () => ({
-            order: async () => ({ data: sampleStats, error: null }),
-          }),
-        }),
-      };
+    if (table === 'impact_metrics') {
+      return { select };
     }
-    if (table === 'freelancers') {
-      return {
-        select: () => Promise.resolve({ count: 0 }),
-      };
-    }
-    if (table === 'profiles') {
-      return {
-        select: () => ({
-          eq: () => Promise.resolve({ count: 0 }),
-        }),
-      };
-    }
-    return {
-      select: () => Promise.resolve({ data: [], error: null }),
-    };
+    return { select: () => ({}) };
   };
-  return { supabase: { from } };
+
+  return {
+    supabase: { from },
+    supabaseConfigStatus: {
+      hasValidConfig: true,
+      resolvedUrl: 'http://example.test',
+      resolvedAnonKey: 'anon-key',
+    },
+  };
 });
 
-describe('StatsSection', () => {
+describe('ImpactGrowthSection', () => {
   it('matches snapshot', async () => {
     const { container, findByText } = render(
       <BrowserRouter>
-        <StatsSection />
-      </BrowserRouter>
+        <ImpactGrowthSection />
+      </BrowserRouter>,
     );
     await findByText('SMEs Supported');
     await waitFor(() => expect(container).toMatchSnapshot());

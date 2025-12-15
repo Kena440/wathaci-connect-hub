@@ -12,6 +12,9 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_ANON_KEY?: string;
   readonly REACT_APP_SUPABASE_ANON_KEY?: string;
   readonly VITE_SUPABASE_URL?: string;
+  readonly VITE_IMPACT_METRICS_ENABLED?: string;
+  readonly VITE_TESTIMONIALS_ENABLED?: string;
+  readonly VITE_TRUSTED_PARTNERS_ENABLED?: string;
   readonly VITE_MAINTENANCE_MODE?: string;
   readonly VITE_MAINTENANCE_ALLOW_SIGNIN?: string;
   readonly VITE_MAINTENANCE_ALLOW_SIGNUP?: string;

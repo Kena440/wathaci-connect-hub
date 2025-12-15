@@ -81,6 +81,12 @@ const resolvedConfig = getSupabaseClientConfiguration(clientOptions);
 const supabaseUrl = resolvedConfig?.url ?? fallbackUrl;
 const supabaseAnonKey = resolvedConfig?.anonKey ?? fallbackAnonKey;
 
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn(
+    '[Supabase] Missing env vars — marketing sections will use static/fallback content.',
+  );
+}
+
 const maskKey = (key?: string | null): string | undefined => {
   if (!key || typeof key !== "string") {
     return undefined;
