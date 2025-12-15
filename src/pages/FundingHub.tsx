@@ -7,13 +7,24 @@ import { AutomatedMatchingEngine } from '@/components/funding/AutomatedMatchingE
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSubscriptionAccess } from '@/hooks/useSubscriptionAccess';
 import SeoMeta from '@/components/SeoMeta';
+import { useAppContext } from '@/contexts/AppContext';
+import { useToast } from '@/hooks/use-toast';
 
 const FundingHub = () => {
   const { isSubscribed } = useSubscriptionAccess('funding hub');
+  const { user } = useAppContext();
+  const { toast } = useToast();
+  const isAuthenticated = Boolean(user);
 
   // TEMPORARY: subscription gating bypass for Funding Hub analysis (see subscriptionDebug.ts)
   // TODO: Restore subscription-gated viewOnly handling when analysis is complete.
   const sharedProps = { viewOnly: !isSubscribed } as const;
+
+  const promptLogin = () =>
+    toast({
+      title: 'Sign in required',
+      description: 'Please sign in to apply or request support on funding opportunities.',
+    });
 
   return (
     <AppLayout>
@@ -77,6 +88,16 @@ const FundingHub = () => {
                 </div>
               </div>
 
+              {!isAuthenticated && (
+                <div className="mb-6 rounded-lg border border-orange-200 bg-white/80 p-4 text-left shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900">Browse first, sign in to act</h3>
+                  <p className="text-sm text-gray-700">
+                    You can explore public funding opportunities without an account. Sign in when you are ready to apply or request
+                    matching support.
+                  </p>
+                </div>
+              )}
+
             <Tabs defaultValue="automated" className="space-y-6 relative w-full">
               <TabsList className="flex w-full flex-wrap gap-2 bg-white/90 backdrop-blur justify-center md:justify-start">
                 <TabsTrigger value="automated">Automated Engine</TabsTrigger>
@@ -106,7 +127,10 @@ const FundingHub = () => {
               </TabsContent>
 
               <TabsContent value="discovery">
-                <FundingHubComponent />
+                <FundingHubComponent
+                  onAuthRequired={promptLogin}
+                  isAuthenticated={isAuthenticated}
+                />
               </TabsContent>
             </Tabs>
           </div>

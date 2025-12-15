@@ -27,6 +27,8 @@ import {
   MonetizationState,
   PaymentAction,
 } from './types';
+import { useAppContext } from '@/contexts/AppContext';
+import { toast } from 'sonner';
 
 const PaymentGrid = ({
   actions,
@@ -59,7 +61,7 @@ const PaymentGrid = ({
             <p className="text-sm text-muted-foreground">Pay before continuing</p>
           </div>
           <Button
-            disabled={action.status === 'paid' || viewOnly}
+            disabled={action.status === 'paid'}
             onClick={() => {
               if (viewOnly) {
                 onRequestAccess?.();
@@ -207,14 +209,23 @@ export const CreditPassportPage = () => {
   const [history, setHistory] = useState<CreditPassportResult[]>([]);
   const [notes, setNotes] = useState('');
   const { isSubscribed } = useSubscriptionAccess('credit passport');
+  const { user } = useAppContext();
+  const isAuthenticated = Boolean(user);
 
   // TEMPORARY: subscription gating bypass for Credit Passport analysis (see subscriptionDebug.ts)
   // TODO: Restore subscription-gated viewOnly behavior when analysis is complete.
-  const viewOnly = !isSubscribed;
+  const viewOnly = !isSubscribed || !isAuthenticated;
 
   const ensureInteractive = () => {
+    if (!user) {
+      toast.info('Sign in to generate, pay for, or share credit passports');
+      return false;
+    }
     return true;
   };
+
+  const handleAuthPrompt = () =>
+    toast.info('Sign in to run the credit passport engine or record payments.');
 
   const paymentActions: PaymentAction[] = useMemo(
     () => [
@@ -325,10 +336,20 @@ export const CreditPassportPage = () => {
           </Card>
         </div>
 
+        {!isAuthenticated && (
+          <Card className="border-orange-200 bg-orange-50">
+            <CardContent className="pt-6 text-sm text-gray-800">
+              Browse the credit passport explainer and pricing without signing in. Sign in to record payments, generate results,
+              and unlock PDF or sharing actions.
+            </CardContent>
+          </Card>
+        )}
+
         <PaymentGrid
           actions={paymentActions}
           onPay={handlePay}
           viewOnly={viewOnly}
+          onRequestAccess={handleAuthPrompt}
         />
 
         <Card className="border-orange-100">
