@@ -221,7 +221,7 @@ export const AppRoutes = () => (
       <Route path="/copilot" element={withAppLayout(withAuth(<Copilot />))} />
       <Route
         path="/funding-hub"
-        element={withCompletedProfile(<FundingHub />)}
+        element={<FundingHub />}
       />
       <Route path="/privacy-policy" element={withAppLayout(<PrivacyPolicy />)} />
       <Route path="/terms-of-service" element={withAppLayout(<TermsOfService />)} />
@@ -379,7 +379,15 @@ export const AppRoutes = () => (
         path="/compliance"
         element={
           withAppLayout(
-            withCompletedProfile(<ComplianceDashboard />),
+            <ComplianceDashboard />,
+          )
+        }
+      />
+      <Route
+        path="/compliance-hub"
+        element={
+          withAppLayout(
+            <ComplianceDashboard />,
           )
         }
       />
@@ -390,7 +398,7 @@ export const AppRoutes = () => (
       />
       <Route
         path="/credit-passport"
-        element={withCompletedProfile(<CreditPassport />)}
+        element={<CreditPassport />}
       />
 
       <Route path="*" element={withAppLayout(<NotFound />, { showFooter: false })} />

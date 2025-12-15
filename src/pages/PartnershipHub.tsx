@@ -11,6 +11,8 @@ import { supabase } from '@/lib/supabase-enhanced';
 import IndustryMatcher from '@/components/industry/IndustryMatcher';
 import { Handshake, Users, TrendingUp, Award, Building, Globe, CheckCircle, Star, Target } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
+import { useAppContext } from '@/contexts/AppContext';
+import { useToast } from '@/hooks/use-toast';
 
 const partnerTypes = [
   {
@@ -54,11 +56,14 @@ const partnerTypes = [
 const currentPartners: any[] = [];
 
 export const PartnershipHub = () => {
+  const { user } = useAppContext();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     companyName: '', contactName: '', email: '', phone: '', partnershipType: '', otherPartnershipType: '', description: '', website: ''
   });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const isAuthenticated = Boolean(user);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -67,7 +72,17 @@ export const PartnershipHub = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
+    if (!isAuthenticated) {
+      toast({
+        title: 'Sign in required',
+        description: 'Please sign in to submit a partnership application.',
+        variant: 'destructive',
+      });
+      setLoading(false);
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('partnership_applications')
@@ -240,6 +255,13 @@ export const PartnershipHub = () => {
           </TabsContent>
           <TabsContent value="apply" className="space-y-8">
             <div className="max-w-2xl mx-auto">
+              {!isAuthenticated && (
+                <Card className="border-orange-200 bg-orange-50">
+                  <CardContent className="pt-6 text-sm text-gray-800">
+                    Sign in or create an account to submit your partnership application. Browsing remains open to everyone.
+                  </CardContent>
+                </Card>
+              )}
               {submitted ? (
                 <Card className="text-center py-12">
                   <CardContent>

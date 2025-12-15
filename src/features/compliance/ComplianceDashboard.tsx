@@ -40,12 +40,17 @@ export const ComplianceDashboard = () => {
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [isAddStandardDrawerOpen, setIsAddStandardDrawerOpen] = useState(false);
   const { isSubscribed } = useSubscriptionAccess('compliance hub');
+  const isAuthenticated = Boolean(user);
 
   // TEMPORARY: subscription gating bypass for Compliance Hub analysis (see subscriptionDebug.ts)
   // TODO: Reinstate subscription-based viewOnly when analysis is complete.
-  const viewOnly = !isSubscribed;
+  const viewOnly = !isSubscribed || !isAuthenticated;
 
   const ensureInteractive = () => {
+    if (!user) {
+      toast.info('Sign in to add or update compliance tasks');
+      return false;
+    }
     return true;
   };
 
@@ -86,6 +91,9 @@ export const ComplianceDashboard = () => {
   useEffect(() => {
     if (user) {
       void fetchTasks();
+    } else {
+      setLoading(false);
+      setTasks([]);
     }
   }, [fetchTasks, user]);
 
@@ -219,6 +227,14 @@ export const ComplianceDashboard = () => {
           </p>
         </div>
 
+        {!isAuthenticated && (
+          <Card className="mb-6 border-orange-200 bg-orange-50">
+            <CardContent className="pt-6 text-sm text-gray-800">
+              Browse compliance templates and timelines without signing in. Sign in to add reminders, track due dates, and mark tasks as completed.
+            </CardContent>
+          </Card>
+        )}
+
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <Button
@@ -296,13 +312,19 @@ export const ComplianceDashboard = () => {
         {/* Modals */}
         <AddComplianceTaskModal
           open={isAddTaskModalOpen}
-          onOpenChange={setIsAddTaskModalOpen}
+          onOpenChange={open => {
+            if (open && !ensureInteractive()) return;
+            setIsAddTaskModalOpen(open);
+          }}
           onTaskAdded={fetchTasks}
         />
 
         <AddStandardTasksDrawer
           open={isAddStandardDrawerOpen}
-          onOpenChange={setIsAddStandardDrawerOpen}
+          onOpenChange={open => {
+            if (open && !ensureInteractive()) return;
+            setIsAddStandardDrawerOpen(open);
+          }}
           onTasksAdded={fetchTasks}
         />
       </div>

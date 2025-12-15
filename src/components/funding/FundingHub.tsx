@@ -20,7 +20,13 @@ interface FundingOpportunity {
   matchScore?: number;
 }
 
-export const FundingHub = () => {
+export const FundingHub = ({
+  isAuthenticated = true,
+  onAuthRequired,
+}: {
+  isAuthenticated?: boolean;
+  onAuthRequired?: () => void;
+}) => {
   const [opportunities, setOpportunities] = useState<FundingOpportunity[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -48,12 +54,18 @@ export const FundingHub = () => {
     }
   };
   const handleApply = async (opportunityId: string) => {
-    // Implementation for application process
+    if (!isAuthenticated) {
+      onAuthRequired?.();
+      return;
+    }
     console.log('Applying for opportunity:', opportunityId);
   };
 
   const handleGetHelp = async (opportunityId: string) => {
-    // Implementation for getting professional help
+    if (!isAuthenticated) {
+      onAuthRequired?.();
+      return;
+    }
     console.log('Getting help for opportunity:', opportunityId);
   };
 
