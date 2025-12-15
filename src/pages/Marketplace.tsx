@@ -27,6 +27,8 @@ import {
   type MarketplaceService,
   runMarketplaceSearch
 } from '@/data/marketplace';
+import { fetchMarketplaceListings } from '@/features/marketplace/api';
+import type { MarketplaceListing } from '@/features/marketplace/types';
 import SeoMeta from '@/components/SeoMeta';
 
 type CartItemType = 'product' | 'service';
@@ -71,6 +73,9 @@ const Marketplace = () => {
   const [products, setProducts] = useState<MarketplaceProduct[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState<string | null>(null);
+  const [liveListings, setLiveListings] = useState<MarketplaceListing[]>([]);
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [liveError, setLiveError] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -105,9 +110,28 @@ const Marketplace = () => {
     }
   }, []);
 
+  const loadLiveListings = useCallback(async () => {
+    setLiveLoading(true);
+    try {
+      const response = await fetchMarketplaceListings({ pageSize: 24, sort: 'featured' });
+      setLiveListings(response.items || []);
+      if (!response.items?.length) {
+        setLiveError('Live marketplace listings are not available yet. Showing curated catalog instead.');
+      } else {
+        setLiveError(null);
+      }
+    } catch (error) {
+      console.error('Error loading live listings:', error);
+      setLiveError('Live marketplace listings are temporarily unavailable.');
+    } finally {
+      setLiveLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void loadProducts();
-  }, [loadProducts]);
+    void loadLiveListings();
+  }, [loadProducts, loadLiveListings]);
 
   const handleCheckoutSuccess = async (paymentData: any) => {
     try {
@@ -355,6 +379,63 @@ const Marketplace = () => {
                   onSearch={handleSearch}
                   onAIRecommendations={() => setActiveTab('recommendations')}
                 />
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900">Live marketplace listings</h3>
+                    <p className="text-xs text-gray-500">Real-time listings from Supabase with safe fallbacks.</p>
+                  </div>
+
+                  {liveError && (
+                    <Card className="border-amber-200 bg-amber-50">
+                      <CardContent className="py-3 text-amber-700 text-sm">{liveError}</CardContent>
+                    </Card>
+                  )}
+
+                  {liveLoading ? (
+                    <div className="grid gap-4 md:grid-cols-3">
+                      {Array.from({ length: 6 }).map((_, idx) => (
+                        <div key={idx} className="h-40 animate-pulse rounded-lg bg-gray-100" />
+                      ))}
+                    </div>
+                  ) : liveListings.length ? (
+                    <div className="grid gap-4 md:grid-cols-3">
+                      {liveListings.map((listing) => (
+                        <Card key={listing.id} className="h-full border border-gray-100 shadow-sm">
+                          {listing.cover_image_url && (
+                            <div className="h-32 w-full overflow-hidden rounded-t-lg bg-gray-50">
+                              <img src={listing.cover_image_url} alt={listing.title} className="h-full w-full object-cover" />
+                            </div>
+                          )}
+                          <CardHeader className="pb-2">
+                            <p className="text-xs uppercase tracking-wide text-gray-500">{listing.category}</p>
+                            <CardTitle className="text-lg">{listing.title}</CardTitle>
+                            <p className="text-sm text-gray-600 line-clamp-2">{listing.description}</p>
+                          </CardHeader>
+                          <CardContent className="pt-0 space-y-2">
+                            <div className="flex items-center justify-between text-sm text-gray-700">
+                              <span className="font-medium">
+                                {listing.price_amount ? `${listing.currency ?? 'ZMW'} ${listing.price_amount}` : 'Contact for quote'}
+                              </span>
+                              <span className="text-xs rounded-full bg-gray-100 px-2 py-1">{listing.listing_type}</span>
+                            </div>
+                            {listing.delivery_mode?.length && (
+                              <p className="text-xs text-gray-500">Delivery: {listing.delivery_mode.join(', ')}</p>
+                            )}
+                            <Button asChild variant="secondary" className="w-full justify-between">
+                              <Link to={`/marketplace/listing/${listing.slug || listing.id}`}>
+                                View details
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                              </Link>
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500">No live listings available. Try again later.</div>
+                  )}
+                </div>
 
                 {productsError && (
                   <Card className="border-amber-200 bg-amber-50">

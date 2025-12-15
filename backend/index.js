@@ -26,6 +26,7 @@ const documentRoutes = require('./routes/documents');
 const resolveRoutes = require('./routes/resolve');
 const otpRoutes = require('./routes/otp');
 const emailRoutes = require('./routes/email');
+const marketplaceRoutes = require('./routes/marketplace');
 const healthRoutes = require('./routes/health');
 const auditRoutes = require('./routes/audit');
 const diagnosticsRoutes = require('./routes/diagnostics');
@@ -197,6 +198,8 @@ app.get('/api', (req, res) => {
       diagnostics:
         'POST /api/diagnostics/run, GET /api/diagnostics/:companyId/latest, GET /api/diagnostics/:companyId/history',
       support: 'POST /api/support/contact',
+      marketplace:
+        'GET /api/marketplace/listings, GET /api/marketplace/listings/:id, POST /api/marketplace/orders, POST /api/marketplace/saved',
     },
   });
 });
@@ -209,6 +212,7 @@ app.use(['/users', '/api/users'], userRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/marketplace', marketplaceRoutes);
 app.use('/resolve', resolveRoutes);
 app.use('/api/auth/otp', otpRoutes);
 app.use('/api/email', emailRoutes);
