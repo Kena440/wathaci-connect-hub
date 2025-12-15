@@ -72,7 +72,7 @@ export const OnboardingLanding = () => {
             name: 'Wathaci Connect Onboarding',
             description:
               'Onboard SMEs, investors, donors, and professionals into the Zambian business platform for advisory services, compliance tools, and opportunity matching.',
-            url: 'https://wathaci.com/onboarding'
+            url: 'https://www.wathaci.com/onboarding'
           }
         ]}
       />

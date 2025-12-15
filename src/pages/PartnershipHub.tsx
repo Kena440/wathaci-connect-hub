@@ -13,6 +13,7 @@ import { Handshake, Users, TrendingUp, Award, Building, Globe, CheckCircle, Star
 import AppLayout from '@/components/AppLayout';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
+import SeoMeta from '@/components/SeoMeta';
 
 const partnerTypes = [
   {
@@ -108,6 +109,11 @@ export const PartnershipHub = () => {
 
   return (
     <AppLayout>
+      <SeoMeta
+        title="Partnership Hub | Wathaci Connect"
+        description="Partner with Wathaci Connect to reach SMEs with compliance, technology, funding, and professional services solutions across Zambia."
+        canonicalPath="/partnership-hub"
+      />
       <div className="min-h-screen bg-white relative">
 
         <div

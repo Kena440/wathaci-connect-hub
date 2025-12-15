@@ -1,14 +1,22 @@
+import AppLayout from "@/components/AppLayout";
+import SeoMeta from "@/components/SeoMeta";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function TermsOfService() {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-3xl font-bold text-center">Terms of Service</CardTitle>
-          <p className="text-center text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
-        </CardHeader>
-        <CardContent className="space-y-6">
+    <AppLayout>
+      <SeoMeta
+        title="Terms of Service"
+        description="Terms of Service for using the Wathaci Connect platform for SME support, compliance, and professional services."
+        canonicalPath="/terms"
+      />
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-3xl font-bold text-center">Terms of Service</CardTitle>
+            <p className="text-center text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
+          </CardHeader>
+          <CardContent className="space-y-6">
           <section>
             <h2 className="text-xl font-semibold mb-3">1. Acceptance of Terms</h2>
             <p className="text-sm leading-relaxed">
@@ -92,8 +100,9 @@ export default function TermsOfService() {
               <p><strong>Registration:</strong> Registered under Zambian business law</p>
             </div>
           </section>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </AppLayout>
   );
 }

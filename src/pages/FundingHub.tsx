@@ -52,7 +52,7 @@ const FundingHub = () => {
             },
             offers: {
               '@type': 'Offer',
-              url: 'https://wathaci.com/funding-hub',
+              url: 'https://www.wathaci.com/funding-hub',
               description: 'Pipeline discovery, live funding calls, and AI-matched investment opportunities for SMEs.'
             }
           }

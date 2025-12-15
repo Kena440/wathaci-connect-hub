@@ -11,6 +11,7 @@ import { LencoPayment } from '@/components/LencoPayment';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 import { resourcePurchaseService } from '@/lib/services';
+import SeoMeta from '@/components/SeoMeta';
 
 const resources = [
   {
@@ -210,6 +211,11 @@ const Resources = () => {
 
   return (
     <AppLayout>
+      <SeoMeta
+        title="Resources for SME compliance, funding, and professional growth in Zambia"
+        description="Download SME compliance checklists, governance templates, funding readiness guides, and professional playbooks from Wathaci Connect."
+        canonicalPath="/resources"
+      />
       <div className="min-h-screen bg-gray-50">
         <section className="relative overflow-hidden text-white">
           <div

@@ -29,6 +29,7 @@ import {
 } from './types';
 import { useAppContext } from '@/contexts/AppContext';
 import { toast } from 'sonner';
+import SeoMeta from '@/components/SeoMeta';
 
 const PaymentGrid = ({
   actions,
@@ -307,6 +308,11 @@ export const CreditPassportPage = () => {
 
   return (
     <AppLayout>
+      <SeoMeta
+        title="Credit Passport for SMEs and professionals"
+        description="Generate a Credit Passport, fundability score, and exportable PDF to share with investors, lenders, and partners across Zambia."
+        canonicalPath="/credit-passport"
+      />
       <div className="max-w-6xl mx-auto px-4 py-10 space-y-8">
         <div className="grid md:grid-cols-2 gap-6 items-center">
           <div className="space-y-3">

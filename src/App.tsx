@@ -51,7 +51,11 @@ const PartnershipHub = lazy(() =>
     default: module.PartnershipHub,
   }))
 );
+const ProfessionalsPage = lazy(() => import("./pages/Professionals"));
+const SmesPage = lazy(() => import("./pages/Smes"));
+const InvestorsPage = lazy(() => import("./pages/Investors"));
 const FundingHub = lazy(() => import("./pages/FundingHub"));
+const ContactPage = lazy(() => import("./pages/Contact"));
 const ProfileSetup = lazy(() =>
   import("./pages/ProfileSetup").then((module) => ({ default: module.ProfileSetup }))
 );
@@ -156,11 +160,7 @@ const ReadinessResult = lazy(() =>
 );
 
 // Compliance Hub feature
-const ComplianceDashboard = lazy(() =>
-  import("./features/compliance/ComplianceDashboard").then((module) => ({
-    default: module.ComplianceDashboard,
-  }))
-);
+const ComplianceHubPage = lazy(() => import("./pages/ComplianceHub"));
 const Copilot = lazy(() => import("./pages/Copilot"));
 
 const withAppLayout = (element: ReactNode, options: { showFooter?: boolean } = {}) => (
@@ -182,7 +182,11 @@ export const AppRoutes = () => (
       <Route path="/" element={<Index />} />
       <Route path="/marketplace" element={<Marketplace />} />
       <Route path="/freelancer-hub" element={<FreelancerHub />} />
+      <Route path="/professionals" element={<ProfessionalsPage />} />
+      <Route path="/smes" element={<SmesPage />} />
+      <Route path="/investors" element={<InvestorsPage />} />
       <Route path="/resources" element={<Resources />} />
+      <Route path="/contact" element={<ContactPage />} />
       <Route path="/signin" element={withAppLayout(<SignIn />, { showFooter: false })} />
       <Route path="/signup" element={withAppLayout(<SignUp />, { showFooter: false })} />
       <Route
@@ -225,7 +229,9 @@ export const AppRoutes = () => (
       />
       <Route path="/privacy-policy" element={withAppLayout(<PrivacyPolicy />)} />
       <Route path="/terms-of-service" element={withAppLayout(<TermsOfService />)} />
+      <Route path="/terms" element={withAppLayout(<TermsOfService />)} />
       <Route path="/about-us" element={<AboutUs />} />
+      <Route path="/about" element={<AboutUs />} />
       <Route path="/test-error" element={withAppLayout(<TestError />, { showFooter: false })} />
       <Route path="/checkout" element={<PaymentPage />} />
       <Route
@@ -375,22 +381,8 @@ export const AppRoutes = () => (
       />
       
       {/* Compliance Hub route */}
-      <Route
-        path="/compliance"
-        element={
-          withAppLayout(
-            <ComplianceDashboard />,
-          )
-        }
-      />
-      <Route
-        path="/compliance-hub"
-        element={
-          withAppLayout(
-            <ComplianceDashboard />,
-          )
-        }
-      />
+      <Route path="/compliance" element={<ComplianceHubPage />} />
+      <Route path="/compliance-hub" element={<ComplianceHubPage />} />
 
       <Route
         path="/ai-documents"

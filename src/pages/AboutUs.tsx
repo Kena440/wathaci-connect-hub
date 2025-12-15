@@ -48,20 +48,20 @@ export default function AboutUs() {
           "Professional services marketplace Zambia",
           "Connect entrepreneurs with investors in Zambia"
         ]}
-        canonicalPath="/about-us"
+        canonicalPath="/about"
         structuredData={[
           {
             '@context': 'https://schema.org',
             '@type': 'AboutPage',
             name: 'About Wathaci Connect',
-            url: 'https://wathaci.com/about-us',
+            url: 'https://www.wathaci.com/about',
             description:
               "Wathaci Connect is a Lusaka-based SME ecosystem platform providing advisory services, compliance support, and an opportunity matching engine for professionals, SMEs, investors, and donors.",
             breadcrumb: {
               '@type': 'BreadcrumbList',
               itemListElement: [
-                { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://wathaci.com/' },
-                { '@type': 'ListItem', position: 2, name: 'About Us', item: 'https://wathaci.com/about-us' }
+                { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.wathaci.com/' },
+                { '@type': 'ListItem', position: 2, name: 'About', item: 'https://www.wathaci.com/about' }
               ]
             }
           }

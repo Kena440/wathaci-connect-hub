@@ -14,7 +14,7 @@ interface SeoMetaProps {
   structuredData?: StructuredData[];
 }
 
-const BASE_URL = "https://wathaci.com";
+const BASE_URL = "https://www.wathaci.com";
 
 const upsertMetaTag = (selector: string, attributes: Record<string, string>) => {
   const head = document.head;
@@ -49,7 +49,7 @@ export const SeoMeta = ({
   image = "https://d64gsuwffb70l.cloudfront.net/686a39ec793daf0c658a746a_1753699300137_a4fb9790.png",
   type = "website",
   twitterCard = "summary_large_image",
-  robots = "index,follow",
+  robots = "index, follow",
   structuredData = []
 }: SeoMetaProps) => {
   useEffect(() => {
