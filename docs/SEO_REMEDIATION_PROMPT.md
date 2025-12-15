@@ -5,7 +5,7 @@ You are the lead SEO, web performance, and content specialist tasked with fixing
 ## Global success criteria
 - Final on-page, technical, and speed scores meet or exceed **90/100** on standard audits (Google Lighthouse, SEMrush, PageSpeed Insights) for both mobile and desktop.
 - All pages are fully crawlable and indexable; no audit errors or blocking directives remain.
-- Core Web Vitals pass for mobile and desktop: **LCP ≤ 2.5s**, **INP ≤ 200ms**, CLS within Google-recommended thresholds.
+- Core Web Vitals pass for mobile and desktop: **LCP ≤ 2.5s**, **INP ≤ 200ms**, **CLS ≤ 0.1**.
 - Social profiles (X/Twitter, LinkedIn, Facebook, Instagram) are correctly linked and validated.
 
 ## Technical SEO fixes
@@ -31,11 +31,11 @@ You are the lead SEO, web performance, and content specialist tasked with fixing
 
 ## On-page SEO fixes
 1. **Meta Title & Description**
-   - Keep the existing title if accurate; otherwise craft <70-char titles with primary keyword. Rewrite meta descriptions to 120–150 chars, action-oriented, keyword-rich, and unique per page.
+   - Keep the existing title if accurate; otherwise craft titles under 70 characters with a primary keyword. Rewrite meta descriptions to 120–150 chars, action-oriented, keyword-rich, and unique per page.
 2. **Headings (H1–H6)**
    - Ensure exactly one H1 per page that states the page’s core intent and includes a primary keyword. Build a logical heading hierarchy (H2/H3) covering services, benefits, testimonials, FAQs, and CTAs.
 3. **Content Depth & Text-to-Code Ratio**
-   - Expand thin pages to **≥800–1,200 words** of high-quality, original content tailored to Zambian business services (WATHACI’s focus). Include keyword-rich sections, bullet lists, and internal links. Improve text-to-code ratio by reducing unnecessary markup/scripts.
+   - Expand thin pages to **800-1,200 words** of high-quality, original content tailored to Zambian business services (WATHACI’s focus). Include keyword-rich sections, bullet lists, and internal links. Improve text-to-code ratio by reducing unnecessary markup/scripts.
 4. **Internal Linking**
    - Add contextual internal links to priority pages (services, pricing, contact, blog). Ensure anchor text is descriptive and avoids duplication.
 5. **Alt Text & Media**
@@ -52,7 +52,7 @@ You are the lead SEO, web performance, and content specialist tasked with fixing
 2. **Media Optimization**
    - Serve images in WebP/AVIF; size images responsively; enable compression and caching headers (Cache-Control, ETag). Use a CDN if available.
 3. **Performance Targets**
-   - Achieve **Performance Score ≥ 90**, **LCP ≤ 2.5s**, **INP ≤ 200ms** on mobile. Optimize server TTFB, enable HTTP/2 or HTTP/3.
+   - Achieve **Performance Score ≥ 90** on mobile and desktop with **LCP ≤ 2.5s**, **INP ≤ 200ms**, and **CLS ≤ 0.1**. Optimize server TTFB, enable HTTP/2 or HTTP/3.
 4. **Mobile Friendliness**
    - Implement responsive layouts and tap-target sizing; remove horizontal scroll; ensure fonts and buttons are legible on small screens. Re-run mobile friendliness tests until passing.
 
