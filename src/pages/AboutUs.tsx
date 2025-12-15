@@ -2,6 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Linkedin, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
+import { Seo } from "@/components/Seo";
+import { seoMetadata } from "@/config/seo";
 
 interface TeamMember {
   name: string;
@@ -37,6 +39,7 @@ export default function AboutUs() {
 
   return (
     <AppLayout>
+      <Seo {...seoMetadata.about} />
       <div className="min-h-screen bg-gray-50 relative">
         <div
           aria-hidden="true"
@@ -59,16 +62,16 @@ export default function AboutUs() {
           </Link>
           <Card>
             <CardHeader>
-              <CardTitle className="text-3xl font-bold text-center">About Us</CardTitle>
+              <CardTitle className="text-3xl font-bold text-center">About Wathaci Connect</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
               <p>
-                WATHACI CONNECT empowers entrepreneurs and organizations by linking them with the
-                resources, partners, and funding needed to grow their impact across Zambia.
+                Wathaci Connect is a Zambian business platform strengthening the SME ecosystem in Zambia through business
+                advisory services, SME compliance support, and funding and investment matching for entrepreneurs and partners.
               </p>
               <p>
-                Our platform fosters collaboration and innovation through AI-powered matching tools,
-                comprehensive business resources, and a vibrant community of stakeholders.
+                Our SME growth platform fosters collaboration via an investor engagement portal, strategic partnerships
+                facilitation, and AI-powered opportunity matching that showcases Zambia business innovation.
               </p>
             </CardContent>
           </Card>

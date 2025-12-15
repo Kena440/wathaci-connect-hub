@@ -20,6 +20,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { SUPPORT_EMAIL } from '@/lib/supportEmail';
 import { PaymentWithNegotiation } from '@/components/PaymentWithNegotiation';
+import { Seo } from '@/components/Seo';
+import { seoMetadata } from '@/config/seo';
 import {
   marketplaceProducts as fallbackProducts,
   getMarketplaceCatalog,
@@ -234,6 +236,7 @@ const Marketplace = () => {
 
   return (
     <AppLayout>
+      <Seo {...seoMetadata.marketplace} />
       <div className="min-h-screen bg-gray-50 relative">
         <div
           aria-hidden="true"
@@ -249,8 +252,11 @@ const Marketplace = () => {
         />
         <div className="relative z-10 py-16 text-white">
           <div className="max-w-6xl mx-auto px-6 text-center">
-            <h1 className="text-5xl font-bold mb-4">AI-Powered Marketplace</h1>
-            <p className="text-xl mb-8">Discover services from freelancers, partners, and resources with intelligent AI analysis</p>
+            <h1 className="text-5xl font-bold mb-4">Marketplace for professional services</h1>
+            <p className="text-xl mb-8">
+              Discover consultancy services for SMEs, SME compliance support, and Lusaka business services with an AI-powered
+              opportunity matching engine for Zambian entrepreneurs.
+            </p>
 
             <div className="flex justify-center gap-4 mb-8 flex-wrap">
               <Button
@@ -297,11 +303,12 @@ const Marketplace = () => {
               <div className="space-y-8">
                 <div className="text-center mb-8">
                   <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                    Comprehensive Service Marketplace
+                    Comprehensive service marketplace for SMEs
                   </h2>
                   <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-                    Browse services from our network of freelancers, verified partners, and educational resources.
-                    Our AI analyzes qualifications and offerings to match you with the perfect service provider.
+                    Browse business advisory services, SME compliance support, and consultancy services for SMEs from our network
+                    of freelancers, verified partners, and educational resources.
+                    Our AI analyzes qualifications and offerings to match you with the right expertise for Zambia business innovation.
                   </p>
                 </div>
                 <IntegratedMarketplace

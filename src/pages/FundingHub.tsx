@@ -6,6 +6,8 @@ import LiveFundingMatcher from '@/components/funding/LiveFundingMatcher';
 import { AutomatedMatchingEngine } from '@/components/funding/AutomatedMatchingEngine';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSubscriptionAccess } from '@/hooks/useSubscriptionAccess';
+import { Seo } from '@/components/Seo';
+import { seoMetadata } from '@/config/seo';
 
 const FundingHub = () => {
   const { isSubscribed } = useSubscriptionAccess('funding hub');
@@ -16,6 +18,7 @@ const FundingHub = () => {
 
   return (
     <AppLayout>
+      <Seo {...seoMetadata.fundingHub} />
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50">
           <div className="relative overflow-hidden">
             <div
@@ -25,9 +28,10 @@ const FundingHub = () => {
             />
             <div className="relative z-10 max-w-6xl mx-auto px-4 py-10 min-h-[60vh]">
               <div className="mb-6 text-center md:text-left">
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">AI-Powered Funding Hub</h1>
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Funding and investment matching hub</h1>
                 <p className="text-gray-700 max-w-3xl mx-auto md:mx-0">
-                  Discover live funding opportunities and get matched with expert professionals using advanced AI
+                  Connect entrepreneurs with investors in Zambia through our investor engagement portal, live business
+                  opportunities, and AI-driven opportunity matching engine.
                 </p>
               </div>
 

@@ -7,12 +7,15 @@ import { DonateButton } from '@/components/DonateButton';
 import AppLayout from '@/components/AppLayout';
 import IndustryMatcher from '@/components/industry/IndustryMatcher';
 import { Users, Lightbulb, Heart, Target } from 'lucide-react';
+import { Seo } from '@/components/Seo';
+import { seoMetadata } from '@/config/seo';
 
 const FreelancerHub = () => {
   const [activeTab, setActiveTab] = useState('directory');
 
   return (
     <AppLayout>
+      <Seo {...seoMetadata.freelancerHub} />
       <div className="min-h-screen bg-gray-50 relative">
         <div
           aria-hidden="true"
@@ -29,8 +32,11 @@ const FreelancerHub = () => {
           <div className="max-w-6xl mx-auto px-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-5xl font-bold mb-4">Freelancer Hub</h1>
-                <p className="text-xl">Connect, collaborate, and grow your business network</p>
+                <h1 className="text-5xl font-bold mb-4">Professionals & consultants for SMEs</h1>
+                <p className="text-xl">
+                  Marketplace for professional services offering business advisory services, consultancy services for SMEs, and
+                  Lusaka business services.
+                </p>
               </div>
               <DonateButton />
             </div>

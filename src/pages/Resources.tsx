@@ -11,6 +11,8 @@ import { LencoPayment } from '@/components/LencoPayment';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 import { resourcePurchaseService } from '@/lib/services';
+import { Seo } from '@/components/Seo';
+import { seoMetadata } from '@/config/seo';
 
 const resources = [
   {
@@ -210,6 +212,7 @@ const Resources = () => {
 
   return (
     <AppLayout>
+      <Seo {...seoMetadata.resources} />
       <div className="min-h-screen bg-gray-50">
         <section className="relative overflow-hidden text-white">
           <div
@@ -224,8 +227,11 @@ const Resources = () => {
             className="pointer-events-none absolute inset-0 bg-gradient-to-r from-emerald-700/80 to-blue-700/80"
           />
           <div className="relative z-10 max-w-6xl mx-auto px-6 py-14 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">Business Resources</h1>
-            <p className="text-lg md:text-xl mb-8">Tools, templates, and knowledge to grow your business</p>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">SME growth platform resources</h1>
+            <p className="text-lg md:text-xl mb-8">
+              Capacity-building resources, business formalisation tools, and startup ecosystem support for SME digital
+              transformation in Zambia.
+            </p>
 
             <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap sm:gap-4 mb-4">
               <Button

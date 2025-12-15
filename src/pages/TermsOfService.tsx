@@ -1,8 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Seo } from "@/components/Seo";
+import { seoMetadata } from "@/config/seo";
 
 export default function TermsOfService() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <Seo {...seoMetadata.terms} />
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl font-bold text-center">Terms of Service</CardTitle>

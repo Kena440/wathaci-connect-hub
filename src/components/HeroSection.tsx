@@ -18,36 +18,36 @@ const HeroSectionComponent = () => {
           <div className="mb-8">
             <img
               src="https://d64gsuwffb70l.cloudfront.net/686a39ec793daf0c658a746a_1753699300137_a4fb9790.png"
-              alt="WATHACI CONNECT"
+              alt="Wathaci Connect, the Zambian business platform for SMEs"
               loading="lazy"
               decoding="async"
               className="h-32 w-auto mx-auto drop-shadow-2xl"
             />
           </div>
           <h1 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
-            Empowering Zambian
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-green-600"> Business Excellence</span>
+            Wathaci Connect: Zambia's
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-green-600"> SME growth platform</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Connect with professional services, find skilled freelancers, and access resources
-            designed specifically for Zambian businesses. Your gateway to growth and success.
+            A Zambian business platform built to power SME digital transformation with business advisory services,
+            SME compliance support, and funding and investment matching for entrepreneurs, donors, and partners.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/onboarding">
               <Button size="lg" className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white px-8 py-3 text-lg">
-                Join the Founding Cohort – Create Your Profile
+                Join the SME growth platform
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
             <Link to="/get-started">
               <Button size="lg" className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white px-8 py-3 text-lg">
-                Get Started Today
+                Find expert business services
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
             <Link to="/marketplace">
               <Button variant="outline" size="lg" className="border-2 border-green-600 text-green-700 hover:bg-green-50 px-8 py-3 text-lg">
-                Explore Marketplace
+                Explore marketplace for professional services
               </Button>
             </Link>
           </div>

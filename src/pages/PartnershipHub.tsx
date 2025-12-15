@@ -11,6 +11,8 @@ import { supabase } from '@/lib/supabase-enhanced';
 import IndustryMatcher from '@/components/industry/IndustryMatcher';
 import { Handshake, Users, TrendingUp, Award, Building, Globe, CheckCircle, Star, Target } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
+import { Seo } from '@/components/Seo';
+import { seoMetadata } from '@/config/seo';
 
 const partnerTypes = [
   {
@@ -93,6 +95,7 @@ export const PartnershipHub = () => {
 
   return (
     <AppLayout>
+      <Seo {...seoMetadata.partnershipHub} />
       <div className="min-h-screen bg-white relative">
 
         <div
@@ -109,9 +112,10 @@ export const PartnershipHub = () => {
       <div className="relative z-10 py-16 text-gray-900">
         <div className="max-w-6xl mx-auto px-6 text-center">
           <Handshake className="w-16 h-16 mx-auto mb-6 text-gray-900" />
-          <h1 className="text-4xl font-bold mb-4 text-gray-900">Partnership Hub</h1>
+          <h1 className="text-4xl font-bold mb-4 text-gray-900">Strategic partnerships facilitation</h1>
           <p className="text-xl text-gray-700 max-w-2xl mx-auto">
-            Join our growing network of partners and help transform Zambian businesses together
+            Collaborate on Zambia business innovation through business networking Zambia, referral alliances, and African SME
+            development initiatives.
           </p>
         </div>
       </div>

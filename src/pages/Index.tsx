@@ -5,6 +5,8 @@ import ServicesGrid from '@/components/ServicesGrid';
 import MarketplacePreview from '@/components/MarketplacePreview';
 import StatsSection from '@/components/StatsSection';
 import TestimonialsSection from '@/components/TestimonialsSection';
+import { Seo } from '@/components/Seo';
+import { seoMetadata } from '@/config/seo';
 import { SubscriptionBanner } from '@/components/SubscriptionBanner';
 import { useAppContext } from '@/contexts/AppContext';
 
@@ -13,6 +15,7 @@ const Index: React.FC = () => {
 
   return (
     <AppLayout>
+      <Seo {...seoMetadata.home} />
       <div className="relative min-h-screen overflow-hidden bg-white/40 backdrop-blur-sm">
         <div
           aria-hidden="true"
