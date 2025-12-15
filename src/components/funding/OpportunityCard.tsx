@@ -7,30 +7,36 @@ export interface FundingOpportunityCardProps {
   opportunity: {
     id: string;
     title: string;
-    provider_name: string;
-    description: string;
-    sectors?: string[];
-    instrument_type?: string[];
-    country_focus?: string[];
-    ticket_size_min?: number | null;
-    ticket_size_max?: number | null;
+    funder_name?: string | null;
+    funding_type: string;
+    target_sectors?: string[];
+    eligible_applicants?: string[];
+    eligible_countries?: string[];
+    funding_amount_min?: number | null;
+    funding_amount_max?: number | null;
     currency?: string | null;
-    application_deadline?: string | null;
-    is_featured?: boolean;
-    matchScore?: number;
+    deadline?: string | null;
+    tags?: string[];
+    relevance_score?: number;
   };
   onApply: (id: string) => void;
   onDetails: (id: string) => void;
 }
 
-export const OpportunityCard = ({ opportunity, onApply, onDetails }: FundingOpportunityCardProps) => {
+const formatAmount = (opportunity: FundingOpportunityCardProps['opportunity']) => {
   const currency = opportunity.currency || 'USD';
-  const deadline = opportunity.application_deadline
-    ? new Date(opportunity.application_deadline).toLocaleDateString()
+  if (opportunity.funding_amount_min || opportunity.funding_amount_max) {
+    const min = opportunity.funding_amount_min ? `${currency} ${opportunity.funding_amount_min}` : '—';
+    const max = opportunity.funding_amount_max ? `${currency} ${opportunity.funding_amount_max}` : '—';
+    return `${min} - ${max}`;
+  }
+  return 'Funding amount not specified';
+};
+
+export const OpportunityCard = ({ opportunity, onApply, onDetails }: FundingOpportunityCardProps) => {
+  const deadline = opportunity.deadline
+    ? new Date(opportunity.deadline).toLocaleDateString()
     : 'Rolling';
-  const ticketLabel = opportunity.ticket_size_min || opportunity.ticket_size_max
-    ? `${currency} ${opportunity.ticket_size_min ?? '—'} - ${opportunity.ticket_size_max ?? '—'}`
-    : 'Ticket size on request';
 
   return (
     <Card className="h-full hover:shadow-lg transition-shadow border border-slate-200">
@@ -38,33 +44,30 @@ export const OpportunityCard = ({ opportunity, onApply, onDetails }: FundingOppo
         <div className="flex justify-between items-start gap-2">
           <div>
             <CardTitle className="text-lg text-slate-900">{opportunity.title}</CardTitle>
-            <p className="text-sm text-slate-600">{opportunity.provider_name}</p>
+            <p className="text-sm text-slate-600">{opportunity.funder_name || 'Funding partner'}</p>
           </div>
-          {typeof opportunity.matchScore === 'number' && (
-            <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">
-              {Math.round(opportunity.matchScore)}% match
-            </Badge>
-          )}
+          <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 capitalize">
+            {opportunity.funding_type || 'grant'}
+          </Badge>
         </div>
         <div className="flex flex-wrap gap-2">
-          {(opportunity.instrument_type || []).map(type => (
-            <Badge key={type} variant="outline" className="bg-orange-50 text-orange-800 border-orange-200">
-              {type}
-            </Badge>
-          ))}
-          {(opportunity.sectors || []).slice(0, 3).map(sector => (
+          {(opportunity.target_sectors || []).slice(0, 3).map(sector => (
             <Badge key={sector} variant="secondary" className="bg-slate-100 text-slate-800">
               {sector}
+            </Badge>
+          ))}
+          {(opportunity.tags || []).slice(0, 2).map(tag => (
+            <Badge key={tag} variant="outline" className="bg-orange-50 text-orange-800 border-orange-200">
+              {tag}
             </Badge>
           ))}
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <p className="text-sm text-slate-700 line-clamp-3">{opportunity.description}</p>
         <div className="space-y-2 text-sm text-slate-700">
           <div className="flex items-center gap-2">
             <DollarSign className="h-4 w-4 text-emerald-600" />
-            <span>{ticketLabel}</span>
+            <span>{formatAmount(opportunity)}</span>
           </div>
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-blue-600" />
@@ -72,12 +75,12 @@ export const OpportunityCard = ({ opportunity, onApply, onDetails }: FundingOppo
           </div>
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-slate-600" />
-            <span>{(opportunity.country_focus || ['Zambia']).join(', ')}</span>
+            <span>{(opportunity.eligible_countries || ['Zambia']).join(', ')}</span>
           </div>
         </div>
         <div className="flex gap-2 pt-2">
           <Button onClick={() => onApply(opportunity.id)} className="flex-1">
-            Express Interest
+            Apply now
           </Button>
           <Button variant="outline" onClick={() => onDetails(opportunity.id)} className="flex-1">
             View details
