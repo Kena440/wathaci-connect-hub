@@ -18,4 +18,7 @@ interface ImportMetaEnv {
   readonly VITE_MAINTENANCE_BANNER_TITLE?: string;
   readonly VITE_MAINTENANCE_BANNER_MESSAGE?: string;
   readonly VITE_MAINTENANCE_ALLOWED_EMAIL_DOMAINS?: string;
+  readonly NEXT_PUBLIC_CHATBOT_ID?: string;
+  readonly VITE_NEXT_PUBLIC_CHATBOT_ID?: string;
+  readonly VITE_CHATBOT_ID?: string;
 }
