@@ -7,7 +7,7 @@ const ComplianceHubPage = () => {
     <AppLayout>
       <SeoMeta
         title="Compliance Hub | Wathaci Connect"
-        description="Monitor SME compliance tasks, document evidence, and stay audit-ready with Wathaci Connect."
+        description="Track Zambian regulatory, tax, and governance readiness with live checklists, AI health scores, and specialist recommendations."
         canonicalPath="/compliance-hub"
       />
       <ComplianceDashboard />
