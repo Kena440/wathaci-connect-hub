@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Linkedin, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
+import SeoMeta from "@/components/SeoMeta";
 
 interface TeamMember {
   name: string;
@@ -37,6 +38,35 @@ export default function AboutUs() {
 
   return (
     <AppLayout>
+      <SeoMeta
+        title="About Wathaci Connect | Zambia SME ecosystem platform"
+        description="Learn how Wathaci Connect strengthens Zambia's SME ecosystem with advisory services, compliance support, investment readiness, and a professional services marketplace that links entrepreneurs, investors, donors, and partners."
+        keywords={[
+          "Wathaci Connect team",
+          "Zambia SME ecosystem platform",
+          "SME compliance and investment readiness",
+          "Professional services marketplace Zambia",
+          "Connect entrepreneurs with investors in Zambia"
+        ]}
+        canonicalPath="/about-us"
+        structuredData={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'AboutPage',
+            name: 'About Wathaci Connect',
+            url: 'https://wathaci.com/about-us',
+            description:
+              "Wathaci Connect is a Lusaka-based SME ecosystem platform providing advisory services, compliance support, and an opportunity matching engine for professionals, SMEs, investors, and donors.",
+            breadcrumb: {
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://wathaci.com/' },
+                { '@type': 'ListItem', position: 2, name: 'About Us', item: 'https://wathaci.com/about-us' }
+              ]
+            }
+          }
+        ]}
+      />
       <div className="min-h-screen bg-gray-50 relative">
         <div
           aria-hidden="true"
@@ -59,22 +89,38 @@ export default function AboutUs() {
           </Link>
           <Card>
             <CardHeader>
-              <CardTitle className="text-3xl font-bold text-center">About Us</CardTitle>
+              <h1 className="text-3xl font-bold text-center text-gray-900">About Wathaci Connect</h1>
             </CardHeader>
-            <CardContent className="space-y-4 text-sm">
+            <CardContent className="space-y-4 text-base leading-relaxed text-gray-700">
               <p>
-                WATHACI CONNECT empowers entrepreneurs and organizations by linking them with the
-                resources, partners, and funding needed to grow their impact across Zambia.
+                Wathaci Connect is a Zambia-first SME ecosystem platform. We connect professionals, SMEs, donors, and investors through
+                an opportunity matching engine, a professional services marketplace, and compliance workflows that help businesses grow with confidence.
               </p>
               <p>
-                Our platform fosters collaboration and innovation through AI-powered matching tools,
-                comprehensive business resources, and a vibrant community of stakeholders.
+                Our team blends donor-programme experience, corporate governance expertise, and technology delivery so that every entrepreneur can access
+                reliable services—from business formalisation to funding readiness—without leaving the Zambian market.
               </p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Our mission</h2>
+                  <p className="text-sm text-gray-700 mt-2">
+                    Strengthen the Zambian SME ecosystem by making business advisory, compliance support, and capital matching
+                    easy to access for every entrepreneur and professional.
+                  </p>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">What makes us different</h2>
+                  <p className="text-sm text-gray-700 mt-2">
+                    A single platform where professionals monetise expertise, SMEs complete readiness checklists, and donors or investors
+                    find verifiable pipeline opportunities in Zambia.
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl font-bold text-center">Our Team</CardTitle>
+              <h2 className="text-2xl font-bold text-center text-gray-900">Our Team</h2>
             </CardHeader>
             <CardContent className="grid md:grid-cols-2 gap-6">
               {teamMembers.map((member, idx) => (
