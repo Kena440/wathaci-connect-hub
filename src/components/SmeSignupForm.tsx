@@ -122,7 +122,7 @@ const SmeSignupForm: React.FC = () => {
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
       {/* Main signup card */}
       <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 space-y-4">
-        <h1 className="text-xl font-semibold text-gray-900">SME Sign-up – WATHACI Connect</h1>
+        <h1 className="text-xl font-semibold text-gray-900">SME Sign-Up – Wathaci Connect</h1>
         <p className="text-sm text-gray-600">
           Create your SME profile so investors, donors, government agencies, and professionals can find and work with you.
         </p>

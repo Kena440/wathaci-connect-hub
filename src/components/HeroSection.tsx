@@ -25,8 +25,8 @@ const HeroSectionComponent = () => {
             />
           </div>
           <h1 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
-            Zambia's SME growth platform for
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-green-600"> business opportunities & investment</span>
+            Zambia's SME Growth Platform for
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-green-600"> Business Opportunities & Investment</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
             Wathaci Connect is the entrepreneur support hub for Zambia and Africa—combining business advisory services, SME compliance support, strategic partnerships facilitation, and a funding and investment matching engine to accelerate growth.
@@ -46,7 +46,7 @@ const HeroSectionComponent = () => {
             </Link>
             <Link to="/marketplace">
               <Button variant="outline" size="lg" className="border-2 border-green-600 text-green-700 hover:bg-green-50 px-8 py-3 text-lg">
-                Explore SME marketplace
+                Explore SME Marketplace
               </Button>
             </Link>
           </div>

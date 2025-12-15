@@ -67,7 +67,7 @@ const FundingHub = () => {
             />
             <div className="relative z-10 max-w-6xl mx-auto px-4 py-10 min-h-[60vh]">
               <div className="mb-6 text-center md:text-left">
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">AI-powered investor and donor Funding Hub</h1>
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">AI-Powered Investor and Donor Funding Hub</h1>
                 <p className="text-gray-700 max-w-3xl mx-auto md:mx-0">
                   Discover live funding opportunities, connect entrepreneurs with investors in Zambia, and build technical assistance
                   teams for grant programmes using verifiable SME data.
@@ -75,11 +75,11 @@ const FundingHub = () => {
               </div>
               <div className="grid md:grid-cols-3 gap-4 text-gray-800 text-sm mb-6">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">For investors</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">For Investors</h2>
                   <p>Source investment-ready SMEs, track compliance, and deploy capital through curated deal pipelines.</p>
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">For donors</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">For Donors</h2>
                   <p>Launch calls for proposals, align grantees with expert consultants, and report on programme delivery.</p>
                 </div>
                 <div>
@@ -90,7 +90,7 @@ const FundingHub = () => {
 
               {!isAuthenticated && (
                 <div className="mb-6 rounded-lg border border-orange-200 bg-white/80 p-4 text-left shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900">Browse first, sign in to act</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Browse First, Sign In to Act</h3>
                   <p className="text-sm text-gray-700">
                     You can explore public funding opportunities without an account. Sign in when you are ready to apply or request
                     matching support.

@@ -211,7 +211,7 @@ const Index: React.FC = () => {
           <section className="container mx-auto px-4 py-12">
             <div className="bg-white/80 backdrop-blur shadow-lg rounded-2xl p-8 border border-emerald-100">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                Professionals, SMEs, and investors—one connected Zambia SME ecosystem
+                Professionals, SMEs, and Investors—One Connected Zambia SME Ecosystem
               </h2>
               <p className="text-gray-700 text-lg mb-6">
                 Wathaci Connect delivers a three-phase onboarding journey that aligns the core of Zambia&apos;s SME economy:

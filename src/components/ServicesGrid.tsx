@@ -55,7 +55,7 @@ const ServicesGrid = () => {
             Our Core Services
           </Badge>
           <h2 id="services-heading" className="text-4xl font-bold text-gray-900 mb-4">
-            Business advisory services for Zambia's SME ecosystem
+            Business Advisory Services for Zambia's SME Ecosystem
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             From startup compliance to investment readiness, our SME growth platform links entrepreneurs with strategic partnerships facilitation, marketplace for professional services, and digital transformation support.
