@@ -16,24 +16,14 @@ import { useTranslation } from 'react-i18next';
 // TEMPORARY BYPASS MODE: remove after auth errors are fixed
 import { isBypassUser } from '@/lib/authBypass';
 import { BypassUserBadge } from './BypassModeBanner';
+import { NavBar } from './NavBar';
+import { NAV_ITEMS } from '@/config/navItems';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, profile, signOut, loading } = useAppContext();
   const { t, i18n } = useTranslation();
   const { pathname } = useLocation();
-
-  const navItems = [
-    { key: 'home', href: '/' },
-    { key: 'marketplace', href: '/marketplace' },
-    { key: 'freelancerHub', href: '/freelancer-hub' },
-    { key: 'resources', href: '/resources' },
-    { key: 'partnershipHub', href: '/partnership-hub' },
-    { key: 'fundingHub', href: '/funding-hub' },
-    { key: 'complianceHub', href: '/compliance' },
-    { key: 'creditPassport', href: '/credit-passport' },
-    { key: 'aboutUs', href: '/about-us' }
-  ];
 
   const handleSignOut = async () => {
     await signOut();
@@ -95,18 +85,7 @@ const Header = () => {
             />
           </Link>
 
-          <nav className="hidden md:flex flex-1 items-center gap-2 bg-white/50 px-2 py-1 rounded-full border border-orange-100 shadow-sm overflow-x-auto">
-            {navItems.map((item) => (
-              <Link
-                key={item.key}
-                to={item.href}
-                className={`${getNavClasses(item.href)} rounded-full px-4 py-2 transition-colors whitespace-nowrap`}
-                aria-current={isActive(item.href) ? 'page' : undefined}
-              >
-                {t(item.key)}
-              </Link>
-            ))}
-          </nav>
+          <NavBar activePath={pathname} />
 
           <div className="hidden md:flex items-center space-x-3 flex-shrink-0">
             {user && <NotificationCenter />}
@@ -205,15 +184,15 @@ const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-orange-200">
             <nav className="flex flex-col space-y-4">
-              {navItems.map((item) => (
+              {NAV_ITEMS.map((item) => (
                 <Link
-                  key={item.key}
+                  key={item.id}
                   to={item.href}
                   className={`${getNavClasses(item.href)} rounded-lg px-3 py-2`}
                   onClick={() => setIsMenuOpen(false)}
                   aria-current={isActive(item.href) ? 'page' : undefined}
                 >
-                  {t(item.key)}
+                  {t(item.label)}
                 </Link>
               ))}
               <div className="flex flex-col space-y-2 pt-4 border-t border-orange-200">
