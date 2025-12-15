@@ -2,35 +2,20 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const Joi = require('joi');
 const { getSupabaseClient } = require('../lib/supabaseAdmin');
-const requireAuth = require('../middleware/requireAuth');
+const { runFundingRefresh } = require('../lib/funding-crawler');
 
 const router = express.Router();
 
-const aiLimiter = rateLimit({ windowMs: 60 * 1000, limit: 15, standardHeaders: true, legacyHeaders: false });
+const ADMIN_TOKEN = process.env.FUNDING_REFRESH_TOKEN || process.env.ADMIN_TOKEN;
 
-const callOpenAI = async payload => {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('Missing OpenAI key');
-  }
+const refreshLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`OpenAI request failed: ${response.status} ${text}`);
-  }
-
-  return response.json();
-};
-
-const getClient = () => {
+const ensureClient = () => {
   const supabase = getSupabaseClient();
   if (!supabase) {
     throw new Error('Supabase not configured');
@@ -38,58 +23,75 @@ const getClient = () => {
   return supabase;
 };
 
-const normalizeArrayFilter = value => {
-  if (!value) return undefined;
-  if (Array.isArray(value)) return value;
-  return String(value)
+const parseStatusList = statusParam => {
+  if (!statusParam) return ['open', 'upcoming'];
+  const list = String(statusParam)
     .split(',')
-    .map(v => v.trim())
+    .map(s => s.trim().toLowerCase())
     .filter(Boolean);
+  return list.length ? list : ['open', 'upcoming'];
+};
+
+const parseDeadlineRange = window => {
+  const days = Number(window);
+  if (!days || Number.isNaN(days)) return null;
+  const start = new Date();
+  const end = new Date();
+  end.setDate(end.getDate() + days);
+  return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
 };
 
 router.get('/opportunities', async (req, res) => {
   try {
-    const supabase = getClient();
+    const supabase = ensureClient();
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const pageSize = Math.min(Math.max(parseInt(req.query.pageSize, 10) || 12, 1), 50);
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
-
-    const sectorFilters = normalizeArrayFilter(req.query.sector);
-    const stageFilters = normalizeArrayFilter(req.query.stage);
-    const instrumentFilters = normalizeArrayFilter(req.query.instrument);
-    const countryFilters = normalizeArrayFilter(req.query.country);
-    const ticketMin = req.query.ticketMin ? Number(req.query.ticketMin) : undefined;
-    const ticketMax = req.query.ticketMax ? Number(req.query.ticketMax) : undefined;
-    const search = req.query.q ? String(req.query.q).trim() : '';
+    const offset = (page - 1) * limit;
+    const statuses = parseStatusList(req.query.status);
 
     let query = supabase
       .from('funding_opportunities')
       .select('*', { count: 'exact' })
-      .eq('is_active', true)
-      .order('is_featured', { ascending: false })
-      .order('updated_at', { ascending: false });
+      .eq('zambia_eligible', true)
+      .eq('verification_level', 'strict')
+      .in('status', statuses);
 
-    if (sectorFilters?.length) query = query.contains('sectors', sectorFilters);
-    if (stageFilters?.length) query = query.contains('stage_focus', stageFilters);
-    if (instrumentFilters?.length) query = query.contains('instrument_type', instrumentFilters);
-    if (countryFilters?.length) query = query.contains('country_focus', countryFilters);
-    if (ticketMin !== undefined) query = query.gte('ticket_size_max', ticketMin);
-    if (ticketMax !== undefined) query = query.lte('ticket_size_min', ticketMax);
+    if (req.query.funding_type) {
+      query = query.eq('funding_type', req.query.funding_type);
+    }
+    if (req.query.sector) {
+      query = query.contains('target_sectors', [req.query.sector]);
+    }
+    if (req.query.applicant) {
+      query = query.contains('eligible_applicants', [req.query.applicant]);
+    }
+    const deadlineRange = parseDeadlineRange(req.query.deadline_days);
+    if (deadlineRange) {
+      query = query.gte('deadline', deadlineRange.start).lte('deadline', deadlineRange.end);
+    }
+    const search = req.query.query || req.query.q;
     if (search) {
-      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%,provider_name.ilike.%${search}%,tags.cs.{${search}}`);
+      const term = search.toLowerCase();
+      query = query.or(`title.ilike.%${term}%,funder_name.ilike.%${term}%,tags.ilike.%${term}%`);
     }
 
-    const { data, error, count } = await query.range(from, to);
+    const sort = req.query.sort === 'relevance' ? 'relevance' : 'deadline';
+    if (sort === 'relevance') {
+      query = query.order('relevance_score', { ascending: false }).order('deadline', { ascending: true, nullsLast: true });
+    } else {
+      query = query.order('deadline', { ascending: true, nullsLast: true }).order('relevance_score', { ascending: false });
+    }
+
+    const { data, error, count } = await query.range(offset, offset + limit - 1);
     if (error) throw error;
 
     res.json({
       items: data || [],
       pagination: {
         page,
-        pageSize,
+        pageSize: limit,
         total: count || 0,
-        totalPages: count ? Math.ceil(count / pageSize) : 0,
+        totalPages: count ? Math.ceil(count / limit) : 0,
       },
     });
   } catch (error) {
@@ -100,12 +102,13 @@ router.get('/opportunities', async (req, res) => {
 
 router.get('/opportunities/:id', async (req, res) => {
   try {
-    const supabase = getClient();
+    const supabase = ensureClient();
     const { data, error } = await supabase
       .from('funding_opportunities')
       .select('*')
       .eq('id', req.params.id)
-      .eq('is_active', true)
+      .eq('zambia_eligible', true)
+      .neq('status', 'closed')
       .single();
 
     if (error) {
@@ -120,130 +123,49 @@ router.get('/opportunities/:id', async (req, res) => {
   }
 });
 
-router.post('/match', aiLimiter, async (req, res) => {
+router.post('/refresh', refreshLimiter, async (req, res) => {
   try {
-    if (!process.env.OPENAI_API_KEY) {
-      return res.status(503).json({ error: 'AI service unavailable' });
-    }
-    const schema = Joi.object({ smeId: Joi.string().uuid().required(), topN: Joi.number().min(1).max(25).default(10) });
-    const { error: validationError, value } = schema.validate(req.body || {});
+    const schema = Joi.object({ limit: Joi.number().integer().min(1).max(100).default(30) });
+    const { value, error: validationError } = schema.validate(req.body || {});
     if (validationError) return res.status(400).json({ error: validationError.message });
 
-    const supabase = getClient();
-    const [{ data: smeProfile }, { data: opportunities, error: oppError }] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', value.smeId).single(),
+    if (!ADMIN_TOKEN || req.headers['x-admin-token'] !== ADMIN_TOKEN) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const summary = await runFundingRefresh({ limit: value.limit });
+    res.json({ message: 'Refresh started', summary });
+  } catch (error) {
+    console.error('[funding] refresh error', error.message);
+    res.status(500).json({ error: 'Failed to refresh funding opportunities' });
+  }
+});
+
+router.get('/health', async (req, res) => {
+  try {
+    const supabase = ensureClient();
+    const [{ data: runData }, { count: openCount }] = await Promise.all([
+      supabase
+        .from('funding_runs')
+        .select('id, started_at, finished_at, status, discovered_count, inserted_count, updated_count, skipped_count, error')
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
       supabase
         .from('funding_opportunities')
-        .select('id,title,provider_name,sectors,ticket_size_min,ticket_size_max,instrument_type,stage_focus,country_focus,tags,application_deadline')
-        .eq('is_active', true),
+        .select('id', { count: 'exact', head: true })
+        .eq('zambia_eligible', true)
+        .eq('verification_level', 'strict')
+        .in('status', ['open', 'upcoming']),
     ]);
 
-    if (oppError) throw oppError;
-
-    const prompt = [
-      'You are matching a small business to funding opportunities.',
-      'Use only the anonymised business facts to rank matches.',
-      'Respond in JSON array under key "matches" with fields funding_id, score (0-100), reason, summary.',
-      'If information is missing, still return a sensible ordering.',
-      `SME profile: ${JSON.stringify(smeProfile || {})}`,
-      `Opportunities: ${JSON.stringify(opportunities || [])}`,
-    ].join('\n');
-
-    const completion = await callOpenAI({
-      model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
-      messages: [
-        { role: 'system', content: 'Return valid JSON only.' },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.2,
-      response_format: { type: 'json_object' },
+    res.json({
+      last_run: runData || null,
+      open_count: openCount || 0,
     });
-
-    let parsed = { matches: [] };
-    try {
-      parsed = JSON.parse(completion.choices?.[0]?.message?.content || '{}');
-    } catch (err) {
-      console.error('[funding] parse error', err.message);
-    }
-
-    const matches = Array.isArray(parsed.matches)
-      ? parsed.matches.slice(0, value.topN)
-      : [];
-
-    await supabase.from('funding_events').insert({ event_type: 'ai_match_requested', context: { smeId: value.smeId, count: matches.length } });
-
-    res.json({ matches });
   } catch (error) {
-    console.error('[funding] match error', error.message);
-    res.status(503).json({ error: 'Unable to generate AI recommendations at this time.' });
-  }
-});
-
-router.post('/eligibility-explain', aiLimiter, async (req, res) => {
-  try {
-    if (!process.env.OPENAI_API_KEY) {
-      return res.status(503).json({ error: 'AI service unavailable' });
-    }
-
-    const schema = Joi.object({ smeId: Joi.string().uuid().required(), fundingId: Joi.string().uuid().required() });
-    const { value, error: validationError } = schema.validate(req.body || {});
-    if (validationError) return res.status(400).json({ error: validationError.message });
-
-    const supabase = getClient();
-    const [{ data: smeProfile }, { data: opportunity }] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', value.smeId).single(),
-      supabase.from('funding_opportunities').select('*').eq('id', value.fundingId).single(),
-    ]);
-
-    const prompt = [
-      'Explain eligibility for the SME vs the opportunity.',
-      'Respond with JSON { summary: string, why_qualified: string, blockers: string, next_steps: string }',
-      `SME: ${JSON.stringify(smeProfile || {})}`,
-      `Opportunity: ${JSON.stringify(opportunity || {})}`,
-    ].join('\n');
-
-    const completion = await callOpenAI({
-      model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
-      messages: [
-        { role: 'system', content: 'Return concise JSON only.' },
-        { role: 'user', content: prompt },
-      ],
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
-    });
-
-    const result = JSON.parse(completion.choices?.[0]?.message?.content || '{}');
-    res.json(result);
-  } catch (error) {
-    console.error('[funding] eligibility error', error.message);
-    res.status(503).json({ error: 'Unable to generate eligibility guidance.' });
-  }
-});
-
-router.post('/applications', requireAuth, async (req, res) => {
-  try {
-    const schema = Joi.object({
-      funding_id: Joi.string().uuid().required(),
-      notes: Joi.string().allow('', null),
-    });
-    const { value, error: validationError } = schema.validate(req.body || {});
-    if (validationError) return res.status(400).json({ error: validationError.message });
-
-    const supabase = getClient();
-    const { data, error } = await supabase
-      .from('funding_applications')
-      .insert({ funding_id: value.funding_id, notes: value.notes, sme_id: req.userId })
-      .select('*')
-      .single();
-
-    if (error) throw error;
-
-    await supabase.from('funding_events').insert({ event_type: 'application_created', context: { funding_id: value.funding_id, sme_id: req.userId } });
-
-    res.status(201).json(data);
-  } catch (error) {
-    console.error('[funding] application error', error.message);
-    res.status(500).json({ error: 'Unable to record application' });
+    console.error('[funding] health error', error.message);
+    res.status(500).json({ error: 'Unable to load funding health' });
   }
 });
 
