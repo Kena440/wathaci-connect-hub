@@ -44,4 +44,24 @@
     <loc>https://wathaci.com/partnership-hub</loc>
     <changefreq>weekly</changefreq>
   </url>
+  <url>
+    <loc>https://wathaci.com/about-us</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://wathaci.com/privacy-policy</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://wathaci.com/terms-of-service</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://wathaci.com/signup</loc>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://wathaci.com/signin</loc>
+    <changefreq>weekly</changefreq>
+  </url>
 </urlset>

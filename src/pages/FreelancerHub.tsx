@@ -6,13 +6,41 @@ import { CollaborationSuggestions } from '@/components/CollaborationSuggestions'
 import { DonateButton } from '@/components/DonateButton';
 import AppLayout from '@/components/AppLayout';
 import IndustryMatcher from '@/components/industry/IndustryMatcher';
-import { Users, Lightbulb, Heart, Target } from 'lucide-react';
+import { Users, Lightbulb, Target } from 'lucide-react';
+import SeoMeta from '@/components/SeoMeta';
 
 const FreelancerHub = () => {
   const [activeTab, setActiveTab] = useState('directory');
 
   return (
     <AppLayout>
+      <SeoMeta
+        title="Professional services marketplace in Zambia | Freelancer Hub"
+        description="Find and hire vetted professionals in Zambia for SME advisory, compliance, finance, marketing, and technology projects. Wathaci Connect aligns experts with SMEs, investors, and donor programmes."
+        keywords={[
+          'Professional services marketplace Zambia',
+          'Hire freelancers in Zambia',
+          'SME advisory services Lusaka',
+          'Business consultants for SMEs',
+          'Digital services marketplace Africa'
+        ]}
+        canonicalPath="/freelancer-hub"
+        structuredData={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'ProfessionalService',
+            name: 'Wathaci Connect Freelancer Hub',
+            serviceType: [
+              'Business advisory services for SMEs',
+              'Legal and compliance consulting',
+              'Finance and accounting services',
+              'Digital marketing and technology delivery'
+            ],
+            areaServed: ['Zambia', 'Africa'],
+            url: 'https://wathaci.com/freelancer-hub'
+          }
+        ]}
+      />
       <div className="min-h-screen bg-gray-50 relative">
         <div
           aria-hidden="true"
@@ -37,7 +65,29 @@ const FreelancerHub = () => {
           </div>
         </div>
 
-        <div className="relative z-10 max-w-6xl mx-auto px-6 py-12 bg-gray-50">
+        <div className="relative z-10 max-w-6xl mx-auto px-6 py-12 bg-gray-50 space-y-10">
+          <section className="bg-white border border-emerald-100 rounded-2xl p-6 shadow-sm">
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">Professional services marketplace built for Zambia&apos;s SMEs</h2>
+            <p className="text-gray-700 leading-relaxed">
+              The Freelancer Hub is the go-to marketplace for Zambian professionals to package services and for SMEs to book trusted
+              advisors. Whether you need investment readiness support, compliance documentation, or a growth marketing sprint,
+              Wathaci Connect matches you to experts who understand the local business landscape.
+            </p>
+            <div className="grid md:grid-cols-3 gap-4 mt-4 text-sm text-gray-700">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">For professionals</h3>
+                <p>Publish offers, negotiate securely, and reach donor-funded programmes seeking vetted partners in Zambia.</p>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">For SMEs</h3>
+                <p>Search by industry, budget, and location to find compliant advisors who can fast-track funding applications.</p>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">For investors &amp; donors</h3>
+                <p>Source technical assistance providers to support portfolio companies and grant recipients with credible delivery partners.</p>
+              </div>
+            </div>
+          </section>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
             <TabsList className="grid w-full grid-cols-4 lg:w-fit lg:grid-cols-4">
               <TabsTrigger value="matcher" className="flex items-center gap-2">
