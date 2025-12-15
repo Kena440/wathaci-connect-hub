@@ -6,7 +6,7 @@ const ComplianceHubPage = () => {
   return (
     <AppLayout>
       <SeoMeta
-        title="Compliance Hub | Wathaci Connect"
+        title="Compliance Hub"
         description="Monitor SME compliance tasks, document evidence, and stay audit-ready with Wathaci Connect."
         canonicalPath="/compliance-hub"
       />

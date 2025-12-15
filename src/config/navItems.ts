@@ -11,7 +11,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'resources', label: 'resources', href: '/resources' },
   { id: 'partnershipHub', label: 'partnershipHub', href: '/partnership-hub' },
   { id: 'fundingHub', label: 'fundingHub', href: '/funding-hub' },
-  { id: 'complianceHub', label: 'complianceHub', href: '/compliance' },
+  { id: 'complianceHub', label: 'complianceHub', href: '/compliance-hub' },
   { id: 'creditPassport', label: 'creditPassport', href: '/credit-passport' },
   { id: 'aboutUs', label: 'aboutUs', href: '/about-us' },
 ];
