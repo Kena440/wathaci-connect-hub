@@ -48,19 +48,19 @@ const services = [
 
 const ServicesGrid = () => {
   return (
-    <section className="py-16 px-6 bg-white/60 backdrop-blur-sm">
+    <section className="py-16 px-6 bg-white/60 backdrop-blur-sm" aria-labelledby="services-heading">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
+        <header className="text-center mb-12">
           <Badge className="mb-4 bg-blue-100 text-blue-800 border-blue-300">
             Our Core Services
           </Badge>
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Professional Services for Every Business Need
+          <h2 id="services-heading" className="text-4xl font-bold text-gray-900 mb-4">
+            Business advisory services for Zambia's SME ecosystem
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            From startups to established enterprises, we provide comprehensive business solutions
+            From startup compliance to investment readiness, our SME growth platform links entrepreneurs with strategic partnerships facilitation, marketplace for professional services, and digital transformation support.
           </p>
-        </div>
+        </header>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {services.map((service, index) => (
             <ServiceCard

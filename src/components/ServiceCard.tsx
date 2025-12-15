@@ -30,7 +30,7 @@ export const ServiceCard = ({
         <div className="w-full h-48 mb-4 rounded-lg overflow-hidden">
           <img
             src={image}
-            alt={title}
+            alt={`${title} - SME growth platform service in Zambia`}
             loading="lazy"
             decoding="async"
             className="w-full h-full object-cover"

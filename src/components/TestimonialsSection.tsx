@@ -96,7 +96,7 @@ const TestimonialsSection = () => {
                   <div className="flex items-center space-x-3">
                     <img
                       src={testimonial.client_image_url || '/placeholder.svg'}
-                      alt={testimonial.client_name}
+                      alt={`${testimonial.client_name} testimonial for Zambian SME growth platform`}
                       loading="lazy"
                       decoding="async"
                       className="w-12 h-12 rounded-full object-cover"

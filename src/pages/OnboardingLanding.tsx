@@ -8,6 +8,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { Loader2, Sparkles } from 'lucide-react';
 import OnboardingGraceBanner from '@/components/OnboardingGraceBanner';
 import { SUBSCRIPTION_GRACE_LABEL } from '@/lib/subscriptionWindow';
+import SeoMeta from '@/components/SeoMeta';
 
 const accountTypeRoutes: Record<string, string> = {
   sme: '/onboarding/sme',
@@ -52,6 +53,29 @@ export const OnboardingLanding = () => {
 
   return (
     <AppLayout showFooter={false}>
+      <SeoMeta
+        title="SME, investor, and professional onboarding | Wathaci Connect"
+        description="Join Wathaci Connect to access SME ecosystem Zambia tools: business formalisation, investor engagement portal, strategic partnerships, and capacity-building resources."
+        keywords={[
+          'SME onboarding Zambia',
+          'Investor engagement portal',
+          'Professional services marketplace',
+          'Opportunity matching engine',
+          'Business formalisation tools',
+          'Digital services for SMEs'
+        ]}
+        canonicalPath="/onboarding"
+        structuredData={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            name: 'Wathaci Connect Onboarding',
+            description:
+              'Onboard SMEs, investors, donors, and professionals into the Zambian business platform for advisory services, compliance tools, and opportunity matching.',
+            url: 'https://wathaci.com/onboarding'
+          }
+        ]}
+      />
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-emerald-50" aria-hidden="true" />
         <div className="relative z-10 mx-auto max-w-5xl px-6 py-16">
@@ -62,12 +86,10 @@ export const OnboardingLanding = () => {
                 Founding cohort free access
               </div>
               <h1 className="mt-6 text-4xl font-bold text-gray-900 md:text-5xl">
-                Start your WATHACI Connect onboarding
+                Start your Wathaci Connect onboarding for SME growth
               </h1>
               <p className="mt-4 text-lg text-gray-700">
-                Create your account and profile without a subscription until {SUBSCRIPTION_GRACE_LABEL}.
-                Use this link to invite peers from LinkedIn, email, or anywhere else and bring them
-                straight into onboarding.
+                Create your account and profile without a subscription until {SUBSCRIPTION_GRACE_LABEL}. Whether you are looking for SME compliance support, investor engagement, business advisory services, or a professional services marketplace, this is the fastest route into Zambia's opportunity matching engine.
               </p>
               <div className="mt-6">
                 <OnboardingGraceBanner className="mb-0" />
