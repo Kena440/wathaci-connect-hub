@@ -34,6 +34,7 @@ const agentRoutes = require('./routes/agent');
 const supportRoutes = require('./routes/support');
 const copilotRoutes = require('./routes/copilot');
 const fundingRoutes = require('./routes/funding');
+const partnershipRoutes = require('./routes/partnerships');
 
 // Health helpers
 const { getTwilioHealth } = require('./lib/twilioClient');
@@ -218,6 +219,7 @@ app.use('/api/agent', agentLimiter, agentRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/copilot', copilotRoutes);
 app.use('/api/funding', fundingRoutes);
+app.use('/api/partnerships', partnershipRoutes);
 
 /**
  * Global error handler
