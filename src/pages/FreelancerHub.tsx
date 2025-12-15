@@ -37,7 +37,7 @@ const FreelancerHub = () => {
               'Digital marketing and technology delivery'
             ],
             areaServed: ['Zambia', 'Africa'],
-            url: 'https://wathaci.com/freelancer-hub'
+            url: 'https://www.wathaci.com/freelancer-hub'
           }
         ]}
       />

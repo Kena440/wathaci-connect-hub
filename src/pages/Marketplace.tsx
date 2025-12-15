@@ -254,7 +254,7 @@ const Marketplace = () => {
             name: 'Wathaci Connect Marketplace',
             description:
               'Professional services marketplace offering business advisory, compliance support, and investment readiness solutions for Zambian SMEs.',
-            url: 'https://wathaci.com/marketplace'
+            url: 'https://www.wathaci.com/marketplace'
           },
           {
             '@context': 'https://schema.org',
@@ -265,7 +265,7 @@ const Marketplace = () => {
               position: index + 1,
               name: product.name,
               description: product.description,
-              url: 'https://wathaci.com/marketplace'
+              url: 'https://www.wathaci.com/marketplace'
             }))
           }
         ]}

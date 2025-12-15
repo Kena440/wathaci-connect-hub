@@ -35,7 +35,7 @@ const Index: React.FC = () => {
             '@context': 'https://schema.org',
             '@type': 'Organization',
             name: 'Wathaci Connect',
-            url: 'https://wathaci.com',
+            url: 'https://www.wathaci.com',
             logo: 'https://d64gsuwffb70l.cloudfront.net/686a39ec793daf0c658a746a_1753699300137_a4fb9790.png',
             description:
               'Zambian SME growth platform delivering business advisory services, compliance support, investment readiness, and opportunity matching across Africa.',
@@ -48,7 +48,7 @@ const Index: React.FC = () => {
             '@context': 'https://schema.org',
             '@type': 'LocalBusiness',
             name: 'Wathaci Connect Zambia',
-            url: 'https://wathaci.com',
+            url: 'https://www.wathaci.com',
             image: 'https://d64gsuwffb70l.cloudfront.net/686a39ec793daf0c658a746a_1753699300137_a4fb9790.png',
             address: {
               '@type': 'PostalAddress',
@@ -64,10 +64,10 @@ const Index: React.FC = () => {
             '@context': 'https://schema.org',
             '@type': 'WebSite',
             name: 'Wathaci Connect',
-            url: 'https://wathaci.com',
+            url: 'https://www.wathaci.com',
             potentialAction: {
               '@type': 'SearchAction',
-              target: 'https://wathaci.com/marketplace?q={search_term_string}',
+              target: 'https://www.wathaci.com/marketplace?q={search_term_string}',
               'query-input': 'required name=search_term_string'
             }
           },
@@ -101,7 +101,7 @@ const Index: React.FC = () => {
             },
             offers: {
               '@type': 'Offer',
-              url: 'https://wathaci.com/marketplace',
+              url: 'https://www.wathaci.com/marketplace',
               availability: 'https://schema.org/InStock'
             }
           },
@@ -109,7 +109,7 @@ const Index: React.FC = () => {
             '@context': 'https://schema.org',
             '@type': 'OfferCatalog',
             name: 'Wathaci Connect service catalog',
-            url: 'https://wathaci.com/marketplace',
+            url: 'https://www.wathaci.com/marketplace',
             itemListElement: [
               {
                 '@type': 'Offer',
