@@ -100,3 +100,35 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-gray-400;
 }
+/* Navigation performance improvements */
+.nav-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background-color: #ffffff;
+  border-radius: 0.75rem;
+  border: 1px solid #ffedd5;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.nav-item {
+  font-size: 0.875rem;
+  color: #6b7280;
+  border-radius: 9999px;
+  padding: 0.5rem 1rem;
+  white-space: nowrap;
+  transition: color 120ms ease, background-color 120ms ease;
+}
+
+.nav-item:hover {
+  color: #ea580c;
+  background-color: #fff7ed;
+}
+
+.nav-item--active {
+  color: #ea580c;
+  background-color: #ffedd5;
+  font-weight: 500;
+}
