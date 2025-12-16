@@ -1,0 +1,42 @@
+{
+  "tables": {
+    "sme_profiles": {
+      "columns": [
+        "user_id",
+        "id",
+        "profile_id",
+        "account_type",
+        "email",
+        "msisdn",
+        "full_name",
+        "profile_slug",
+        "is_active",
+        "is_profile_complete",
+        "approval_status",
+        "business_name",
+        "registration_number",
+        "registration_type",
+        "sector",
+        "subsector",
+        "years_in_operation",
+        "employee_count",
+        "turnover_bracket",
+        "products_overview",
+        "target_market",
+        "location_city",
+        "location_country",
+        "contact_name",
+        "contact_phone",
+        "business_email",
+        "website_url",
+        "social_links",
+        "main_challenges",
+        "support_needs",
+        "logo_url",
+        "photos",
+        "created_at",
+        "updated_at"
+      ]
+    }
+  }
+}

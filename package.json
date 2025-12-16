@@ -19,6 +19,7 @@
     "test:jest": "jest",
     "test:jest:watch": "jest --watch",
     "test:accessibility": "jest --testPathPatterns=\"accessibility\"",
+    "test:schema-contract": "node --test test/smeProfileContract.spec.mjs",
     "test:lighthouse": "node scripts/run-lighthouse.mjs",
     "test:email-otp": "node scripts/production-email-otp-test.mjs",
     "test:password-reset": "node scripts/password-reset-test.mjs",
