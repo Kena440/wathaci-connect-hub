@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -15,6 +14,12 @@ import { getSmeProfile, upsertSmeProfile, uploadProfileMedia } from '@/lib/api/p
 import { ArrowLeft, Loader2, Upload, Check } from 'lucide-react';
 import { supabaseClient } from '@/lib/supabaseClient';
 import OnboardingGraceBanner from '@/components/OnboardingGraceBanner';
+import {
+  SmeProfileFormValues,
+  mapSmeProfileRowToForm,
+  smeProfileDefaultValues,
+  smeProfileSchema,
+} from '@/lib/contracts/smeProfileContract';
 
 const challenges = [
   'Access to finance',
@@ -34,31 +39,6 @@ const supportAreas = [
   'People and culture',
 ];
 
-const smeSchema = z.object({
-  business_name: z.string().min(2, 'Business name is required'),
-  registration_number: z.string().optional(),
-  registration_type: z.string().optional(),
-  sector: z.string().optional(),
-  subsector: z.string().optional(),
-  years_in_operation: z.number().int().min(0).optional(),
-  employee_count: z.number().int().min(0).optional(),
-  turnover_bracket: z.string().optional(),
-  products_overview: z.string().optional(),
-  target_market: z.string().optional(),
-  location_city: z.string().min(1, 'City is required'),
-  location_country: z.string().min(1, 'Country is required'),
-  contact_name: z.string().min(1, 'Contact person is required'),
-  contact_phone: z.string().min(4, 'Phone number is required'),
-  business_email: z.string().email('Enter a valid email'),
-  website_url: z.string().url('Enter a valid URL').optional().or(z.literal('')).transform((val) => val || undefined),
-  social_links: z.string().optional(),
-  main_challenges: z.array(z.string()).optional(),
-  support_needs: z.array(z.string()).optional(),
-  logo_url: z.string().optional(),
-});
-
-type SmeFormValues = z.infer<typeof smeSchema>;
-
 export const SmeOnboardingPage = () => {
   const { user } = useAppContext();
   const { toast } = useToast();
@@ -67,29 +47,11 @@ export const SmeOnboardingPage = () => {
   const [initializing, setInitializing] = useState(true);
   const [logoPreview, setLogoPreview] = useState<string | undefined>();
 
-  const form = useForm<SmeFormValues>({
-    resolver: zodResolver(smeSchema),
+  const form = useForm<SmeProfileFormValues>({
+    resolver: zodResolver(smeProfileSchema),
     defaultValues: {
-      business_name: '',
-      registration_number: '',
-      registration_type: '',
-      sector: '',
-      subsector: '',
-      years_in_operation: undefined,
-      employee_count: undefined,
-      turnover_bracket: '',
-      products_overview: '',
-      target_market: '',
-      location_city: '',
-      location_country: 'Zambia',
-      contact_name: '',
-      contact_phone: '',
-      business_email: user?.email || '',
-      website_url: '',
-      social_links: '',
-      main_challenges: [],
-      support_needs: [],
-      logo_url: '',
+      ...smeProfileDefaultValues,
+      business_email: user?.email || smeProfileDefaultValues.business_email,
     },
     mode: 'onChange',
   });
@@ -101,28 +63,7 @@ export const SmeOnboardingPage = () => {
       try {
         const existing = await getSmeProfile();
         if (existing) {
-          reset({
-            business_name: existing.business_name,
-            registration_number: existing.registration_number || '',
-            registration_type: existing.registration_type || '',
-            sector: existing.sector || '',
-            subsector: existing.subsector || '',
-            years_in_operation: existing.years_in_operation ?? undefined,
-            employee_count: existing.employee_count ?? undefined,
-            turnover_bracket: existing.turnover_bracket || '',
-            products_overview: existing.products_overview || '',
-            target_market: existing.target_market || '',
-            location_city: existing.location_city || '',
-            location_country: existing.location_country || 'Zambia',
-            contact_name: existing.contact_name || '',
-            contact_phone: existing.contact_phone || '',
-            business_email: existing.business_email || user?.email || '',
-            website_url: existing.website_url || '',
-            social_links: existing.social_links?.join(', ') || '',
-            main_challenges: existing.main_challenges || [],
-            support_needs: existing.support_needs || [],
-            logo_url: existing.logo_url || '',
-          });
+          reset(mapSmeProfileRowToForm(existing, user?.email));
 
           if (existing.logo_url) {
             const signed = await createSignedPreview(existing.logo_url);
@@ -171,13 +112,10 @@ export const SmeOnboardingPage = () => {
     }
   };
 
-  const onSubmit = async (data: SmeFormValues, stayOnPage?: boolean) => {
+  const onSubmit = async (data: SmeProfileFormValues, stayOnPage?: boolean) => {
     setLoading(true);
     try {
-      await upsertSmeProfile({
-        ...data,
-        social_links: data.social_links?.split(',').map((link) => link.trim()).filter(Boolean),
-      });
+      await upsertSmeProfile(data);
 
       if (user?.id) {
         const { error: profileUpdateError } = await supabaseClient

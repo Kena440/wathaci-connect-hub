@@ -1,6 +1,13 @@
-import { supabaseClient } from "@/lib/supabaseClient";
+import {
+  SME_PROFILE_DB_COLUMNS,
+  buildSmeProfileDbPayload,
+  smeProfileSchema,
+  type SmeProfileFormValues,
+} from '@/lib/contracts/smeProfileContract';
+import type { SmeProfileRow } from '@/@types/database';
+import { supabaseClient } from '@/lib/supabaseClient';
 
-export type EntityType = "individual" | "firm" | "company";
+export type EntityType = 'individual' | 'firm' | 'company';
 
 export interface ProfessionalProfilePayload {
   entity_type: EntityType;
@@ -23,34 +30,10 @@ export interface ProfessionalProfilePayload {
   linkedin_url?: string | null;
   website_url?: string | null;
   portfolio_url?: string | null;
-  availability: "part_time" | "full_time" | "occasional";
+  availability: 'part_time' | 'full_time' | 'occasional';
   notes?: string | null;
   profile_photo_url?: string | null;
   logo_url?: string | null;
-}
-
-export interface SmeProfilePayload {
-  business_name: string;
-  registration_number?: string | null;
-  registration_type?: string | null;
-  sector?: string | null;
-  subsector?: string | null;
-  years_in_operation?: number | null;
-  employee_count?: number | null;
-  turnover_bracket?: string | null;
-  products_overview?: string | null;
-  target_market?: string | null;
-  location_city: string;
-  location_country: string;
-  contact_name: string;
-  contact_phone: string;
-  business_email: string;
-  website_url?: string | null;
-  social_links?: string[];
-  main_challenges?: string[];
-  support_needs?: string[];
-  logo_url?: string | null;
-  photos?: string[];
 }
 
 export interface InvestorProfilePayload {
@@ -183,64 +166,58 @@ export async function upsertProfessionalProfile(payload: ProfessionalProfilePayl
   return data;
 }
 
-export async function getSmeProfile() {
+export async function getSmeProfile(): Promise<SmeProfileRow | null> {
   const user = await requireUser();
   const { data, error } = await supabaseClient
-    .from("sme_profiles")
-    .select("*")
-    .eq("user_id", user.id)
+    .from('sme_profiles')
+    .select(SME_PROFILE_DB_COLUMNS.join(','))
+    .eq('user_id', user.id)
     .maybeSingle();
 
-  if (error && error.code !== "PGRST116") {
+  if (error && error.code !== 'PGRST116') {
     throw new Error(error.message);
   }
 
-  return data ?? null;
+  return (data as SmeProfileRow | null) ?? null;
 }
 
-export async function upsertSmeProfile(payload: SmeProfilePayload) {
+const isSchemaMismatchError = (message?: string) =>
+  message?.toLowerCase().includes('schema cache') || message?.toLowerCase().includes('column');
+
+export async function upsertSmeProfile(payload: SmeProfileFormValues) {
   const user = await requireUser();
-  const sanitizedPayload = {
-    ...payload,
-    registration_number: sanitizeText(payload.registration_number),
-    registration_type: sanitizeText(payload.registration_type),
-    sector: sanitizeText(payload.sector),
-    subsector: sanitizeText(payload.subsector),
-    turnover_bracket: sanitizeText(payload.turnover_bracket),
-    products_overview: sanitizeText(payload.products_overview),
-    target_market: sanitizeText(payload.target_market),
-    contact_name: payload.contact_name.trim(),
-    contact_phone: payload.contact_phone.trim(),
-    business_email: payload.business_email.trim(),
-    location_city: payload.location_city.trim(),
-    location_country: payload.location_country.trim(),
-    website_url: sanitizeText(payload.website_url),
-    logo_url: sanitizeText(payload.logo_url),
-  };
+  const parsed = smeProfileSchema.safeParse(payload);
+
+  if (!parsed.success) {
+    throw new Error('SME profile payload failed validation.');
+  }
+
+  const sanitizedPayload = buildSmeProfileDbPayload(parsed.data, user.id);
   const { data, error } = await supabaseClient
-    .from("sme_profiles")
-    .upsert({
-      ...sanitizedPayload,
-      social_links: payload.social_links ?? [],
-      main_challenges: payload.main_challenges ?? [],
-      support_needs: payload.support_needs ?? [],
-      photos: payload.photos ?? [],
-      user_id: user.id,
-      updated_at: new Date().toISOString(),
-    })
+    .from('sme_profiles')
+    .upsert(sanitizedPayload)
     .select()
     .single();
 
   if (error) {
-    console.error("[profile-onboarding] sme_profiles upsert failed", {
-      table: "sme_profiles",
-      error,
-      payloadKeys: Object.keys(payload),
-    });
-    throw new Error(error.message || "Unable to save SME profile");
+    if (import.meta.env.DEV) {
+      console.error('[profile-onboarding] sme_profiles upsert failed', {
+        table: 'sme_profiles',
+        error,
+        payloadKeys: Object.keys(sanitizedPayload),
+      });
+    }
+
+    if (isSchemaMismatchError(error.message)) {
+      throw new Error(
+        'SME profile fields are out of sync with the database. Please refresh and try again; the team has been notified.'
+      );
+    }
+
+    throw new Error(error.message || 'Unable to save SME profile');
   }
 
-  return data;
+  return data as SmeProfileRow;
 }
 
 export async function getInvestorProfile() {
