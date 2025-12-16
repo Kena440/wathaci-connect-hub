@@ -16,6 +16,7 @@
  *   TEST_EMAIL (optional) - Override test email address
  */
 
+import "dotenv/config";
 import { createClient } from '@supabase/supabase-js';
 
 // Color codes for terminal output
@@ -35,24 +36,18 @@ const envArg = args.find(arg => arg.startsWith('--env='))?.split('=')[1] || 'pro
 const emailArg = args.find(arg => arg.startsWith('--email='))?.split('=')[1];
 
 // Load environment variables
-let supabaseUrl, supabaseKey;
-
-if (envArg === 'production') {
-  supabaseUrl = process.env.VITE_SUPABASE_URL;
-  supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
-} else {
-  // Use local or staging environment
-  supabaseUrl = process.env.VITE_SUPABASE_URL || 'http://localhost:54321';
-  supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'test-key';
-}
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
 
 const testEmail = emailArg || process.env.TEST_EMAIL || `test-${Date.now()}@wathaci-test.com`;
 
 // Validation
 if (!supabaseUrl || !supabaseKey) {
-  console.error(`${colors.red}${colors.bold}❌ Error: Missing environment variables${colors.reset}`);
-  console.error('Required: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY');
-  process.exit(1);
+  console.log(
+    `${colors.yellow}${colors.bold}⚠️  Skipping production email/otp test: Missing environment variables.${colors.reset}`
+  );
+  console.log('Required: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY');
+  process.exit(0);
 }
 
 // Initialize Supabase client

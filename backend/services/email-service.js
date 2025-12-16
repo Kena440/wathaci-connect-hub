@@ -545,6 +545,31 @@ function getConfigStatus() {
   };
 }
 
+function getEmailHealth() {
+  const configured = configurationValid && Boolean(transporter);
+
+  if (!configurationValid) {
+    return {
+      configured,
+      status: 'disabled',
+      message: 'SMTP configuration incomplete',
+    };
+  }
+
+  if (!transporter) {
+    return {
+      configured,
+      status: 'error',
+      message: 'SMTP transporter failed to initialize',
+    };
+  }
+
+  return {
+    configured,
+    status: 'ok',
+  };
+}
+
 module.exports = {
   sendEmail,
   sendOTPEmail,
@@ -554,4 +579,5 @@ module.exports = {
   isEmailConfigured,
   getConfigStatus,
   logEmail,
+  getEmailHealth,
 };

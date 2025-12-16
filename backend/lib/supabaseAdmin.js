@@ -56,7 +56,38 @@ function isSupabaseConfigured() {
   return supabaseClient !== null;
 }
 
+function isSupabaseAdminConfigured() {
+  return Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
+}
+
+function getSupabaseHealth() {
+  const configured = isSupabaseAdminConfigured();
+
+  if (!configured) {
+    return {
+      configured,
+      status: 'disabled',
+      message: 'Supabase admin credentials are not configured',
+    };
+  }
+
+  if (!supabaseClient) {
+    return {
+      configured,
+      status: 'error',
+      message: 'Supabase admin client failed to initialize',
+    };
+  }
+
+  return {
+    configured,
+    status: 'ok',
+  };
+}
+
 module.exports = {
   getSupabaseClient,
   isSupabaseConfigured,
+  isSupabaseAdminConfigured,
+  getSupabaseHealth,
 };
