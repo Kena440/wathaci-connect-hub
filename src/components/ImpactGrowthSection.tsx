@@ -12,7 +12,8 @@ export type ImpactMetric = {
   sort_order?: number | null;
 };
 
-const IMPACT_METRICS_ENABLED = getBooleanEnv('VITE_IMPACT_METRICS_ENABLED', true);
+// Default to disabled so environments without the impact_metrics table don't trigger failing requests
+const IMPACT_METRICS_ENABLED = getBooleanEnv('VITE_IMPACT_METRICS_ENABLED', false);
 
 export const ImpactGrowthSection: React.FC = () => {
   const [metrics, setMetrics] = React.useState<ImpactMetric[] | null>(null);
@@ -28,6 +29,9 @@ export const ImpactGrowthSection: React.FC = () => {
     );
 
     if (!IMPACT_METRICS_ENABLED) {
+      console.info(
+        '[ImpactGrowthSection] Impact metrics are disabled via VITE_IMPACT_METRICS_ENABLED=false; showing fallback.',
+      );
       setMetrics([]);
       setLoading(false);
       return () => {
