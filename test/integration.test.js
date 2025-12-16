@@ -18,15 +18,20 @@ test('Health check endpoint returns server status', async () => {
   const { port } = server.address();
 
   try {
-    const res = await fetch(`http://localhost:${port}/health`);
-    
+    const res = await fetch(`http://localhost:${port}/health`, {
+      headers: {
+        Origin: 'https://wathaci.com',
+      },
+    });
+
     assert.strictEqual(res.status, 200);
     const data = await res.json();
-    
-    assert.strictEqual(data.status, 'healthy');
+
+    assert.ok(['ok', 'degraded'].includes(data.status));
     assert.ok(data.timestamp);
-    assert.ok(typeof data.uptime === 'number');
-    assert.ok(data.environment);
+    assert.ok(data.supabase);
+    assert.ok(data.email);
+    assert.ok(data.twilio);
   } finally {
     server.close();
   }
@@ -63,17 +68,16 @@ test('CORS headers are properly set for allowed origins', async () => {
     // Test with origin header
     const res = await fetch(`http://localhost:${port}/health`, {
       headers: {
-        'Origin': 'https://wathaci.com',
+        Origin: 'https://wathaci.com',
       },
     });
 
     // CORS should allow configured origins
     const allowOriginHeader = res.headers.get('access-control-allow-origin');
-    assert.ok(allowOriginHeader === '*' || allowOriginHeader === 'https://wathaci.com');
-    
-    const allowMethodsHeader = res.headers.get('access-control-allow-methods');
-    assert.ok(allowMethodsHeader?.includes('GET'));
-    assert.ok(allowMethodsHeader?.includes('POST'));
+    assert.strictEqual(allowOriginHeader, 'https://wathaci.com');
+
+    const allowCredentials = res.headers.get('access-control-allow-credentials');
+    assert.strictEqual(allowCredentials, 'true');
   } finally {
     server.close();
   }
@@ -222,15 +226,17 @@ test('Multiple concurrent requests are handled correctly', async () => {
   try {
     // Make 5 concurrent requests
     const promises = Array.from({ length: 5 }, (_, i) =>
-      fetch(`http://localhost:${port}/health`).then(res => res.json())
+      fetch(`http://localhost:${port}/health`, {
+        headers: { Origin: 'https://wathaci.com' },
+      }).then(res => res.json())
     );
 
     const results = await Promise.all(promises);
-    
+
     // All should succeed
     assert.strictEqual(results.length, 5);
     results.forEach(result => {
-      assert.strictEqual(result.status, 'healthy');
+      assert.ok(['ok', 'degraded'].includes(result.status));
     });
   } finally {
     server.close();

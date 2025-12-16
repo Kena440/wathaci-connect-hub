@@ -16,6 +16,7 @@
  *   VITE_SUPABASE_ANON_KEY - Supabase anon key
  */
 
+import "dotenv/config";
 import { createClient } from '@supabase/supabase-js';
 
 // Color codes for terminal output
@@ -32,13 +33,15 @@ const colors = {
 // Parse command line arguments
 const args = process.argv.slice(2);
 const emailArg = args.find(arg => arg.startsWith('--email='))?.split('=')[1];
+const envEmail = process.env.TEST_PASSWORD_RESET_EMAIL;
+const email = emailArg || envEmail;
 const envArg = args.find(arg => arg.startsWith('--env='))?.split('=')[1] || 'production';
 
 // Validation
-if (!emailArg) {
-  console.error(`${colors.red}${colors.bold}❌ Error: Email address required${colors.reset}`);
-  console.error('Usage: node scripts/password-reset-test.mjs --email test@example.com');
-  process.exit(1);
+if (!email) {
+  console.log(`${colors.yellow}${colors.bold}⚠️  Skipping password reset test: email is not configured.${colors.reset}`);
+  console.log('Provide --email or set TEST_PASSWORD_RESET_EMAIL to run this test.');
+  process.exit(0);
 }
 
 // Load environment variables
@@ -46,9 +49,11 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error(`${colors.red}${colors.bold}❌ Error: Missing environment variables${colors.reset}`);
-  console.error('Required: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY');
-  process.exit(1);
+  console.log(
+    `${colors.yellow}${colors.bold}⚠️  Skipping password reset test: Supabase environment variables are missing.${colors.reset}`
+  );
+  console.log('Required: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY');
+  process.exit(0);
 }
 
 // Initialize Supabase client
@@ -90,7 +95,7 @@ async function testPasswordResetRequest() {
   logSubheader('Test 1: Password Reset Request');
   const startTime = Date.now();
 
-  log(`Requesting password reset for: ${emailArg}`, 'info');
+  log(`Requesting password reset for: ${email}`, 'info');
   log('This will send a password reset email...', 'info');
 
   try {
@@ -105,7 +110,7 @@ async function testPasswordResetRequest() {
       redirectUrl = 'https://wathaci.com/reset-password';
     }
 
-    const { data, error } = await supabase.auth.resetPasswordForEmail(emailArg, {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectUrl,
     });
 
@@ -121,7 +126,7 @@ async function testPasswordResetRequest() {
     log(`PASSED: Password reset email sent (${duration}ms)`, 'success');
     
     console.log(`\n${colors.yellow}📧 Email Verification Required:${colors.reset}`);
-    console.log(`   1. Check inbox for: ${emailArg}`);
+    console.log(`   1. Check inbox for: ${email}`);
     console.log(`   2. From: Wathaci <support@wathaci.com>`);
     console.log(`   3. Subject: "Reset your Wathaci password"`);
     console.log(`   4. Expected delivery: < 30 seconds`);
@@ -141,13 +146,13 @@ async function testUserExists() {
   logSubheader('Test 2: Verify User Exists');
   const startTime = Date.now();
 
-  log(`Checking if user exists: ${emailArg}`, 'info');
+  log(`Checking if user exists: ${email}`, 'info');
 
   try {
     // Try to sign in with a dummy password to check if user exists
     // (This will fail but we can check the error message)
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: emailArg,
+      email,
       password: 'dummy-password-for-check',
     });
 

@@ -75,6 +75,42 @@ function isTwilioConfigured() {
 }
 
 /**
+ * Report Twilio health status for health checks
+ */
+function getTwilioHealth() {
+  const configured = Boolean(Twilio && TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN);
+
+  if (!Twilio) {
+    return {
+      configured,
+      status: 'disabled',
+      message: 'Twilio SDK not installed',
+    };
+  }
+
+  if (!configured) {
+    return {
+      configured,
+      status: 'disabled',
+      message: 'Twilio credentials not configured',
+    };
+  }
+
+  if (!twilioClient) {
+    return {
+      configured,
+      status: 'error',
+      message: 'Twilio client could not be initialized',
+    };
+  }
+
+  return {
+    configured,
+    status: 'ok',
+  };
+}
+
+/**
  * Get the configured Twilio phone number for SMS
  * @returns {string | null} Phone number or null if not configured
  */
@@ -95,4 +131,5 @@ module.exports = {
   isTwilioConfigured,
   getTwilioPhoneNumber,
   getTwilioWhatsAppFrom,
+  getTwilioHealth,
 };

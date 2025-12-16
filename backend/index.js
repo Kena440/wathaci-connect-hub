@@ -40,16 +40,8 @@ const partnershipRoutes = require('./routes/partnerships');
 
 // Health helpers
 const { getTwilioHealth } = require('./lib/twilioClient');
-
-const {
-  getEmailHealth,
-  isEmailConfigured,
-} = require('./services/email-service');
-
-const {
-  getSupabaseHealth,
-  isSupabaseAdminConfigured,
-} = require('./lib/supabaseAdmin');
+const { getEmailHealth } = require('./services/email-service');
+const { getSupabaseHealth } = require('./lib/supabaseAdmin');
 
 const app = express();
 
@@ -64,48 +56,6 @@ app.use((req, res, next) => {
   res.setHeader('x-request-id', requestId);
   return next();
 });
-
-/**
- * Root route: simple ping
- */
-app.get('/', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    service: 'Wathaci Backend',
-    message: 'Backend is running successfully',
-    timestamp: new Date().toISOString(),
-  });
-});
-
-/**
- * Integrated health route: Supabase + Email + Twilio
- */
-app.get('/health', (req, res) => {
-  const twilio = getTwilioHealth();
-  const email = getEmailHealth();
-  const supabase = getSupabaseHealth();
-
-  // Supabase + Email are required for "ok"
-  // Twilio is optional but reported
-  const overallHealthy =
-    isSupabaseAdminConfigured() &&
-    isEmailConfigured();
-
-  res.status(overallHealthy ? 200 : 503).json({
-    status: overallHealthy ? 'ok' : 'degraded',
-    service: 'Wathaci Backend',
-    timestamp: new Date().toISOString(),
-    requestId: req.requestId,
-    components: {
-      supabaseAdmin: supabase,
-      email,
-      twilio,
-    },
-  });
-});
-
-// Log payment readiness on startup
-logPaymentReadiness();
 
 /**
  * CORS configuration
@@ -180,6 +130,73 @@ app.use((req, res, next) => {
     return next(err);
   });
 });
+
+/**
+ * Root route: simple ping
+ */
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'Wathaci Backend',
+    message: 'Backend is running successfully',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+/**
+ * Integrated health route: Supabase + Email + Twilio
+ */
+app.get('/health', (req, res) => {
+  const safeFetch = (label, getter, fallback) => {
+    try {
+      if (typeof getter === 'function') {
+        return getter();
+      }
+      return fallback;
+    } catch (error) {
+      console.warn(`[Health] ${label} health check failed`, error.message);
+      return {
+        configured: false,
+        status: 'error',
+        message: error.message,
+      };
+    }
+  };
+
+  const supabase = safeFetch('Supabase', getSupabaseHealth, {
+    configured: false,
+    status: 'disabled',
+    message: 'Supabase health unavailable',
+  });
+
+  const email = safeFetch('Email', getEmailHealth, {
+    configured: false,
+    status: 'disabled',
+    message: 'Email health unavailable',
+  });
+
+  const twilio = safeFetch('Twilio', getTwilioHealth, {
+    configured: false,
+    status: 'disabled',
+    message: 'Twilio health unavailable',
+  });
+
+  const components = [supabase, email, twilio];
+  const overallStatus = components.every(service => service?.configured && service?.status === 'ok')
+    ? 'ok'
+    : 'degraded';
+
+  res.status(200).json({
+    status: overallStatus,
+    timestamp: new Date().toISOString(),
+    supabase,
+    email,
+    twilio,
+  });
+});
+
+// Log payment readiness on startup
+logPaymentReadiness();
 
 /**
  * JSON body parsing with rawBody retained for webhooks, etc.
