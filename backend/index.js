@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const { randomUUID } = require('crypto');
 
 const { logPaymentReadiness } = require('./lib/payment-readiness');
 
@@ -56,6 +57,14 @@ const app = express();
 // See: https://expressjs.com/en/guide/behind-proxies.html
 app.set('trust proxy', 1);
 
+// Correlation IDs for every request
+app.use((req, res, next) => {
+  const requestId = req.headers['x-request-id'] || randomUUID();
+  req.requestId = requestId;
+  res.setHeader('x-request-id', requestId);
+  return next();
+});
+
 /**
  * Root route: simple ping
  */
@@ -86,6 +95,7 @@ app.get('/health', (req, res) => {
     status: overallHealthy ? 'ok' : 'degraded',
     service: 'Wathaci Backend',
     timestamp: new Date().toISOString(),
+    requestId: req.requestId,
     components: {
       supabaseAdmin: supabase,
       email,
@@ -122,21 +132,54 @@ const configuredOrigins = parseAllowedOrigins(
   process.env.ALLOWED_ORIGINS ?? process.env.CORS_ALLOWED_ORIGINS
 );
 
-const allowedOrigins = Array.from(
-  new Set([...defaultAllowedOrigins, ...configuredOrigins])
-);
+const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...configuredOrigins]));
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error(`Not allowed by CORS: ${origin}`));
-    },
-    credentials: true,
-  })
-);
+const isAllowedVercelPreview = origin => {
+  if (!origin) return false;
+  try {
+    const { hostname } = new URL(origin);
+    return hostname.endsWith('.vercel.app') && hostname.includes('wathaci');
+  } catch (error) {
+    return false;
+  }
+};
+
+const corsMiddleware = cors({
+  origin: (origin, callback) => {
+    const allowed =
+      !origin ||
+      allowedOrigins.includes(origin) ||
+      isAllowedVercelPreview(origin);
+
+    if (allowed) {
+      return callback(null, true);
+    }
+
+    const error = new Error(`Not allowed by CORS: ${origin}`);
+    error.code = 'CORS_NOT_ALLOWED';
+    return callback(error);
+  },
+  credentials: true,
+});
+
+app.use((req, res, next) => {
+  corsMiddleware(req, res, err => {
+    if (err && err.code === 'CORS_NOT_ALLOWED') {
+      console.warn('[CORS] Blocked request', {
+        origin: req.headers.origin,
+        method: req.method,
+        path: req.originalUrl,
+        requestId: req.requestId,
+      });
+      return res.status(403).json({
+        code: 'CORS_NOT_ALLOWED',
+        message: 'Request origin is not allowed.',
+        requestId: req.requestId,
+      });
+    }
+    return next(err);
+  });
+});
 
 /**
  * JSON body parsing with rawBody retained for webhooks, etc.
@@ -160,20 +203,47 @@ app.use(
 app.use(morgan('dev'));
 app.use(helmet());
 
-const limiter = rateLimit({
+const buildJsonLimiter = options =>
+  rateLimit({
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+      const retryAfter = Math.ceil((options.windowMs ?? 0) / 1000);
+      res.status(429).json({
+        code: 'RATE_LIMITED',
+        message: 'Too many attempts. Please wait and try again.',
+        retryAfter,
+        requestId: req.requestId,
+      });
+    },
+    ...options,
+  });
+
+const limiter = buildJsonLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 1000,
 });
 
 // Dedicated limiter for AI/agent traffic to avoid noisy neighbours blocking chat requests
-const agentLimiter = rateLimit({
+const agentLimiter = buildJsonLimiter({
   windowMs: 60 * 1000,
   limit: 30,
-  standardHeaders: true,
-  legacyHeaders: false,
 });
 
-app.use(limiter);
+const otpLimiter = buildJsonLimiter({
+  windowMs: 10 * 60 * 1000,
+  limit: 5,
+});
+
+const emailLimiter = buildJsonLimiter({
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+});
+
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') return next();
+  return limiter(req, res, next);
+});
 
 /**
  * API index / documentation
@@ -214,8 +284,11 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/marketplace', marketplaceRoutes);
 app.use('/resolve', resolveRoutes);
-app.use('/api/auth/otp', otpRoutes);
-app.use('/api/email', emailRoutes);
+const skipOptions = middleware => (req, res, next) =>
+  req.method === 'OPTIONS' ? next() : middleware(req, res, next);
+
+app.use('/api/auth/otp', skipOptions(otpLimiter), otpRoutes);
+app.use('/api/email', skipOptions(emailLimiter), emailRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/diagnostics', diagnosticsRoutes);
 app.use('/api/credit-passports', creditPassportRoutes);
@@ -234,6 +307,7 @@ app.use((err, req, res, next) => {
     stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
     url: req.url,
     method: req.method,
+    requestId: req.requestId,
   });
 
   if (res.headersSent) {
@@ -241,10 +315,12 @@ app.use((err, req, res, next) => {
   }
 
   res.status(err.status || 500).json({
-    error:
+    code: err.code || 'SERVER_ERROR',
+    message:
       process.env.NODE_ENV === 'production'
         ? 'Internal server error'
         : err.message,
+    requestId: req.requestId,
   });
 });
 
