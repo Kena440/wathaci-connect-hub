@@ -34,22 +34,32 @@ export const FreelancerDirectory = () => {
   const [priceRange, setPriceRange] = useState('');
   const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchFreelancers();
   }, []);
 
   const fetchFreelancers = async () => {
+    setLoading(true);
+    setErrorMessage(null);
     try {
       const { data, error } = await supabase
         .from('freelancers')
         .select('*')
         .eq('availability_status', 'available');
-      
-      if (error) throw error;
+
+      if (error) {
+        console.error('Error fetching freelancers:', error);
+        setErrorMessage('We could not load available freelancers right now. Please try again.');
+        setFreelancers([]);
+        return;
+      }
+
       setFreelancers(data || []);
     } catch (error) {
       console.error('Error fetching freelancers:', error);
+      setErrorMessage('We could not load available freelancers right now. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -69,6 +79,16 @@ export const FreelancerDirectory = () => {
 
     return matchesSearch && matchesLocation && matchesPrice;
   });
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <p className="text-gray-600 text-lg">Loading available freelancers...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -232,7 +252,19 @@ export const FreelancerDirectory = () => {
         ))}
       </div>
 
-      {freelancers.length === 0 ? (
+      {errorMessage ? (
+        <div className="text-center py-12">
+          <p className="text-red-600 text-lg font-semibold">{errorMessage}</p>
+          <p className="text-gray-500 mt-2">If the issue persists, please reach out to support.</p>
+          <Button
+            variant="outline"
+            onClick={fetchFreelancers}
+            className="mt-4"
+          >
+            Retry
+          </Button>
+        </div>
+      ) : freelancers.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-500 text-lg">No freelancers available yet.</p>
           <p className="text-gray-400 mt-2">We're building our network of verified professionals. Check back soon!</p>
