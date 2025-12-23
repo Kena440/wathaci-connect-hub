@@ -3,10 +3,16 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const BOOTSTRAP_SECRET = Deno.env.get("BOOTSTRAP_PROFILE_SECRET") ?? "";
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error("[bootstrap-profile] missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment");
   throw new Error("bootstrap-profile: missing env");
+}
+
+if (!BOOTSTRAP_SECRET) {
+  console.error("[bootstrap-profile] missing BOOTSTRAP_PROFILE_SECRET in environment");
+  throw new Error("bootstrap-profile: missing BOOTSTRAP_PROFILE_SECRET");
 }
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -23,10 +29,17 @@ type Body = {
 
 type JsonRecord = Record<string, unknown> | null;
 
-const json = (obj: Record<string, unknown>, status = 200) =>
+const buildCorsHeaders = (origin: string | null) => ({
+  "Access-Control-Allow-Origin": origin || "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "content-type, x-bootstrap-secret, x-correlation-id",
+  "Access-Control-Max-Age": "86400",
+});
+
+const json = (obj: Record<string, unknown>, status = 200, headers: HeadersInit = {}) =>
   new Response(JSON.stringify(obj), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...headers },
   });
 
 const logUserEvent = async (
@@ -53,8 +66,25 @@ const logUserEvent = async (
 };
 
 Deno.serve(async (req: Request) => {
+  const origin = req.headers.get("origin");
+  const corsHeaders = buildCorsHeaders(origin);
+
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { status: 204, headers: corsHeaders });
+  }
+
   if (req.method !== "POST") {
-    return json({ error: "Only POST" }, 405);
+    return json({ error: "Only POST" }, 405, corsHeaders);
+  }
+
+  const correlationId = req.headers.get("x-correlation-id") ?? crypto.randomUUID();
+
+  const providedSecret = req.headers.get("x-bootstrap-secret") ?? "";
+  if (providedSecret !== BOOTSTRAP_SECRET) {
+    console.warn("[bootstrap-profile] missing or invalid bootstrap secret", {
+      correlationId,
+    });
+    return json({ error: "unauthorized" }, 401, { ...corsHeaders, "x-correlation-id": correlationId });
   }
 
   let body: Body | null = null;
@@ -62,18 +92,18 @@ Deno.serve(async (req: Request) => {
   try {
     body = (await req.json()) as Body;
   } catch (error) {
-    console.error("[bootstrap-profile] invalid JSON", error);
-    return json({ error: "invalid json" }, 400);
+    console.error("[bootstrap-profile] invalid JSON", { error, correlationId });
+    return json({ error: "invalid json" }, 400, { ...corsHeaders, "x-correlation-id": correlationId });
   }
 
   if (!body || typeof body !== "object") {
-    return json({ error: "invalid body" }, 400);
+    return json({ error: "invalid body" }, 400, { ...corsHeaders, "x-correlation-id": correlationId });
   }
 
   const { userId, email, full_name, msisdn, profile_type } = body;
 
   if (!userId) {
-    return json({ error: "userId required" }, 400);
+    return json({ error: "userId required" }, 400, { ...corsHeaders, "x-correlation-id": correlationId });
   }
 
   await logUserEvent(
@@ -110,14 +140,21 @@ Deno.serve(async (req: Request) => {
     });
 
     if (ensureResult.error) {
-      console.error("[bootstrap-profile] ensure_profile_exists error", ensureResult.error);
+      console.error("[bootstrap-profile] ensure_profile_exists error", {
+        error: ensureResult.error,
+        correlationId,
+      });
       await logUserEvent(userId, "bootstrap_profile_error", email, {
         error: ensureResult.error.message,
         hint: ensureResult.error.hint,
         code: ensureResult.error.code,
+        correlationId,
       });
 
-      return json({ error: "failed to ensure profile" }, 500);
+      return json({ error: "failed to ensure profile" }, 500, {
+        ...corsHeaders,
+        "x-correlation-id": correlationId,
+      });
     }
 
     const { data: profile, error } = await supabaseAdmin
@@ -127,21 +164,38 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (error) {
-      console.error("[bootstrap-profile] profile select error", error);
-      await logUserEvent(userId, "bootstrap_profile_error", email, { error: error.message, code: error.code });
+      console.error("[bootstrap-profile] profile select error", { error, correlationId });
+      await logUserEvent(userId, "bootstrap_profile_error", email, {
+        error: error.message,
+        code: error.code,
+        correlationId,
+      });
 
-      return json({ error: "failed to read profile" }, 500);
+      return json({ error: "failed to read profile" }, 500, {
+        ...corsHeaders,
+        "x-correlation-id": correlationId,
+      });
     }
 
     await logUserEvent(userId, "bootstrap_profile_ok", email, {
       profile_id: profile.id,
+      correlationId,
     });
 
-    return json({ ok: true, profile }, 200);
+    return json({ ok: true, profile }, 200, {
+      ...corsHeaders,
+      "x-correlation-id": correlationId,
+    });
   } catch (error) {
-    console.error("[bootstrap-profile] unexpected error", error);
-    await logUserEvent(userId, "bootstrap_profile_error", email, { error: String(error) });
+    console.error("[bootstrap-profile] unexpected error", { error, correlationId });
+    await logUserEvent(userId, "bootstrap_profile_error", email, {
+      error: String(error),
+      correlationId,
+    });
 
-    return json({ error: "internal error" }, 500);
+    return json({ error: "internal error" }, 500, {
+      ...corsHeaders,
+      "x-correlation-id": correlationId,
+    });
   }
 });
