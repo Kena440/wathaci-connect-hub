@@ -66,6 +66,17 @@ const normalizeString = (value: unknown): string | null | undefined => {
   return trimmed;
 };
 
+const generateCorrelationId = (): string => {
+  try {
+    return crypto.randomUUID();
+  } catch (error) {
+    if (typeof console !== 'undefined') {
+      console.warn('[auth] crypto.randomUUID unavailable, using fallback id', error);
+    }
+    return `auth-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+  }
+};
+
 const prepareProfilePayload = (
   email: string | null | undefined,
   userData?: Record<string, any>,
@@ -652,7 +663,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [user?.id]);
 
   const signIn = async (email: string, password: string): Promise<AuthState> => {
-    logInfo('Initiating sign-in flow', { event: 'auth:signIn:start' });
+    const correlationId = generateCorrelationId();
+    logInfo('Initiating sign-in flow', { event: 'auth:signIn:start', correlationId });
     const { data: authUser, error } = await userService.signIn(email, password);
 
     // TEMPORARY BYPASS MODE: remove after auth errors are fixed
@@ -729,8 +741,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       logSupabaseAuthError('signIn', error);
       logError('Sign-in failed', error, {
         event: 'auth:signIn:error',
+        correlationId,
       });
-      throw new Error(errorMessage);
+      throw new Error(`${errorMessage} (ref: ${correlationId})`);
     }
 
     const offlineState = resolveOfflineAuthState(authUser ?? null);
@@ -779,13 +792,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       event: 'auth:signIn:success',
       userId: finalState.user?.id ?? authUser.id,
       hasProfile: Boolean(finalState.profile),
+      correlationId,
     });
 
     return finalState;
   };
 
   const signUp = async (email: string, password: string, userData?: any): Promise<AuthState> => {
-    logInfo('Initiating sign-up flow', { event: 'auth:signUp:start' });
+    const correlationId = generateCorrelationId();
+    logInfo('Initiating sign-up flow', { event: 'auth:signUp:start', correlationId });
 
     const { data: user, error } = await userService.signUp(email, password, userData);
 
@@ -858,18 +873,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       logSupabaseAuthError('signUp', error);
       logError('Sign-up failed', error, {
         event: 'auth:signUp:error',
+        correlationId,
       });
-      throw new Error(errorMessage);
+      throw new Error(`${errorMessage} (ref: ${correlationId})`);
     }
 
     let createdProfile: Profile | null = null;
 
     if (user) {
       const profilePayload = prepareProfilePayload(user.email, userData);
-      logProfileOperation('creating-profile-for-new-user', { 
+      logProfileOperation('creating-profile-for-new-user', {
         userId: user.id,
         hasPhone: !!profilePayload.phone,
-        hasMsisdn: !!profilePayload.msisdn 
+        hasMsisdn: !!profilePayload.msisdn
       });
 
       // Retry logic for profile creation (handles race conditions)
