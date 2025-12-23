@@ -1,3 +1,4 @@
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -30,13 +31,30 @@ jest.mock('../pages/PrivacyPolicy', () => createLazyMock('Privacy Policy Page'))
 jest.mock('../pages/TermsOfService', () => createLazyMock('Terms Of Service Page'));
 jest.mock('../pages/Messages', () => createLazyMock('Messages Page'));
 jest.mock('../pages/FundingHub', () => createLazyMock('Funding Hub Page'));
-
-const appContextMock: { user: { id: string } | null } = { user: null };
-jest.mock('@/contexts/AppContext', () => ({
-  useAppContext: () => ({ user: appContextMock.user, loading: false }),
+jest.mock('../components/AppLayout', () => ({
+  __esModule: true,
+  default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}));
+jest.mock('../components/AccountTypeRoute', () => ({
+  AccountTypeRoute: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-import { AppRoutes } from '../App';
+const authState: { user: { id: string } | null } = { user: null };
+
+jest.mock('../components/auth/RequireAuth', () => ({
+  RequireAuth: ({ children }: { children: React.ReactNode }) =>
+    authState.user ? <>{children}</> : <div>Sign In Page</div>,
+  RequireCompletedProfile: ({ children }: { children: React.ReactNode }) =>
+    authState.user ? <>{children}</> : <div>Complete Profile</div>,
+}));
+
+jest.mock('../components/PrivateRoute', () => ({
+  __esModule: true,
+  default: ({ children }: { children: React.ReactNode }) =>
+    authState.user ? <>{children}</> : <div>Sign In Page</div>,
+}));
+
+import { AppRoutes } from '../AppRoutes';
 
 const publicRoutes = [
   { path: '/', text: 'Home Page' },
@@ -47,7 +65,6 @@ const publicRoutes = [
   { path: '/signup', text: 'Sign Up Page' },
   { path: '/forgot-password', text: 'Forgot Password Page' },
   { path: '/reset-password', text: 'Reset Password Page' },
-  { path: '/get-started', text: 'Get Started Page' },
   { path: '/profile-setup', text: 'Profile Setup Page' },
   { path: '/profile-review', text: 'Profile Review Page' },
   { path: '/subscription-plans', text: 'Subscription Plans Page' },
@@ -58,12 +75,12 @@ const publicRoutes = [
 
 const protectedRoutes = [
   { path: '/messages', text: 'Messages Page' },
-  { path: '/funding-hub', text: 'Funding Hub Page' },
+  { path: '/get-started', text: 'Get Started Page' },
 ];
 
 describe('AppRoutes', () => {
   it.each(publicRoutes)('renders %s', async ({ path, text }) => {
-    appContextMock.user = null;
+    authState.user = null;
     render(
       <MemoryRouter initialEntries={[path]}>
         <AppRoutes />
@@ -74,7 +91,7 @@ describe('AppRoutes', () => {
 
   describe('protected routes', () => {
     it.each(protectedRoutes)('redirects unauthenticated users from %s', async ({ path }) => {
-      appContextMock.user = null;
+      authState.user = null;
       render(
         <MemoryRouter initialEntries={[path]}>
           <AppRoutes />
@@ -84,7 +101,7 @@ describe('AppRoutes', () => {
     });
 
     it.each(protectedRoutes)('renders %s when authenticated', async ({ path, text }) => {
-      appContextMock.user = { id: '1' };
+      authState.user = { id: '1' };
       render(
         <MemoryRouter initialEntries={[path]}>
           <AppRoutes />
@@ -95,7 +112,7 @@ describe('AppRoutes', () => {
   });
 
   it('renders NotFound for unknown paths', async () => {
-    appContextMock.user = null;
+    authState.user = null;
     render(
       <MemoryRouter initialEntries={['/unknown']}>
         <AppRoutes />
