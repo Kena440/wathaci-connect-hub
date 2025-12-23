@@ -37,6 +37,7 @@ describe('useProfile', () => {
     mockContext.profile = null;
     mockContext.loading = false;
     mockRefreshUser.mockReset();
+    mockRefreshUser.mockResolvedValue({ user: null, profile: null });
   });
 
   it('returns context values', () => {
@@ -55,6 +56,7 @@ describe('useProfile', () => {
     mockContext.user = { id: 'user-2' } as User;
     mockContext.profile = null;
     mockContext.loading = false;
+    mockRefreshUser.mockResolvedValue({ user: mockContext.user, profile: mockContext.profile });
 
     renderHook(() => useProfile({ refreshOnMount: false, refreshOnMissing: true }));
 
@@ -65,6 +67,7 @@ describe('useProfile', () => {
     mockContext.user = { id: 'user-3' } as User;
     mockContext.profile = null;
     mockContext.loading = true;
+    mockRefreshUser.mockResolvedValue({ user: mockContext.user, profile: mockContext.profile });
 
     renderHook(() => useProfile({ refreshOnMount: false, refreshOnMissing: true }));
 
