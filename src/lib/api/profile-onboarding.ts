@@ -181,8 +181,16 @@ export async function getSmeProfile(): Promise<SmeProfileRow | null> {
   return (data as SmeProfileRow | null) ?? null;
 }
 
-const isSchemaMismatchError = (message?: string) =>
-  message?.toLowerCase().includes('schema cache') || message?.toLowerCase().includes('column');
+const isSchemaMismatchError = (message?: string) => {
+  if (!message) return false;
+  const lower = message.toLowerCase();
+
+  return (
+    lower.includes('schema cache') ||
+    /column\s+.+\s+does not exist/.test(lower) ||
+    /record\s+.+\s+has no column/.test(lower)
+  );
+};
 
 export async function upsertSmeProfile(payload: SmeProfileFormValues) {
   const user = await requireUser();
