@@ -8,13 +8,15 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getMaintenanceConfig } from "@/config/featureFlags";
 // TEMPORARY BYPASS MODE: remove after auth errors are fixed
 import { BypassModeBanner } from "@/components/BypassModeBanner";
+import { supabaseConfigStatus } from "@/lib/supabaseClient";
 
 export const SignUp = () => {
   const navigate = useNavigate();
   const maintenance = getMaintenanceConfig();
   const maintenanceActive = maintenance.enabled;
-  const signUpDisabled = maintenanceActive && !maintenance.allowSignUp;
   const signInAvailable = !maintenanceActive || maintenance.allowSignIn;
+  const supabaseMisconfigured = !supabaseConfigStatus.hasValidConfig;
+  const signUpDisabled = (maintenanceActive && !maintenance.allowSignUp) || supabaseMisconfigured;
 
   const [selectedAccountType, setSelectedAccountType] = useState<AccountTypeValue | "">("");
   const [accountTypeError, setAccountTypeError] = useState<string | null>(null);
@@ -37,6 +39,22 @@ export const SignUp = () => {
 
   const headline = useMemo(() => "Sign up. It is fast and easy.", []);
 
+  const authConfigWarning = useMemo(() => {
+    if (!supabaseMisconfigured) {
+      return null;
+    }
+
+    const missingUrlKeys = supabaseConfigStatus.missingUrlKeys?.join(", ") || "VITE_SUPABASE_URL";
+    const missingAnonKeys = supabaseConfigStatus.missingAnonKeys?.join(", ") || "VITE_SUPABASE_ANON_KEY";
+
+    return {
+      title: "Authentication configuration missing",
+      description:
+        "Sign-ups are temporarily disabled because the Supabase URL or anon key is not configured. Add the missing environment variables and redeploy to restore authentication.",
+      details: `Missing keys → ${missingUrlKeys}; ${missingAnonKeys}`,
+    };
+  }, [supabaseMisconfigured]);
+
   const showSuccessState = Boolean(emailForConfirmation);
 
   return (
@@ -44,11 +62,21 @@ export const SignUp = () => {
       <div className="w-full max-w-5xl rounded-2xl bg-white/95 p-8 shadow-xl ring-1 ring-orange-100/60 backdrop-blur">
         {/* TEMPORARY BYPASS MODE: remove after auth errors are fixed */}
         <BypassModeBanner className="mb-6" />
-        
+
         {maintenanceActive && (
           <Alert variant="warning" className="mb-6">
             <AlertTitle>{maintenance.bannerTitle}</AlertTitle>
             <AlertDescription>{maintenance.bannerMessage}</AlertDescription>
+          </Alert>
+        )}
+
+        {authConfigWarning && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTitle>{authConfigWarning.title}</AlertTitle>
+            <AlertDescription>
+              <p>{authConfigWarning.description}</p>
+              <p className="mt-2 text-xs text-red-100/90">{authConfigWarning.details}</p>
+            </AlertDescription>
           </Alert>
         )}
 
@@ -80,7 +108,7 @@ export const SignUp = () => {
                 <AccountTypeSelector
                   value={selectedAccountType}
                   onChange={handleAccountTypeChange}
-                  disabled={signUpDisabled}
+                  disabled={signUpDisabled || supabaseMisconfigured}
                   error={accountTypeError}
                 />
 
@@ -88,7 +116,7 @@ export const SignUp = () => {
                   accountType={selectedAccountType}
                   onAccountTypeMissing={setAccountTypeError}
                   onSuccess={handleSignupSuccess}
-                  disabled={signUpDisabled}
+                  disabled={signUpDisabled || supabaseMisconfigured}
                 />
               </>
             ) : (
