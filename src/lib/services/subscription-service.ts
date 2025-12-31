@@ -22,11 +22,14 @@ export class SubscriptionService extends BaseService<UserSubscription> {
    */
   async getPlansByAccountType(accountType: AccountType): Promise<DatabaseResponse<SubscriptionPlan[]>> {
     return withErrorHandling(
-      () => supabase
-        .from('subscription_plans')
-        .select('*')
-        .contains('user_types', [accountType])
-        .order('lenco_amount', { ascending: true }),
+      async () => {
+        const result = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .contains('user_types', [accountType])
+          .order('lenco_amount', { ascending: true });
+        return result;
+      },
       'SubscriptionService.getPlansByAccountType'
     );
   }
@@ -36,11 +39,14 @@ export class SubscriptionService extends BaseService<UserSubscription> {
    */
   async getAllPlans(): Promise<DatabaseResponse<SubscriptionPlan[]>> {
     return withErrorHandling(
-      () => supabase
-        .from('subscription_plans')
-        .select('*')
-        .order('category', { ascending: true })
-        .order('lenco_amount', { ascending: true }),
+      async () => {
+        const result = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .order('category', { ascending: true })
+          .order('lenco_amount', { ascending: true });
+        return result;
+      },
       'SubscriptionService.getAllPlans'
     );
   }
@@ -50,11 +56,14 @@ export class SubscriptionService extends BaseService<UserSubscription> {
    */
   async getPlanById(planId: string): Promise<DatabaseResponse<SubscriptionPlan>> {
     return withErrorHandling(
-      () => supabase
-        .from('subscription_plans')
-        .select('*')
-        .eq('id', planId)
-        .single(),
+      async () => {
+        const result = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .eq('id', planId)
+          .single();
+        return result;
+      },
       'SubscriptionService.getPlanById'
     );
   }
@@ -64,24 +73,27 @@ export class SubscriptionService extends BaseService<UserSubscription> {
    */
   async getCurrentUserSubscription(userId: string): Promise<DatabaseResponse<UserSubscription | null>> {
     return withErrorHandling(
-      () => supabase
-        .from('user_subscriptions')
-        .select(`
-          *,
-          subscription_plans (
-            id,
-            name,
-            price,
-            period,
-            features,
-            category,
-            lenco_amount
-          )
-        `)
-        .eq('user_id', userId)
-        .eq('status', 'active')
-        .gte('end_date', new Date().toISOString())
-        .single(),
+      async () => {
+        const result = await supabase
+          .from('user_subscriptions')
+          .select(`
+            *,
+            subscription_plans (
+              id,
+              name,
+              price,
+              period,
+              features,
+              category,
+              lenco_amount
+            )
+          `)
+          .eq('user_id', userId)
+          .eq('status', 'active')
+          .gte('end_date', new Date().toISOString())
+          .single();
+        return result;
+      },
       'SubscriptionService.getCurrentUserSubscription'
     );
   }
@@ -91,22 +103,25 @@ export class SubscriptionService extends BaseService<UserSubscription> {
    */
   async getUserSubscriptions(userId: string): Promise<DatabaseResponse<UserSubscription[]>> {
     return withErrorHandling(
-      () => supabase
-        .from('user_subscriptions')
-        .select(`
-          *,
-          subscription_plans (
-            id,
-            name,
-            price,
-            period,
-            features,
-            category,
-            lenco_amount
-          )
-        `)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false }),
+      async () => {
+        const result = await supabase
+          .from('user_subscriptions')
+          .select(`
+            *,
+            subscription_plans (
+              id,
+              name,
+              price,
+              period,
+              features,
+              category,
+              lenco_amount
+            )
+          `)
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+        return result;
+      },
       'SubscriptionService.getUserSubscriptions'
     );
   }
@@ -164,27 +179,30 @@ export class SubscriptionService extends BaseService<UserSubscription> {
    */
   async activateSubscription(subscriptionId: string): Promise<DatabaseResponse<UserSubscription>> {
     return withErrorHandling(
-      () => supabase
-        .from('user_subscriptions')
-        .update({
-          status: 'active',
-          payment_status: 'paid',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', subscriptionId)
-        .select(`
-          *,
-          subscription_plans (
-            id,
-            name,
-            price,
-            period,
-            features,
-            category,
-            lenco_amount
-          )
-        `)
-        .single(),
+      async () => {
+        const result = await supabase
+          .from('user_subscriptions')
+          .update({
+            status: 'active',
+            payment_status: 'paid',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', subscriptionId)
+          .select(`
+            *,
+            subscription_plans (
+              id,
+              name,
+              price,
+              period,
+              features,
+              category,
+              lenco_amount
+            )
+          `)
+          .single();
+        return result;
+      },
       'SubscriptionService.activateSubscription'
     );
   }
@@ -194,26 +212,29 @@ export class SubscriptionService extends BaseService<UserSubscription> {
    */
   async cancelSubscription(subscriptionId: string): Promise<DatabaseResponse<UserSubscription>> {
     return withErrorHandling(
-      () => supabase
-        .from('user_subscriptions')
-        .update({
-          status: 'cancelled',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', subscriptionId)
-        .select(`
-          *,
-          subscription_plans (
-            id,
-            name,
-            price,
-            period,
-            features,
-            category,
-            lenco_amount
-          )
-        `)
-        .single(),
+      async () => {
+        const result = await supabase
+          .from('user_subscriptions')
+          .update({
+            status: 'cancelled',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', subscriptionId)
+          .select(`
+            *,
+            subscription_plans (
+              id,
+              name,
+              price,
+              period,
+              features,
+              category,
+              lenco_amount
+            )
+          `)
+          .single();
+        return result;
+      },
       'SubscriptionService.cancelSubscription'
     );
   }
@@ -348,11 +369,11 @@ export class SubscriptionService extends BaseService<UserSubscription> {
    */
   async getExpiringSubscriptions(): Promise<DatabaseResponse<UserSubscription[]>> {
     return withErrorHandling(
-      () => {
+      async () => {
         const sevenDaysFromNow = new Date();
         sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
 
-        return supabase
+        const result = await supabase
           .from('user_subscriptions')
           .select(`
             *,
@@ -363,6 +384,7 @@ export class SubscriptionService extends BaseService<UserSubscription> {
           .lte('end_date', sevenDaysFromNow.toISOString())
           .gte('end_date', new Date().toISOString())
           .order('end_date', { ascending: true });
+        return result;
       },
       'SubscriptionService.getExpiringSubscriptions'
     );
@@ -377,27 +399,30 @@ export class SubscriptionService extends BaseService<UserSubscription> {
     paymentStatus: 'pending' | 'paid' | 'failed'
   ): Promise<DatabaseResponse<UserSubscription>> {
     return withErrorHandling(
-      () => supabase
-        .from('user_subscriptions')
-        .update({
-          status,
-          payment_status: paymentStatus,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', subscriptionId)
-        .select(`
-          *,
-          subscription_plans (
-            id,
-            name,
-            price,
-            period,
-            features,
-            category,
-            lenco_amount
-          )
-        `)
-        .single(),
+      async () => {
+        const result = await supabase
+          .from('user_subscriptions')
+          .update({
+            status,
+            payment_status: paymentStatus,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', subscriptionId)
+          .select(`
+            *,
+            subscription_plans (
+              id,
+              name,
+              price,
+              period,
+              features,
+              category,
+              lenco_amount
+            )
+          `)
+          .single();
+        return result;
+      },
       'SubscriptionService.updateSubscriptionStatus'
     );
   }
@@ -451,17 +476,20 @@ export class TransactionService extends BaseService<Transaction> {
    */
   async getUserTransactions(userId: string): Promise<DatabaseResponse<Transaction[]>> {
     return withErrorHandling(
-      () => supabase
-        .from('transactions')
-        .select(`
-          *,
-          user_subscriptions (
-            id,
-            subscription_plans (name, price, period)
-          )
-        `)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false }),
+      async () => {
+        const result = await supabase
+          .from('transactions')
+          .select(`
+            *,
+            user_subscriptions (
+              id,
+              subscription_plans (name, price, period)
+            )
+          `)
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+        return result;
+      },
       'TransactionService.getUserTransactions'
     );
   }
@@ -471,11 +499,14 @@ export class TransactionService extends BaseService<Transaction> {
    */
   async getByReference(referenceNumber: string): Promise<DatabaseResponse<Transaction>> {
     return withErrorHandling(
-      () => supabase
-        .from('transactions')
-        .select('*')
-        .eq('reference_number', referenceNumber)
-        .single(),
+      async () => {
+        const result = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('reference_number', referenceNumber)
+          .single();
+        return result;
+      },
       'TransactionService.getByReference'
     );
   }
