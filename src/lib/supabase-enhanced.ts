@@ -6,8 +6,8 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Environment validation
 const validateEnvironment = (): { url: string; key: string } => {
-  const url = import.meta.env.VITE_SUPABASE_URL;
-  const key = import.meta.env.VITE_SUPABASE_KEY;
+  const url = (import.meta as any).env?.VITE_SUPABASE_URL;
+  const key = (import.meta as any).env?.VITE_SUPABASE_KEY;
 
   if (!url) {
     throw new Error('Missing VITE_SUPABASE_URL environment variable');

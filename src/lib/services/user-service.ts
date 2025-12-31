@@ -133,11 +133,14 @@ export class ProfileService extends BaseService<Profile> {
    */
   async getByUserId(userId: string): Promise<DatabaseResponse<Profile>> {
     return withErrorHandling(
-      () => supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single(),
+      async () => {
+        const result = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+        return result;
+      },
       'ProfileService.getByUserId'
     );
   }
@@ -189,10 +192,7 @@ export class ProfileService extends BaseService<Profile> {
       async () => {
         let query = supabase
           .from('profiles')
-          .select(`
-            *,
-            user:auth.users(email, created_at)
-          `)
+          .select('*')
           .eq('profile_completed', true);
 
         // Apply filters
@@ -209,12 +209,7 @@ export class ProfileService extends BaseService<Profile> {
         }
 
         if (filters.search) {
-          query = query.or(`
-            business_name.ilike.%${filters.search}%,
-            first_name.ilike.%${filters.search}%,
-            last_name.ilike.%${filters.search}%,
-            description.ilike.%${filters.search}%
-          `);
+          query = query.or(`business_name.ilike.%${filters.search}%,first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
         }
 
         const result = await query.order('updated_at', { ascending: false });
@@ -285,21 +280,24 @@ export class ProfileService extends BaseService<Profile> {
    */
   async getProfileWithSubscription(userId: string) {
     return withErrorHandling(
-      () => supabase
-        .from('profiles')
-        .select(`
-          *,
-          subscriptions:user_subscriptions(
-            id,
-            plan_id,
-            status,
-            start_date,
-            end_date,
-            subscription_plans(name, features, category)
-          )
-        `)
-        .eq('id', userId)
-        .single(),
+      async () => {
+        const result = await supabase
+          .from('profiles')
+          .select(`
+            *,
+            subscriptions:user_subscriptions(
+              id,
+              plan_id,
+              status,
+              start_date,
+              end_date,
+              subscription_plans(name, features, category)
+            )
+          `)
+          .eq('id', userId)
+          .single();
+        return result;
+      },
       'ProfileService.getProfileWithSubscription'
     );
   }
@@ -373,11 +371,11 @@ export class ProfileService extends BaseService<Profile> {
 
         const allRequiredFields = [
           ...requiredFields,
-          ...(profile.account_type ? accountTypeSpecificFields[profile.account_type] || [] : [])
+          ...(profile.account_type ? accountTypeSpecificFields[profile.account_type as AccountType] || [] : [])
         ];
 
         const completedFields = allRequiredFields.filter(field => {
-          const value = profile[field];
+          const value = (profile as any)[field];
           return value !== null && value !== undefined && value !== '';
         }).length;
 
