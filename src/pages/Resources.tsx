@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileText, Download, Eye, Calendar, User, Search } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
+import PageHero from '@/components/PageHero';
+import heroResources from '@/assets/hero-resources.jpg';
 
 const resources = [
   {
@@ -128,44 +130,43 @@ const Resources = () => {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-gradient-to-r from-emerald-600 to-blue-600 text-white py-16">
-          <div className="max-w-6xl mx-auto px-6 text-center">
-            <h1 className="text-5xl font-bold mb-4">Business Resources</h1>
-            <p className="text-xl mb-8">Tools, templates, and knowledge to grow your business</p>
-            
-            <div className="flex justify-center gap-4 mb-8">
-              <Button 
-                variant={activeTab === 'documents' ? 'secondary' : 'outline'}
-                onClick={() => setActiveTab('documents')}
-                className="text-lg px-8"
-              >
-                Documents & Templates
-              </Button>
-              <Button 
-                variant={activeTab === 'webinars' ? 'secondary' : 'outline'}
-                onClick={() => setActiveTab('webinars')}
-                className="text-lg px-8"
-              >
-                Webinars & Training
-              </Button>
-              <Button 
-                variant={activeTab === 'tools' ? 'secondary' : 'outline'}
-                onClick={() => setActiveTab('tools')}
-                className="text-lg px-8"
-              >
-                Business Tools
-              </Button>
-            </div>
+      <div className="min-h-screen bg-background">
+        <PageHero
+          title="Business Resources"
+          description="Tools, templates, and knowledge to grow your business"
+          backgroundImage={heroResources}
+        >
+          <div className="flex justify-center gap-4 flex-wrap">
+            <Button 
+              variant={activeTab === 'documents' ? 'secondary' : 'outline'}
+              onClick={() => setActiveTab('documents')}
+              className="text-lg px-8"
+            >
+              Documents & Templates
+            </Button>
+            <Button 
+              variant={activeTab === 'webinars' ? 'secondary' : 'outline'}
+              onClick={() => setActiveTab('webinars')}
+              className="text-lg px-8"
+            >
+              Webinars & Training
+            </Button>
+            <Button 
+              variant={activeTab === 'tools' ? 'secondary' : 'outline'}
+              onClick={() => setActiveTab('tools')}
+              className="text-lg px-8"
+            >
+              Business Tools
+            </Button>
           </div>
-        </div>
+        </PageHero>
 
         <div className="max-w-6xl mx-auto px-6 py-12">
           {activeTab === 'documents' && (
             <div>
-              <div className="flex gap-4 mb-8">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+              <div className="flex gap-4 mb-8 flex-wrap">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                   <Input 
                     placeholder="Search resources..."
                     value={searchTerm}
@@ -206,10 +207,10 @@ const Resources = () => {
                         <Badge variant="outline">{resource.type}</Badge>
                       </div>
                       <CardTitle className="text-lg">{resource.title}</CardTitle>
-                      <p className="text-gray-600 text-sm">{resource.description}</p>
+                      <p className="text-muted-foreground text-sm">{resource.description}</p>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-2 mb-4 text-sm text-gray-500">
+                      <div className="space-y-2 mb-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
                           <User className="w-4 h-4" />
                           <span>{resource.author}</span>
@@ -245,22 +246,22 @@ const Resources = () => {
             <div>
               <div className="text-center mb-12">
                 <h2 className="text-3xl font-bold mb-4">Webinars & Training Sessions</h2>
-                <p className="text-gray-600">Learn from industry experts and stay updated with latest trends</p>
+                <p className="text-muted-foreground">Learn from industry experts and stay updated with latest trends</p>
               </div>
               
               <div className="space-y-6">
                 {webinars.map((webinar) => (
                   <Card key={webinar.id} className="hover:shadow-lg transition-shadow">
                     <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between flex-wrap gap-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-4 mb-2">
+                          <div className="flex items-center gap-4 mb-2 flex-wrap">
                             <h3 className="text-xl font-bold">{webinar.title}</h3>
                             <Badge variant={webinar.status === 'upcoming' ? 'default' : 'secondary'}>
                               {webinar.status === 'upcoming' ? 'Upcoming' : 'Completed'}
                             </Badge>
                           </div>
-                          <div className="flex items-center gap-6 text-gray-600">
+                          <div className="flex items-center gap-6 text-muted-foreground flex-wrap">
                             <div className="flex items-center gap-2">
                               <Calendar className="w-4 h-4" />
                               <span>{new Date(webinar.date).toLocaleDateString()} at {webinar.time}</span>
@@ -290,9 +291,9 @@ const Resources = () => {
               <h2 className="text-3xl font-bold mb-8">Business Tools & Calculators</h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <Card className="p-8 hover:shadow-lg transition-shadow">
-                  <FileText className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+                  <FileText className="w-12 h-12 text-primary mx-auto mb-4" />
                   <h3 className="text-xl font-bold mb-4">Compliance Calendar</h3>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-muted-foreground mb-6">
                     Track all your regulatory filing deadlines and requirements
                   </p>
                   <Button>Access Tool</Button>
@@ -301,7 +302,7 @@ const Resources = () => {
                 <Card className="p-8 hover:shadow-lg transition-shadow">
                   <div className="text-4xl mb-4">📊</div>
                   <h3 className="text-xl font-bold mb-4">Financial Calculator</h3>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-muted-foreground mb-6">
                     Calculate loan payments, ROI, and other financial metrics
                   </p>
                   <Button>Use Calculator</Button>
@@ -310,7 +311,7 @@ const Resources = () => {
                 <Card className="p-8 hover:shadow-lg transition-shadow">
                   <div className="text-4xl mb-4">⚖️</div>
                   <h3 className="text-xl font-bold mb-4">Risk Assessment Tool</h3>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-muted-foreground mb-6">
                     Evaluate and score business risks with our interactive tool
                   </p>
                   <Button>Start Assessment</Button>

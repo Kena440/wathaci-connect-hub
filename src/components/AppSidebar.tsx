@@ -16,7 +16,11 @@ import {
   Menu,
   X,
   Globe,
-  Heart
+  Heart,
+  TrendingUp,
+  Info,
+  Shield,
+  FileText
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -29,13 +33,20 @@ import { NotificationCenter } from './NotificationCenter';
 import wathciLogo from '@/assets/wathaci-logo.png';
 import { cn } from '@/lib/utils';
 
-const navItems = [
+const mainNavItems = [
   { name: 'Home', href: '/', icon: Home },
   { name: 'Marketplace', href: '/marketplace', icon: Store },
   { name: 'Freelancer Hub', href: '/freelancer-hub', icon: Users },
-  { name: 'Resources', href: '/resources', icon: BookOpen },
+  { name: 'Funding Hub', href: '/funding-hub', icon: TrendingUp },
   { name: 'Partnership Hub', href: '/partnership-hub', icon: Handshake },
+  { name: 'Resources', href: '/resources', icon: BookOpen },
   { name: 'Wallet', href: '/wallet', icon: CreditCard },
+];
+
+const infoNavItems = [
+  { name: 'About Us', href: '/about-us', icon: Info },
+  { name: 'Privacy Policy', href: '/privacy-policy', icon: Shield },
+  { name: 'Terms of Service', href: '/terms-of-service', icon: FileText },
 ];
 
 export const AppSidebar = () => {
@@ -52,6 +63,31 @@ export const AppSidebar = () => {
   const showGetStarted = !user || !user.profile_completed;
 
   const isActive = (path: string) => location.pathname === path;
+
+  const NavLink = ({ item }: { item: typeof mainNavItems[0] }) => {
+    const Icon = item.icon;
+    const active = isActive(item.href);
+    return (
+      <Link
+        to={item.href}
+        onClick={() => setIsMobileOpen(false)}
+        className={cn(
+          "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+          active 
+            ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-glow" 
+            : "text-sidebar-foreground/80 hover:bg-sidebar-accent/20 hover:text-sidebar-foreground"
+        )}
+      >
+        <Icon className={cn(
+          "w-5 h-5 transition-transform group-hover:scale-110",
+          active && "text-sidebar-accent-foreground"
+        )} />
+        {!isCollapsed && (
+          <span className="font-medium">{item.name}</span>
+        )}
+      </Link>
+    );
+  };
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -71,32 +107,19 @@ export const AppSidebar = () => {
 
       {/* Navigation */}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.name}
-              to={item.href}
-              onClick={() => setIsMobileOpen(false)}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
-                active 
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-glow" 
-                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent/20 hover:text-sidebar-foreground"
-              )}
-            >
-              <Icon className={cn(
-                "w-5 h-5 transition-transform group-hover:scale-110",
-                active && "text-sidebar-accent-foreground"
-              )} />
-              {!isCollapsed && (
-                <span className="font-medium">{item.name}</span>
-              )}
-            </Link>
-          );
-        })}
+        {/* Main Navigation */}
+        <div className="space-y-1">
+          {!isCollapsed && (
+            <p className="px-3 py-2 text-xs font-semibold text-sidebar-foreground/50 uppercase tracking-wider">
+              Main
+            </p>
+          )}
+          {mainNavItems.map((item) => (
+            <NavLink key={item.name} item={item} />
+          ))}
+        </div>
 
+        {/* Messages (for logged in users) */}
         {user && (
           <Link
             to="/messages"
@@ -112,11 +135,23 @@ export const AppSidebar = () => {
             {!isCollapsed && <span className="font-medium">Messages</span>}
           </Link>
         )}
+
+        {/* Info Section */}
+        <div className="space-y-1 pt-4">
+          {!isCollapsed && (
+            <p className="px-3 py-2 text-xs font-semibold text-sidebar-foreground/50 uppercase tracking-wider">
+              Info
+            </p>
+          )}
+          {infoNavItems.map((item) => (
+            <NavLink key={item.name} item={item} />
+          ))}
+        </div>
       </nav>
 
       {/* Bottom Section */}
       <div className="p-3 border-t border-sidebar-border space-y-2">
-        {/* Donate */}
+        {/* Support Us */}
         <Link
           to="/get-started"
           onClick={() => setIsMobileOpen(false)}
