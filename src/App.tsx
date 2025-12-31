@@ -18,8 +18,10 @@ import { PartnershipHub } from "./pages/PartnershipHub";
 import { ProfileSetup } from "./pages/ProfileSetup";
 import { ProfileReview } from "./components/ProfileReview";
 import FreelancerHub from "./pages/FreelancerHub";
+import FundingHub from "./pages/FundingHub";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import AboutUs from "./pages/AboutUs";
 import Messages from "./pages/Messages";
 import Wallet from "./pages/Wallet";
 
@@ -31,6 +33,7 @@ export const AppRoutes = () => (
     <Route path="/auth" element={<Auth />} />
     <Route path="/marketplace" element={<Marketplace />} />
     <Route path="/freelancer-hub" element={<FreelancerHub />} />
+    <Route path="/funding-hub" element={<FundingHub />} />
     <Route path="/resources" element={<Resources />} />
     <Route path="/get-started" element={<GetStarted />} />
     <Route path="/profile-setup" element={
@@ -47,6 +50,7 @@ export const AppRoutes = () => (
     <Route path="/partnership-hub" element={<PartnershipHub />} />
     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
     <Route path="/terms-of-service" element={<TermsOfService />} />
+    <Route path="/about-us" element={<AboutUs />} />
     <Route path="/messages" element={
       <ProtectedRoute>
         <Messages />
