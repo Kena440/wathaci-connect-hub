@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Building2, Users, Briefcase, TrendingUp, Heart, DollarSign, Target, Award, Globe } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Building2, Users, TrendingUp, Heart, DollarSign, Target, Award, Globe } from 'lucide-react';
 
 interface Stats {
   smes: number;
   professionals: number;
-  freelancers: number;
   investors: number;
   donors: number;
   totalFunding: number;
-  projectsCompleted: number;
-  jobsCreated: number;
+  ordersCompleted: number;
+  servicesListed: number;
   countriesServed: number;
 }
 
@@ -18,12 +17,11 @@ const StatsSection = () => {
   const [stats, setStats] = useState<Stats>({
     smes: 0,
     professionals: 0,
-    freelancers: 0,
     investors: 0,
     donors: 0,
     totalFunding: 0,
-    projectsCompleted: 0,
-    jobsCreated: 0,
+    ordersCompleted: 0,
+    servicesListed: 0,
     countriesServed: 0
   });
   const [loading, setLoading] = useState(true);
@@ -34,69 +32,74 @@ const StatsSection = () => {
 
   const fetchImpactStats = async () => {
     try {
-      // Fetch business stats from database
-      const { data: businessStats, error } = await supabase
-        .from('business_stats')
-        .select('*')
-        .eq('is_active', true)
-        .order('order_index');
+      // Fetch profile counts by account type
+      const [smesResult, professionalsResult, investorsResult, donorsResult] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('account_type', 'sole_proprietor'),
+        supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('account_type', 'professional'),
+        supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('account_type', 'investor'),
+        supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('account_type', 'donor')
+      ]);
 
-      if (error) throw error;
-
-      // Convert business stats to our format
-      const statsMap = businessStats?.reduce((acc, stat) => {
-        acc[stat.stat_type] = stat.stat_value;
-        return acc;
-      }, {} as Record<string, number>) || {};
-
-      // Fetch user type counts as fallback
-      const { count: smesCount } = await supabase
-        .from('profiles')
+      // Fetch orders completed
+      const { count: ordersCount } = await supabase
+        .from('orders')
         .select('*', { count: 'exact', head: true })
-        .eq('account_type', 'sole_proprietor');
+        .eq('status', 'completed');
 
-      const { count: professionalsCount } = await supabase
-        .from('profiles')
+      // Fetch active services count
+      const { count: servicesCount } = await supabase
+        .from('services')
         .select('*', { count: 'exact', head: true })
-        .eq('account_type', 'professional');
+        .eq('is_active', true);
 
-      const { count: freelancersCount } = await supabase
-        .from('freelancers')
-        .select('*', { count: 'exact', head: true });
+      // Fetch total donations (successful)
+      const { data: donationsData } = await supabase
+        .from('donations')
+        .select('amount')
+        .eq('status', 'successful');
+      
+      const totalDonations = donationsData?.reduce((sum, d) => sum + (d.amount || 0), 0) || 0;
 
-      const { count: investorsCount } = await supabase
+      // Fetch distinct countries from profiles
+      const { data: countriesData } = await supabase
         .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('account_type', 'investor');
-
-      const { count: donorsCount } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('account_type', 'donor');
+        .select('country')
+        .not('country', 'is', null);
+      
+      const uniqueCountries = new Set(countriesData?.map(p => p.country).filter(Boolean));
 
       setStats({
-        smes: statsMap.businesses || smesCount || 0,
-        professionals: professionalsCount || 0,
-        freelancers: freelancersCount || 0,
-        investors: investorsCount || 0,
-        donors: donorsCount || 0,
-        totalFunding: statsMap.funding || 0,
-        projectsCompleted: statsMap.transactions || 0,
-        jobsCreated: Math.floor((statsMap.users || 0) * 2.5),
-        countriesServed: 3
+        smes: smesResult.count || 0,
+        professionals: professionalsResult.count || 0,
+        investors: investorsResult.count || 0,
+        donors: donorsResult.count || 0,
+        totalFunding: totalDonations,
+        ordersCompleted: ordersCount || 0,
+        servicesListed: servicesCount || 0,
+        countriesServed: uniqueCountries.size || 1
       });
     } catch (error) {
       console.error('Error fetching impact stats:', error);
-      // Set to zero for launch - real data will populate as users join
       setStats({
         smes: 0,
         professionals: 0,
-        freelancers: 0,
         investors: 0,
         donors: 0,
         totalFunding: 0,
-        projectsCompleted: 0,
-        jobsCreated: 0,
+        ordersCompleted: 0,
+        servicesListed: 0,
         countriesServed: 1
       });
     } finally {
@@ -124,45 +127,45 @@ const StatsSection = () => {
     },
     {
       icon: Target,
-      value: loading ? '...' : stats.projectsCompleted.toLocaleString(),
-      label: 'Projects Completed',
+      value: loading ? '...' : stats.ordersCompleted.toLocaleString(),
+      label: 'Orders Completed',
       color: 'text-blue-600',
-      description: 'Successful business initiatives'
+      description: 'Successful transactions'
     },
     {
-      icon: Users,
-      value: loading ? '...' : stats.jobsCreated.toLocaleString(),
-      label: 'Jobs Created',
+      icon: Award,
+      value: loading ? '...' : stats.servicesListed.toLocaleString(),
+      label: 'Services Listed',
       color: 'text-purple-600',
-      description: 'Employment opportunities generated'
+      description: 'Active marketplace offerings'
     },
     {
       icon: Building2,
       value: loading ? '...' : stats.smes.toLocaleString(),
-      label: 'SMEs Supported',
+      label: 'SMEs Registered',
       color: 'text-orange-600',
-      description: 'Small businesses empowered'
+      description: 'Small businesses on platform'
+    },
+    {
+      icon: Users,
+      value: loading ? '...' : stats.professionals.toLocaleString(),
+      label: 'Professionals',
+      color: 'text-indigo-600',
+      description: 'Skilled service providers'
     },
     {
       icon: TrendingUp,
       value: loading ? '...' : stats.investors.toLocaleString(),
       label: 'Active Investors',
-      color: 'text-indigo-600',
+      color: 'text-cyan-600',
       description: 'Funding partners engaged'
     },
     {
       icon: Heart,
       value: loading ? '...' : stats.donors.toLocaleString(),
-      label: 'Donors & Supporters',
+      label: 'Donors',
       color: 'text-red-600',
-      description: 'Community champions'
-    },
-    {
-      icon: Award,
-      value: loading ? '...' : `${Math.floor((stats.smes + stats.professionals + stats.freelancers) * 0.85)}`,
-      label: 'Success Stories',
-      color: 'text-yellow-600',
-      description: 'Businesses thriving'
+      description: 'Community supporters'
     },
     {
       icon: Globe,
