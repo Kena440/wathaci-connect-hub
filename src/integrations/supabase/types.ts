@@ -16,25 +16,106 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
+          account_type: string | null
+          address: string | null
+          annual_revenue: number | null
           avatar_url: string | null
+          business_name: string | null
+          card_details: Json | null
+          coordinates: Json | null
+          country: string | null
           created_at: string
+          description: string | null
+          email: string | null
+          employee_count: number | null
+          experience_years: number | null
+          first_name: string | null
           full_name: string | null
+          funding_stage: string | null
+          gaps_identified: string[] | null
           id: string
+          industry_sector: string | null
+          last_name: string | null
+          linkedin_url: string | null
+          payment_method: string | null
+          payment_phone: string | null
+          phone: string | null
+          profile_completed: boolean | null
+          profile_image_url: string | null
+          qualifications: Json | null
+          registration_number: string | null
+          specialization: string | null
           updated_at: string
+          use_same_phone: boolean | null
+          website_url: string | null
         }
         Insert: {
+          account_type?: string | null
+          address?: string | null
+          annual_revenue?: number | null
           avatar_url?: string | null
+          business_name?: string | null
+          card_details?: Json | null
+          coordinates?: Json | null
+          country?: string | null
           created_at?: string
+          description?: string | null
+          email?: string | null
+          employee_count?: number | null
+          experience_years?: number | null
+          first_name?: string | null
           full_name?: string | null
+          funding_stage?: string | null
+          gaps_identified?: string[] | null
           id: string
+          industry_sector?: string | null
+          last_name?: string | null
+          linkedin_url?: string | null
+          payment_method?: string | null
+          payment_phone?: string | null
+          phone?: string | null
+          profile_completed?: boolean | null
+          profile_image_url?: string | null
+          qualifications?: Json | null
+          registration_number?: string | null
+          specialization?: string | null
           updated_at?: string
+          use_same_phone?: boolean | null
+          website_url?: string | null
         }
         Update: {
+          account_type?: string | null
+          address?: string | null
+          annual_revenue?: number | null
           avatar_url?: string | null
+          business_name?: string | null
+          card_details?: Json | null
+          coordinates?: Json | null
+          country?: string | null
           created_at?: string
+          description?: string | null
+          email?: string | null
+          employee_count?: number | null
+          experience_years?: number | null
+          first_name?: string | null
           full_name?: string | null
+          funding_stage?: string | null
+          gaps_identified?: string[] | null
           id?: string
+          industry_sector?: string | null
+          last_name?: string | null
+          linkedin_url?: string | null
+          payment_method?: string | null
+          payment_phone?: string | null
+          phone?: string | null
+          profile_completed?: boolean | null
+          profile_image_url?: string | null
+          qualifications?: Json | null
+          registration_number?: string | null
+          specialization?: string | null
           updated_at?: string
+          use_same_phone?: boolean | null
+          website_url?: string | null
         }
         Relationships: []
       }

@@ -7,21 +7,26 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 // Environment validation
 const validateEnvironment = (): { url: string; key: string } => {
   const url = (import.meta as any).env?.VITE_SUPABASE_URL;
-  const key = (import.meta as any).env?.VITE_SUPABASE_KEY;
+  // Support both key names for backwards compatibility
+  const key = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY || 
+              (import.meta as any).env?.VITE_SUPABASE_KEY;
 
   if (!url) {
-    throw new Error('Missing VITE_SUPABASE_URL environment variable');
+    console.warn('Missing VITE_SUPABASE_URL environment variable');
+    return { url: '', key: '' };
   }
 
   if (!key) {
-    throw new Error('Missing VITE_SUPABASE_KEY environment variable');
+    console.warn('Missing VITE_SUPABASE_PUBLISHABLE_KEY environment variable');
+    return { url: '', key: '' };
   }
 
   // Basic URL validation
   try {
     new URL(url);
   } catch {
-    throw new Error('Invalid VITE_SUPABASE_URL format');
+    console.warn('Invalid VITE_SUPABASE_URL format');
+    return { url: '', key: '' };
   }
 
   return { url, key };
@@ -31,20 +36,23 @@ const validateEnvironment = (): { url: string; key: string } => {
 const createSupabaseClient = (): SupabaseClient => {
   const { url, key } = validateEnvironment();
 
+  if (!url || !key) {
+    // Return a mock client that won't work but won't crash
+    console.error('Supabase client not properly configured');
+  }
+
   const client = createClient(url, key, {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
-      // Storage for auth tokens
-      storage: window.localStorage,
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     },
     global: {
       headers: {
         'X-Client-Info': 'wathaci-connect-v1',
       },
     },
-    // Enhanced error handling
     db: {
       schema: 'public',
     },
