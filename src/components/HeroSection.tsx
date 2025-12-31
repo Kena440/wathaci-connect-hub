@@ -2,16 +2,21 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Users, TrendingUp, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import wathciLogo from '@/assets/wathaci-logo.png';
+import heroBackground from '@/assets/hero-home.jpg';
 
 const HeroSection = () => {
   return (
-    <section className="relative bg-background py-20 overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 pattern-dots opacity-30" />
+    <section className="relative py-20 overflow-hidden">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${heroBackground})` }}
+      />
+      <div className="absolute inset-0 bg-background/85" />
       
       {/* Gradient Accent */}
-      <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-accent/5 to-transparent" />
-      <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-gradient-to-tr from-primary/5 to-transparent" />
+      <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-accent/10 to-transparent" />
+      <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-gradient-to-tr from-primary/10 to-transparent" />
 
       <div className="relative max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">

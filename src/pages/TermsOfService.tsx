@@ -1,14 +1,20 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import AppLayout from "@/components/AppLayout";
+import PageHero from "@/components/PageHero";
+import heroImage from "@/assets/hero-getstarted.jpg";
 
 export default function TermsOfService() {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-3xl font-bold text-center">Terms of Service</CardTitle>
-          <p className="text-center text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
-        </CardHeader>
-        <CardContent className="space-y-6">
+    <AppLayout>
+      <PageHero
+        title="Terms of Service"
+        description="Please read these terms carefully before using our platform"
+        backgroundImage={heroImage}
+      />
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <Card>
+          <CardContent className="pt-6 space-y-6">
+            <p className="text-center text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
           <section>
             <h2 className="text-xl font-semibold mb-3">1. Acceptance of Terms</h2>
             <p className="text-sm leading-relaxed">
@@ -95,5 +101,6 @@ export default function TermsOfService() {
         </CardContent>
       </Card>
     </div>
+    </AppLayout>
   );
 }
