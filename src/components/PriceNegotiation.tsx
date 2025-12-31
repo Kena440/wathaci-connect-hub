@@ -6,12 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { LencoPayment } from './LencoPayment';
-import { NegotiationHistory } from './NegotiationHistory';
 import ZRATaxCalculator from './ZRATaxCalculator';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { MessageCircle, DollarSign, CheckCircle, History } from 'lucide-react';
+import { MessageCircle, DollarSign, CheckCircle, History, Send, Loader2 } from 'lucide-react';
 
 interface PriceNegotiationProps {
   initialPrice: number;
@@ -19,6 +19,15 @@ interface PriceNegotiationProps {
   providerId: string;
   serviceId?: string;
   onNegotiationComplete?: (finalPrice: number) => void;
+}
+
+interface NegotiationMessage {
+  id: string;
+  sender_id: string;
+  message: string;
+  proposed_price: number | null;
+  message_type: string | null;
+  created_at: string;
 }
 
 const PriceNegotiation = ({ 
@@ -33,9 +42,11 @@ const PriceNegotiation = ({
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState<'negotiating' | 'agreed' | 'payment'>('negotiating');
   const [showPayment, setShowPayment] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [taxCalculation, setTaxCalculation] = useState<any>(null);
+  const [negotiationId, setNegotiationId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<NegotiationMessage[]>([]);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const managementFee = currentPrice * 0.03;
@@ -45,53 +56,202 @@ const PriceNegotiation = ({
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
+      if (user) {
+        checkExistingNegotiation(user.id);
+      }
     };
     getUser();
   }, []);
 
-  const saveNegotiation = async (proposedPrice: number, message: string, status: string) => {
-    if (!user) return;
+  // Real-time subscription for negotiation messages
+  useEffect(() => {
+    if (!negotiationId) return;
 
+    const channel = supabase
+      .channel(`negotiation-${negotiationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'negotiation_messages',
+          filter: `negotiation_id=eq.${negotiationId}`
+        },
+        (payload) => {
+          const newMessage = payload.new as NegotiationMessage;
+          setMessages(prev => [...prev, newMessage]);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'negotiations',
+          filter: `id=eq.${negotiationId}`
+        },
+        (payload) => {
+          const updated = payload.new as any;
+          setCurrentPrice(updated.current_price);
+          if (updated.status === 'accepted') {
+            setStatus('agreed');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [negotiationId]);
+
+  const checkExistingNegotiation = async (userId: string) => {
     try {
-      const { error } = await supabase
-        .from('negotiation_history')
-        .insert({
-          service_id: serviceId,
-          provider_id: providerId,
-          client_id: user.id,
-          service_title: serviceTitle,
-          initial_price: initialPrice,
-          proposed_price: proposedPrice,
-          message,
-          status
-        });
+      const { data, error } = await supabase
+        .from('negotiations')
+        .select('*')
+        .eq('service_id', serviceId)
+        .eq('client_id', userId)
+        .in('status', ['pending', 'countered'])
+        .single();
+
+      if (data && !error) {
+        setNegotiationId(data.id);
+        setCurrentPrice(data.current_price);
+        fetchMessages(data.id);
+      }
+    } catch (error) {
+      // No existing negotiation, which is fine
+    }
+  };
+
+  const fetchMessages = async (negId: string) => {
+    const { data, error } = await supabase
+      .from('negotiation_messages')
+      .select('*')
+      .eq('negotiation_id', negId)
+      .order('created_at', { ascending: true });
+
+    if (data && !error) {
+      setMessages(data);
+    }
+  };
+
+  const createNegotiation = async () => {
+    if (!user) return null;
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('negotiation-manager', {
+        body: {
+          action: 'create',
+          serviceId,
+          providerId,
+          serviceTitle,
+          initialPrice,
+          clientId: user.id
+        }
+      });
 
       if (error) throw error;
+      setNegotiationId(data.negotiation.id);
+      return data.negotiation.id;
     } catch (error) {
-      console.error('Error saving negotiation:', error);
+      console.error('Error creating negotiation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start negotiation. Please try again.",
+        variant: "destructive"
+      });
+      return null;
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleCounterOffer = async () => {
-    if (!proposedPrice || !message) return;
+    if (!proposedPrice || !message || !user) return;
     
-    const price = parseFloat(proposedPrice);
-    await saveNegotiation(price, message, 'pending');
-    
-    setCurrentPrice(price);
-    setProposedPrice('');
-    setMessage('');
-    
-    toast({
-      title: "Counter Offer Sent",
-      description: "Your price proposal has been sent to the service provider.",
-    });
+    setLoading(true);
+    try {
+      let negId = negotiationId;
+      if (!negId) {
+        negId = await createNegotiation();
+        if (!negId) return;
+      }
+
+      const price = parseFloat(proposedPrice);
+      
+      const { data, error } = await supabase.functions.invoke('negotiation-manager', {
+        body: {
+          action: 'counter',
+          negotiationId: negId,
+          proposedPrice: price,
+          message,
+          senderId: user.id
+        }
+      });
+
+      if (error) throw error;
+      
+      setCurrentPrice(price);
+      setProposedPrice('');
+      setMessage('');
+      
+      toast({
+        title: "Counter Offer Sent",
+        description: "Your price proposal has been sent to the service provider.",
+      });
+    } catch (error) {
+      console.error('Error sending counter offer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send counter offer. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAcceptPrice = async () => {
-    await saveNegotiation(currentPrice, 'Price accepted', 'accepted');
-    setStatus('agreed');
-    onNegotiationComplete?.(currentPrice);
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      let negId = negotiationId;
+      if (!negId) {
+        negId = await createNegotiation();
+        if (!negId) return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('negotiation-manager', {
+        body: {
+          action: 'accept',
+          negotiationId: negId,
+          accepterId: user.id
+        }
+      });
+
+      if (error) throw error;
+      
+      setStatus('agreed');
+      onNegotiationComplete?.(currentPrice);
+      
+      toast({
+        title: "Price Accepted",
+        description: "The negotiation has been completed successfully!",
+      });
+    } catch (error) {
+      console.error('Error accepting price:', error);
+      toast({
+        title: "Error",
+        description: "Failed to accept price. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleProceedToPayment = () => {
@@ -134,7 +294,7 @@ const PriceNegotiation = ({
                 <span>Service Price:</span>
                 <span>K{currentPrice.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Management Fee (3%):</span>
                 <span>K{managementFee.toFixed(2)}</span>
               </div>
@@ -151,30 +311,17 @@ const PriceNegotiation = ({
             />
           </CardContent>
         </Card>
-      ) : showHistory ? (
-        <div className="w-full max-w-2xl mx-auto">
-          <div className="mb-4">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowHistory(false)}
-              className="mb-4"
-            >
-              ← Back to Negotiation
-            </Button>
-          </div>
-          <NegotiationHistory serviceId={serviceId} userId={user?.id} />
-        </div>
       ) : (
         <Card className="w-full max-w-2xl mx-auto border-0 shadow-none">
           <CardContent className="space-y-6 pt-6">
-            <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="bg-muted p-4 rounded-lg">
               <div className="flex justify-between items-center mb-2">
                 <span className="font-medium">Current Price:</span>
                 <Badge variant="outline" className="text-lg px-3 py-1">
                   K{currentPrice.toFixed(2)}
                 </Badge>
               </div>
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 Management Fee (3%): K{managementFee.toFixed(2)} | Total: K{totalAmount.toFixed(2)}
               </div>
             </div>
@@ -185,17 +332,41 @@ const PriceNegotiation = ({
               onTaxCalculated={setTaxCalculation}
             />
 
-            <div className="flex justify-end">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowHistory(true)}
-                className="flex items-center gap-2"
-              >
-                <History className="w-4 h-4" />
-                View History
-              </Button>
-            </div>
+            {/* Messages Thread */}
+            {messages.length > 0 && (
+              <div className="border rounded-lg">
+                <div className="p-3 border-b bg-muted/50">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4" />
+                    Negotiation Messages
+                  </h4>
+                </div>
+                <ScrollArea className="h-48 p-3">
+                  <div className="space-y-3">
+                    {messages.map((msg) => (
+                      <div 
+                        key={msg.id} 
+                        className={`p-3 rounded-lg ${
+                          msg.sender_id === user?.id 
+                            ? 'bg-primary/10 ml-8' 
+                            : 'bg-muted mr-8'
+                        }`}
+                      >
+                        <p className="text-sm">{msg.message}</p>
+                        {msg.proposed_price && (
+                          <Badge variant="secondary" className="mt-2">
+                            Proposed: K{msg.proposed_price.toFixed(2)}
+                          </Badge>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(msg.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
 
             {status === 'negotiating' && (
               <div className="space-y-4">
@@ -220,10 +391,22 @@ const PriceNegotiation = ({
                   />
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={handleCounterOffer} disabled={!proposedPrice || !message}>
+                  <Button 
+                    onClick={handleCounterOffer} 
+                    disabled={!proposedPrice || !message || loading}
+                  >
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4 mr-2" />
+                    )}
                     Send Counter Offer
                   </Button>
-                  <Button variant="outline" onClick={handleAcceptPrice}>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleAcceptPrice}
+                    disabled={loading}
+                  >
                     Accept Current Price
                   </Button>
                 </div>
@@ -234,8 +417,8 @@ const PriceNegotiation = ({
               <div className="text-center space-y-4">
                 <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
                 <h3 className="text-xl font-bold">Price Agreed!</h3>
-                <p className="text-gray-600">Final amount: K{taxCalculation?.netAmount?.toFixed(2) || totalAmount.toFixed(2)}</p>
-                <Button onClick={handleProceedToPayment} className="bg-orange-600 hover:bg-orange-700">
+                <p className="text-muted-foreground">Final amount: K{taxCalculation?.netAmount?.toFixed(2) || totalAmount.toFixed(2)}</p>
+                <Button onClick={handleProceedToPayment} className="bg-primary hover:bg-primary/90">
                   Proceed to Payment
                 </Button>
               </div>
