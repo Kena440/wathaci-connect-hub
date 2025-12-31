@@ -2,31 +2,15 @@ import { render } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import StatsSection from '../StatsSection';
 
-vi.mock('@/lib/supabase', () => {
-  const from = (table: string) => {
-    if (table === 'business_stats') {
-      return {
-        select: () => ({
-          eq: () => ({
-            order: async () => ({ data: [], error: null }),
-          }),
-        }),
-      };
-    }
-    if (table === 'freelancers') {
-      return {
-        select: () => Promise.resolve({ count: 0 }),
-      };
-    }
-    if (table === 'profiles') {
-      return {
-        select: () => ({
-          eq: () => Promise.resolve({ count: 0 }),
-        }),
-      };
-    }
+vi.mock('@/integrations/supabase/client', () => {
+  const from = () => {
     return {
-      select: () => Promise.resolve({ data: [], error: null }),
+      select: () => ({
+        eq: () => ({
+          not: () => Promise.resolve({ data: [], count: 0 }),
+        }),
+        not: () => Promise.resolve({ data: [] }),
+      }),
     };
   };
   return { supabase: { from } };
