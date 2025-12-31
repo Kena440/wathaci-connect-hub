@@ -21,6 +21,7 @@ import FreelancerHub from "./pages/FreelancerHub";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Messages from "./pages/Messages";
+import Wallet from "./pages/Wallet";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,11 @@ export const AppRoutes = () => (
     <Route path="/messages" element={
       <ProtectedRoute>
         <Messages />
+      </ProtectedRoute>
+    } />
+    <Route path="/wallet" element={
+      <ProtectedRoute>
+        <Wallet />
       </ProtectedRoute>
     } />
     <Route path="*" element={<NotFound />} />
