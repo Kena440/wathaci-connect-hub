@@ -149,12 +149,40 @@ export const ProfileSetup = () => {
       const cleanedData: Record<string, any> = {};
       
       const allowedFields = [
-        'first_name', 'last_name', 'full_name', 'phone', 'country', 'address',
-        'description', 'industry_sector', 'linkedin_url', 'website_url',
-        'profile_image_url', 'business_name', 'registration_number',
-        'specialization', 'experience_years', 'employee_count', 'annual_revenue',
-        'funding_stage', 'qualifications', 'payment_method', 'payment_phone',
-        'use_same_phone', 'coordinates', 'account_type'
+        // Personal/Contact fields
+        'first_name', 'last_name', 'full_name', 'phone', 'country', 'province', 
+        'city', 'address', 'coordinates', 'profile_image_url', 'avatar_url',
+        
+        // Professional fields
+        'title', 'bio', 'description', 'specialization', 'experience_years',
+        'qualifications', 'certifications', 'license_number', 'skills',
+        'services_offered', 'hourly_rate', 'currency', 'availability_status',
+        
+        // Business fields
+        'business_name', 'registration_number', 'industry_sector', 'ownership_structure',
+        'employee_count', 'annual_revenue', 'funding_stage', 'funding_needed',
+        'years_in_business', 'business_model', 'sectors', 'target_market',
+        
+        // Social/Web links
+        'website_url', 'linkedin_url', 'twitter_url', 'facebook_url', 'portfolio_url',
+        
+        // Payment fields
+        'payment_method', 'payment_phone', 'use_same_phone',
+        
+        // Marketplace/Rating fields
+        'rating', 'reviews_count', 'total_jobs_completed',
+        
+        // Compliance fields
+        'compliance_verified', 'verification_date', 'documents_submitted',
+        
+        // Investor/Donor specific
+        'total_invested', 'total_donated', 'investment_portfolio', 'preferred_sectors',
+        
+        // Communication preferences
+        'preferred_contact_method', 'notification_preferences',
+        
+        // Other
+        'account_type', 'gaps_identified'
       ];
 
       for (const key of allowedFields) {

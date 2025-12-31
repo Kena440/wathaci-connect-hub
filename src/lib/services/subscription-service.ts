@@ -463,7 +463,7 @@ export class TransactionService extends BaseService<Transaction> {
    */
   async updateTransactionStatus(
     transactionId: string,
-    status: 'pending' | 'completed' | 'failed' | 'refunded'
+    status: 'pending' | 'processing' | 'successful' | 'failed' | 'refunded' | 'cancelled'
   ): Promise<DatabaseResponse<Transaction>> {
     return this.update(transactionId, {
       status,

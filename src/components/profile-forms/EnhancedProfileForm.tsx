@@ -90,27 +90,71 @@ export const EnhancedProfileForm = ({
   const form = useForm({
     resolver: config ? zodResolver(config.schema) : undefined,
     defaultValues: {
+      // Personal info
       first_name: '',
       last_name: '',
       phone: '',
       country: '',
+      province: '',
+      city: '',
       address: '',
+      
+      // Professional info
+      title: '',
+      bio: '',
       description: '',
       industry_sector: '',
-      linkedin_url: '',
-      website_url: '',
-      profile_image_url: '',
-      business_name: '',
-      registration_number: '',
       specialization: '',
       experience_years: undefined,
+      license_number: '',
+      skills: [],
+      services_offered: [],
+      hourly_rate: undefined,
+      currency: 'ZMW',
+      availability_status: 'available',
+      qualifications: [],
+      certifications: [],
+      
+      // Business info
+      business_name: '',
+      registration_number: '',
+      ownership_structure: '',
       employee_count: undefined,
       annual_revenue: undefined,
       funding_stage: '',
-      qualifications: [],
+      funding_needed: undefined,
+      years_in_business: undefined,
+      business_model: '',
+      sectors: [],
+      target_market: [],
+      
+      // Social links
+      linkedin_url: '',
+      website_url: '',
+      twitter_url: '',
+      facebook_url: '',
+      portfolio_url: '',
+      profile_image_url: '',
+      
+      // Investor/Donor
+      total_invested: 0,
+      total_donated: 0,
+      preferred_sectors: [],
+      investment_portfolio: [],
+      
+      // Payment
       use_same_phone: true,
       payment_method: 'phone',
       payment_phone: '',
+      
+      // Communication
+      preferred_contact_method: 'email',
+      notification_preferences: {
+        email: true,
+        sms: false,
+        push: true,
+      },
+      
       ...initialData,
     },
   });
