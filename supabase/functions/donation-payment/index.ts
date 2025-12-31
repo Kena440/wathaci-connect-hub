@@ -6,8 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const LENCO_API_URL = 'https://api.lenco.co/v2';
-
 interface DonationRequest {
   amount: number;
   currency?: string;
@@ -59,12 +57,24 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const lencoApiToken = Deno.env.get('LENCO_API_TOKEN');
+    const lencoBaseUrl = Deno.env.get('LENCO_BASE_URL') || 'https://api.lenco.co';
+    const lencoPublicKey = Deno.env.get('LENCO_PUBLIC_KEY');
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Build API URL - ensure it ends with /v2 for API calls
+    const LENCO_API_URL = lencoBaseUrl.endsWith('/v2') ? lencoBaseUrl : `${lencoBaseUrl}/v2`;
+
+    console.log('Lenco Configuration:', { 
+      baseUrl: lencoBaseUrl, 
+      apiUrl: LENCO_API_URL,
+      hasToken: !!lencoApiToken,
+      hasPublicKey: !!lencoPublicKey 
+    });
 
     if (!lencoApiToken) {
       console.error('LENCO_API_TOKEN not configured');
       return new Response(
-        JSON.stringify({ success: false, error: 'Payment gateway not configured' }),
+        JSON.stringify({ success: false, error: 'Payment gateway not configured - missing API token' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
