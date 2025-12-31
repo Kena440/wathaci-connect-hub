@@ -6,6 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const LENCO_API_URL = 'https://api.lenco.co/v2';
+
 interface DonationRequest {
   amount: number;
   currency?: string;
@@ -15,6 +17,36 @@ interface DonationRequest {
   payment_method: string;
   payment_provider?: string;
   phone_number?: string;
+  success_url?: string;
+  cancel_url?: string;
+}
+
+// Map provider names to Lenco operator codes
+function mapProviderToOperator(provider: string): string {
+  const providerMap: Record<string, string> = {
+    'mtn': 'MTN',
+    'airtel': 'AIRTEL',
+    'zamtel': 'ZAMTEL'
+  };
+  return providerMap[provider.toLowerCase()] || provider.toUpperCase();
+}
+
+// Format phone number to international format
+function formatPhoneNumber(phone: string): string {
+  // Remove all non-digit characters
+  let cleaned = phone.replace(/\D/g, '');
+  
+  // If starts with 0, replace with 260
+  if (cleaned.startsWith('0')) {
+    cleaned = '260' + cleaned.substring(1);
+  }
+  
+  // If doesn't start with 260, add it
+  if (!cleaned.startsWith('260')) {
+    cleaned = '260' + cleaned;
+  }
+  
+  return cleaned;
 }
 
 serve(async (req) => {
@@ -26,7 +58,16 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const lencoApiToken = Deno.env.get('LENCO_API_TOKEN');
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    if (!lencoApiToken) {
+      console.error('LENCO_API_TOKEN not configured');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Payment gateway not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Get user from auth header (optional for donations)
     let userId: string | null = null;
@@ -46,10 +87,12 @@ serve(async (req) => {
       message, 
       payment_method,
       payment_provider,
-      phone_number 
+      phone_number,
+      success_url,
+      cancel_url
     } = body;
 
-    console.log(`Processing donation: K${amount} via ${payment_method}`);
+    console.log(`Processing donation: ${currency} ${amount} via ${payment_method}`);
 
     if (!amount || amount <= 0) {
       return new Response(
@@ -88,78 +131,244 @@ serve(async (req) => {
       );
     }
 
-    // For mobile money payments, we simulate sending a payment request
-    // In production, this would integrate with MTN MoMo, Airtel Money, or Zamtel APIs
+    // Mobile Money Payment via Lenco
     if (payment_method === 'mobile_money' && phone_number && payment_provider) {
-      console.log(`Sending ${payment_provider} payment request to ${phone_number}`);
+      const formattedPhone = formatPhoneNumber(phone_number);
+      const operator = mapProviderToOperator(payment_provider);
       
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Update status to processing (in production, this would be 'pending' until webhook confirms)
-      await supabase
-        .from('donations')
-        .update({ status: 'processing' })
-        .eq('id', donation.id);
+      console.log(`Initiating Lenco mobile money payment: ${operator} - ${formattedPhone}`);
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          transaction_id: donation.id,
-          reference,
-          status: 'processing',
-          message: `Payment request sent to ${phone_number}. Please approve the payment on your phone.`,
-          payment_instructions: {
-            provider: payment_provider,
-            phone: phone_number,
-            amount: `K${amount}`,
-            reference
-          }
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      try {
+        const lencoResponse = await fetch(`${LENCO_API_URL}/collections/mobile-money`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${lencoApiToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            amount: amount.toFixed(2),
+            currency: currency,
+            reference: reference,
+            customer: {
+              name: donor_name || 'Anonymous Donor',
+              email: donor_email || 'donor@wathaci.com'
+            },
+            mobileMoney: {
+              phone: formattedPhone,
+              country: 'ZM',
+              operator: operator
+            }
+          })
+        });
+
+        const lencoData = await lencoResponse.json();
+        console.log('Lenco API response:', JSON.stringify(lencoData));
+
+        if (!lencoResponse.ok) {
+          console.error('Lenco API error:', lencoData);
+          
+          // Update donation status to failed
+          await supabase
+            .from('donations')
+            .update({ status: 'failed' })
+            .eq('id', donation.id);
+
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: lencoData.message || 'Payment initiation failed',
+              details: lencoData
+            }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const paymentData = lencoData.data;
+        const paymentStatus = paymentData?.status;
+
+        // Update donation with Lenco reference
+        await supabase
+          .from('donations')
+          .update({ 
+            status: paymentStatus === 'successful' ? 'successful' : 'processing',
+            payment_reference: paymentData?.lencoReference || reference
+          })
+          .eq('id', donation.id);
+
+        // Handle different Lenco statuses
+        if (paymentStatus === 'otp-required') {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              transaction_id: donation.id,
+              reference: paymentData?.lencoReference || reference,
+              status: 'otp-required',
+              lenco_id: paymentData?.id,
+              message: 'An OTP has been sent to your phone. Please enter it to complete the payment.',
+              requires_otp: true
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        if (paymentStatus === 'pay-offline') {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              transaction_id: donation.id,
+              reference: paymentData?.lencoReference || reference,
+              status: 'pending',
+              lenco_id: paymentData?.id,
+              message: `Please approve the payment of K${amount} on your ${operator} mobile money. Check your phone for the authorization prompt.`,
+              payment_instructions: {
+                provider: operator,
+                phone: formattedPhone,
+                amount: `K${amount}`,
+                action: 'Authorize the payment on your phone'
+              }
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        if (paymentStatus === 'successful') {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              transaction_id: donation.id,
+              reference: paymentData?.lencoReference || reference,
+              status: 'successful',
+              message: 'Payment completed successfully! Thank you for your donation.'
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Default response for other statuses
+        return new Response(
+          JSON.stringify({
+            success: true,
+            transaction_id: donation.id,
+            reference: paymentData?.lencoReference || reference,
+            status: paymentStatus || 'pending',
+            lenco_id: paymentData?.id,
+            message: 'Payment is being processed. Please check your phone for any authorization prompts.'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+
+      } catch (lencoError) {
+        console.error('Lenco API request failed:', lencoError);
+        
+        await supabase
+          .from('donations')
+          .update({ status: 'failed' })
+          .eq('id', donation.id);
+
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Failed to connect to payment gateway',
+            details: lencoError instanceof Error ? lencoError.message : 'Unknown error'
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
-    // For card payments, we would redirect to a payment gateway
+    // Card Payment via Lenco Checkout
     if (payment_method === 'card') {
-      // In production, integrate with a card payment provider like PayChangu, DPO, or Stripe
-      await supabase
-        .from('donations')
-        .update({ status: 'processing' })
-        .eq('id', donation.id);
+      console.log('Initiating Lenco card checkout session');
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          transaction_id: donation.id,
-          reference,
-          status: 'processing',
-          message: 'Card payment processing. You will receive a confirmation shortly.',
-          payment_instructions: {
-            method: 'card',
-            amount: `K${amount}`,
-            reference
-          }
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      try {
+        const baseUrl = req.headers.get('origin') || 'https://wathaci.com';
+        
+        const lencoResponse = await fetch(`${LENCO_API_URL}/checkout/sessions`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${lencoApiToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            amount: amount.toFixed(2),
+            currency: currency,
+            reference: reference,
+            customer: {
+              name: donor_name || 'Anonymous Donor',
+              email: donor_email || 'donor@wathaci.com'
+            },
+            successUrl: success_url || `${baseUrl}/donate?status=success&ref=${reference}`,
+            cancelUrl: cancel_url || `${baseUrl}/donate?status=cancelled&ref=${reference}`
+          })
+        });
+
+        const lencoData = await lencoResponse.json();
+        console.log('Lenco Checkout response:', JSON.stringify(lencoData));
+
+        if (!lencoResponse.ok) {
+          console.error('Lenco Checkout error:', lencoData);
+          
+          await supabase
+            .from('donations')
+            .update({ status: 'failed' })
+            .eq('id', donation.id);
+
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: lencoData.message || 'Failed to create checkout session',
+              details: lencoData
+            }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Update donation status
+        await supabase
+          .from('donations')
+          .update({ status: 'processing' })
+          .eq('id', donation.id);
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            transaction_id: donation.id,
+            reference: reference,
+            status: 'redirect',
+            checkout_url: lencoData.data?.checkoutUrl || lencoData.checkoutUrl,
+            message: 'Redirecting to secure payment page...'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+
+      } catch (checkoutError) {
+        console.error('Lenco Checkout request failed:', checkoutError);
+        
+        await supabase
+          .from('donations')
+          .update({ status: 'failed' })
+          .eq('id', donation.id);
+
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Failed to create checkout session',
+            details: checkoutError instanceof Error ? checkoutError.message : 'Unknown error'
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
-    // Mark as successful for demo purposes
-    await supabase
-      .from('donations')
-      .update({ status: 'successful' })
-      .eq('id', donation.id);
-
+    // Fallback for unknown payment methods
     return new Response(
-      JSON.stringify({
-        success: true,
+      JSON.stringify({ 
+        success: false, 
+        error: 'Unsupported payment method',
         transaction_id: donation.id,
-        reference,
-        status: 'successful',
-        message: 'Thank you for your donation! Your contribution will help Zambian SMEs grow.'
+        reference
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
