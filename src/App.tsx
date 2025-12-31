@@ -24,6 +24,7 @@ import TermsOfService from "./pages/TermsOfService";
 import AboutUs from "./pages/AboutUs";
 import Messages from "./pages/Messages";
 import Wallet from "./pages/Wallet";
+import Donate from "./pages/Donate";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,7 @@ export const AppRoutes = () => (
         <Wallet />
       </ProtectedRoute>
     } />
+    <Route path="/donate" element={<Donate />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

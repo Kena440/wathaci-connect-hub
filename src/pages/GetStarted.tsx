@@ -9,6 +9,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Building, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
+import wathciLogo from '@/assets/wathaci-logo.png';
+
 export const GetStarted = () => {
   const [formData, setFormData] = useState({
     firstName: '',
@@ -71,8 +73,8 @@ export const GetStarted = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-emerald-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center mb-4">
-            <span className="text-white font-bold text-xl">W</span>
+          <div className="mx-auto w-16 h-16 mb-4">
+            <img src={wathciLogo} alt="WATHACI" className="w-full h-full object-contain" />
           </div>
           <CardTitle className="text-2xl">Get Started</CardTitle>
           <CardDescription>Create your WATHACI account</CardDescription>

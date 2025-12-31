@@ -153,9 +153,9 @@ export const AppSidebar = () => {
       <div className="p-3 border-t border-sidebar-border space-y-2">
         {/* Support Us */}
         <Link
-          to="/get-started"
+          to="/donate"
           onClick={() => setIsMobileOpen(false)}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground/80 hover:bg-sidebar-accent/20 hover:text-sidebar-foreground transition-all"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 transition-all"
         >
           <Heart className="w-5 h-5" />
           {!isCollapsed && <span className="font-medium">Support Us</span>}
