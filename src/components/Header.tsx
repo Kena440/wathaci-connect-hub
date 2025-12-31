@@ -102,7 +102,7 @@ const Header = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link to="/signin">
+              <Link to="/auth">
                 <Button variant="outline" size="sm" className="border-orange-300 hover:bg-orange-50">
                   Sign In
                 </Button>
@@ -177,7 +177,7 @@ const Header = () => {
                     </Button>
                   </>
                 ) : (
-                  <Link to="/signin">
+                  <Link to="/auth">
                     <Button variant="outline" size="sm" className="w-full border-orange-300">
                       Sign In
                     </Button>
