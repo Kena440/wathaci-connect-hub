@@ -1,18 +1,19 @@
 import { UseFormReturn } from 'react-hook-form';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { FormSection } from './FormSection';
+import { PhoneInputWithVerification } from '@/components/PhoneInputWithVerification';
 
 interface PaymentFieldsProps {
   form: UseFormReturn<any>;
 }
 
 export const PaymentFields = ({ form }: PaymentFieldsProps) => {
-  const { register, setValue, watch } = form;
+  const { setValue, watch } = form;
   const useSamePhone = watch('use_same_phone');
   const paymentMethod = watch('payment_method');
+  const paymentPhone = watch('payment_phone') || '';
 
   return (
     <FormSection 
@@ -48,14 +49,13 @@ export const PaymentFields = ({ form }: PaymentFieldsProps) => {
           </RadioGroup>
 
           {paymentMethod === 'phone' && (
-            <div className="space-y-2">
-              <Label htmlFor="payment_phone_number">Payment Phone Number</Label>
-              <Input
-                id="payment_phone_number"
-                {...register('payment_phone')}
-                placeholder="+260 XXX XXX XXX"
-              />
-            </div>
+            <PhoneInputWithVerification
+              value={paymentPhone}
+              onChange={(value) => setValue('payment_phone', value)}
+              label="Payment Phone Number"
+              placeholder="097XXXXXXX"
+              showVerification={true}
+            />
           )}
 
           {paymentMethod === 'card' && (

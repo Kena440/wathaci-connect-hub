@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Smartphone, CreditCard, Banknote, Info, CheckCircle, Loader2, AlertCircle, Phone } from 'lucide-react';
+import { Smartphone, CreditCard, Banknote, Info, CheckCircle, Loader2, AlertCircle, Phone, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { detectProvider, isValidZambianPhone, formatPhoneForDisplay } from '@/lib/phone-utils';
 
 interface LencoPaymentProps {
   amount: string | number;
@@ -20,6 +21,14 @@ interface LencoPaymentProps {
 }
 
 type PaymentStatus = 'idle' | 'processing' | 'pending' | 'otp-required' | 'success' | 'error';
+
+interface PhoneVerification {
+  isVerifying: boolean;
+  isVerified: boolean;
+  accountName: string | null;
+  providerName: string | null;
+  error: string | null;
+}
 
 export const LencoPayment = ({ 
   amount, 
@@ -38,6 +47,13 @@ export const LencoPayment = ({
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('idle');
   const [paymentMessage, setPaymentMessage] = useState('');
   const [paymentReference, setPaymentReference] = useState('');
+  const [phoneVerification, setPhoneVerification] = useState<PhoneVerification>({
+    isVerifying: false,
+    isVerified: false,
+    accountName: null,
+    providerName: null,
+    error: null
+  });
   const { toast } = useToast();
 
   // Calculate fee breakdown
@@ -47,11 +63,97 @@ export const LencoPayment = ({
   const platformFee = totalAmount * 0.02;
   const netAmount = totalAmount - platformFee;
 
+  // Auto-detect provider when phone number changes
+  useEffect(() => {
+    if (phoneNumber.length >= 3) {
+      const detected = detectProvider(phoneNumber);
+      if (detected) {
+        setProvider(detected.provider);
+        setPhoneVerification(prev => ({
+          ...prev,
+          providerName: detected.providerName,
+          error: null
+        }));
+      }
+    }
+  }, [phoneNumber]);
+
+  // Verify phone and get account name
+  const verifyPhone = useCallback(async (phone: string) => {
+    if (!isValidZambianPhone(phone)) {
+      setPhoneVerification(prev => ({
+        ...prev,
+        isVerifying: false,
+        isVerified: false,
+        accountName: null,
+        error: null
+      }));
+      return;
+    }
+
+    setPhoneVerification(prev => ({
+      ...prev,
+      isVerifying: true,
+      error: null
+    }));
+
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-phone', {
+        body: { phone_number: phone }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data?.success) {
+        setPhoneVerification({
+          isVerifying: false,
+          isVerified: true,
+          accountName: data.account_name,
+          providerName: data.provider_name,
+          error: null
+        });
+        
+        // Auto-set provider from verification
+        if (data.provider) {
+          setProvider(data.provider);
+        }
+      } else {
+        setPhoneVerification(prev => ({
+          ...prev,
+          isVerifying: false,
+          isVerified: false,
+          error: data?.error || 'Verification failed'
+        }));
+      }
+    } catch (err) {
+      console.error('Phone verification error:', err);
+      setPhoneVerification(prev => ({
+        ...prev,
+        isVerifying: false,
+        isVerified: false,
+        error: null // Don't show error, just continue without verification
+      }));
+    }
+  }, []);
+
+  // Debounce phone verification
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (phoneNumber.length >= 10) {
+        verifyPhone(phoneNumber);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [phoneNumber, verifyPhone]);
+
   const handlePayment = async () => {
     if (paymentMethod === 'mobile_money' && (!phoneNumber || !provider)) {
       toast({
         title: "Missing Information",
-        description: "Please select a provider and enter your phone number",
+        description: "Please enter your phone number",
         variant: "destructive",
       });
       return;
@@ -193,7 +295,7 @@ export const LencoPayment = ({
           <p className="text-amber-700 mb-4">{paymentMessage}</p>
           <div className="bg-white/50 p-4 rounded-lg mb-4">
             <p className="text-sm text-amber-600">
-              Check your <strong>{provider.toUpperCase()}</strong> mobile money for the payment prompt.
+              Check your <strong>{phoneVerification.providerName || provider.toUpperCase()}</strong> mobile money for the payment prompt.
             </p>
             <p className="text-lg font-bold text-amber-800 mt-2">K{totalAmount.toFixed(2)}</p>
           </div>
@@ -319,10 +421,62 @@ export const LencoPayment = ({
         {paymentMethod === 'mobile_money' && (
           <>
             <div>
+              <Label>Phone Number</Label>
+              <div className="relative">
+                <Input
+                  type="tel"
+                  placeholder="097XXXXXXX"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className={phoneVerification.isVerified ? 'pr-10 border-green-500' : ''}
+                />
+                {phoneVerification.isVerifying && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+                {phoneVerification.isVerified && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  </div>
+                )}
+              </div>
+              
+              {/* Provider and Account Name Display */}
+              {(phoneVerification.providerName || phoneVerification.accountName) && (
+                <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  {phoneVerification.providerName && (
+                    <div className="flex items-center gap-2 text-sm text-green-700">
+                      <Smartphone className="h-4 w-4" />
+                      <span className="font-medium">{phoneVerification.providerName}</span>
+                    </div>
+                  )}
+                  {phoneVerification.accountName && (
+                    <div className="flex items-center gap-2 text-sm text-green-800 mt-1">
+                      <User className="h-4 w-4" />
+                      <span className="font-semibold">{phoneVerification.accountName}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {phoneVerification.error && (
+                <p className="text-xs text-destructive mt-1">{phoneVerification.error}</p>
+              )}
+              
+              {!phoneVerification.providerName && !phoneVerification.error && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Enter your registered mobile money number
+                </p>
+              )}
+            </div>
+            
+            {/* Provider selector - auto-filled but can be changed */}
+            <div>
               <Label>Mobile Money Provider</Label>
               <Select value={provider} onValueChange={setProvider}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select provider" />
+                <SelectTrigger className={provider ? 'border-green-500/50' : ''}>
+                  <SelectValue placeholder="Auto-detected from number" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="mtn">MTN Mobile Money</SelectItem>
@@ -330,18 +484,11 @@ export const LencoPayment = ({
                   <SelectItem value="zamtel">Zamtel Kwacha</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div>
-              <Label>Phone Number</Label>
-              <Input
-                type="tel"
-                placeholder="097XXXXXXX"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Enter your registered mobile money number
-              </p>
+              {provider && phoneVerification.providerName && (
+                <p className="text-xs text-green-600 mt-1">
+                  ✓ Auto-detected: {phoneVerification.providerName}
+                </p>
+              )}
             </div>
           </>
         )}

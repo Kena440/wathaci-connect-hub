@@ -118,7 +118,7 @@ export const Donate = () => {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <div className="flex justify-center mb-8">
-              <div className="p-4 bg-background/10 backdrop-blur-sm rounded-2xl border border-background/20">
+              <div className="p-4 bg-white/95 backdrop-blur-sm rounded-2xl border border-white/30 shadow-lg">
                 <img src={wathciLogo} alt="WATHACI" className="h-20 w-auto" />
               </div>
             </div>
