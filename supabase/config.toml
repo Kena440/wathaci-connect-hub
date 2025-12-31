@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.funding-matcher]
 verify_jwt = false
+
+[functions.donation-payment]
+verify_jwt = false

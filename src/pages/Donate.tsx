@@ -309,8 +309,11 @@ export const Donate = () => {
                       <p className="text-muted-foreground">Complete your donation below</p>
                     </div>
                     <LencoPayment
-                      amount={`K${finalAmount}`}
-                      description={`Donation to WATHACI - Supporting Zambian SMEs${donorName ? ` from ${donorName}` : ''}${message ? `: "${message}"` : ''}`}
+                      amount={finalAmount}
+                      description="Donation to WATHACI - Supporting Zambian SMEs"
+                      donorName={donorName}
+                      donorEmail={donorEmail}
+                      message={message}
                       onSuccess={handleDonationSuccess}
                       onCancel={() => setShowPayment(false)}
                     />

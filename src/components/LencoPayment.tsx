@@ -4,29 +4,44 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Smartphone, CreditCard, Banknote, Info } from 'lucide-react';
+import { Smartphone, CreditCard, Banknote, Info, CheckCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LencoPaymentProps {
   amount: string | number;
   description: string;
+  donorName?: string;
+  donorEmail?: string;
+  message?: string;
   onSuccess?: () => void;
   onCancel?: () => void;
-  onError?: (error: any) => void;
+  onError?: (error: unknown) => void;
 }
 
-export const LencoPayment = ({ amount, description, onSuccess, onCancel, onError }: LencoPaymentProps) => {
+export const LencoPayment = ({ 
+  amount, 
+  description, 
+  donorName,
+  donorEmail,
+  message,
+  onSuccess, 
+  onCancel, 
+  onError 
+}: LencoPaymentProps) => {
   const [paymentMethod, setPaymentMethod] = useState<string>('mobile_money');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [provider, setProvider] = useState('');
   const [loading, setLoading] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const { toast } = useToast();
 
   // Calculate fee breakdown
-  const totalAmount = typeof amount === 'string' ? parseFloat(amount.toString().replace(/[^\d.]/g, '')) : parseFloat(amount.toString());
-  const managementFee = totalAmount * 0.02;
-  const providerAmount = totalAmount - managementFee;
+  const totalAmount = typeof amount === 'string' 
+    ? parseFloat(amount.toString().replace(/[^\d.]/g, '')) 
+    : parseFloat(amount.toString());
+  const platformFee = totalAmount * 0.02;
+  const netAmount = totalAmount - platformFee;
 
   const handlePayment = async () => {
     if (paymentMethod === 'mobile_money' && (!phoneNumber || !provider)) {
@@ -39,15 +54,19 @@ export const LencoPayment = ({ amount, description, onSuccess, onCancel, onError
     }
 
     setLoading(true);
+    setPaymentStatus('processing');
     
     try {
-      const { data, error } = await supabase.functions.invoke('lenco-payment', {
+      const { data, error } = await supabase.functions.invoke('donation-payment', {
         body: {
           amount: totalAmount,
-          paymentMethod,
-          phoneNumber,
-          provider,
-          description
+          currency: 'ZMW',
+          donor_name: donorName,
+          donor_email: donorEmail,
+          message: message,
+          payment_method: paymentMethod,
+          payment_provider: provider,
+          phone_number: phoneNumber
         }
       });
 
@@ -57,27 +76,54 @@ export const LencoPayment = ({ amount, description, onSuccess, onCancel, onError
       }
       
       if (data?.success) {
+        setPaymentStatus('success');
         toast({
-          title: "Payment Successful",
-          description: `Payment completed. Transaction ID: ${data.transaction_id}`,
+          title: "Thank You!",
+          description: data.message || `Your donation of K${totalAmount} was successful!`,
         });
-        onSuccess?.();
+        
+        // Wait a moment to show success state
+        setTimeout(() => {
+          onSuccess?.();
+        }, 2000);
       } else {
         throw new Error(data?.error || 'Payment was declined');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Payment error:', error);
-      const errorMessage = error.message || 'Payment failed. Please check your connection and try again.';
+      setPaymentStatus('error');
+      const errorMessage = error instanceof Error ? error.message : 'Payment failed. Please try again.';
       onError?.(error);
       toast({
         title: "Payment Failed",
         description: errorMessage,
         variant: "destructive",
       });
+      // Reset status after showing error
+      setTimeout(() => setPaymentStatus('idle'), 3000);
     } finally {
       setLoading(false);
     }
   };
+
+  if (paymentStatus === 'success') {
+    return (
+      <Card className="w-full max-w-md mx-auto border-green-200 bg-green-50">
+        <CardContent className="pt-8 pb-8 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-4">
+            <CheckCircle className="h-10 w-10" />
+          </div>
+          <h3 className="text-xl font-semibold text-green-800 mb-2">Payment Successful!</h3>
+          <p className="text-green-600">
+            Thank you for your generous donation of K{totalAmount.toFixed(2)}
+          </p>
+          <p className="text-sm text-green-500 mt-2">
+            Your contribution will help Zambian entrepreneurs thrive.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -86,26 +132,26 @@ export const LencoPayment = ({ amount, description, onSuccess, onCancel, onError
           <Banknote className="h-5 w-5" />
           Secure Payment Portal
         </CardTitle>
-        <p className="text-sm text-gray-600">{description}</p>
+        <p className="text-sm text-muted-foreground">{description}</p>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="bg-blue-50 p-3 rounded-lg">
+        <div className="bg-primary/5 p-3 rounded-lg border border-primary/10">
           <div className="flex items-center gap-2 mb-2">
-            <Info className="h-4 w-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-800">Payment Breakdown</span>
+            <Info className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium text-foreground">Payment Breakdown</span>
           </div>
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
-              <span>Total Amount:</span>
-              <span className="font-semibold">K{totalAmount.toFixed(2)}</span>
+              <span className="text-muted-foreground">Total Amount:</span>
+              <span className="font-semibold text-foreground">K{totalAmount.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-gray-600">
+            <div className="flex justify-between text-muted-foreground">
               <span>Platform Fee (2%):</span>
-              <span>K{managementFee.toFixed(2)}</span>
+              <span>K{platformFee.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-green-600 font-semibold">
-              <span>Provider Receives:</span>
-              <span>K{providerAmount.toFixed(2)}</span>
+              <span>Goes to SMEs:</span>
+              <span>K{netAmount.toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -160,20 +206,37 @@ export const LencoPayment = ({ amount, description, onSuccess, onCancel, onError
           </>
         )}
 
+        {paymentMethod === 'card' && (
+          <div className="bg-muted/50 p-4 rounded-lg text-center">
+            <CreditCard className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+            <p className="text-sm text-muted-foreground">
+              Card payment will be processed securely
+            </p>
+          </div>
+        )}
+
         <div className="flex gap-2 pt-4">
           <Button 
             variant="outline" 
             onClick={onCancel}
             className="flex-1"
+            disabled={loading}
           >
             Cancel
           </Button>
           <Button 
             onClick={handlePayment} 
-            disabled={loading}
-            className="flex-1"
+            disabled={loading || (paymentMethod === 'mobile_money' && (!phoneNumber || !provider))}
+            className="flex-1 bg-primary hover:bg-primary/90"
           >
-            {loading ? 'Processing...' : `Pay K${totalAmount.toFixed(2)}`}
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              `Pay K${totalAmount.toFixed(2)}`
+            )}
           </Button>
         </div>
       </CardContent>
