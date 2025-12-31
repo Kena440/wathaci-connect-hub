@@ -8,3 +8,24 @@ verify_jwt = false
 
 [functions.lenco-subscriptions]
 verify_jwt = true
+
+[functions.marketplace-manager]
+verify_jwt = false
+
+[functions.negotiation-manager]
+verify_jwt = true
+
+[functions.funding-opportunities]
+verify_jwt = false
+
+[functions.ai-funding-analyzer]
+verify_jwt = true
+
+[functions.partnership-manager]
+verify_jwt = false
+
+[functions.live-funding-matcher]
+verify_jwt = false
+
+[functions.funding-matcher]
+verify_jwt = false
