@@ -35,6 +35,7 @@ const navItems = [
   { name: 'Freelancer Hub', href: '/freelancer-hub', icon: Users },
   { name: 'Resources', href: '/resources', icon: BookOpen },
   { name: 'Partnership Hub', href: '/partnership-hub', icon: Handshake },
+  { name: 'Wallet', href: '/wallet', icon: CreditCard },
 ];
 
 export const AppSidebar = () => {
