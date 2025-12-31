@@ -1,7 +1,9 @@
-import { AppLayout } from '@/components/AppLayout';
+import AppLayout from '@/components/AppLayout';
+import PageHero from '@/components/PageHero';
 import { WalletDashboard } from '@/components/payments';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
+import heroImage from '@/assets/hero-wallet.jpg';
 
 const Wallet = () => {
   const { user, loading } = useAuth();
@@ -22,13 +24,12 @@ const Wallet = () => {
 
   return (
     <AppLayout>
+      <PageHero
+        title="My Wallet"
+        description="Manage your balance, view transactions, and request withdrawals"
+        backgroundImage={heroImage}
+      />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-display font-bold text-foreground">My Wallet</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage your balance, view transactions, and request withdrawals
-          </p>
-        </div>
         <WalletDashboard />
       </div>
     </AppLayout>
