@@ -1,1 +1,10 @@
 project_id = "xvnkpvmyyumnmwdycuee"
+
+[functions.lenco-payments]
+verify_jwt = true
+
+[functions.lenco-webhook]
+verify_jwt = false
+
+[functions.lenco-subscriptions]
+verify_jwt = true

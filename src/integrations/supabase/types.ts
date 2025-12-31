@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      payment_accounts: {
+        Row: {
+          balance_usd: number
+          balance_zmw: number
+          bank_account_number: string | null
+          bank_name: string | null
+          created_at: string
+          id: string
+          lenco_account_id: string | null
+          mobile_money_number: string | null
+          mobile_money_provider: string | null
+          pending_balance_usd: number
+          pending_balance_zmw: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance_usd?: number
+          balance_zmw?: number
+          bank_account_number?: string | null
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          lenco_account_id?: string | null
+          mobile_money_number?: string | null
+          mobile_money_provider?: string | null
+          pending_balance_usd?: number
+          pending_balance_zmw?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance_usd?: number
+          balance_zmw?: number
+          bank_account_number?: string | null
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          lenco_account_id?: string | null
+          mobile_money_number?: string | null
+          mobile_money_provider?: string | null
+          pending_balance_usd?: number
+          pending_balance_zmw?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      platform_fee_tiers: {
+        Row: {
+          created_at: string
+          currency: string
+          fee_percentage: number
+          id: string
+          is_active: boolean | null
+          max_amount: number | null
+          min_amount: number
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          fee_percentage: number
+          id?: string
+          is_active?: boolean | null
+          max_amount?: number | null
+          min_amount: number
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          fee_percentage?: number
+          id?: string
+          is_active?: boolean | null
+          max_amount?: number | null
+          min_amount?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_type: string | null
@@ -119,6 +197,169 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plans: {
+        Row: {
+          account_type: string
+          billing_interval: string
+          created_at: string
+          description: string | null
+          features: Json | null
+          id: string
+          is_active: boolean | null
+          name: string
+          price_usd: number
+          price_zmw: number
+          updated_at: string
+        }
+        Insert: {
+          account_type: string
+          billing_interval?: string
+          created_at?: string
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price_usd?: number
+          price_zmw?: number
+          updated_at?: string
+        }
+        Update: {
+          account_type?: string
+          billing_interval?: string
+          created_at?: string
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price_usd?: number
+          price_zmw?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean | null
+          cancelled_at: string | null
+          created_at: string
+          currency: string
+          current_period_end: string
+          current_period_start: string
+          id: string
+          plan_id: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          trial_end: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean | null
+          cancelled_at?: string | null
+          created_at?: string
+          currency?: string
+          current_period_end: string
+          current_period_start?: string
+          id?: string
+          plan_id: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          trial_end?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean | null
+          cancelled_at?: string | null
+          created_at?: string
+          currency?: string
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          plan_id?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          trial_end?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          lenco_reference: string | null
+          lenco_transaction_id: string | null
+          metadata: Json | null
+          net_amount: number | null
+          platform_fee: number | null
+          recipient_id: string | null
+          service_id: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          subscription_id: string | null
+          transaction_type: Database["public"]["Enums"]["transaction_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          lenco_reference?: string | null
+          lenco_transaction_id?: string | null
+          metadata?: Json | null
+          net_amount?: number | null
+          platform_fee?: number | null
+          recipient_id?: string | null
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          subscription_id?: string | null
+          transaction_type: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          lenco_reference?: string | null
+          lenco_transaction_id?: string | null
+          metadata?: Json | null
+          net_amount?: number | null
+          platform_fee?: number | null
+          recipient_id?: string | null
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          subscription_id?: string | null
+          transaction_type?: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -145,6 +386,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_platform_fee: {
+        Args: { p_amount: number; p_currency: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -155,6 +400,25 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      payment_status:
+        | "pending"
+        | "processing"
+        | "successful"
+        | "failed"
+        | "refunded"
+        | "cancelled"
+      subscription_status:
+        | "active"
+        | "cancelled"
+        | "expired"
+        | "past_due"
+        | "trialing"
+      transaction_type:
+        | "service_purchase"
+        | "subscription"
+        | "platform_fee"
+        | "payout"
+        | "refund"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -283,6 +547,28 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      payment_status: [
+        "pending",
+        "processing",
+        "successful",
+        "failed",
+        "refunded",
+        "cancelled",
+      ],
+      subscription_status: [
+        "active",
+        "cancelled",
+        "expired",
+        "past_due",
+        "trialing",
+      ],
+      transaction_type: [
+        "service_purchase",
+        "subscription",
+        "platform_fee",
+        "payout",
+        "refund",
+      ],
     },
   },
 } as const
