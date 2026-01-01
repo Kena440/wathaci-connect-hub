@@ -1907,6 +1907,7 @@ export type Database = {
           currency: string
           description: string | null
           id: string
+          idempotency_key: string | null
           lenco_reference: string | null
           lenco_transaction_id: string | null
           metadata: Json | null
@@ -1926,6 +1927,7 @@ export type Database = {
           currency?: string
           description?: string | null
           id?: string
+          idempotency_key?: string | null
           lenco_reference?: string | null
           lenco_transaction_id?: string | null
           metadata?: Json | null
@@ -1945,6 +1947,7 @@ export type Database = {
           currency?: string
           description?: string | null
           id?: string
+          idempotency_key?: string | null
           lenco_reference?: string | null
           lenco_transaction_id?: string | null
           metadata?: Json | null
@@ -1995,6 +1998,42 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      webhook_events: {
+        Row: {
+          error: string | null
+          event_id: string
+          event_type: string | null
+          id: string
+          payload: Json
+          processed: boolean
+          processed_at: string | null
+          provider: string
+          received_at: string
+        }
+        Insert: {
+          error?: string | null
+          event_id: string
+          event_type?: string | null
+          id?: string
+          payload?: Json
+          processed?: boolean
+          processed_at?: string | null
+          provider: string
+          received_at?: string
+        }
+        Update: {
+          error?: string | null
+          event_id?: string
+          event_type?: string | null
+          id?: string
+          payload?: Json
+          processed?: boolean
+          processed_at?: string | null
+          provider?: string
+          received_at?: string
         }
         Relationships: []
       }
@@ -2065,6 +2104,29 @@ export type Database = {
       }
     }
     Functions: {
+      admin_repair_wallet_transaction: {
+        Args: {
+          p_amount: number
+          p_currency: string
+          p_reason: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      apply_wallet_transaction: {
+        Args: {
+          p_amount: number
+          p_currency: string
+          p_description?: string
+          p_idempotency_key?: string
+          p_metadata?: Json
+          p_provider?: string
+          p_provider_reference?: string
+          p_transaction_type: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       assign_admin_role: {
         Args: {
           p_notes?: string
@@ -2086,6 +2148,9 @@ export type Database = {
         }
         Returns: Json
       }
+      get_grace_period_end: { Args: never; Returns: string }
+      get_user_entitlements: { Args: { p_user_id: string }; Returns: Json }
+      has_full_access: { Args: { p_user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
