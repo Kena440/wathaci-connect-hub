@@ -38,6 +38,7 @@ import UsersManager from "./pages/admin/UsersManager";
 import RolesManager from "./pages/admin/RolesManager";
 import AuditLogs from "./pages/admin/AuditLogs";
 import AdminSettings from "./pages/admin/AdminSettings";
+import PaymentReconciliation from "./pages/admin/PaymentReconciliation";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +92,7 @@ export const AppRoutes = () => (
     <Route path="/admin/roles" element={<AdminGuard><RolesManager /></AdminGuard>} />
     <Route path="/admin/audit-logs" element={<AdminGuard><AuditLogs /></AdminGuard>} />
     <Route path="/admin/settings" element={<AdminGuard><AdminSettings /></AdminGuard>} />
+    <Route path="/admin/payments" element={<AdminGuard><PaymentReconciliation /></AdminGuard>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
