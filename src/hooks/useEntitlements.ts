@@ -166,6 +166,9 @@ export const useEntitlements = () => {
     hasFullAccess: entitlements?.hasFullAccess ?? false,
     isAdmin: entitlements?.isAdmin ?? false,
     inGracePeriod: entitlements?.inGracePeriod ?? false,
+    gracePeriodEnd: entitlements?.gracePeriodEnd ?? null,
+    subscription: entitlements?.subscription ?? null,
+    limits: entitlements?.limits ?? defaultLimits,
   };
 };
 
