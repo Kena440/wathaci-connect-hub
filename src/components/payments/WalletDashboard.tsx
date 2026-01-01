@@ -34,9 +34,12 @@ import {
   Loader2,
   RefreshCw,
   DollarSign,
-  Banknote
+  Banknote,
+  Crown,
+  Shield
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
+import { useEntitlements } from '@/hooks/useEntitlements';
 
 interface PaymentAccount {
   id: string;
@@ -66,6 +69,7 @@ interface Transaction {
 
 export const WalletDashboard = () => {
   const { user, session } = useAuth();
+  const { entitlements, inGracePeriod, hasFullAccess } = useEntitlements();
   const [account, setAccount] = useState<PaymentAccount | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -95,7 +99,7 @@ export const WalletDashboard = () => {
         .select('*')
         .or(`user_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(50);
 
       if (txError) throw txError;
       setTransactions(txData || []);
@@ -189,6 +193,11 @@ export const WalletDashboard = () => {
     return <ArrowUpRight className="w-5 h-5 text-accent" />;
   };
 
+  const gracePeriodEnd = entitlements?.gracePeriodEnd 
+    ? new Date(entitlements.gracePeriodEnd) 
+    : new Date('2026-01-20T00:00:00+02:00');
+  const daysRemaining = differenceInDays(gracePeriodEnd, new Date());
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -199,6 +208,34 @@ export const WalletDashboard = () => {
 
   return (
     <div className="space-y-6">
+      {/* Grace Period / Subscription Status */}
+      {inGracePeriod && !entitlements?.subscription && (
+        <Card className="bg-gradient-to-r from-accent/10 to-primary/5 border-accent/20">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-accent/20">
+                  <Crown className="w-5 h-5 text-accent" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">Free Access Active</p>
+                  <p className="text-sm text-muted-foreground">
+                    All premium features unlocked until {format(gracePeriodEnd, 'MMM d, yyyy')}
+                    {daysRemaining > 0 && (
+                      <span className="ml-1 text-accent">({daysRemaining} days remaining)</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => window.location.href = '/subscription-plans'}>
+                <Shield className="w-4 h-4 mr-1" />
+                Subscribe Now
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Balance Cards */}
       <div className="grid md:grid-cols-2 gap-4">
         <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-0">
