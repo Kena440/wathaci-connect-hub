@@ -221,7 +221,7 @@ export const AppSidebar = () => {
                 variant="outline" 
                 size="sm" 
                 className={cn(
-                  "w-full border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent/20",
+                  "w-full border-sidebar-foreground/50 text-sidebar-foreground bg-sidebar-accent/10 hover:bg-sidebar-accent/30 hover:border-sidebar-foreground",
                   isCollapsed && "px-2"
                 )}
               >
