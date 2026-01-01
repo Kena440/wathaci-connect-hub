@@ -209,6 +209,65 @@ export type Database = {
           },
         ]
       }
+      funding_matches: {
+        Row: {
+          action_plan: string | null
+          created_at: string
+          funding_id: string
+          id: string
+          match_score: number
+          reasons: string[] | null
+          sme_id: string
+        }
+        Insert: {
+          action_plan?: string | null
+          created_at?: string
+          funding_id: string
+          id?: string
+          match_score: number
+          reasons?: string[] | null
+          sme_id: string
+        }
+        Update: {
+          action_plan?: string | null
+          created_at?: string
+          funding_id?: string
+          id?: string
+          match_score?: number
+          reasons?: string[] | null
+          sme_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funding_matches_funding_id_fkey"
+            columns: ["funding_id"]
+            isOneToOne: false
+            referencedRelation: "funding_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funding_matches_sme_id_fkey"
+            columns: ["sme_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funding_matches_sme_id_fkey"
+            columns: ["sme_id"]
+            isOneToOne: false
+            referencedRelation: "v_profile_match_features"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funding_matches_sme_id_fkey"
+            columns: ["sme_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       funding_opportunities: {
         Row: {
           amount_display: string | null
@@ -217,6 +276,7 @@ export type Database = {
           application_url: string | null
           applications_count: number | null
           category: string
+          confidence_score: number | null
           contact_email: string | null
           created_at: string
           currency: string | null
@@ -227,11 +287,18 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_featured: boolean | null
+          last_checked_at: string | null
           location: string | null
           organization: string
+          region_focus: string[] | null
           required_documents: string[] | null
+          requirements: string | null
           sectors: string[] | null
+          source_url: string | null
+          summary: string | null
+          target_stage: string[] | null
           title: string
+          type: string | null
           updated_at: string
           views_count: number | null
         }
@@ -242,6 +309,7 @@ export type Database = {
           application_url?: string | null
           applications_count?: number | null
           category: string
+          confidence_score?: number | null
           contact_email?: string | null
           created_at?: string
           currency?: string | null
@@ -252,11 +320,18 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_featured?: boolean | null
+          last_checked_at?: string | null
           location?: string | null
           organization: string
+          region_focus?: string[] | null
           required_documents?: string[] | null
+          requirements?: string | null
           sectors?: string[] | null
+          source_url?: string | null
+          summary?: string | null
+          target_stage?: string[] | null
           title: string
+          type?: string | null
           updated_at?: string
           views_count?: number | null
         }
@@ -267,6 +342,7 @@ export type Database = {
           application_url?: string | null
           applications_count?: number | null
           category?: string
+          confidence_score?: number | null
           contact_email?: string | null
           created_at?: string
           currency?: string | null
@@ -277,11 +353,18 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_featured?: boolean | null
+          last_checked_at?: string | null
           location?: string | null
           organization?: string
+          region_focus?: string[] | null
           required_documents?: string[] | null
+          requirements?: string | null
           sectors?: string[] | null
+          source_url?: string | null
+          summary?: string | null
+          target_stage?: string[] | null
           title?: string
+          type?: string | null
           updated_at?: string
           views_count?: number | null
         }
@@ -622,6 +705,116 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      notification_preferences: {
+        Row: {
+          frequency: string | null
+          funding_alerts: boolean | null
+          match_alerts: boolean | null
+          messages: boolean | null
+          product_updates: boolean | null
+          quiet_hours: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          frequency?: string | null
+          funding_alerts?: boolean | null
+          match_alerts?: boolean | null
+          messages?: boolean | null
+          product_updates?: boolean | null
+          quiet_hours?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          frequency?: string | null
+          funding_alerts?: boolean | null
+          match_alerts?: boolean | null
+          messages?: boolean | null
+          product_updates?: boolean | null
+          quiet_hours?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "v_profile_match_features"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "v_public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          data: Json | null
+          id: string
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          data?: Json | null
+          id?: string
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          data?: Json | null
+          id?: string
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_profile_match_features"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orders: {
         Row: {
@@ -1117,6 +1310,116 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string | null
+          created_at: string
+          device_info: Json | null
+          endpoint: string | null
+          fcm_token: string | null
+          id: string
+          is_active: boolean | null
+          p256dh: string | null
+          provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auth?: string | null
+          created_at?: string
+          device_info?: Json | null
+          endpoint?: string | null
+          fcm_token?: string | null
+          id?: string
+          is_active?: boolean | null
+          p256dh?: string | null
+          provider: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auth?: string | null
+          created_at?: string
+          device_info?: Json | null
+          endpoint?: string | null
+          fcm_token?: string | null
+          id?: string
+          is_active?: boolean | null
+          p256dh?: string | null
+          provider?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_profile_match_features"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pwa_analytics: {
+        Row: {
+          created_at: string
+          device_info: Json | null
+          event_type: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_info?: Json | null
+          event_type: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_info?: Json | null
+          event_type?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pwa_analytics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pwa_analytics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_profile_match_features"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pwa_analytics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referrals: {
         Row: {
           commission_amount: number | null
@@ -1304,6 +1607,79 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      sme_professional_matches: {
+        Row: {
+          created_at: string
+          id: string
+          match_score: number
+          professional_id: string
+          reasons: string[] | null
+          recommended_scope: string | null
+          sme_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_score: number
+          professional_id: string
+          reasons?: string[] | null
+          recommended_scope?: string | null
+          sme_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_score?: number
+          professional_id?: string
+          reasons?: string[] | null
+          recommended_scope?: string | null
+          sme_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sme_professional_matches_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sme_professional_matches_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "v_profile_match_features"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sme_professional_matches_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sme_professional_matches_sme_id_fkey"
+            columns: ["sme_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sme_professional_matches_sme_id_fkey"
+            columns: ["sme_id"]
+            isOneToOne: false
+            referencedRelation: "v_profile_match_features"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sme_professional_matches_sme_id_fkey"
+            columns: ["sme_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sme_profiles: {
         Row: {
