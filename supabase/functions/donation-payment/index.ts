@@ -29,10 +29,16 @@ function mapProviderToOperator(provider: string): string {
   return providerMap[provider.toLowerCase()] || provider.toUpperCase();
 }
 
-// Format phone number to international format
+// Format phone number for Lenco API
+// Lenco accepts format: 260XXXXXXXXX (12 digits total for Zambia)
 function formatPhoneNumber(phone: string): string {
   // Remove all non-digit characters
   let cleaned = phone.replace(/\D/g, '');
+  
+  // Remove leading + if present in original
+  if (cleaned.startsWith('+')) {
+    cleaned = cleaned.substring(1);
+  }
   
   // If starts with 0, replace with 260
   if (cleaned.startsWith('0')) {
@@ -43,6 +49,13 @@ function formatPhoneNumber(phone: string): string {
   if (!cleaned.startsWith('260')) {
     cleaned = '260' + cleaned;
   }
+  
+  // Ensure exactly 12 digits for Zambian numbers (260 + 9 digits)
+  if (cleaned.length > 12) {
+    cleaned = cleaned.substring(0, 12);
+  }
+  
+  console.log(`Phone formatted: ${phone} -> ${cleaned} (length: ${cleaned.length})`);
   
   return cleaned;
 }
@@ -149,26 +162,34 @@ serve(async (req) => {
       console.log(`Initiating Lenco mobile money payment: ${operator} - ${formattedPhone}`);
 
       try {
+        // Build request body according to Lenco API v2 spec
+        const requestBody = {
+          amount: parseFloat(amount.toFixed(2)),
+          currency: currency.toUpperCase(),
+          reference: reference,
+          narration: `Donation to Wathaci - ${reference}`,
+          customer: {
+            name: donor_name || 'Anonymous Donor',
+            email: donor_email || 'donor@wathaci.com',
+            phone: formattedPhone
+          },
+          mobileMoney: {
+            phone: formattedPhone,
+            country: 'ZM',
+            operator: operator
+          }
+        };
+        
+        console.log('Lenco request body:', JSON.stringify(requestBody, null, 2));
+        
         const lencoResponse = await fetch(`${LENCO_API_URL}/collections/mobile-money`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${lencoApiToken}`,
             'Content-Type': 'application/json',
+            'Accept': 'application/json'
           },
-          body: JSON.stringify({
-            amount: amount.toFixed(2),
-            currency: currency,
-            reference: reference,
-            customer: {
-              name: donor_name || 'Anonymous Donor',
-              email: donor_email || 'donor@wathaci.com'
-            },
-            mobileMoney: {
-              phone: formattedPhone,
-              country: 'ZM',
-              operator: operator
-            }
-          })
+          body: JSON.stringify(requestBody)
         });
 
         const lencoData = await lencoResponse.json();

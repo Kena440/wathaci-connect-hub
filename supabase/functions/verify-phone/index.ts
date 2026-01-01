@@ -32,16 +32,27 @@ function detectProvider(phoneNumber: string) {
   return ZAMBIA_PREFIXES[prefix] || null;
 }
 
+// Format phone number for Lenco API
+// Lenco accepts format: 260XXXXXXXXX (12 digits total for Zambia)
 function formatPhoneNumber(phone: string): string {
   let cleaned = phone.replace(/\D/g, '');
   
+  // If starts with 0, replace with 260
   if (cleaned.startsWith('0')) {
     cleaned = '260' + cleaned.substring(1);
   }
   
+  // If doesn't start with 260, add it
   if (!cleaned.startsWith('260')) {
     cleaned = '260' + cleaned;
   }
+  
+  // Ensure exactly 12 digits for Zambian numbers
+  if (cleaned.length > 12) {
+    cleaned = cleaned.substring(0, 12);
+  }
+  
+  console.log(`Phone formatted: ${phone} -> ${cleaned} (length: ${cleaned.length})`);
   
   return cleaned;
 }
