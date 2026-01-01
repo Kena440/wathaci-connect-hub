@@ -7,6 +7,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AppProvider } from "@/contexts/AppContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { OnboardingGuard } from "@/components/OnboardingGuard";
+import { HelmetProvider } from 'react-helmet-async';
 import Index from "./pages/Index";
 import Marketplace from "./pages/Marketplace";
 import Resources from "./pages/Resources";
@@ -28,6 +30,8 @@ import Messages from "./pages/Messages";
 import Wallet from "./pages/Wallet";
 import Donate from "./pages/Donate";
 import Install from "./pages/Install";
+import OnboardingProfile from "./pages/OnboardingProfile";
+import PublicProfile from "./pages/PublicProfile";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +56,12 @@ export const AppRoutes = () => (
         <ProfileReview />
       </ProtectedRoute>
     } />
+    <Route path="/onboarding/profile" element={
+      <ProtectedRoute>
+        <OnboardingProfile />
+      </ProtectedRoute>
+    } />
+    <Route path="/profile/:id" element={<PublicProfile />} />
     <Route path="/subscription-plans" element={<SubscriptionPlans />} />
     <Route path="/partnership-hub" element={<PartnershipHub />} />
     <Route path="/privacy-policy" element={<PrivacyPolicy />} />
@@ -74,21 +84,25 @@ export const AppRoutes = () => (
 );
 
 const App = () => (
-  <ThemeProvider defaultTheme="light">
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AppProvider>
-          <BrowserRouter>
-            <AuthProvider>
-              <Toaster />
-              <Sonner />
-              <AppRoutes />
-            </AuthProvider>
-          </BrowserRouter>
-        </AppProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
+  <HelmetProvider>
+    <ThemeProvider defaultTheme="light">
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AppProvider>
+            <BrowserRouter>
+              <AuthProvider>
+                <OnboardingGuard>
+                  <Toaster />
+                  <Sonner />
+                  <AppRoutes />
+                </OnboardingGuard>
+              </AuthProvider>
+            </BrowserRouter>
+          </AppProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  </HelmetProvider>
 );
 
 export default App;
