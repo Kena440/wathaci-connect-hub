@@ -65,6 +65,85 @@ export type Database = {
         }
         Relationships: []
       }
+      freelancer_profiles: {
+        Row: {
+          availability: string
+          certifications: string[] | null
+          created_at: string
+          experience_level: string
+          languages: string[] | null
+          past_clients: string | null
+          portfolio_url: string | null
+          preferred_industries: string[] | null
+          primary_skills: string[]
+          professional_title: string
+          profile_id: string
+          rate_range: string
+          rate_type: string
+          services_offered: string
+          updated_at: string
+          work_mode: string
+        }
+        Insert: {
+          availability: string
+          certifications?: string[] | null
+          created_at?: string
+          experience_level: string
+          languages?: string[] | null
+          past_clients?: string | null
+          portfolio_url?: string | null
+          preferred_industries?: string[] | null
+          primary_skills?: string[]
+          professional_title: string
+          profile_id: string
+          rate_range: string
+          rate_type: string
+          services_offered: string
+          updated_at?: string
+          work_mode: string
+        }
+        Update: {
+          availability?: string
+          certifications?: string[] | null
+          created_at?: string
+          experience_level?: string
+          languages?: string[] | null
+          past_clients?: string | null
+          portfolio_url?: string | null
+          preferred_industries?: string[] | null
+          primary_skills?: string[]
+          professional_title?: string
+          profile_id?: string
+          rate_range?: string
+          rate_type?: string
+          services_offered?: string
+          updated_at?: string
+          work_mode?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "freelancer_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "freelancer_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_profile_match_features"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "freelancer_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       funding_applications: {
         Row: {
           ai_analysis: Json | null
@@ -207,6 +286,152 @@ export type Database = {
           views_count?: number | null
         }
         Relationships: []
+      }
+      government_profiles: {
+        Row: {
+          collaboration_interests: string[]
+          contact_person_title: string
+          created_at: string
+          current_initiatives: string | null
+          department_or_unit: string
+          documents_urls: string[] | null
+          eligibility_criteria: string | null
+          institution_name: string
+          institution_type: string
+          mandate_areas: string[]
+          procurement_portal_url: string | null
+          profile_id: string
+          services_or_programmes: string
+          updated_at: string
+        }
+        Insert: {
+          collaboration_interests?: string[]
+          contact_person_title: string
+          created_at?: string
+          current_initiatives?: string | null
+          department_or_unit: string
+          documents_urls?: string[] | null
+          eligibility_criteria?: string | null
+          institution_name: string
+          institution_type: string
+          mandate_areas?: string[]
+          procurement_portal_url?: string | null
+          profile_id: string
+          services_or_programmes: string
+          updated_at?: string
+        }
+        Update: {
+          collaboration_interests?: string[]
+          contact_person_title?: string
+          created_at?: string
+          current_initiatives?: string | null
+          department_or_unit?: string
+          documents_urls?: string[] | null
+          eligibility_criteria?: string | null
+          institution_name?: string
+          institution_type?: string
+          mandate_areas?: string[]
+          procurement_portal_url?: string | null
+          profile_id?: string
+          services_or_programmes?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "government_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "government_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_profile_match_features"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "government_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investor_profiles: {
+        Row: {
+          created_at: string
+          decision_timeline: string | null
+          geo_focus: string[]
+          investment_preferences: string[]
+          investment_stage_focus: string[]
+          investor_type: string
+          portfolio_companies: string[] | null
+          profile_id: string
+          required_documents: string | null
+          sectors_of_interest: string[]
+          thesis: string | null
+          ticket_size_range: string
+          updated_at: string
+          website_override: string | null
+        }
+        Insert: {
+          created_at?: string
+          decision_timeline?: string | null
+          geo_focus?: string[]
+          investment_preferences?: string[]
+          investment_stage_focus?: string[]
+          investor_type: string
+          portfolio_companies?: string[] | null
+          profile_id: string
+          required_documents?: string | null
+          sectors_of_interest?: string[]
+          thesis?: string | null
+          ticket_size_range: string
+          updated_at?: string
+          website_override?: string | null
+        }
+        Update: {
+          created_at?: string
+          decision_timeline?: string | null
+          geo_focus?: string[]
+          investment_preferences?: string[]
+          investment_stage_focus?: string[]
+          investor_type?: string
+          portfolio_companies?: string[] | null
+          profile_id?: string
+          required_documents?: string | null
+          sectors_of_interest?: string[]
+          thesis?: string | null
+          ticket_size_range?: string
+          updated_at?: string
+          website_override?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investor_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_profile_match_features"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       needs_assessments: {
         Row: {
@@ -704,6 +929,7 @@ export type Database = {
           created_at: string
           currency: string | null
           description: string | null
+          display_name: string | null
           documents_submitted: boolean | null
           email: string | null
           employee_count: number | null
@@ -718,6 +944,7 @@ export type Database = {
           id: string
           industry_sector: string | null
           investment_portfolio: Json | null
+          is_profile_complete: boolean
           last_name: string | null
           license_number: string | null
           linkedin_url: string | null
@@ -770,6 +997,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           description?: string | null
+          display_name?: string | null
           documents_submitted?: boolean | null
           email?: string | null
           employee_count?: number | null
@@ -784,6 +1012,7 @@ export type Database = {
           id: string
           industry_sector?: string | null
           investment_portfolio?: Json | null
+          is_profile_complete?: boolean
           last_name?: string | null
           license_number?: string | null
           linkedin_url?: string | null
@@ -836,6 +1065,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           description?: string | null
+          display_name?: string | null
           documents_submitted?: boolean | null
           email?: string | null
           employee_count?: number | null
@@ -850,6 +1080,7 @@ export type Database = {
           id?: string
           industry_sector?: string | null
           investment_portfolio?: Json | null
+          is_profile_complete?: boolean
           last_name?: string | null
           license_number?: string | null
           linkedin_url?: string | null
@@ -1074,6 +1305,94 @@ export type Database = {
         }
         Relationships: []
       }
+      sme_profiles: {
+        Row: {
+          areas_served: string[]
+          business_name: string
+          business_stage: string
+          created_at: string
+          documents_urls: string[] | null
+          funding_needed: boolean | null
+          funding_range: string | null
+          industry: string
+          monthly_revenue_range: string | null
+          preferred_support: string[] | null
+          profile_id: string
+          registration_number: string | null
+          registration_status: string | null
+          sectors_of_interest: string[] | null
+          services_or_products: string
+          team_size_range: string | null
+          top_needs: string[]
+          updated_at: string
+          year_established: number | null
+        }
+        Insert: {
+          areas_served?: string[]
+          business_name: string
+          business_stage: string
+          created_at?: string
+          documents_urls?: string[] | null
+          funding_needed?: boolean | null
+          funding_range?: string | null
+          industry: string
+          monthly_revenue_range?: string | null
+          preferred_support?: string[] | null
+          profile_id: string
+          registration_number?: string | null
+          registration_status?: string | null
+          sectors_of_interest?: string[] | null
+          services_or_products: string
+          team_size_range?: string | null
+          top_needs?: string[]
+          updated_at?: string
+          year_established?: number | null
+        }
+        Update: {
+          areas_served?: string[]
+          business_name?: string
+          business_stage?: string
+          created_at?: string
+          documents_urls?: string[] | null
+          funding_needed?: boolean | null
+          funding_range?: string | null
+          industry?: string
+          monthly_revenue_range?: string | null
+          preferred_support?: string[] | null
+          profile_id?: string
+          registration_number?: string | null
+          registration_status?: string | null
+          sectors_of_interest?: string[] | null
+          services_or_products?: string
+          team_size_range?: string | null
+          top_needs?: string[]
+          updated_at?: string
+          year_established?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sme_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sme_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_profile_match_features"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sme_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_plans: {
         Row: {
           account_type: string
@@ -1260,7 +1579,69 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_profile_match_features: {
+        Row: {
+          account_type: string | null
+          city: string | null
+          country: string | null
+          id: string | null
+          match_text: string | null
+          primary_tags: string[] | null
+          secondary_tags: string[] | null
+        }
+        Relationships: []
+      }
+      v_public_profiles: {
+        Row: {
+          account_type: string | null
+          areas_served: string[] | null
+          availability: string | null
+          bio: string | null
+          business_name: string | null
+          business_stage: string | null
+          certifications: string[] | null
+          city: string | null
+          collaboration_interests: string[] | null
+          contact_person_title: string | null
+          country: string | null
+          created_at: string | null
+          department_or_unit: string | null
+          display_name: string | null
+          experience_level: string | null
+          freelancer_services: string | null
+          full_name: string | null
+          funding_needed: boolean | null
+          geo_focus: string[] | null
+          id: string | null
+          industry: string | null
+          institution_name: string | null
+          institution_type: string | null
+          investment_preferences: string[] | null
+          investment_stage_focus: string[] | null
+          investor_sectors: string[] | null
+          investor_type: string | null
+          is_profile_complete: boolean | null
+          languages: string[] | null
+          linkedin: string | null
+          mandate_areas: string[] | null
+          preferred_industries: string[] | null
+          primary_skills: string[] | null
+          professional_title: string | null
+          profile_photo_url: string | null
+          rate_range: string | null
+          rate_type: string | null
+          services_or_programmes: string | null
+          sme_sectors: string[] | null
+          sme_services: string | null
+          team_size_range: string | null
+          thesis: string | null
+          ticket_size_range: string | null
+          top_needs: string[] | null
+          website: string | null
+          work_mode: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       calculate_platform_fee: {
@@ -1276,6 +1657,7 @@ export type Database = {
       }
     }
     Enums: {
+      account_type_enum: "sme" | "freelancer" | "investor" | "government"
       app_role: "admin" | "moderator" | "user"
       payment_status:
         | "pending"
@@ -1423,6 +1805,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_type_enum: ["sme", "freelancer", "investor", "government"],
       app_role: ["admin", "moderator", "user"],
       payment_status: [
         "pending",
