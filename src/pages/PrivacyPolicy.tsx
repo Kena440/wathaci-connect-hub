@@ -62,7 +62,7 @@ export default function PrivacyPolicy() {
             <section>
               <h2 className="text-xl font-semibold mb-3">6. Contact Information</h2>
               <div className="text-sm space-y-1 text-muted-foreground">
-                <p><strong className="text-foreground">Data Protection Officer:</strong> privacy@wathaci.org</p>
+                <p><strong className="text-foreground">Data Protection Officer:</strong> support@wathaci.com</p>
                 <p><strong className="text-foreground">Address:</strong> Lusaka, Zambia</p>
                 <p><strong className="text-foreground">Data Protection Commission:</strong> www.dpc.gov.zm</p>
               </div>

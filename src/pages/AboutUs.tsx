@@ -132,7 +132,7 @@ export default function AboutUs() {
             Have questions? We'd love to hear from you.
           </p>
           <p className="text-primary font-medium">
-            Email: info@wathaci.org
+            Email: support@wathaci.com
           </p>
         </section>
       </div>

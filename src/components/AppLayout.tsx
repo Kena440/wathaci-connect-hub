@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { AppSidebar } from './AppSidebar';
 import Footer from './Footer';
+import CisoAssistant from './CisoAssistant';
 
 interface AppLayoutProps {
   children?: ReactNode;
@@ -17,6 +18,7 @@ export const AppLayout = ({ children, showFooter = true }: AppLayoutProps) => {
         </main>
         {showFooter && <Footer />}
       </div>
+      <CisoAssistant />
     </div>
   );
 };

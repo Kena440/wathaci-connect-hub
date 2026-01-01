@@ -93,7 +93,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-semibold mb-3">10. Contact Information</h2>
             <div className="text-sm space-y-1">
-              <p><strong>Legal Department:</strong> legal@businessconsultmarket.com</p>
+              <p><strong>Legal Department:</strong> support@wathaci.com</p>
               <p><strong>Business Address:</strong> Lusaka, Zambia</p>
               <p><strong>Registration:</strong> Registered under Zambian business law</p>
             </div>

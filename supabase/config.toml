@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.verify-phone]
 verify_jwt = false
+
+[functions.ciso-assistant]
+verify_jwt = false
