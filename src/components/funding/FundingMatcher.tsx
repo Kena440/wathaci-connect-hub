@@ -5,10 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/lib/supabase';
-import { Search, TrendingUp, DollarSign, Clock, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Search, TrendingUp, DollarSign, Clock, Loader2, Save } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const FundingMatcher = () => {
+  const { user } = useAuth();
   const [businessProfile, setBusinessProfile] = useState({
     businessType: '',
     sector: '',
@@ -34,10 +37,42 @@ export const FundingMatcher = () => {
 
   const [matches, setMatches] = useState<FundingMatch[]>([]);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const saveAssessment = async () => {
+    if (!user) {
+      toast.error('Please sign in to save your assessment');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('needs_assessments' as any).insert({
+        user_id: user.id,
+        assessment_type: 'funding',
+        business_type: businessProfile.businessType,
+        sector: businessProfile.sector,
+        location: businessProfile.location,
+        funding_amount: fundingNeeds.amount ? parseFloat(fundingNeeds.amount) : null,
+        funding_purpose: fundingNeeds.purpose,
+        funding_timeline: fundingNeeds.timeline,
+        recommendations: matches,
+        status: 'completed'
+      } as any);
+
+      if (error) throw error;
+      toast.success('Assessment saved successfully!');
+    } catch (error: any) {
+      console.error('Error saving assessment:', error);
+      toast.error('Failed to save assessment');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleMatch = async () => {
     if (!businessProfile.businessType || !fundingNeeds.amount) {
-      alert('Please fill in business type and funding amount');
+      toast.error('Please fill in business type and funding amount');
       return;
     }
 
@@ -49,9 +84,26 @@ export const FundingMatcher = () => {
 
       if (error) throw error;
       setMatches(data.matches || []);
+      
+      // Auto-save if user is logged in
+      if (user && data.matches?.length > 0) {
+        await supabase.from('needs_assessments' as any).insert({
+          user_id: user.id,
+          assessment_type: 'funding',
+          business_type: businessProfile.businessType,
+          sector: businessProfile.sector,
+          location: businessProfile.location,
+          funding_amount: fundingNeeds.amount ? parseFloat(fundingNeeds.amount) : null,
+          funding_purpose: fundingNeeds.purpose,
+          funding_timeline: fundingNeeds.timeline,
+          ai_analysis: data,
+          recommendations: data.matches,
+          status: 'completed'
+        } as any);
+      }
     } catch (error) {
       console.error('Error matching funding:', error);
-      alert('Error finding matches. Please try again.');
+      toast.error('Error finding matches. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -95,13 +147,24 @@ export const FundingMatcher = () => {
                   <SelectItem value="manufacturing">Manufacturing</SelectItem>
                   <SelectItem value="services">Services</SelectItem>
                   <SelectItem value="retail">Retail</SelectItem>
+                  <SelectItem value="mining">Mining</SelectItem>
+                  <SelectItem value="tourism">Tourism</SelectItem>
+                  <SelectItem value="healthcare">Healthcare</SelectItem>
+                  <SelectItem value="education">Education</SelectItem>
                 </SelectContent>
               </Select>
 
               <Input
-                placeholder="Location"
+                placeholder="Location (e.g., Lusaka, Copperbelt)"
                 value={businessProfile.location}
                 onChange={(e) => setBusinessProfile({...businessProfile, location: e.target.value})}
+              />
+
+              <Input
+                placeholder="Number of Employees"
+                type="number"
+                value={businessProfile.employees}
+                onChange={(e) => setBusinessProfile({...businessProfile, employees: e.target.value})}
               />
             </div>
 
@@ -116,9 +179,10 @@ export const FundingMatcher = () => {
               />
 
               <Textarea
-                placeholder="What will you use the funding for?"
+                placeholder="What will you use the funding for? (e.g., equipment purchase, working capital, expansion)"
                 value={fundingNeeds.purpose}
                 onChange={(e) => setFundingNeeds({...fundingNeeds, purpose: e.target.value})}
+                rows={3}
               />
 
               <Select value={fundingNeeds.timeline} onValueChange={(value) => 
@@ -136,19 +200,33 @@ export const FundingMatcher = () => {
             </div>
           </div>
 
-          <Button onClick={handleMatch} disabled={loading} className="w-full">
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Finding Matches...
-              </>
-            ) : (
-              <>
-                <Search className="w-4 h-4 mr-2" />
-                Find Funding Matches
-              </>
+          <div className="flex gap-3">
+            <Button onClick={handleMatch} disabled={loading} className="flex-1">
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Finding Matches...
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4 mr-2" />
+                  Find Funding Matches
+                </>
+              )}
+            </Button>
+            {user && matches.length > 0 && (
+              <Button variant="outline" onClick={saveAssessment} disabled={saving}>
+                {saving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save
+                  </>
+                )}
+              </Button>
             )}
-          </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -161,14 +239,14 @@ export const FundingMatcher = () => {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="font-semibold text-lg">{match.title}</h3>
-                    <p className="text-gray-600">{match.provider}</p>
+                    <p className="text-muted-foreground">{match.provider}</p>
                   </div>
-                  <Badge className="bg-green-100 text-green-800">
+                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
                     {match.match_score}% Match
                   </Badge>
                 </div>
                 
-                <p className="text-gray-700 mb-4">{match.description}</p>
+                <p className="text-muted-foreground mb-4">{match.description}</p>
                 
                 <div className="grid md:grid-cols-3 gap-4 mb-4">
                   <div className="flex items-center gap-2">
@@ -186,8 +264,8 @@ export const FundingMatcher = () => {
                 </div>
 
                 {match.reasoning && (
-                  <div className="bg-blue-50 p-3 rounded-lg mb-4">
-                    <p className="text-sm text-blue-800">{match.reasoning}</p>
+                  <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg mb-4">
+                    <p className="text-sm text-blue-800 dark:text-blue-200">{match.reasoning}</p>
                   </div>
                 )}
 

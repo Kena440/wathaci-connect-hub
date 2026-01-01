@@ -208,6 +208,60 @@ export type Database = {
         }
         Relationships: []
       }
+      needs_assessments: {
+        Row: {
+          ai_analysis: Json | null
+          assessment_type: string
+          business_type: string | null
+          created_at: string
+          funding_amount: number | null
+          funding_purpose: string | null
+          funding_timeline: string | null
+          gaps_identified: string[] | null
+          id: string
+          location: string | null
+          recommendations: Json | null
+          sector: string | null
+          status: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          ai_analysis?: Json | null
+          assessment_type: string
+          business_type?: string | null
+          created_at?: string
+          funding_amount?: number | null
+          funding_purpose?: string | null
+          funding_timeline?: string | null
+          gaps_identified?: string[] | null
+          id?: string
+          location?: string | null
+          recommendations?: Json | null
+          sector?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          ai_analysis?: Json | null
+          assessment_type?: string
+          business_type?: string | null
+          created_at?: string
+          funding_amount?: number | null
+          funding_purpose?: string | null
+          funding_timeline?: string | null
+          gaps_identified?: string[] | null
+          id?: string
+          location?: string | null
+          recommendations?: Json | null
+          sector?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       negotiation_messages: {
         Row: {
           created_at: string
@@ -307,6 +361,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notification_logs: {
+        Row: {
+          created_at: string
+          email_sent: boolean | null
+          id: string
+          message: string | null
+          notification_type: string
+          related_id: string | null
+          sent_at: string | null
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email_sent?: boolean | null
+          id?: string
+          message?: string | null
+          notification_type: string
+          related_id?: string | null
+          sent_at?: string | null
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email_sent?: boolean | null
+          id?: string
+          message?: string | null
+          notification_type?: string
+          related_id?: string | null
+          sent_at?: string | null
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       orders: {
         Row: {
