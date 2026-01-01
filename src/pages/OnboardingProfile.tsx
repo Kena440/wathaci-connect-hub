@@ -5,11 +5,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, Check, Sparkles, User, Building, TrendingUp, Landmark, Briefcase, MapPin, Globe, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { OnboardingStepper } from '@/components/onboarding/OnboardingStepper';
 import { BaseInfoStep } from '@/components/onboarding/steps/BaseInfoStep';
 import { SMEStep } from '@/components/onboarding/steps/SMEStep';
@@ -39,10 +40,42 @@ const STEPS = [
 ];
 
 const ACCOUNT_TYPES = [
-  { value: 'sme', label: 'SME / Business', description: 'Small or medium enterprise looking for funding, partners, or resources' },
-  { value: 'freelancer', label: 'Professional / Freelancer', description: 'Individual offering professional services' },
-  { value: 'investor', label: 'Investor', description: 'Angel investor, VC, or funding organization' },
-  { value: 'government', label: 'Government Institution', description: 'Government agency or public institution' },
+  { 
+    value: 'sme', 
+    label: 'SME / Business', 
+    description: 'Small or medium enterprise looking for funding, partners, or resources',
+    icon: Building,
+    color: 'from-blue-500/20 to-blue-600/10',
+    borderColor: 'border-blue-500/30',
+    iconColor: 'text-blue-600'
+  },
+  { 
+    value: 'freelancer', 
+    label: 'Professional / Freelancer', 
+    description: 'Individual offering professional services',
+    icon: Briefcase,
+    color: 'from-purple-500/20 to-purple-600/10',
+    borderColor: 'border-purple-500/30',
+    iconColor: 'text-purple-600'
+  },
+  { 
+    value: 'investor', 
+    label: 'Investor', 
+    description: 'Angel investor, VC, or funding organization',
+    icon: TrendingUp,
+    color: 'from-emerald-500/20 to-emerald-600/10',
+    borderColor: 'border-emerald-500/30',
+    iconColor: 'text-emerald-600'
+  },
+  { 
+    value: 'government', 
+    label: 'Government Institution', 
+    description: 'Government agency or public institution',
+    icon: Landmark,
+    color: 'from-amber-500/20 to-amber-600/10',
+    borderColor: 'border-amber-500/30',
+    iconColor: 'text-amber-600'
+  },
 ];
 
 export default function OnboardingProfile() {
@@ -68,7 +101,7 @@ export default function OnboardingProfile() {
     },
   });
 
-  // Role-specific forms - use undefined for enum fields
+  // Role-specific forms
   const smeForm = useForm<SMEProfileData>({
     resolver: zodResolver(smeProfileSchema),
     defaultValues: {
@@ -140,7 +173,6 @@ export default function OnboardingProfile() {
       if (!user) return;
 
       try {
-        // Load base profile
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
@@ -264,7 +296,6 @@ export default function OnboardingProfile() {
     try {
       const baseData = baseForm.getValues();
 
-      // Upsert base profile
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
@@ -412,7 +443,6 @@ export default function OnboardingProfile() {
   };
 
   const handleComplete = async () => {
-    // Validate all forms
     const baseValid = await baseForm.trigger();
     if (!baseValid) {
       toast.error('Please complete all basic info fields');
@@ -445,21 +475,6 @@ export default function OnboardingProfile() {
     }
   };
 
-  const getRoleForm = () => {
-    switch (accountType) {
-      case 'sme':
-        return <SMEStep form={smeForm} />;
-      case 'freelancer':
-        return <FreelancerStep form={freelancerForm} />;
-      case 'investor':
-        return <InvestorStep form={investorForm} />;
-      case 'government':
-        return <GovernmentStep form={governmentForm} />;
-      default:
-        return null;
-    }
-  };
-
   const getPreviewData = (): Record<string, any> => {
     const base = baseForm.getValues() as Record<string, any>;
     let roleData: Record<string, any> = {};
@@ -476,29 +491,41 @@ export default function OnboardingProfile() {
 
     return { ...base, ...roleData };
   };
-  const getActiveRoleForm = () => {
-    if (accountType === 'sme') return smeForm;
-    if (accountType === 'freelancer') return freelancerForm;
-    if (accountType === 'investor') return investorForm;
-    if (accountType === 'government') return governmentForm;
-    return smeForm; // fallback
-  };
+
+  const selectedAccountTypeInfo = ACCOUNT_TYPES.find(t => t.value === accountType);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background via-background to-muted/30">
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />
+          <Loader2 className="h-12 w-12 animate-spin text-primary relative z-10" />
+        </div>
+        <p className="text-muted-foreground mt-4 animate-pulse">Loading your profile...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 py-8 px-4">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Complete Your Profile</h1>
-          <p className="text-muted-foreground mt-2">
-            Set up your profile to get the most out of WATHACI Connect
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 py-8 px-4 sm:py-12">
+      {/* Background decoration */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/5 rounded-full blur-3xl" />
+      </div>
+      
+      <div className="max-w-3xl mx-auto relative z-10">
+        {/* Header */}
+        <div className="text-center mb-8 sm:mb-12">
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-1.5 text-sm font-medium mb-4">
+            <Sparkles className="h-4 w-4" />
+            <span>Complete Your Profile</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
+            Welcome to <span className="gradient-text">WATHACI Connect</span>
+          </h1>
+          <p className="text-muted-foreground mt-3 max-w-lg mx-auto text-base sm:text-lg">
+            Set up your profile to unlock funding opportunities, partnerships, and professional connections
           </p>
         </div>
 
@@ -508,32 +535,70 @@ export default function OnboardingProfile() {
           onStepClick={(step) => step < currentStep && setCurrentStep(step)}
         />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{STEPS[currentStep - 1].name}</CardTitle>
-            <CardDescription>{STEPS[currentStep - 1].description}</CardDescription>
+        <Card className="shadow-xl border-0 bg-card/80 backdrop-blur-sm overflow-hidden">
+          {/* Step Header */}
+          <CardHeader className="bg-gradient-to-r from-muted/50 to-muted/30 border-b pb-6">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <span className="text-lg font-bold text-primary">{currentStep}</span>
+              </div>
+              <div>
+                <CardTitle className="text-xl">{STEPS[currentStep - 1].name}</CardTitle>
+                <CardDescription className="text-base">{STEPS[currentStep - 1].description}</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
+          
+          <CardContent className="p-6 sm:p-8">
             {/* Step 1: Account Type Selection */}
             {currentStep === 1 && (
-              <div className="space-y-4">
-                <Label>What best describes you? *</Label>
-                <div className="grid gap-3">
-                  {ACCOUNT_TYPES.map((type) => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      onClick={() => setAccountType(type.value as AccountType)}
-                      className={`p-4 rounded-lg border-2 text-left transition-all ${
-                        accountType === type.value
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <div className="font-medium text-foreground">{type.label}</div>
-                      <div className="text-sm text-muted-foreground mt-1">{type.description}</div>
-                    </button>
-                  ))}
+              <div className="space-y-6">
+                <div className="text-center mb-2">
+                  <p className="text-sm text-muted-foreground">Select the option that best describes you</p>
+                </div>
+                <div className="grid gap-4">
+                  {ACCOUNT_TYPES.map((type) => {
+                    const Icon = type.icon;
+                    const isSelected = accountType === type.value;
+                    return (
+                      <button
+                        key={type.value}
+                        type="button"
+                        onClick={() => setAccountType(type.value as AccountType)}
+                        className={`group relative p-5 rounded-2xl border-2 text-left transition-all duration-300 ${
+                          isSelected
+                            ? `border-primary bg-gradient-to-br ${type.color} shadow-lg shadow-primary/10`
+                            : 'border-border hover:border-primary/40 hover:bg-muted/30'
+                        }`}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className={`p-3 rounded-xl transition-all ${
+                            isSelected 
+                              ? 'bg-primary text-primary-foreground shadow-md' 
+                              : `bg-gradient-to-br ${type.color} ${type.iconColor}`
+                          }`}>
+                            <Icon className="h-6 w-6" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-foreground text-lg">{type.label}</div>
+                            <div className="text-sm text-muted-foreground mt-1 leading-relaxed">{type.description}</div>
+                          </div>
+                          {isSelected && (
+                            <div className="flex-shrink-0">
+                              <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                                <Check className="h-4 w-4" strokeWidth={3} />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Selection indicator */}
+                        {isSelected && (
+                          <div className="absolute inset-0 rounded-2xl ring-2 ring-primary ring-offset-2 ring-offset-background pointer-events-none" />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -580,73 +645,122 @@ export default function OnboardingProfile() {
             {/* Step 4: Preview */}
             {currentStep === 4 && (
               <div className="space-y-6">
-                <div className="bg-muted/50 rounded-lg p-4 space-y-4">
-                  <h3 className="font-semibold">Profile Summary</h3>
+                {/* Success indicator */}
+                <div className="flex items-center justify-center mb-4">
+                  <div className="h-16 w-16 rounded-full bg-gradient-to-br from-zambia-green/20 to-zambia-green/10 flex items-center justify-center">
+                    <CheckCircle2 className="h-8 w-8 text-zambia-green" />
+                  </div>
+                </div>
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-semibold text-foreground">Almost there!</h3>
+                  <p className="text-muted-foreground mt-1">Review your profile before completing</p>
+                </div>
+
+                {/* Profile Preview Card */}
+                <div className="bg-gradient-to-br from-muted/60 to-muted/40 rounded-2xl p-6 space-y-5">
+                  {/* Account Type Badge */}
+                  {selectedAccountTypeInfo && (
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg bg-gradient-to-br ${selectedAccountTypeInfo.color}`}>
+                        <selectedAccountTypeInfo.icon className={`h-5 w-5 ${selectedAccountTypeInfo.iconColor}`} />
+                      </div>
+                      <Badge variant="secondary" className="text-sm capitalize">
+                        {accountType?.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                  )}
+
+                  <Separator />
+
+                  {/* Profile Details */}
                   {(() => {
                     const data = getPreviewData();
                     return (
-                      <dl className="grid gap-3 text-sm">
-                        <div className="grid grid-cols-3 gap-2">
-                          <dt className="text-muted-foreground">Account Type:</dt>
-                          <dd className="col-span-2 font-medium capitalize">{accountType}</dd>
+                      <dl className="space-y-4">
+                        {/* Basic Info */}
+                        <div className="grid gap-3">
+                          <div className="flex items-center gap-3">
+                            <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <span className="text-foreground font-medium">{data.full_name}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">{data.city}, {data.country}</span>
+                          </div>
+                          {data.website_url && (
+                            <div className="flex items-center gap-3">
+                              <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              <span className="text-muted-foreground truncate">{data.website_url}</span>
+                            </div>
+                          )}
                         </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <dt className="text-muted-foreground">Name:</dt>
-                          <dd className="col-span-2">{data.full_name}</dd>
+
+                        <Separator />
+
+                        {/* Bio */}
+                        <div>
+                          <dt className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Bio</dt>
+                          <dd className="text-foreground text-sm leading-relaxed">{data.bio}</dd>
                         </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <dt className="text-muted-foreground">Location:</dt>
-                          <dd className="col-span-2">{data.city}, {data.country}</dd>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <dt className="text-muted-foreground">Bio:</dt>
-                          <dd className="col-span-2">{data.bio}</dd>
-                        </div>
+
+                        {/* Role-specific details */}
                         {accountType === 'sme' && (
                           <>
-                            <div className="grid grid-cols-3 gap-2">
-                              <dt className="text-muted-foreground">Business:</dt>
-                              <dd className="col-span-2">{data.business_name}</dd>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <dt className="text-muted-foreground">Industry:</dt>
-                              <dd className="col-span-2">{data.industry}</dd>
+                            <Separator />
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <dt className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Business</dt>
+                                <dd className="text-foreground font-medium">{data.business_name}</dd>
+                              </div>
+                              <div>
+                                <dt className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Industry</dt>
+                                <dd className="text-foreground">{data.industry}</dd>
+                              </div>
                             </div>
                           </>
                         )}
                         {accountType === 'freelancer' && (
                           <>
-                            <div className="grid grid-cols-3 gap-2">
-                              <dt className="text-muted-foreground">Title:</dt>
-                              <dd className="col-span-2">{data.professional_title}</dd>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <dt className="text-muted-foreground">Skills:</dt>
-                              <dd className="col-span-2">{data.primary_skills?.join(', ')}</dd>
+                            <Separator />
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <dt className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Title</dt>
+                                <dd className="text-foreground font-medium">{data.professional_title}</dd>
+                              </div>
+                              <div>
+                                <dt className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Skills</dt>
+                                <dd className="text-foreground text-sm">{data.primary_skills?.slice(0, 3).join(', ')}{data.primary_skills?.length > 3 ? '...' : ''}</dd>
+                              </div>
                             </div>
                           </>
                         )}
                         {accountType === 'investor' && (
                           <>
-                            <div className="grid grid-cols-3 gap-2">
-                              <dt className="text-muted-foreground">Type:</dt>
-                              <dd className="col-span-2">{data.investor_type}</dd>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <dt className="text-muted-foreground">Ticket Size:</dt>
-                              <dd className="col-span-2">{data.ticket_size_range}</dd>
+                            <Separator />
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <dt className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Type</dt>
+                                <dd className="text-foreground font-medium capitalize">{data.investor_type?.replace('_', ' ')}</dd>
+                              </div>
+                              <div>
+                                <dt className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Ticket Size</dt>
+                                <dd className="text-foreground">{data.ticket_size_range}</dd>
+                              </div>
                             </div>
                           </>
                         )}
                         {accountType === 'government' && (
                           <>
-                            <div className="grid grid-cols-3 gap-2">
-                              <dt className="text-muted-foreground">Institution:</dt>
-                              <dd className="col-span-2">{data.institution_name}</dd>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <dt className="text-muted-foreground">Department:</dt>
-                              <dd className="col-span-2">{data.department_or_unit}</dd>
+                            <Separator />
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <dt className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Institution</dt>
+                                <dd className="text-foreground font-medium">{data.institution_name}</dd>
+                              </div>
+                              <div>
+                                <dt className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Department</dt>
+                                <dd className="text-foreground">{data.department_or_unit}</dd>
+                              </div>
                             </div>
                           </>
                         )}
@@ -654,46 +768,69 @@ export default function OnboardingProfile() {
                     );
                   })()}
                 </div>
-                <p className="text-sm text-muted-foreground">
+
+                <p className="text-xs text-center text-muted-foreground px-4">
                   By completing your profile, you agree to make your public information visible to other users for matching and discovery purposes.
                 </p>
               </div>
             )}
 
             {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8 pt-6 border-t">
+            <div className="flex justify-between mt-10 pt-6 border-t">
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={handleBack}
                 disabled={currentStep === 1 || saving}
+                className="gap-2"
               >
-                <ArrowLeft className="mr-2 h-4 w-4" />
+                <ArrowLeft className="h-4 w-4" />
                 Back
               </Button>
 
               {currentStep < 4 ? (
-                <Button type="button" onClick={handleNext} disabled={saving}>
+                <Button 
+                  type="button" 
+                  onClick={handleNext} 
+                  disabled={saving}
+                  size="lg"
+                  className="gap-2 px-8 shadow-lg shadow-primary/20"
+                >
                   {saving ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <ArrowRight className="mr-2 h-4 w-4" />
+                    <>
+                      Continue
+                      <ArrowRight className="h-4 w-4" />
+                    </>
                   )}
-                  Continue
                 </Button>
               ) : (
-                <Button type="button" onClick={handleComplete} disabled={saving}>
+                <Button 
+                  type="button" 
+                  onClick={handleComplete} 
+                  disabled={saving}
+                  size="lg"
+                  className="gap-2 px-8 bg-gradient-to-r from-zambia-green to-zambia-green/90 hover:from-zambia-green/90 hover:to-zambia-green/80 shadow-lg shadow-zambia-green/20"
+                >
                   {saving ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Check className="mr-2 h-4 w-4" />
+                    <>
+                      <Check className="h-4 w-4" strokeWidth={3} />
+                      Complete Profile
+                    </>
                   )}
-                  Complete Profile
                 </Button>
               )}
             </div>
           </CardContent>
         </Card>
+
+        {/* Help text */}
+        <p className="text-center text-xs text-muted-foreground mt-6">
+          Need help? <a href="/resources" className="text-primary hover:underline">Visit our resources</a> or contact support
+        </p>
       </div>
     </div>
   );

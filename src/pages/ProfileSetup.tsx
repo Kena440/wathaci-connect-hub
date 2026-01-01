@@ -6,12 +6,11 @@ import { DueDiligenceUpload } from '@/components/DueDiligenceUpload';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { UserTypeSubscriptions } from '@/components/UserTypeSubscriptions';
-import { User, Building, Briefcase, TrendingUp, Heart, Landmark, ArrowRight } from 'lucide-react';
+import { User, Building, Briefcase, TrendingUp, Heart, Landmark, ArrowRight, Check, Sparkles, FileCheck, Loader2 } from 'lucide-react';
 
 const accountTypes = [
   {
@@ -19,36 +18,54 @@ const accountTypes = [
     label: 'Sole Proprietor',
     description: 'Individual business owner running their own venture',
     icon: User,
+    color: 'from-violet-500/20 to-violet-600/10',
+    borderColor: 'border-violet-500/30',
+    iconColor: 'text-violet-600',
   },
   {
     value: 'professional',
     label: 'Professional',
     description: 'Expert offering specialized services (lawyers, accountants, consultants)',
     icon: Briefcase,
+    color: 'from-purple-500/20 to-purple-600/10',
+    borderColor: 'border-purple-500/30',
+    iconColor: 'text-purple-600',
   },
   {
     value: 'sme',
     label: 'SME',
     description: 'Small & Medium Enterprise with registered company',
     icon: Building,
+    color: 'from-blue-500/20 to-blue-600/10',
+    borderColor: 'border-blue-500/30',
+    iconColor: 'text-blue-600',
   },
   {
     value: 'investor',
     label: 'Investor',
     description: 'Individual or firm looking to invest in businesses',
     icon: TrendingUp,
+    color: 'from-emerald-500/20 to-emerald-600/10',
+    borderColor: 'border-emerald-500/30',
+    iconColor: 'text-emerald-600',
   },
   {
     value: 'donor',
     label: 'Donor',
     description: 'Philanthropist or organization providing grants/funding',
     icon: Heart,
+    color: 'from-rose-500/20 to-rose-600/10',
+    borderColor: 'border-rose-500/30',
+    iconColor: 'text-rose-600',
   },
   {
     value: 'government',
     label: 'Government Institution',
     description: 'Government agency or public sector organization',
     icon: Landmark,
+    color: 'from-amber-500/20 to-amber-600/10',
+    borderColor: 'border-amber-500/30',
+    iconColor: 'text-amber-600',
   },
 ];
 
@@ -145,43 +162,23 @@ export const ProfileSetup = () => {
     setLoading(true);
     
     try {
-      // Clean up the data - remove any undefined values and form-specific fields
       const cleanedData: Record<string, any> = {};
       
       const allowedFields = [
-        // Personal/Contact fields
         'first_name', 'last_name', 'full_name', 'phone', 'country', 'province', 
         'city', 'address', 'coordinates', 'profile_image_url', 'avatar_url',
-        
-        // Professional fields
         'title', 'bio', 'description', 'specialization', 'experience_years',
         'qualifications', 'certifications', 'license_number', 'skills',
         'services_offered', 'hourly_rate', 'currency', 'availability_status',
-        
-        // Business fields
         'business_name', 'registration_number', 'industry_sector', 'ownership_structure',
         'employee_count', 'annual_revenue', 'funding_stage', 'funding_needed',
         'years_in_business', 'business_model', 'sectors', 'target_market',
-        
-        // Social/Web links
         'website_url', 'linkedin_url', 'twitter_url', 'facebook_url', 'portfolio_url',
-        
-        // Payment fields
         'payment_method', 'payment_phone', 'use_same_phone',
-        
-        // Marketplace/Rating fields
         'rating', 'reviews_count', 'total_jobs_completed',
-        
-        // Compliance fields
         'compliance_verified', 'verification_date', 'documents_submitted',
-        
-        // Investor/Donor specific
         'total_invested', 'total_donated', 'investment_portfolio', 'preferred_sectors',
-        
-        // Communication preferences
         'preferred_contact_method', 'notification_preferences',
-        
-        // Other
         'account_type', 'gaps_identified'
       ];
 
@@ -223,28 +220,58 @@ export const ProfileSetup = () => {
     }
   };
 
+  const selectedTypeInfo = accountTypes.find(t => t.value === selectedAccountType);
+
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background via-background to-muted/30">
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />
+          <Loader2 className="h-12 w-12 animate-spin text-primary relative z-10" />
+        </div>
+        <p className="text-muted-foreground mt-4 animate-pulse">Loading...</p>
       </div>
     );
   }
 
   if (!showProfileForm) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted py-8 px-4">
-        <Card className="w-full max-w-3xl mx-auto">
-          <CardHeader className="text-center pb-2">
-            <CardTitle className="text-2xl">Welcome to WATHACI</CardTitle>
-            <CardDescription className="text-base">
-              Choose the account type that best describes your role
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label className="text-base font-medium">I am a...</Label>
-              <div className="grid gap-3">
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 py-8 px-4 sm:py-12">
+        {/* Background decoration */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/5 rounded-full blur-3xl" />
+        </div>
+        
+        <div className="max-w-3xl mx-auto relative z-10">
+          {/* Header */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-1.5 text-sm font-medium mb-4">
+              <Sparkles className="h-4 w-4" />
+              <span>Get Started</span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
+              Welcome to <span className="gradient-text">WATHACI</span>
+            </h1>
+            <p className="text-muted-foreground mt-3 max-w-lg mx-auto text-base sm:text-lg">
+              Choose the account type that best describes your role to unlock personalized features
+            </p>
+          </div>
+          
+          <Card className="shadow-xl border-0 bg-card/80 backdrop-blur-sm overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-muted/50 to-muted/30 border-b pb-6">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <User className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">I am a...</CardTitle>
+                  <CardDescription className="text-base">Select one to continue</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 sm:p-8 space-y-6">
+              <div className="grid gap-4">
                 {accountTypes.map((type) => {
                   const Icon = type.icon;
                   const isSelected = selectedAccountType === type.value;
@@ -253,73 +280,123 @@ export const ProfileSetup = () => {
                       key={type.value}
                       type="button"
                       onClick={() => setSelectedAccountType(type.value)}
-                      className={`flex items-start gap-4 p-4 rounded-lg border-2 text-left transition-all ${
+                      className={`group relative p-5 rounded-2xl border-2 text-left transition-all duration-300 ${
                         isSelected
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                          ? `border-primary bg-gradient-to-br ${type.color} shadow-lg shadow-primary/10`
+                          : 'border-border hover:border-primary/40 hover:bg-muted/30'
                       }`}
                     >
-                      <div className={`p-2 rounded-lg ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium">{type.label}</div>
-                        <div className="text-sm text-muted-foreground">{type.description}</div>
-                      </div>
-                      {isSelected && (
-                        <div className="text-primary">
-                          <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
+                      <div className="flex items-start gap-4">
+                        <div className={`p-3 rounded-xl transition-all ${
+                          isSelected 
+                            ? 'bg-primary text-primary-foreground shadow-md' 
+                            : `bg-gradient-to-br ${type.color} ${type.iconColor}`
+                        }`}>
+                          <Icon className="h-6 w-6" />
                         </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-foreground text-lg">{type.label}</div>
+                          <div className="text-sm text-muted-foreground mt-1 leading-relaxed">{type.description}</div>
+                        </div>
+                        {isSelected && (
+                          <div className="flex-shrink-0">
+                            <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                              <Check className="h-4 w-4" strokeWidth={3} />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {isSelected && (
+                        <div className="absolute inset-0 rounded-2xl ring-2 ring-primary ring-offset-2 ring-offset-background pointer-events-none" />
                       )}
                     </button>
                   );
                 })}
               </div>
-            </div>
-            <Button
-              onClick={handleAccountTypeSelect}
-              disabled={!selectedAccountType || loading}
-              className="w-full"
-              size="lg"
-            >
-              {loading ? 'Processing...' : (
-                <>
-                  Continue
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
+              
+              <Button
+                onClick={handleAccountTypeSelect}
+                disabled={!selectedAccountType || loading}
+                className="w-full gap-2 shadow-lg shadow-primary/20"
+                size="lg"
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    Continue
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted py-8 px-4">
-      <div className="max-w-6xl mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle>Complete Your Profile</CardTitle>
-            <CardDescription>
-              Set up your profile and complete due diligence to access all platform features
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/* Subscription Banner for Profile Setup */}
-            <div className="mb-6">
-              <UserTypeSubscriptions userType={selectedAccountType} />
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30 py-8 px-4 sm:py-12">
+      {/* Background decoration */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/5 rounded-full blur-3xl" />
+      </div>
+      
+      <div className="max-w-4xl mx-auto relative z-10">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-1.5 text-sm font-medium mb-4">
+            <Sparkles className="h-4 w-4" />
+            <span>Complete Your Profile</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
+            Set Up Your <span className="gradient-text">Profile</span>
+          </h1>
+          <p className="text-muted-foreground mt-3 max-w-lg mx-auto">
+            Complete your profile and due diligence to access all platform features
+          </p>
+          
+          {/* Account type badge */}
+          {selectedTypeInfo && (
+            <div className="mt-4 inline-flex items-center gap-2">
+              <Badge variant="secondary" className="text-sm gap-2 py-1.5 px-3">
+                <selectedTypeInfo.icon className={`h-4 w-4 ${selectedTypeInfo.iconColor}`} />
+                {selectedTypeInfo.label}
+              </Badge>
             </div>
-            
+          )}
+        </div>
+        
+        <Card className="shadow-xl border-0 bg-card/80 backdrop-blur-sm overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-muted/50 to-muted/30 border-b">
+            <UserTypeSubscriptions userType={selectedAccountType} />
+          </CardHeader>
+          
+          <CardContent className="p-0">
             <Tabs value={activeTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="profile">Profile Information</TabsTrigger>
-                <TabsTrigger value="documents">Due Diligence Documents</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 rounded-none border-b bg-muted/30 h-14">
+                <TabsTrigger 
+                  value="profile" 
+                  className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-none h-full"
+                >
+                  <User className="h-4 w-4" />
+                  <span className="hidden sm:inline">Profile Information</span>
+                  <span className="sm:hidden">Profile</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="documents"
+                  className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-none h-full"
+                >
+                  <FileCheck className="h-4 w-4" />
+                  <span className="hidden sm:inline">Due Diligence Documents</span>
+                  <span className="sm:hidden">Documents</span>
+                </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="profile" className="mt-6">
+              <TabsContent value="profile" className="p-6 sm:p-8 mt-0">
                 <EnhancedProfileForm
                   accountType={selectedAccountType}
                   onSubmit={handleProfileSubmit}
@@ -329,16 +406,21 @@ export const ProfileSetup = () => {
                 />
               </TabsContent>
               
-              <TabsContent value="documents" className="mt-6">
+              <TabsContent value="documents" className="p-6 sm:p-8 mt-0">
                 <DueDiligenceUpload onComplianceChange={setIsCompliant} />
                 {isCompliant && (
-                  <div className="mt-6 p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg">
-                    <div className="flex items-center gap-2 text-green-800 dark:text-green-200">
-                      <span className="font-semibold">✓ Compliance Complete</span>
+                  <div className="mt-6 p-5 bg-gradient-to-br from-zambia-green/10 to-zambia-green/5 border border-zambia-green/20 rounded-2xl">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-zambia-green/20 flex items-center justify-center">
+                        <Check className="h-5 w-5 text-zambia-green" strokeWidth={3} />
+                      </div>
+                      <div>
+                        <span className="font-semibold text-zambia-green">Compliance Complete</span>
+                        <p className="text-sm text-zambia-green/80 mt-0.5">
+                          You can now offer products and services on the marketplace.
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                      You can now offer products and services on the marketplace.
-                    </p>
                   </div>
                 )}
               </TabsContent>
