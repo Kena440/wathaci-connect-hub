@@ -83,6 +83,7 @@ export default function OnboardingProfile() {
   const { user, refreshProfile } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [accountType, setAccountType] = useState<AccountType | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -182,6 +183,11 @@ export default function OnboardingProfile() {
         if (profile) {
           if (profile.account_type) {
             setAccountType(profile.account_type as AccountType);
+          }
+          
+          // Load avatar
+          if (profile.avatar_url || profile.profile_image_url) {
+            setAvatarUrl(profile.avatar_url || profile.profile_image_url);
           }
           
           baseForm.reset({
@@ -309,6 +315,7 @@ export default function OnboardingProfile() {
           bio: baseData.bio,
           website_url: baseData.website_url || null,
           linkedin_url: baseData.linkedin_url || null,
+          avatar_url: avatarUrl,
           is_profile_complete: complete,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'id' });
@@ -607,7 +614,11 @@ export default function OnboardingProfile() {
             {currentStep === 2 && (
               <Form {...baseForm}>
                 <form className="space-y-6">
-                  <BaseInfoStep form={baseForm} />
+                  <BaseInfoStep 
+                    form={baseForm} 
+                    currentAvatar={avatarUrl}
+                    onAvatarChange={setAvatarUrl}
+                  />
                 </form>
               </Form>
             )}

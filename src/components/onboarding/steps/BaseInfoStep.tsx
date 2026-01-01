@@ -4,15 +4,35 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FormSection } from '../FormSection';
+import { AvatarUploadWithCrop } from '../AvatarUploadWithCrop';
 import { BaseProfileData } from '@/lib/validations/onboarding';
 
 interface BaseInfoStepProps {
   form: UseFormReturn<BaseProfileData>;
+  onAvatarChange?: (url: string | null) => void;
+  currentAvatar?: string | null;
 }
 
-export function BaseInfoStep({ form }: BaseInfoStepProps) {
+export function BaseInfoStep({ form, onAvatarChange, currentAvatar }: BaseInfoStepProps) {
+  const fullName = form.watch('full_name');
+  
   return (
     <div className="space-y-6">
+      {/* Profile Photo Section */}
+      <FormSection 
+        title="Profile Photo" 
+        description="Add a photo to personalize your profile"
+      >
+        <div className="flex justify-center py-2">
+          <AvatarUploadWithCrop
+            currentImage={currentAvatar}
+            onImageChange={onAvatarChange || (() => {})}
+            userName={fullName}
+            size="xl"
+          />
+        </div>
+      </FormSection>
+
       <FormSection 
         title="Personal Information" 
         description="Tell us about yourself"
