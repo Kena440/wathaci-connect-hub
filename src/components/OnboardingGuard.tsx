@@ -1,7 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useRef, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
 interface OnboardingGuardProps {
@@ -18,48 +17,36 @@ const EXEMPT_ROUTES = [
   '/terms-of-service',
 ];
 
+// Routes that require authentication but not profile completion
+const PUBLIC_ROUTES = [
+  '/',
+  '/marketplace',
+  '/freelancer-hub',
+  '/funding-hub',
+  '/resources',
+  '/get-started',
+  '/subscription-plans',
+  '/partnership-hub',
+  '/about-us',
+  '/donate',
+  '/install',
+  '/profile/',
+];
+
 export function OnboardingGuard({ children }: OnboardingGuardProps) {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, profile, profileLoading } = useAuth();
   const location = useLocation();
-  const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
-  const [checking, setChecking] = useState(true);
+  const redirectingRef = useRef(false);
+  const [hasDecided, setHasDecided] = useState(false);
 
+  // Reset redirect ref when location changes
   useEffect(() => {
-    const checkProfileCompletion = async () => {
-      if (!user) {
-        setProfileComplete(null);
-        setChecking(false);
-        return;
-      }
+    redirectingRef.current = false;
+    setHasDecided(false);
+  }, [location.pathname]);
 
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('is_profile_complete')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (error) {
-          console.error('Error checking profile:', error);
-          setProfileComplete(false);
-        } else {
-          setProfileComplete(data?.is_profile_complete ?? false);
-        }
-      } catch (error) {
-        console.error('Error checking profile completion:', error);
-        setProfileComplete(false);
-      } finally {
-        setChecking(false);
-      }
-    };
-
-    if (!authLoading) {
-      checkProfileCompletion();
-    }
-  }, [user, authLoading]);
-
-  // Still loading auth state
-  if (authLoading || checking) {
+  // Wait until auth and profile are fully loaded
+  if (authLoading || (user && profileLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -67,15 +54,42 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
     );
   }
 
-  // Check if current route is exempt
+  // Check if current route is exempt from profile completion requirement
   const isExemptRoute = EXEMPT_ROUTES.some(route => 
     location.pathname.startsWith(route)
   );
 
-  // User is logged in, profile incomplete, and not on exempt route
-  if (user && profileComplete === false && !isExemptRoute) {
+  // Check if current route is public (doesn't require auth)
+  const isPublicRoute = PUBLIC_ROUTES.some(route => 
+    location.pathname === route || location.pathname.startsWith(route)
+  );
+
+  // Not logged in - allow access to public and auth routes
+  if (!user) {
+    return <>{children}</>;
+  }
+
+  // User is logged in - check profile completion
+  const isProfileComplete = profile?.is_profile_complete === true;
+
+  // Already on onboarding page
+  if (location.pathname.startsWith('/onboarding/profile')) {
+    // If profile is complete, redirect away from onboarding
+    if (isProfileComplete && !redirectingRef.current) {
+      redirectingRef.current = true;
+      const from = (location.state as any)?.from?.pathname || '/';
+      return <Navigate to={from} replace />;
+    }
+    // Profile incomplete, stay on onboarding
+    return <>{children}</>;
+  }
+
+  // Profile is incomplete and not on exempt route - redirect to onboarding
+  if (!isProfileComplete && !isExemptRoute && !redirectingRef.current) {
+    redirectingRef.current = true;
     return <Navigate to="/onboarding/profile" state={{ from: location }} replace />;
   }
 
+  // Profile is complete or on exempt route - allow access
   return <>{children}</>;
 }
