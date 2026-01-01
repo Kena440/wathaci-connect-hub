@@ -8,6 +8,7 @@ import { AppProvider } from "@/contexts/AppContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { OnboardingGuard } from "@/components/OnboardingGuard";
+import { AdminGuard } from "@/components/admin/AdminGuard";
 import { HelmetProvider } from 'react-helmet-async';
 import Index from "./pages/Index";
 import Marketplace from "./pages/Marketplace";
@@ -32,6 +33,11 @@ import Donate from "./pages/Donate";
 import Install from "./pages/Install";
 import OnboardingProfile from "./pages/OnboardingProfile";
 import PublicProfile from "./pages/PublicProfile";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import UsersManager from "./pages/admin/UsersManager";
+import RolesManager from "./pages/admin/RolesManager";
+import AuditLogs from "./pages/admin/AuditLogs";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +85,12 @@ export const AppRoutes = () => (
     } />
     <Route path="/donate" element={<Donate />} />
     <Route path="/install" element={<Install />} />
+    {/* Admin Routes */}
+    <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
+    <Route path="/admin/users" element={<AdminGuard><UsersManager /></AdminGuard>} />
+    <Route path="/admin/roles" element={<AdminGuard><RolesManager /></AdminGuard>} />
+    <Route path="/admin/audit-logs" element={<AdminGuard><AuditLogs /></AdminGuard>} />
+    <Route path="/admin/settings" element={<AdminGuard><AdminSettings /></AdminGuard>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
