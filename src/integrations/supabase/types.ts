@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          after: Json | null
+          before: Json | null
+          created_at: string
+          entity: string
+          entity_id: string | null
+          id: string
+          metadata: Json | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          entity: string
+          entity_id?: string | null
+          id?: string
+          metadata?: Json | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          entity?: string
+          entity_id?: string | null
+          id?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
       donations: {
         Row: {
           amount: number
@@ -1935,20 +1971,29 @@ export type Database = {
       user_roles: {
         Row: {
           created_at: string
+          created_by: string | null
           id: string
+          notes: string | null
           role: Database["public"]["Enums"]["app_role"]
+          updated_at: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: string
+          notes?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: string
+          notes?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -2020,9 +2065,26 @@ export type Database = {
       }
     }
     Functions: {
+      assign_admin_role: {
+        Args: {
+          p_notes?: string
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_target_user_id: string
+        }
+        Returns: Json
+      }
       calculate_platform_fee: {
         Args: { p_amount: number; p_currency: string }
         Returns: number
+      }
+      complete_profile: {
+        Args: {
+          p_account_type: string
+          p_base_data: Json
+          p_role_data: Json
+          p_user_id: string
+        }
+        Returns: Json
       }
       has_role: {
         Args: {
@@ -2030,6 +2092,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      is_admin: { Args: { check_user_id: string }; Returns: boolean }
+      revoke_admin_role: {
+        Args: {
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_target_user_id: string
+        }
+        Returns: Json
       }
     }
     Enums: {
