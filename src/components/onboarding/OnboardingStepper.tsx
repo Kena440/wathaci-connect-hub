@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Check } from 'lucide-react';
+import { Check, Sparkles } from 'lucide-react';
 
 interface Step {
   id: number;
@@ -15,58 +15,79 @@ interface OnboardingStepperProps {
 
 export function OnboardingStepper({ steps, currentStep, onStepClick }: OnboardingStepperProps) {
   return (
-    <nav aria-label="Progress" className="mb-8">
-      <ol className="flex items-center justify-between">
-        {steps.map((step, index) => (
-          <li key={step.id} className={cn('relative flex-1', index !== steps.length - 1 && 'pr-8 sm:pr-20')}>
-            {/* Connector line */}
-            {index !== steps.length - 1 && (
-              <div
-                className={cn(
-                  'absolute top-4 left-0 -right-8 sm:-right-20 h-0.5 w-full',
-                  step.id < currentStep ? 'bg-primary' : 'bg-muted'
-                )}
-                style={{ left: '50%' }}
-              />
-            )}
-            
-            {/* Step indicator */}
-            <button
-              type="button"
-              onClick={() => onStepClick?.(step.id)}
-              disabled={step.id > currentStep}
-              className={cn(
-                'relative flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-medium transition-all',
-                step.id < currentStep && 'border-primary bg-primary text-primary-foreground cursor-pointer',
-                step.id === currentStep && 'border-primary bg-background text-primary',
-                step.id > currentStep && 'border-muted bg-muted text-muted-foreground cursor-not-allowed'
+    <nav aria-label="Progress" className="mb-10">
+      <ol className="flex items-center w-full">
+        {steps.map((step, index) => {
+          const isCompleted = step.id < currentStep;
+          const isCurrent = step.id === currentStep;
+          const isUpcoming = step.id > currentStep;
+          
+          return (
+            <li key={step.id} className={cn('flex items-center', index !== steps.length - 1 && 'flex-1')}>
+              {/* Step indicator */}
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onStepClick?.(step.id)}
+                  disabled={isUpcoming}
+                  className={cn(
+                    'relative flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-semibold transition-all duration-300',
+                    isCompleted && 'bg-gradient-to-br from-zambia-green to-zambia-green/80 text-white shadow-lg shadow-zambia-green/25 cursor-pointer hover:scale-105',
+                    isCurrent && 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground ring-4 ring-primary/20 shadow-xl shadow-primary/20 animate-pulse-glow',
+                    isUpcoming && 'bg-muted text-muted-foreground cursor-not-allowed border-2 border-dashed border-muted-foreground/30'
+                  )}
+                >
+                  {isCompleted ? (
+                    <Check className="h-5 w-5" strokeWidth={3} />
+                  ) : isCurrent ? (
+                    <Sparkles className="h-5 w-5" />
+                  ) : (
+                    <span className="text-lg">{step.id}</span>
+                  )}
+                  
+                  {/* Glow effect for current step */}
+                  {isCurrent && (
+                    <span className="absolute inset-0 rounded-2xl bg-primary/30 blur-md -z-10" />
+                  )}
+                </button>
+                
+                {/* Step label */}
+                <div className="text-center max-w-[100px]">
+                  <span
+                    className={cn(
+                      'text-xs font-semibold uppercase tracking-wide transition-colors',
+                      isCompleted && 'text-zambia-green',
+                      isCurrent && 'text-primary',
+                      isUpcoming && 'text-muted-foreground'
+                    )}
+                  >
+                    {step.name}
+                  </span>
+                  {step.description && (
+                    <p className={cn(
+                      'text-[10px] mt-0.5 hidden sm:block transition-colors',
+                      isCurrent ? 'text-foreground/70' : 'text-muted-foreground'
+                    )}>
+                      {step.description}
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              {/* Connector line */}
+              {index !== steps.length - 1 && (
+                <div className="flex-1 mx-4 hidden sm:block">
+                  <div
+                    className={cn(
+                      'h-1 rounded-full transition-all duration-500',
+                      isCompleted ? 'bg-gradient-to-r from-zambia-green to-zambia-green/60' : 'bg-muted'
+                    )}
+                  />
+                </div>
               )}
-            >
-              {step.id < currentStep ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <span>{step.id}</span>
-              )}
-            </button>
-            
-            {/* Step label */}
-            <div className="mt-2">
-              <span
-                className={cn(
-                  'text-xs font-medium',
-                  step.id <= currentStep ? 'text-foreground' : 'text-muted-foreground'
-                )}
-              >
-                {step.name}
-              </span>
-              {step.description && (
-                <p className="text-xs text-muted-foreground hidden sm:block">
-                  {step.description}
-                </p>
-              )}
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ol>
     </nav>
   );
