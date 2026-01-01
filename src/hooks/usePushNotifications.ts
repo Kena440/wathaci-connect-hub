@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { notifyNewOrder, notifyOrderStatusChange, notifyNewMessage, notifyFundingOpportunity } from './useEmailNotification';
 
 interface PushNotificationState {
   isSupported: boolean;
@@ -80,7 +81,7 @@ export const usePushNotifications = () => {
 
   // Subscribe to real-time notifications
   useEffect(() => {
-    if (!user || state.permission !== 'granted') return;
+    if (!user) return;
 
     // Listen for new messages
     const messagesChannel = supabase
@@ -93,12 +94,50 @@ export const usePushNotifications = () => {
           table: 'negotiation_messages',
           filter: `sender_id=neq.${user.id}`,
         },
-        (payload) => {
-          showNotification('New Message', {
-            body: 'You have a new message in your negotiation',
-            tag: 'message',
-            data: { type: 'message', id: payload.new.id },
-          });
+        async (payload) => {
+          // Show push notification if permission granted
+          if (state.permission === 'granted') {
+            showNotification('New Message', {
+              body: 'You have a new message in your negotiation',
+              tag: 'message',
+              data: { type: 'message', id: payload.new.id },
+            });
+          }
+          
+          // Also try to send email notification
+          try {
+            // Get the negotiation to find the recipient
+            const message = payload.new as any;
+            const { data: negotiation } = await supabase
+              .from('negotiations')
+              .select('client_id, provider_id')
+              .eq('id', message.negotiation_id)
+              .single();
+            
+            if (negotiation) {
+              const recipientId = message.sender_id === negotiation.client_id 
+                ? negotiation.provider_id 
+                : negotiation.client_id;
+              
+              // Get sender name
+              const { data: sender } = await supabase
+                .from('profiles')
+                .select('full_name, business_name')
+                .eq('id', message.sender_id)
+                .single();
+              
+              const senderName = sender?.full_name || sender?.business_name || 'Someone';
+              
+              await notifyNewMessage(
+                recipientId,
+                senderName,
+                message.message || '',
+                message.id
+              );
+            }
+          } catch (error) {
+            console.error('Error sending email notification:', error);
+          }
         }
       )
       .subscribe();
@@ -112,14 +151,36 @@ export const usePushNotifications = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'orders',
-          filter: `provider_id=eq.${user.id}`,
         },
-        (payload) => {
-          showNotification('New Order!', {
-            body: `You have a new order: ${payload.new.service_title}`,
-            tag: 'order',
-            data: { type: 'order', id: payload.new.id },
-          });
+        async (payload) => {
+          const order = payload.new as any;
+          
+          // Only notify the provider
+          if (order.provider_id === user.id) {
+            if (state.permission === 'granted') {
+              showNotification('New Order!', {
+                body: `You have a new order: ${order.service_title}`,
+                tag: 'order',
+                data: { type: 'order', id: order.id },
+              });
+            }
+          }
+          
+          // Send email notification to provider
+          try {
+            await notifyNewOrder(
+              order.provider_id,
+              {
+                service: order.service_title,
+                amount: order.total_amount,
+                currency: order.currency,
+                status: order.status
+              },
+              order.id
+            );
+          } catch (error) {
+            console.error('Error sending order email:', error);
+          }
         }
       )
       .on(
@@ -129,14 +190,38 @@ export const usePushNotifications = () => {
           schema: 'public',
           table: 'orders',
         },
-        (payload) => {
+        async (payload) => {
           const order = payload.new as any;
-          if (order.client_id === user.id || order.provider_id === user.id) {
-            showNotification('Order Updated', {
-              body: `Order "${order.service_title}" status changed to ${order.status}`,
-              tag: 'order-update',
-              data: { type: 'order', id: order.id },
-            });
+          const isParticipant = order.client_id === user.id || order.provider_id === user.id;
+          
+          if (isParticipant) {
+            if (state.permission === 'granted') {
+              showNotification('Order Updated', {
+                body: `Order "${order.service_title}" status changed to ${order.status}`,
+                tag: 'order-update',
+                data: { type: 'order', id: order.id },
+              });
+            }
+            
+            // Notify the other party via email
+            try {
+              const notifyUserId = order.client_id === user.id 
+                ? order.provider_id 
+                : order.client_id;
+              
+              await notifyOrderStatusChange(
+                notifyUserId,
+                {
+                  service: order.service_title,
+                  amount: order.total_amount,
+                  currency: order.currency,
+                  status: order.status
+                },
+                order.id
+              );
+            } catch (error) {
+              console.error('Error sending order update email:', error);
+            }
           }
         }
       )
@@ -152,12 +237,19 @@ export const usePushNotifications = () => {
           schema: 'public',
           table: 'funding_opportunities',
         },
-        (payload) => {
-          showNotification('New Funding Opportunity!', {
-            body: `${payload.new.title} from ${payload.new.organization}`,
-            tag: 'funding',
-            data: { type: 'funding', id: payload.new.id },
-          });
+        async (payload) => {
+          const opportunity = payload.new as any;
+          
+          if (state.permission === 'granted') {
+            showNotification('New Funding Opportunity!', {
+              body: `${opportunity.title} from ${opportunity.organization}`,
+              tag: 'funding',
+              data: { type: 'funding', id: opportunity.id },
+            });
+          }
+          
+          // Send email to users who match the opportunity criteria
+          // This is handled in a separate scheduled function for efficiency
         }
       )
       .subscribe();
