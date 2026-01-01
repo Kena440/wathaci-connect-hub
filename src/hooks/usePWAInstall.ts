@@ -11,7 +11,7 @@ interface PWAInstallState {
   isInstallable: boolean;
   isInstalled: boolean;
   isIOS: boolean;
-  showIOSInstructions: boolean;
+  isIOSInstructionsOpen: boolean;
   canPrompt: boolean;
 }
 
@@ -28,7 +28,7 @@ export const usePWAInstall = () => {
     isInstallable: false,
     isInstalled: false,
     isIOS: false,
-    showIOSInstructions: false,
+    isIOSInstructionsOpen: false,
     canPrompt: false,
   });
 
@@ -188,28 +188,32 @@ export const usePWAInstall = () => {
   }, [deferredPrompt, user?.id]);
 
   // Show iOS instructions
-  const showIOSInstructions = useCallback(() => {
+  const openIOSInstructions = useCallback(() => {
     trackAnalytics('prompt_shown');
-    setState(prev => ({ ...prev, showIOSInstructions: true }));
+    setState(prev => ({ ...prev, isIOSInstructionsOpen: true }));
   }, [user?.id]);
 
   // Hide iOS instructions
-  const hideIOSInstructions = useCallback(() => {
-    setState(prev => ({ ...prev, showIOSInstructions: false }));
+  const closeIOSInstructions = useCallback(() => {
+    setState(prev => ({ ...prev, isIOSInstructionsOpen: false }));
   }, []);
 
   // Dismiss prompt
   const dismissPrompt = useCallback(() => {
     trackAnalytics('prompt_dismissed');
     localStorage.setItem(STORAGE_KEY, new Date().toISOString());
-    setState(prev => ({ ...prev, canPrompt: false, showIOSInstructions: false }));
+    setState(prev => ({ ...prev, canPrompt: false, isIOSInstructionsOpen: false }));
   }, [user?.id]);
 
   return {
-    ...state,
+    isInstallable: state.isInstallable,
+    isInstalled: state.isInstalled,
+    isIOS: state.isIOS,
+    isIOSInstructionsOpen: state.isIOSInstructionsOpen,
+    canPrompt: state.canPrompt,
     promptInstall,
-    showIOSInstructions,
-    hideIOSInstructions,
+    openIOSInstructions,
+    closeIOSInstructions,
     dismissPrompt,
   };
 };

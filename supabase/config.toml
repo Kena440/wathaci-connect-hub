@@ -41,3 +41,9 @@ verify_jwt = false
 
 [functions.send-notification]
 verify_jwt = true
+
+[functions.ai-funding-search]
+verify_jwt = false
+
+[functions.sme-matching]
+verify_jwt = true

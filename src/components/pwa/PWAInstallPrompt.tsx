@@ -15,29 +15,35 @@ export const PWAInstallPrompt: React.FC = () => {
   const {
     canPrompt,
     isIOS,
-    showIOSInstructions: showInstructions,
-    promptInstall,
-    showIOSInstructions,
-    hideIOSInstructions,
-    dismissPrompt,
     isInstalled,
+    isIOSInstructionsOpen,
+    promptInstall,
+    openIOSInstructions,
+    closeIOSInstructions,
+    dismissPrompt,
   } = usePWAInstall();
 
-  if (isInstalled || (!canPrompt && !showInstructions)) {
+  if (isInstalled || (!canPrompt && !isIOSInstructionsOpen)) {
     return null;
   }
 
   const handleInstall = () => {
     if (isIOS) {
-      showIOSInstructions();
+      openIOSInstructions();
     } else {
       promptInstall();
     }
   };
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      closeIOSInstructions();
+    }
+  };
+
   return (
     <>
-      {canPrompt && !showInstructions && (
+      {canPrompt && !isIOSInstructionsOpen && (
         <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/95 backdrop-blur-sm border-t border-border shadow-lg">
           <Card className="max-w-lg mx-auto p-4">
             <div className="flex items-start gap-4">
@@ -67,7 +73,7 @@ export const PWAInstallPrompt: React.FC = () => {
         </div>
       )}
 
-      <Dialog open={showInstructions} onOpenChange={(open) => { if (!open) hideIOSInstructions(); }}>
+      <Dialog open={isIOSInstructionsOpen} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -108,7 +114,7 @@ export const PWAInstallPrompt: React.FC = () => {
 
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={dismissPrompt}>Maybe later</Button>
-            <Button onClick={hideIOSInstructions}>Got it</Button>
+            <Button onClick={closeIOSInstructions}>Got it</Button>
           </div>
         </DialogContent>
       </Dialog>
