@@ -6,12 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/components/AppLayout';
 import { LencoPayment } from '@/components/LencoPayment';
+import { DonateImpactStats } from '@/components/DonateImpactStats';
 import { 
   Heart, 
-  Users, 
-  TrendingUp, 
-  Briefcase, 
-  GraduationCap, 
   Lightbulb,
   HandHeart,
   Globe,
@@ -20,13 +17,6 @@ import {
   Sparkles
 } from 'lucide-react';
 import wathciLogo from '@/assets/wathaci-logo.png';
-
-const impactStats = [
-  { icon: Users, value: '2,500+', label: 'SMEs Supported' },
-  { icon: Briefcase, value: '15,000+', label: 'Jobs Created' },
-  { icon: TrendingUp, value: 'K50M+', label: 'Revenue Generated' },
-  { icon: GraduationCap, value: '500+', label: 'Training Sessions' },
-];
 
 const donationTiers = [
   { 
@@ -161,22 +151,8 @@ export const Donate = () => {
         <Sparkles className="absolute bottom-40 left-1/4 h-5 w-5 text-accent/30 animate-pulse delay-300" />
       </section>
 
-      {/* Impact Stats */}
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {impactStats.map((stat, index) => (
-              <div key={index} className="text-center group">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 text-primary mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <stat.icon className="h-8 w-8" />
-                </div>
-                <div className="text-3xl md:text-4xl font-bold text-foreground mb-2">{stat.value}</div>
-                <div className="text-muted-foreground font-medium">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Impact Stats - Real Data */}
+      <DonateImpactStats />
 
       {/* Donation Section */}
       <section id="donate-section" className="py-20 bg-background">

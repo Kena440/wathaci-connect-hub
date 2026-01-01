@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { AppSidebar } from './AppSidebar';
 import Footer from './Footer';
 import CisoAssistant from './CisoAssistant';
+import NotificationPermissionBanner from './NotificationPermissionBanner';
 
 interface AppLayoutProps {
   children?: ReactNode;
@@ -19,6 +20,7 @@ export const AppLayout = ({ children, showFooter = true }: AppLayoutProps) => {
         {showFooter && <Footer />}
       </div>
       <CisoAssistant />
+      <NotificationPermissionBanner />
     </div>
   );
 };

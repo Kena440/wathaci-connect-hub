@@ -12,6 +12,8 @@ import Marketplace from "./pages/Marketplace";
 import Resources from "./pages/Resources";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import { GetStarted } from "./pages/GetStarted";
 import { SubscriptionPlans } from "./pages/SubscriptionPlans";
 import { PartnershipHub } from "./pages/PartnershipHub";
@@ -33,6 +35,8 @@ export const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<Index />} />
     <Route path="/auth" element={<Auth />} />
+    <Route path="/forgot-password" element={<ForgotPassword />} />
+    <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/marketplace" element={<Marketplace />} />
     <Route path="/freelancer-hub" element={<FreelancerHub />} />
     <Route path="/funding-hub" element={<FundingHub />} />

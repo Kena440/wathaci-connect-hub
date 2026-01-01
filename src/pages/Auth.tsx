@@ -225,7 +225,15 @@ export default function Auth() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signin-password" className="text-foreground font-medium">Password</Label>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="signin-password" className="text-foreground font-medium">Password</Label>
+                        <Link 
+                          to="/forgot-password" 
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Forgot password?
+                        </Link>
+                      </div>
                       <div className="relative">
                         <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -240,7 +248,7 @@ export default function Auth() {
                       </div>
                     </div>
                     <Button 
-                      type="submit" 
+                      type="submit"
                       className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold group" 
                       disabled={isLoading}
                     >
