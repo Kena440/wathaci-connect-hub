@@ -1270,6 +1270,48 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_details: {
+        Row: {
+          bank_account_number: string | null
+          bank_name: string | null
+          card_details: Json | null
+          created_at: string
+          id: string
+          mobile_money_number: string | null
+          mobile_money_provider: string | null
+          payment_method: string | null
+          payment_phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bank_account_number?: string | null
+          bank_name?: string | null
+          card_details?: Json | null
+          created_at?: string
+          id?: string
+          mobile_money_number?: string | null
+          mobile_money_provider?: string | null
+          payment_method?: string | null
+          payment_phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bank_account_number?: string | null
+          bank_name?: string | null
+          card_details?: Json | null
+          created_at?: string
+          id?: string
+          mobile_money_number?: string | null
+          mobile_money_provider?: string | null
+          payment_method?: string | null
+          payment_phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       platform_fee_tiers: {
         Row: {
           created_at: string
@@ -1310,7 +1352,6 @@ export type Database = {
           bio: string | null
           business_model: string | null
           business_name: string | null
-          card_details: Json | null
           certifications: Json | null
           city: string | null
           compliance_verified: boolean | null
@@ -1340,8 +1381,6 @@ export type Database = {
           linkedin_url: string | null
           notification_preferences: Json | null
           ownership_structure: string | null
-          payment_method: string | null
-          payment_phone: string | null
           phone: string | null
           portfolio_url: string | null
           preferred_contact_method: string | null
@@ -1378,7 +1417,6 @@ export type Database = {
           bio?: string | null
           business_model?: string | null
           business_name?: string | null
-          card_details?: Json | null
           certifications?: Json | null
           city?: string | null
           compliance_verified?: boolean | null
@@ -1408,8 +1446,6 @@ export type Database = {
           linkedin_url?: string | null
           notification_preferences?: Json | null
           ownership_structure?: string | null
-          payment_method?: string | null
-          payment_phone?: string | null
           phone?: string | null
           portfolio_url?: string | null
           preferred_contact_method?: string | null
@@ -1446,7 +1482,6 @@ export type Database = {
           bio?: string | null
           business_model?: string | null
           business_name?: string | null
-          card_details?: Json | null
           certifications?: Json | null
           city?: string | null
           compliance_verified?: boolean | null
@@ -1476,8 +1511,6 @@ export type Database = {
           linkedin_url?: string | null
           notification_preferences?: Json | null
           ownership_structure?: string | null
-          payment_method?: string | null
-          payment_phone?: string | null
           phone?: string | null
           portfolio_url?: string | null
           preferred_contact_method?: string | null
