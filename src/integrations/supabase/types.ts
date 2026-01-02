@@ -2341,7 +2341,6 @@ export type Database = {
           display_name: string | null
           experience_level: string | null
           freelancer_services: string | null
-          full_name: string | null
           funding_needed: boolean | null
           geo_focus: string[] | null
           id: string | null
@@ -2385,7 +2384,6 @@ export type Database = {
           country: string | null
           created_at: string | null
           display_name: string | null
-          full_name: string | null
           id: string | null
           industry_sector: string | null
           is_profile_complete: boolean | null
@@ -2409,7 +2407,6 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           display_name?: string | null
-          full_name?: string | null
           id?: string | null
           industry_sector?: string | null
           is_profile_complete?: boolean | null
@@ -2433,7 +2430,6 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           display_name?: string | null
-          full_name?: string | null
           id?: string | null
           industry_sector?: string | null
           is_profile_complete?: boolean | null
