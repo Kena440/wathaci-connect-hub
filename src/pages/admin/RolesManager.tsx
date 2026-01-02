@@ -70,12 +70,10 @@ const RolesManager = () => {
 
       if (error) throw error;
 
-      // Get profile info for each user
       const userIds = roles?.map(r => r.user_id) || [];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name, display_name, email, avatar_url')
-        .in('id', userIds);
+      const { data: profiles, error: profilesError } = await supabase.rpc('admin_list_profiles', { p_limit: 200 });
+      if (profilesError) throw profilesError;
+      const profilesMap = new Map((profiles as any[] | null)?.map(p => [p.id, p]));
 
       const profilesMap = new Map(profiles?.map(p => [p.id, p]));
 
@@ -90,10 +88,26 @@ const RolesManager = () => {
   const { data: allUsers } = useQuery({
     queryKey: ['all-users-for-roles', searchQuery],
     queryFn: async () => {
-      let query = supabase
-        .from('profiles')
-        .select('id, full_name, display_name, email, avatar_url')
-        .limit(20);
+      const { data, error } = await supabase.rpc('admin_list_profiles', { p_limit: 200 });
+      if (error) throw error;
+      let rows = (data as any[]) || [];
+
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        rows = rows.filter(r =>
+          [r.full_name, r.email, r.display_name].some((v: any) =>
+            typeof v === 'string' && v.toLowerCase().includes(q)
+          )
+        );
+      }
+
+      return rows.slice(0, 20).map(r => ({
+        id: r.id,
+        full_name: r.full_name,
+        display_name: r.display_name,
+        email: r.email,
+        avatar_url: r.avatar_url,
+      }));
 
       if (searchQuery) {
         query = query.or(`full_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);

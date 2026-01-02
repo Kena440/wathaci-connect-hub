@@ -96,10 +96,7 @@ export const ProfileSetup = () => {
     
     try {
       const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
+        .rpc('get_my_profile');
 
       if (error) {
         throw error;

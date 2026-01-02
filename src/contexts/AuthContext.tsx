@@ -50,10 +50,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setProfileLoading(true);
       
       const { data, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url, account_type, is_profile_complete')
-        .eq('id', userId)
-        .maybeSingle();
+        .rpc('get_my_profile');
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+
+      const row = data as any;
+      const profileData = row ? {
+        id: row.id,
+        full_name: row.full_name,
+        avatar_url: row.avatar_url,
+        account_type: row.account_type,
+        is_profile_complete: row.is_profile_complete ?? false,
+      } : null;
+
+      // Check admin role
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .in('role', ['admin', 'moderator']);
+
+      setIsAdmin((roleData && roleData.length > 0) || false);
+
+      setProfile(profileData);
+      return profileData;
 
       if (error) {
         console.error('Error fetching profile:', error);

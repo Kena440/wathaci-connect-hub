@@ -2492,6 +2492,80 @@ export type Database = {
       }
     }
     Functions: {
+      admin_list_profiles: {
+        Args: { p_limit?: number }
+        Returns: {
+          account_type: string | null
+          address: string | null
+          annual_revenue: number | null
+          availability_status: string | null
+          avatar_url: string | null
+          bio: string | null
+          business_model: string | null
+          business_name: string | null
+          certifications: Json | null
+          city: string | null
+          compliance_verified: boolean | null
+          coordinates: Json | null
+          country: string | null
+          created_at: string
+          currency: string | null
+          description: string | null
+          display_name: string | null
+          documents_submitted: boolean | null
+          email: string | null
+          employee_count: number | null
+          experience_years: number | null
+          facebook_url: string | null
+          first_name: string | null
+          full_name: string | null
+          funding_needed: number | null
+          funding_stage: string | null
+          gaps_identified: string[] | null
+          hourly_rate: number | null
+          id: string
+          industry_sector: string | null
+          investment_portfolio: Json | null
+          is_profile_complete: boolean
+          last_name: string | null
+          license_number: string | null
+          linkedin_url: string | null
+          notification_preferences: Json | null
+          ownership_structure: string | null
+          phone: string | null
+          portfolio_url: string | null
+          preferred_contact_method: string | null
+          preferred_sectors: string[] | null
+          profile_completed: boolean | null
+          profile_image_url: string | null
+          province: string | null
+          qualifications: Json | null
+          rating: number | null
+          registration_number: string | null
+          reviews_count: number | null
+          sectors: string[] | null
+          services_offered: string[] | null
+          skills: string[] | null
+          specialization: string | null
+          target_market: string[] | null
+          title: string | null
+          total_donated: number | null
+          total_invested: number | null
+          total_jobs_completed: number | null
+          twitter_url: string | null
+          updated_at: string
+          use_same_phone: boolean | null
+          verification_date: string | null
+          website_url: string | null
+          years_in_business: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       admin_repair_wallet_transaction: {
         Args: {
           p_amount: number
@@ -2537,6 +2611,80 @@ export type Database = {
         Returns: Json
       }
       get_grace_period_end: { Args: never; Returns: string }
+      get_my_profile: {
+        Args: never
+        Returns: {
+          account_type: string | null
+          address: string | null
+          annual_revenue: number | null
+          availability_status: string | null
+          avatar_url: string | null
+          bio: string | null
+          business_model: string | null
+          business_name: string | null
+          certifications: Json | null
+          city: string | null
+          compliance_verified: boolean | null
+          coordinates: Json | null
+          country: string | null
+          created_at: string
+          currency: string | null
+          description: string | null
+          display_name: string | null
+          documents_submitted: boolean | null
+          email: string | null
+          employee_count: number | null
+          experience_years: number | null
+          facebook_url: string | null
+          first_name: string | null
+          full_name: string | null
+          funding_needed: number | null
+          funding_stage: string | null
+          gaps_identified: string[] | null
+          hourly_rate: number | null
+          id: string
+          industry_sector: string | null
+          investment_portfolio: Json | null
+          is_profile_complete: boolean
+          last_name: string | null
+          license_number: string | null
+          linkedin_url: string | null
+          notification_preferences: Json | null
+          ownership_structure: string | null
+          phone: string | null
+          portfolio_url: string | null
+          preferred_contact_method: string | null
+          preferred_sectors: string[] | null
+          profile_completed: boolean | null
+          profile_image_url: string | null
+          province: string | null
+          qualifications: Json | null
+          rating: number | null
+          registration_number: string | null
+          reviews_count: number | null
+          sectors: string[] | null
+          services_offered: string[] | null
+          skills: string[] | null
+          specialization: string | null
+          target_market: string[] | null
+          title: string | null
+          total_donated: number | null
+          total_invested: number | null
+          total_jobs_completed: number | null
+          twitter_url: string | null
+          updated_at: string
+          use_same_phone: boolean | null
+          verification_date: string | null
+          website_url: string | null
+          years_in_business: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_user_entitlements: { Args: { p_user_id: string }; Returns: Json }
       has_full_access: { Args: { p_user_id: string }; Returns: boolean }
       has_role: {
