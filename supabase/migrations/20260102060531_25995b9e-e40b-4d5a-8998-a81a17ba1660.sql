@@ -1,0 +1,158 @@
+-- Fix public profile views to enforce RLS and remove sensitive data exposure
+
+-- Drop and recreate v_public_profiles_safe with security_invoker
+DROP VIEW IF EXISTS public.v_public_profiles_safe;
+CREATE OR REPLACE VIEW public.v_public_profiles_safe
+WITH (security_invoker = true)
+AS
+SELECT 
+  id,
+  display_name,
+  -- Use display_name only, not full_name
+  account_type,
+  city,
+  country,
+  bio,
+  avatar_url,
+  business_name,
+  industry_sector,
+  specialization,
+  skills,
+  services_offered,
+  rating,
+  reviews_count,
+  total_jobs_completed,
+  website_url,
+  linkedin_url,
+  portfolio_url,
+  availability_status,
+  is_profile_complete,
+  created_at
+FROM profiles
+WHERE is_profile_complete = true;
+
+-- Drop and recreate v_public_profiles with security_invoker
+-- This view is for authenticated marketplace browsing
+DROP VIEW IF EXISTS public.v_public_profiles;
+CREATE OR REPLACE VIEW public.v_public_profiles
+WITH (security_invoker = true)
+AS
+SELECT 
+  p.id,
+  p.display_name,
+  -- Removed full_name to protect PII
+  p.bio,
+  p.avatar_url AS profile_photo_url,
+  p.account_type,
+  p.city,
+  p.country,
+  p.is_profile_complete,
+  p.created_at,
+  p.linkedin_url AS linkedin,
+  p.website_url AS website,
+  -- SME fields
+  sp.business_name,
+  sp.industry,
+  sp.business_stage,
+  sp.services_or_products AS sme_services,
+  sp.areas_served,
+  sp.top_needs,
+  sp.team_size_range,
+  sp.funding_needed,
+  sp.sectors_of_interest AS sme_sectors,
+  -- Freelancer fields
+  fp.professional_title,
+  fp.primary_skills,
+  fp.experience_level,
+  fp.availability,
+  fp.work_mode,
+  fp.rate_type,
+  fp.rate_range,
+  fp.services_offered AS freelancer_services,
+  fp.preferred_industries,
+  fp.languages,
+  fp.certifications,
+  -- Investor fields
+  ip.investor_type,
+  ip.ticket_size_range,
+  ip.sectors_of_interest AS investor_sectors,
+  ip.investment_stage_focus,
+  ip.geo_focus,
+  ip.thesis,
+  ip.investment_preferences,
+  -- Government fields
+  gp.institution_name,
+  gp.institution_type,
+  gp.department_or_unit,
+  gp.contact_person_title,
+  gp.mandate_areas,
+  gp.services_or_programmes,
+  gp.collaboration_interests
+FROM profiles p
+LEFT JOIN sme_profiles sp ON sp.profile_id = p.id
+LEFT JOIN freelancer_profiles fp ON fp.profile_id = p.id
+LEFT JOIN investor_profiles ip ON ip.profile_id = p.id
+LEFT JOIN government_profiles gp ON gp.profile_id = p.id
+WHERE p.is_profile_complete = true;
+
+-- Drop and recreate v_profile_match_features with security_invoker
+DROP VIEW IF EXISTS public.v_profile_match_features;
+CREATE OR REPLACE VIEW public.v_profile_match_features
+WITH (security_invoker = true)
+AS
+SELECT 
+  p.id,
+  p.account_type,
+  p.city,
+  p.country,
+  CASE
+    WHEN p.account_type = 'sme' THEN COALESCE(s.top_needs, '{}'::text[])
+    WHEN p.account_type = 'freelancer' THEN COALESCE(f.primary_skills, '{}'::text[])
+    WHEN p.account_type = 'investor' THEN COALESCE(i.sectors_of_interest, '{}'::text[])
+    WHEN p.account_type = 'government' THEN COALESCE(g.mandate_areas, '{}'::text[])
+    ELSE '{}'::text[]
+  END AS primary_tags,
+  CASE
+    WHEN p.account_type = 'sme' THEN COALESCE(s.sectors_of_interest, '{}'::text[])
+    WHEN p.account_type = 'freelancer' THEN COALESCE(f.preferred_industries, '{}'::text[])
+    WHEN p.account_type = 'investor' THEN COALESCE(i.investment_stage_focus, '{}'::text[])
+    WHEN p.account_type = 'government' THEN COALESCE(g.collaboration_interests, '{}'::text[])
+    ELSE '{}'::text[]
+  END AS secondary_tags,
+  -- Match text uses display_name and non-PII fields only
+  concat_ws(' ', p.display_name, p.bio, p.city, p.country,
+    CASE
+      WHEN p.account_type = 'sme' THEN concat_ws(' ', s.business_name, s.industry, s.services_or_products, array_to_string(s.top_needs, ' '))
+      WHEN p.account_type = 'freelancer' THEN concat_ws(' ', f.professional_title, f.services_offered, array_to_string(f.primary_skills, ' '))
+      WHEN p.account_type = 'investor' THEN concat_ws(' ', i.investor_type, i.thesis, array_to_string(i.sectors_of_interest, ' '))
+      WHEN p.account_type = 'government' THEN concat_ws(' ', g.institution_name, g.services_or_programmes, array_to_string(g.mandate_areas, ' '))
+      ELSE ''
+    END
+  ) AS match_text
+FROM profiles p
+LEFT JOIN sme_profiles s ON s.profile_id = p.id
+LEFT JOIN freelancer_profiles f ON f.profile_id = p.id
+LEFT JOIN investor_profiles i ON i.profile_id = p.id
+LEFT JOIN government_profiles g ON g.profile_id = p.id
+WHERE p.is_profile_complete = true;
+
+-- Add RLS policy to allow authenticated users to view public profiles
+-- This ensures the views work through RLS when using security_invoker
+DROP POLICY IF EXISTS "Authenticated users can view complete public profiles" ON public.profiles;
+CREATE POLICY "Authenticated users can view complete public profiles"
+ON public.profiles
+FOR SELECT
+USING (
+  auth.uid() IS NOT NULL 
+  AND is_profile_complete = true
+);
+
+-- Grant access to the views for authenticated users
+GRANT SELECT ON public.v_public_profiles TO authenticated;
+GRANT SELECT ON public.v_public_profiles_safe TO authenticated;
+GRANT SELECT ON public.v_profile_match_features TO authenticated;
+
+-- Revoke access from anon role to prevent unauthenticated access
+REVOKE SELECT ON public.v_public_profiles FROM anon;
+REVOKE SELECT ON public.v_public_profiles_safe FROM anon;
+REVOKE SELECT ON public.v_profile_match_features FROM anon;
