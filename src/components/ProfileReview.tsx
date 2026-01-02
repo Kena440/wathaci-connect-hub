@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export const ProfileReview = () => {
   const [profile, setProfile] = useState<any>(null);
+  const [paymentDetails, setPaymentDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useAppContext();
   const navigate = useNavigate();
@@ -35,14 +36,24 @@ export const ProfileReview = () => {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
+      // Fetch profile data
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
 
-      if (error) throw error;
-      setProfile(data);
+      if (profileError) throw profileError;
+      setProfile(profileData);
+
+      // Fetch payment details from separate table
+      const { data: paymentData } = await supabase
+        .from('payment_details')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      setPaymentDetails(paymentData);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -250,17 +261,23 @@ export const ProfileReview = () => {
             <CardTitle>Payment Information</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-3">
-              <Phone className="h-5 w-5 text-muted-foreground" />
-              <span>
-                Payment Method: {profile.payment_method === 'phone' ? 'Mobile Money' : 'Card'}
-              </span>
-            </div>
-            {profile.payment_phone && (
-              <div className="flex items-center gap-3 mt-2">
-                <span className="text-muted-foreground">Payment Phone:</span>
-                <span>{profile.payment_phone}</span>
-              </div>
+            {paymentDetails ? (
+              <>
+                <div className="flex items-center gap-3">
+                  <Phone className="h-5 w-5 text-muted-foreground" />
+                  <span>
+                    Payment Method: {paymentDetails.payment_method === 'phone' ? 'Mobile Money' : 'Card'}
+                  </span>
+                </div>
+                {paymentDetails.payment_phone && (
+                  <div className="flex items-center gap-3 mt-2">
+                    <span className="text-muted-foreground">Payment Phone:</span>
+                    <span>{paymentDetails.payment_phone}</span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-muted-foreground">No payment information configured</p>
             )}
           </CardContent>
         </Card>

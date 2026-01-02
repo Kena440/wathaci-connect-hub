@@ -164,6 +164,7 @@ export const ProfileSetup = () => {
     try {
       const cleanedData: Record<string, any> = {};
       
+      // Profile fields (no payment data - moved to payment_details table)
       const allowedFields = [
         'first_name', 'last_name', 'full_name', 'phone', 'country', 'province', 
         'city', 'address', 'coordinates', 'profile_image_url', 'avatar_url',
@@ -174,7 +175,6 @@ export const ProfileSetup = () => {
         'employee_count', 'annual_revenue', 'funding_stage', 'funding_needed',
         'years_in_business', 'business_model', 'sectors', 'target_market',
         'website_url', 'linkedin_url', 'twitter_url', 'facebook_url', 'portfolio_url',
-        'payment_method', 'payment_phone', 'use_same_phone',
         'rating', 'reviews_count', 'total_jobs_completed',
         'compliance_verified', 'verification_date', 'documents_submitted',
         'total_invested', 'total_donated', 'investment_portfolio', 'preferred_sectors',
@@ -182,12 +182,22 @@ export const ProfileSetup = () => {
         'account_type', 'gaps_identified'
       ];
 
+      // Extract payment data for separate table
+      const paymentFields = ['payment_method', 'payment_phone', 'use_same_phone'];
+      const paymentData: Record<string, any> = {};
+      for (const key of paymentFields) {
+        if (profileData[key] !== undefined) {
+          paymentData[key] = profileData[key];
+        }
+      }
+
       for (const key of allowedFields) {
         if (profileData[key] !== undefined && profileData[key] !== '') {
           cleanedData[key] = profileData[key];
         }
       }
 
+      // Save profile data
       const { error } = await supabase
         .from('profiles')
         .upsert({
@@ -197,6 +207,18 @@ export const ProfileSetup = () => {
           profile_completed: true,
           updated_at: new Date().toISOString()
         });
+
+      // Save payment data to separate table
+      if (paymentData.payment_method || paymentData.payment_phone) {
+        await supabase
+          .from('payment_details')
+          .upsert({
+            user_id: user.id,
+            payment_method: paymentData.payment_method,
+            payment_phone: paymentData.use_same_phone ? profileData.phone : paymentData.payment_phone,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id' });
+      }
 
       if (error) throw error;
 

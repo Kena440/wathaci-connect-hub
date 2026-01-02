@@ -227,7 +227,7 @@ export class ProfileService extends BaseService<Profile> {
   }
 
   /**
-   * Update payment information
+   * Update payment information (stored in separate payment_details table)
    */
   async updatePaymentInfo(
     userId: string, 
@@ -237,8 +237,47 @@ export class ProfileService extends BaseService<Profile> {
       card_details?: { number: string; expiry: string };
       use_same_phone?: boolean;
     }
-  ): Promise<DatabaseResponse<Profile>> {
-    return this.updateProfile(userId, paymentData);
+  ): Promise<DatabaseResponse<any>> {
+    try {
+      const { data, error } = await supabase
+        .from('payment_details')
+        .upsert({
+          user_id: userId,
+          payment_method: paymentData.payment_method,
+          payment_phone: paymentData.payment_phone,
+          card_details: paymentData.card_details,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' })
+        .select()
+        .single();
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+      return { data, error: null };
+    } catch (err: any) {
+      return { data: null, error: new Error(err.message) };
+    }
+  }
+
+  /**
+   * Get payment information for a user
+   */
+  async getPaymentInfo(userId: string): Promise<DatabaseResponse<any>> {
+    try {
+      const { data, error } = await supabase
+        .from('payment_details')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) {
+        return { data: null, error: new Error(error.message) };
+      }
+      return { data, error: null };
+    } catch (err: any) {
+      return { data: null, error: new Error(err.message) };
+    }
   }
 
   /**
