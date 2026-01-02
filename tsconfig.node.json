@@ -12,6 +12,9 @@
     "moduleDetection": "force",
     "noEmit": true,
 
+    /* ✅ Fix: allow JavaScript inputs */
+    "allowJs": true,
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": false,
@@ -20,3 +23,4 @@
   },
   "include": ["vite.config.js"]
 }
+
