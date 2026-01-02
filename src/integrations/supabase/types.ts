@@ -2449,6 +2449,51 @@ export type Database = {
         }
         Relationships: []
       }
+      v_recipient_transactions: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          id: string | null
+          net_amount: number | null
+          platform_fee: number | null
+          recipient_id: string | null
+          status: Database["public"]["Enums"]["payment_status"] | null
+          transaction_type:
+            | Database["public"]["Enums"]["transaction_type"]
+            | null
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string | null
+          net_amount?: number | null
+          platform_fee?: number | null
+          recipient_id?: string | null
+          status?: Database["public"]["Enums"]["payment_status"] | null
+          transaction_type?:
+            | Database["public"]["Enums"]["transaction_type"]
+            | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string | null
+          net_amount?: number | null
+          platform_fee?: number | null
+          recipient_id?: string | null
+          status?: Database["public"]["Enums"]["payment_status"] | null
+          transaction_type?:
+            | Database["public"]["Enums"]["transaction_type"]
+            | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_repair_wallet_transaction: {
