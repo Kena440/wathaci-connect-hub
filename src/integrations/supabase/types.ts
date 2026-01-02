@@ -1507,6 +1507,13 @@ export type Database = {
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "referrals_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "v_public_partners"
+            referencedColumns: ["id"]
+          },
         ]
       }
       service_reviews: {
@@ -2048,6 +2055,42 @@ export type Database = {
           match_text: string | null
           primary_tags: string[] | null
           secondary_tags: string[] | null
+        }
+        Relationships: []
+      }
+      v_public_partners: {
+        Row: {
+          company_name: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          is_active: boolean | null
+          is_verified: boolean | null
+          logo_url: string | null
+          partnership_type: string | null
+          website: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          is_verified?: boolean | null
+          logo_url?: string | null
+          partnership_type?: string | null
+          website?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          is_verified?: boolean | null
+          logo_url?: string | null
+          partnership_type?: string | null
+          website?: string | null
         }
         Relationships: []
       }
