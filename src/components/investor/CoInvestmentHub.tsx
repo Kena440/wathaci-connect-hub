@@ -6,23 +6,20 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useAppContext } from '@/contexts/AppContext';
 import { Users, TrendingUp, Calendar, Plus, DollarSign } from 'lucide-react';
 
 interface CoInvestment {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   total_amount: number;
   funding_goal: number;
   status: string;
   deadline: string;
   participants_count: number;
-  sme: {
-    business_name: string;
-    industry: string;
-  };
+  sme_id: string;
 }
 
 const CoInvestmentHub = () => {
@@ -39,14 +36,7 @@ const CoInvestmentHub = () => {
     try {
       const { data, error } = await supabase
         .from('co_investments')
-        .select(`
-          *,
-          sme:profiles!co_investments_sme_id_fkey(
-            business_name,
-            industry
-          ),
-          participants:co_investment_participants(count)
-        `)
+        .select('*')
         .eq('status', 'open')
         .order('created_at', { ascending: false });
 
@@ -107,12 +97,9 @@ const CoInvestmentHub = () => {
                 <CardTitle className="text-lg">{investment.title}</CardTitle>
                 <Badge variant="secondary">{investment.status}</Badge>
               </div>
-              <div className="text-sm text-gray-600">
-                {investment.sme?.business_name} • {investment.sme?.industry}
-              </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-gray-700">{investment.description}</p>
+              <p className="text-sm text-gray-700">{investment.description || 'No description'}</p>
               
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">

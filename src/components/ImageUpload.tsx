@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Upload, X } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface ImageUploadProps {
@@ -63,14 +63,16 @@ export const ImageUpload = ({
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data } = supabase.storage
+      // Get signed URL for security (1 hour expiry, auto-refreshes on component mount)
+      const { data, error: signedError } = await supabase.storage
         .from('profile-images')
-        .getPublicUrl(filePath);
+        .createSignedUrl(filePath, 3600);
 
-      const imageUrl = data.publicUrl;
+      if (signedError) throw signedError;
+
+      const imageUrl = data.signedUrl;
       setPreviewUrl(imageUrl);
-      onImageChange(imageUrl);
+      onImageChange(filePath); // Store path, not URL - generate signed URL when displaying
 
       toast({
         title: "Image uploaded successfully",
