@@ -6,17 +6,18 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Upload, FileText, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
 
 interface Document {
   id: string;
   document_type: string;
   document_name: string;
-  file_url: string;
+  file_path: string;
   verification_status: string;
-  expiry_date?: string;
+  expiry_date?: string | null;
   created_at: string;
+  signedUrl?: string;
 }
 
 const REQUIRED_DOCUMENTS = [
@@ -56,7 +57,16 @@ export const DueDiligenceUpload = ({ onComplianceChange }: { onComplianceChange?
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setDocuments(data || []);
+      
+      // Generate signed URLs for each document
+      const docsWithUrls = await Promise.all((data || []).map(async (doc) => {
+        const { data: signedData } = await supabase.storage
+          .from('profile-images')
+          .createSignedUrl(doc.file_path, 3600); // 1 hour expiry
+        return { ...doc, signedUrl: signedData?.signedUrl };
+      }));
+      
+      setDocuments(docsWithUrls);
     } catch (error) {
       console.error('Error loading documents:', error);
     }
@@ -93,19 +103,14 @@ export const DueDiligenceUpload = ({ onComplianceChange }: { onComplianceChange?
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('profile-images')
-        .getPublicUrl(fileName);
-
-      // Save document record
+      // Save document record with file path (not public URL)
       const { error: insertError } = await supabase
         .from('due_diligence_documents')
         .insert({
           user_id: user.id,
           document_type: selectedType,
           document_name: selectedFile.name,
-          file_url: publicUrl,
+          file_path: fileName,
           expiry_date: expiryDate || null
         });
 

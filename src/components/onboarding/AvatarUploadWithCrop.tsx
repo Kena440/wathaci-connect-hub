@@ -176,14 +176,16 @@ export function AvatarUploadWithCrop({
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data } = supabase.storage
+      // Get signed URL for security (1 hour expiry)
+      const { data, error: signedError } = await supabase.storage
         .from('profile-images')
-        .getPublicUrl(fileName);
+        .createSignedUrl(fileName, 3600);
 
-      const imageUrl = data.publicUrl;
+      if (signedError) throw signedError;
+
+      const imageUrl = data.signedUrl;
       setPreviewUrl(imageUrl);
-      onImageChange(imageUrl);
+      onImageChange(fileName); // Store path, not URL - generate signed URL when displaying
       setCropDialogOpen(false);
       setImageSrc(null);
 

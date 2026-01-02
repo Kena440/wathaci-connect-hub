@@ -50,6 +50,89 @@ export type Database = {
         }
         Relationships: []
       }
+      co_investment_participants: {
+        Row: {
+          amount_committed: number
+          co_investment_id: string
+          created_at: string
+          id: string
+          investor_id: string
+          status: string
+        }
+        Insert: {
+          amount_committed: number
+          co_investment_id: string
+          created_at?: string
+          id?: string
+          investor_id: string
+          status?: string
+        }
+        Update: {
+          amount_committed?: number
+          co_investment_id?: string
+          created_at?: string
+          id?: string
+          investor_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "co_investment_participants_co_investment_id_fkey"
+            columns: ["co_investment_id"]
+            isOneToOne: false
+            referencedRelation: "co_investments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      co_investments: {
+        Row: {
+          created_at: string
+          deadline: string
+          description: string | null
+          funding_goal: number
+          id: string
+          minimum_investment: number
+          participants_count: number
+          sme_id: string
+          status: string
+          target_amount: number
+          title: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deadline: string
+          description?: string | null
+          funding_goal: number
+          id?: string
+          minimum_investment?: number
+          participants_count?: number
+          sme_id: string
+          status?: string
+          target_amount: number
+          title: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deadline?: string
+          description?: string | null
+          funding_goal?: number
+          id?: string
+          minimum_investment?: number
+          participants_count?: number
+          sme_id?: string
+          status?: string
+          target_amount?: number
+          title?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       donations: {
         Row: {
           amount: number
@@ -98,6 +181,42 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      due_diligence_documents: {
+        Row: {
+          created_at: string
+          document_name: string
+          document_type: string
+          expiry_date: string | null
+          file_path: string
+          id: string
+          updated_at: string
+          user_id: string
+          verification_status: string
+        }
+        Insert: {
+          created_at?: string
+          document_name: string
+          document_type: string
+          expiry_date?: string | null
+          file_path: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          verification_status?: string
+        }
+        Update: {
+          created_at?: string
+          document_name?: string
+          document_type?: string
+          expiry_date?: string | null
+          file_path?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          verification_status?: string
         }
         Relationships: []
       }
