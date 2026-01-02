@@ -188,11 +188,10 @@ export default function OnboardingProfile() {
       if (!user) return;
 
       try {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
+        const { data: profileData, error } = await supabase
+          .rpc('get_my_profile');
+
+        if (error) throw error;
 
         if (profileData) {
           if (profileData.account_type) {

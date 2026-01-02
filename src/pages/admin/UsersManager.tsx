@@ -54,35 +54,41 @@ const UsersManager = () => {
   const { data: users, isLoading } = useQuery({
     queryKey: ['admin-users', searchQuery, accountTypeFilter],
     queryFn: async () => {
-      let query = supabase
-        .from('profiles')
-        .select(`
-          id,
-          full_name,
-          display_name,
-          email,
-          avatar_url,
-          account_type,
-          is_profile_complete,
-          created_at,
-          updated_at
-        `)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      const { data, error } = await supabase.rpc('admin_list_profiles', { p_limit: 200 });
+      if (error) throw error;
+
+      let rows = (data as any[]) || [];
 
       if (searchQuery) {
-        query = query.or(`full_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,display_name.ilike.%${searchQuery}%`);
+        const q = searchQuery.toLowerCase();
+        rows = rows.filter(r =>
+          [r.full_name, r.email, r.display_name].some((v: any) =>
+            typeof v === 'string' && v.toLowerCase().includes(q)
+          )
+        );
       }
 
       if (accountTypeFilter && accountTypeFilter !== 'all') {
-        query = query.eq('account_type', accountTypeFilter);
+        rows = rows.filter(r => r.account_type === accountTypeFilter);
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
+      rows = rows
+        .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+        .slice(0, 50);
 
-      // Fetch roles for each user
-      const userIds = data?.map(u => u.id) || [];
+      const dataSafe = rows.map(r => ({
+        id: r.id,
+        full_name: r.full_name,
+        display_name: r.display_name,
+        email: r.email,
+        avatar_url: r.avatar_url,
+        account_type: r.account_type,
+        is_profile_complete: r.is_profile_complete,
+        created_at: r.created_at,
+        updated_at: r.updated_at,
+      }));
+
+      const userIds = dataSafe?.map(u => u.id) || [];
       const { data: roles } = await supabase
         .from('user_roles')
         .select('user_id, role')
@@ -94,7 +100,7 @@ const UsersManager = () => {
         rolesMap.set(r.user_id, [...existing, r.role]);
       });
 
-      return data?.map(user => ({
+      return dataSafe?.map(user => ({
         ...user,
         roles: rolesMap.get(user.id) || ['user']
       }));
