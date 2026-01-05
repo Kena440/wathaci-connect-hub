@@ -9,6 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { OnboardingGuard } from "@/components/OnboardingGuard";
 import { AdminGuard } from "@/components/admin/AdminGuard";
+import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import { HelmetProvider } from 'react-helmet-async';
 import Index from "./pages/Index";
 import Marketplace from "./pages/Marketplace";
@@ -98,25 +99,27 @@ export const AppRoutes = () => (
 );
 
 const App = () => (
-  <HelmetProvider>
-    <ThemeProvider defaultTheme="light">
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <AppProvider>
-            <BrowserRouter>
-              <AuthProvider>
-                <OnboardingGuard>
-                  <Toaster />
-                  <Sonner />
-                  <AppRoutes />
-                </OnboardingGuard>
-              </AuthProvider>
-            </BrowserRouter>
-          </AppProvider>
-        </TooltipProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
-  </HelmetProvider>
+  <AppErrorBoundary>
+    <HelmetProvider>
+      <ThemeProvider defaultTheme="light">
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <AppProvider>
+              <BrowserRouter>
+                <AuthProvider>
+                  <OnboardingGuard>
+                    <Toaster />
+                    <Sonner />
+                    <AppRoutes />
+                  </OnboardingGuard>
+                </AuthProvider>
+              </BrowserRouter>
+            </AppProvider>
+          </TooltipProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </HelmetProvider>
+  </AppErrorBoundary>
 );
 
 export default App;
