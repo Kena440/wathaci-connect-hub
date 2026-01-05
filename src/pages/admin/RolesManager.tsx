@@ -75,8 +75,6 @@ const RolesManager = () => {
       if (profilesError) throw profilesError;
       const profilesMap = new Map((profiles as any[] | null)?.map(p => [p.id, p]));
 
-      const profilesMap = new Map(profiles?.map(p => [p.id, p]));
-
       return roles?.map(role => ({
         ...role,
         profile: profilesMap.get(role.user_id)
@@ -108,14 +106,6 @@ const RolesManager = () => {
         email: r.email,
         avatar_url: r.avatar_url,
       }));
-
-      if (searchQuery) {
-        query = query.or(`full_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data;
     },
     enabled: isAssignDialogOpen
   });
