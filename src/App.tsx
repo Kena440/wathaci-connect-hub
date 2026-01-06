@@ -34,6 +34,10 @@ import Donate from "./pages/Donate";
 import Install from "./pages/Install";
 import OnboardingProfile from "./pages/OnboardingProfile";
 import PublicProfile from "./pages/PublicProfile";
+import ProfessionalsDirectory from "./pages/ProfessionalsDirectory";
+import SMEDirectory from "./pages/SMEDirectory";
+import InvestorsDirectory from "./pages/InvestorsDirectory";
+import GovernmentDirectory from "./pages/GovernmentDirectory";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UsersManager from "./pages/admin/UsersManager";
 import RolesManager from "./pages/admin/RolesManager";
@@ -87,6 +91,11 @@ export const AppRoutes = () => (
     } />
     <Route path="/donate" element={<Donate />} />
     <Route path="/install" element={<Install />} />
+    {/* Directory Routes */}
+    <Route path="/professionals" element={<ProfessionalsDirectory />} />
+    <Route path="/smes" element={<SMEDirectory />} />
+    <Route path="/investors" element={<InvestorsDirectory />} />
+    <Route path="/government" element={<GovernmentDirectory />} />
     {/* Admin Routes */}
     <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
     <Route path="/admin/users" element={<AdminGuard><UsersManager /></AdminGuard>} />
