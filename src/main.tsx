@@ -1,12 +1,13 @@
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
+import { AuthProvider } from '@/providers/AuthProvider';
 
 // Validate critical environment variables
 const validateEnv = () => {
   const requiredVars = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_PUBLISHABLE_KEY'];
-  const missing = requiredVars.filter(v => !import.meta.env[v]);
-  
+  const missing = requiredVars.filter((v) => !import.meta.env[v]);
+
   if (missing.length > 0) {
     console.error('Missing required environment variables:', missing);
     return false;
@@ -48,7 +49,7 @@ const showLoadingFallback = () => {
 const showErrorFallback = (message: string) => {
   const existing = document.getElementById('loading-fallback');
   if (existing) existing.remove();
-  
+
   const fallback = document.createElement('div');
   fallback.id = 'error-fallback';
   fallback.innerHTML = `
@@ -81,107 +82,25 @@ const showErrorFallback = (message: string) => {
         </svg>
       </div>
       <h2 style="margin: 0 0 8px; color: #111827; font-size: 20px;">Wathaci Connect couldn't load</h2>
-      <p style="margin: 0 0 24px; color: #6b7280;">${message}</p>
-      <button onclick="window.location.reload()" style="
-        background: #006B3F;
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        border-radius: 8px;
-        font-size: 16px;
-        cursor: pointer;
-      ">Refresh Page</button>
+      <p style="color: #6b7280;">${'{message}'}</p>
     </div>
   `;
   document.body.appendChild(fallback);
 };
 
-// Remove loading fallback once app renders
-const removeLoadingFallback = () => {
-  const fallback = document.getElementById('loading-fallback');
-  if (fallback) fallback.remove();
-};
-
-// Initialize app
-const initApp = async () => {
-  const rootElement = document.getElementById('root');
-  
-  if (!rootElement) {
-    showErrorFallback('Could not find the application root element.');
-    return;
+// Only proceed to render the app root after env validation
+if (validateEnv()) {
+  const container = document.getElementById('root');
+  if (container) {
+    const root = createRoot(container);
+    root.render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    );
+  } else {
+    showErrorFallback('Root container not found');
   }
-  
-  // Show loading indicator
-  showLoadingFallback();
-  
-  // Set a timeout for slow loading
-  const loadingTimeout = setTimeout(() => {
-    console.warn('App taking longer than expected to load...');
-  }, 5000);
-  
-  // Fail-safe timeout (10 seconds)
-  const failsafeTimeout = setTimeout(() => {
-    const fallback = document.getElementById('loading-fallback');
-    if (fallback) {
-      fallback.innerHTML = `
-        <div style="
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-direction: column;
-          font-family: system-ui, -apple-system, sans-serif;
-          padding: 24px;
-          text-align: center;
-          max-width: 400px;
-          margin: 0 auto;
-        ">
-          <p style="color: #6b7280; margin-bottom: 16px;">Taking longer than expected...</p>
-          <button onclick="window.location.reload()" style="
-            background: #006B3F;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-          ">Reload</button>
-        </div>
-      `;
-    }
-  }, 10000);
-  
-  try {
-    // Validate environment
-    if (!validateEnv()) {
-      clearTimeout(loadingTimeout);
-      clearTimeout(failsafeTimeout);
-      showErrorFallback('Configuration error. Please contact support.');
-      return;
-    }
-    
-    // Render the app
-    const root = createRoot(rootElement);
-    root.render(<App />);
-    
-    // Clear timeouts and remove loading fallback
-    clearTimeout(loadingTimeout);
-    clearTimeout(failsafeTimeout);
-    
-    // Give React a moment to render before removing fallback
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        removeLoadingFallback();
-      });
-    });
-    
-  } catch (error) {
-    clearTimeout(loadingTimeout);
-    clearTimeout(failsafeTimeout);
-    console.error('Failed to initialize app:', error);
-    showErrorFallback('Failed to load the application. Please try refreshing.');
-  }
-};
-
-// Start the app
-initApp();
+} else {
+  showErrorFallback('Invalid environment configuration');
+}
