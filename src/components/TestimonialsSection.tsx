@@ -101,13 +101,10 @@ const TestimonialsSection = () => {
         )}
 
         <div className="text-center mt-12">
-          <div className="flex justify-center items-center space-x-8 opacity-60">
-            <div className="text-2xl font-bold text-gray-500">PACRA</div>
-            <div className="text-2xl font-bold text-gray-500">ZRA</div>
-            <div className="text-2xl font-bold text-gray-500">SEC</div>
-            <div className="text-2xl font-bold text-gray-500">BOZ</div>
+          <div className="inline-block px-6 py-3 rounded-lg bg-muted/50 border border-border">
+            <p className="text-sm font-medium text-muted-foreground">Trusted Partners</p>
+            <p className="text-lg font-semibold text-foreground mt-1">Coming Soon</p>
           </div>
-          <p className="text-sm text-gray-500 mt-2">Trusted partners in regulatory compliance</p>
         </div>
       </div>
     </section>
