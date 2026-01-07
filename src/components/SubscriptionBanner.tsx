@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { X, Crown, Zap } from 'lucide-react';
-import { useAppContext } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { getPlansForUserType, getUserTypeLabel } from '@/data/subscriptionPlans';
 import { SubscriptionCard } from '@/components/SubscriptionCard';
 
@@ -19,7 +19,7 @@ export const SubscriptionBanner = ({
   dismissible = true 
 }: SubscriptionBannerProps) => {
   const [dismissed, setDismissed] = useState(false);
-  const { user } = useAppContext();
+  const { user } = useAuth();
 
   if (dismissed || !user) return null;
 

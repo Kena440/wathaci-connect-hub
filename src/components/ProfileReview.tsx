@@ -1,50 +1,49 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { useAppContext } from '@/contexts/AppContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import { Edit, MapPin, Phone, Mail, Building, Calendar, Users, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export const ProfileReview = () => {
-  const [profile, setProfile] = useState<any>(null);
+  const [profileData, setProfileData] = useState<any>(null);
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const { user } = useAppContext();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     if (!user) {
-      navigate('/signin');
+      navigate('/auth');
       return;
     }
     
-    if (!user.profile_completed) {
+    if (profile && !profile.is_profile_complete) {
       navigate('/profile-setup');
       return;
     }
 
     fetchProfile();
-  }, [user, navigate]);
+  }, [user, profile, navigate]);
 
   const fetchProfile = async () => {
     if (!user) return;
     
     try {
       // Fetch profile data
-      const { data: profileData, error: profileError } = await supabase
+      const { data: fetchedProfile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
 
       if (profileError) throw profileError;
-      setProfile(profileData);
+      setProfileData(fetchedProfile);
 
       // Fetch payment details from separate table
       const { data: paymentData } = await supabase
@@ -73,7 +72,7 @@ export const ProfileReview = () => {
     return <div className="min-h-screen flex items-center justify-center">Loading profile...</div>;
   }
 
-  if (!profile) {
+  if (!profileData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -89,7 +88,7 @@ export const ProfileReview = () => {
   }
 
   const getAccountTypeLabel = (type: string) => {
-    const labels = {
+    const labels: Record<string, string> = {
       'sole_proprietor': 'Sole Proprietor',
       'professional': 'Professional',
       'sme': 'SME',
@@ -97,7 +96,7 @@ export const ProfileReview = () => {
       'donor': 'Donor',
       'government': 'Government Institution'
     };
-    return labels[type as keyof typeof labels] || type;
+    return labels[type] || type;
   };
 
   return (
@@ -109,21 +108,21 @@ export const ProfileReview = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src={profile.profile_image_url || undefined} />
+                  <AvatarImage src={profileData.profile_image_url || undefined} />
                   <AvatarFallback className="text-lg">
-                    {profile.business_name ? 
-                      profile.business_name.substring(0, 2).toUpperCase() :
-                      profile.email.substring(0, 2).toUpperCase()
+                    {profileData.business_name ? 
+                      profileData.business_name.substring(0, 2).toUpperCase() :
+                      (profileData.email || 'U').substring(0, 2).toUpperCase()
                     }
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <CardTitle className="text-2xl">
-                    {profile.business_name || profile.email}
+                    {profileData.business_name || profileData.full_name || profileData.email}
                   </CardTitle>
                   <CardDescription className="flex items-center gap-2 mt-1">
                     <Badge variant="secondary">
-                      {getAccountTypeLabel(profile.account_type)}
+                      {getAccountTypeLabel(profileData.account_type)}
                     </Badge>
                   </CardDescription>
                 </div>
@@ -144,24 +143,24 @@ export const ProfileReview = () => {
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
               <Mail className="h-5 w-5 text-muted-foreground" />
-              <span>{profile.email}</span>
+              <span>{profileData.email}</span>
             </div>
-            {profile.phone && (
+            {profileData.phone && (
               <div className="flex items-center gap-3">
                 <Phone className="h-5 w-5 text-muted-foreground" />
-                <span>{profile.phone}</span>
+                <span>{profileData.phone}</span>
               </div>
             )}
-            {profile.address && (
+            {profileData.address && (
               <div className="flex items-center gap-3">
                 <MapPin className="h-5 w-5 text-muted-foreground" />
-                <span>{profile.address}</span>
+                <span>{profileData.address}</span>
               </div>
             )}
-            {profile.country && (
+            {profileData.country && (
               <div className="flex items-center gap-3">
                 <Building className="h-5 w-5 text-muted-foreground" />
-                <span>{profile.country}{profile.province && `, ${profile.province}`}</span>
+                <span>{profileData.country}{profileData.province && `, ${profileData.province}`}</span>
               </div>
             )}
           </CardContent>
@@ -171,58 +170,52 @@ export const ProfileReview = () => {
         <Card>
           <CardHeader>
             <CardTitle>
-              {profile.account_type === 'professional' ? 'Professional Details' : 'Business Details'}
+              {profileData.account_type === 'professional' ? 'Professional Details' : 'Business Details'}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {profile.sectors && profile.sectors.length > 0 && (
+            {profileData.sectors && profileData.sectors.length > 0 && (
               <div>
                 <h4 className="font-medium mb-2">Sector/Industry</h4>
                 <div className="flex flex-wrap gap-2">
-                  {profile.sectors.map((sector: string, index: number) => (
+                  {profileData.sectors.map((sector: string, index: number) => (
                     <Badge key={index} variant="outline">{sector}</Badge>
                   ))}
                 </div>
               </div>
             )}
 
-            {profile.account_type === 'sole_proprietor' && (
+            {profileData.account_type === 'sole_proprietor' && (
               <>
-                {profile.registration_number && (
+                {profileData.registration_number && (
                   <div>
                     <h4 className="font-medium">Registration Number</h4>
-                    <p className="text-muted-foreground">{profile.registration_number}</p>
-                  </div>
-                )}
-                {profile.customers_served && (
-                  <div className="flex items-center gap-3">
-                    <Users className="h-5 w-5 text-muted-foreground" />
-                    <span>{profile.customers_served} customers served</span>
+                    <p className="text-muted-foreground">{profileData.registration_number}</p>
                   </div>
                 )}
               </>
             )}
 
-            {profile.account_type === 'professional' && (
+            {profileData.account_type === 'professional' && (
               <>
-                {profile.experience_years && (
+                {profileData.experience_years && (
                   <div className="flex items-center gap-3">
                     <Calendar className="h-5 w-5 text-muted-foreground" />
-                    <span>{profile.experience_years} years of experience</span>
+                    <span>{profileData.experience_years} years of experience</span>
                   </div>
                 )}
-                {profile.license_number && (
+                {profileData.license_number && (
                   <div>
                     <h4 className="font-medium">License Number</h4>
-                    <p className="text-muted-foreground">{profile.license_number}</p>
+                    <p className="text-muted-foreground">{profileData.license_number}</p>
                   </div>
                 )}
-                {profile.qualifications && profile.qualifications.length > 0 && (
+                {profileData.qualifications && Array.isArray(profileData.qualifications) && (
                   <div>
                     <h4 className="font-medium mb-2">Qualifications</h4>
                     <div className="flex flex-wrap gap-2">
-                      {profile.qualifications.map((qual: string, index: number) => (
-                        <Badge key={index} variant="outline">{qual}</Badge>
+                      {profileData.qualifications.map((qual: any, index: number) => (
+                        <Badge key={index} variant="outline">{typeof qual === 'string' ? qual : qual.name || qual.title}</Badge>
                       ))}
                     </div>
                   </div>
@@ -230,24 +223,24 @@ export const ProfileReview = () => {
               </>
             )}
 
-            {profile.account_type === 'sme' && (
+            {profileData.account_type === 'sme' && (
               <>
-                {profile.ownership_structure && (
+                {profileData.ownership_structure && (
                   <div>
                     <h4 className="font-medium">Ownership Structure</h4>
-                    <p className="text-muted-foreground">{profile.ownership_structure}</p>
+                    <p className="text-muted-foreground">{profileData.ownership_structure}</p>
                   </div>
                 )}
-                {profile.employees_count && (
+                {profileData.employee_count && (
                   <div className="flex items-center gap-3">
                     <Users className="h-5 w-5 text-muted-foreground" />
-                    <span>{profile.employees_count} employees</span>
+                    <span>{profileData.employee_count} employees</span>
                   </div>
                 )}
-                {profile.funding_requirements && (
+                {profileData.funding_needed && (
                   <div className="flex items-center gap-3">
                     <DollarSign className="h-5 w-5 text-muted-foreground" />
-                    <span>Funding requirement: ${profile.funding_requirements}</span>
+                    <span>Funding requirement: ${profileData.funding_needed}</span>
                   </div>
                 )}
               </>

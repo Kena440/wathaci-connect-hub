@@ -1,13 +1,11 @@
 /**
  * Legacy Supabase client export for backward compatibility
  * 
- * @deprecated Use the enhanced client from '@/lib/supabase-enhanced' for new code
+ * All imports should resolve to the SAME singleton client.
  */
 
-import { supabase as enhancedSupabase } from './supabase-enhanced';
+import { supabase } from '@/integrations/supabase/client';
 
-// Export the enhanced client for backward compatibility
-export { enhancedSupabase as supabase };
-
-// Also export for direct import compatibility
-export default enhancedSupabase;
+// Re-export the singleton client
+export { supabase };
+export default supabase;

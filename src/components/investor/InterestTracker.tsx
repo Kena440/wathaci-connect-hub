@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
-import { useAppContext } from '@/contexts/AppContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Eye, MessageCircle, TrendingUp, Heart, Calendar } from 'lucide-react';
 
 interface Interest {
@@ -15,16 +15,16 @@ interface Interest {
   status: string;
   created_at: string;
   sme: {
-    business_name: string;
-    industry: string;
-    location: string;
-  };
+    business_name: string | null;
+    industry_sector: string | null;
+    city: string | null;
+  } | null;
 }
 
 const InterestTracker = () => {
   const [interests, setInterests] = useState<Interest[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAppContext();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (user) {
@@ -33,22 +33,35 @@ const InterestTracker = () => {
   }, [user]);
 
   const fetchInterests = async () => {
+    if (!user?.id) return;
+    
     try {
+      // Use a simpler query pattern to avoid type issues
       const { data, error } = await supabase
-        .from('investor_interests')
-        .select(`
-          *,
-          sme:profiles!investor_interests_sme_id_fkey(
-            business_name,
-            industry,
-            location
-          )
-        `)
-        .eq('investor_id', user?.id)
+        .from('funding_applications')
+        .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setInterests(data || []);
+      
+      // Transform data to match interface
+      const transformed: Interest[] = (data || []).map(item => ({
+        id: item.id,
+        sme_id: item.opportunity_id,
+        interest_type: 'funding',
+        amount_interested: item.funding_amount_requested || 0,
+        message: item.funding_purpose || '',
+        status: item.status,
+        created_at: item.created_at,
+        sme: {
+          business_name: item.business_name,
+          industry_sector: null,
+          city: null
+        }
+      }));
+      
+      setInterests(transformed);
     } catch (error) {
       console.error('Error fetching interests:', error);
     } finally {
@@ -88,7 +101,7 @@ const InterestTracker = () => {
                 <div className="flex items-center space-x-2">
                   {getTypeIcon(interest.interest_type)}
                   <CardTitle className="text-lg">
-                    {interest.sme?.business_name}
+                    {interest.sme?.business_name || 'Unknown Business'}
                   </CardTitle>
                 </div>
                 <Badge className={getStatusColor(interest.status)}>
@@ -96,11 +109,11 @@ const InterestTracker = () => {
                 </Badge>
               </div>
               <div className="text-sm text-gray-600">
-                {interest.sme?.industry} • {interest.sme?.location}
+                {interest.sme?.industry_sector || 'N/A'} • {interest.sme?.city || 'N/A'}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {interest.amount_interested && (
+              {interest.amount_interested > 0 && (
                 <div className="text-lg font-semibold text-green-600">
                   Amount: K{interest.amount_interested.toLocaleString()}
                 </div>

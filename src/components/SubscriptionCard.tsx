@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Check, CreditCard, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { LencoPayment } from '@/components/LencoPayment';
 
@@ -36,7 +36,7 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate('/signin');
+        navigate('/auth');
         return;
       }
       setShowPayment(true);
@@ -53,20 +53,10 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from('subscriptions').upsert({
-          user_id: user.id,
-          plan_id: plan.id,
-          plan_name: plan.name,
-          amount: plan.price,
-          status: 'active',
-          created_at: new Date().toISOString()
-        });
-
         toast({
           title: "Subscription Activated!",
           description: `Welcome to the ${plan.name} plan!`,
         });
-        
         setShowPayment(false);
       }
     } catch (error) {
@@ -100,9 +90,6 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
               <CreditCard className="w-4 h-4 mr-2" />
               Subscribe
             </Button>
-            <p className="text-xs text-gray-500 text-center">
-              Mobile Money & Card accepted
-            </p>
           </CardContent>
         </Card>
 
@@ -113,7 +100,7 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
             </DialogHeader>
             <LencoPayment
               amount={plan.price}
-              description={`${plan.name} Plan - ${plan.price}${plan.period}`}
+              description={`${plan.name} Plan`}
               onSuccess={handlePaymentSuccess}
               onCancel={() => setShowPayment(false)}
             />
@@ -148,24 +135,14 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
               </li>
             ))}
           </ul>
-          <div className="space-y-2">
-            <Button 
-              className="w-full" 
-              variant={plan.popular ? 'default' : 'outline'}
-              onClick={handleSelectPlan}
-            >
-              <CreditCard className="w-4 h-4 mr-2" />
-              Subscribe with Card
-            </Button>
-            <Button 
-              className="w-full" 
-              variant="outline"
-              onClick={handleSelectPlan}
-            >
-              <Smartphone className="w-4 h-4 mr-2" />
-              Pay with Mobile Money
-            </Button>
-          </div>
+          <Button 
+            className="w-full" 
+            variant={plan.popular ? 'default' : 'outline'}
+            onClick={handleSelectPlan}
+          >
+            <CreditCard className="w-4 h-4 mr-2" />
+            Subscribe
+          </Button>
         </CardContent>
       </Card>
 
@@ -176,7 +153,7 @@ export const SubscriptionCard = ({ plan, userType, compact = false }: Subscripti
           </DialogHeader>
           <LencoPayment
             amount={plan.price}
-            description={`${plan.name} Plan Subscription - ${plan.price}${plan.period}`}
+            description={`${plan.name} Plan Subscription`}
             onSuccess={handlePaymentSuccess}
             onCancel={() => setShowPayment(false)}
           />

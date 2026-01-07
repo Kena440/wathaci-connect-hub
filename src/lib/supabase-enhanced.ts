@@ -1,190 +1,114 @@
 /**
- * Enhanced Supabase client configuration with error handling and validation
+ * Enhanced Supabase client utilities
+ * 
+ * IMPORTANT: This module re-exports the SINGLETON Supabase client from 
+ * @/integrations/supabase/client.ts to ensure only ONE GoTrueClient exists.
+ * 
+ * DO NOT create a new client here - use the singleton!
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
-// Environment validation
-const validateEnvironment = (): { url: string; key: string } => {
-  const url = (import.meta as any).env?.VITE_SUPABASE_URL;
-  // Support both key names for backwards compatibility
-  const key = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY || 
-              (import.meta as any).env?.VITE_SUPABASE_KEY;
+// Re-export the singleton client
+export { supabase };
 
-  if (!url) {
-    console.warn('Missing VITE_SUPABASE_URL environment variable');
-    return { url: '', key: '' };
-  }
+// Export type for external use
+export type SupabaseClientType = typeof supabase;
 
-  if (!key) {
-    console.warn('Missing VITE_SUPABASE_PUBLISHABLE_KEY environment variable');
-    return { url: '', key: '' };
-  }
+/**
+ * Get the Supabase client instance (for testing/utility purposes)
+ */
+export const getSupabaseClient = () => supabase;
 
-  // Basic URL validation
+/**
+ * Test the Supabase connection
+ */
+export const testConnection = async (): Promise<{ success: boolean; error?: string }> => {
   try {
-    new URL(url);
-  } catch {
-    console.warn('Invalid VITE_SUPABASE_URL format');
-    return { url: '', key: '' };
-  }
-
-  return { url, key };
-};
-
-// Create the enhanced Supabase client
-const createSupabaseClient = (): SupabaseClient => {
-  const { url, key } = validateEnvironment();
-
-  if (!url || !key) {
-    // Return a mock client that won't work but won't crash
-    console.error('Supabase client not properly configured');
-  }
-
-  const client = createClient(url, key, {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true,
-      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    },
-    global: {
-      headers: {
-        'X-Client-Info': 'wathaci-connect-v1',
-      },
-    },
-    db: {
-      schema: 'public',
-    },
-  });
-
-  return client;
-};
-
-// Initialize the client
-let supabaseClient: SupabaseClient;
-
-try {
-  supabaseClient = createSupabaseClient();
-} catch (error) {
-  console.error('Failed to initialize Supabase client:', error);
-  throw error;
-}
-
-// Connection testing function
-export const testConnection = async (): Promise<boolean> => {
-  try {
-    const { error } = await supabaseClient
-      .from('profiles')
-      .select('id')
-      .limit(1);
-
+    const { error } = await supabase.from('profiles').select('id').limit(1);
     if (error) {
       console.error('Supabase connection test failed:', error);
-      return false;
+      return { success: false, error: error.message };
     }
-
-    return true;
-  } catch (error) {
-    console.error('Supabase connection test error:', error);
-    return false;
+    return { success: true };
+  } catch (err: any) {
+    console.error('Supabase connection test exception:', err);
+    return { success: false, error: err.message };
   }
 };
 
-// Enhanced error handling wrapper
+/**
+ * Wrap an async operation with error handling
+ */
 export const withErrorHandling = async <T>(
   operation: () => Promise<{ data: T | null; error: any }>,
   context: string
 ): Promise<{ data: T | null; error: Error | null }> => {
   try {
     const result = await operation();
-    
     if (result.error) {
-      const error = new Error(`${context}: ${result.error.message}`);
-      console.error(error);
-      return { data: null, error };
+      console.error(`[${context}] Error:`, result.error);
+      return { data: null, error: result.error };
     }
-
     return { data: result.data, error: null };
-  } catch (error) {
-    const wrappedError = new Error(`${context}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    console.error(wrappedError);
-    return { data: null, error: wrappedError };
+  } catch (err: any) {
+    console.error(`[${context}] Exception:`, err);
+    return { data: null, error: err };
   }
 };
 
-// Retry logic for failed operations
+/**
+ * Retry an async operation with exponential backoff
+ */
 export const withRetry = async <T>(
   operation: () => Promise<T>,
   maxRetries: number = 3,
   delay: number = 1000
 ): Promise<T> => {
-  let lastError: Error;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+  let lastError: any;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       return await operation();
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error('Unknown error');
-      
-      if (attempt === maxRetries) {
-        throw lastError;
+    } catch (err) {
+      lastError = err;
+      if (attempt < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, attempt)));
       }
-
-      // Exponential backoff
-      await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, attempt - 1)));
     }
   }
-
-  throw lastError!;
+  
+  throw lastError;
 };
 
-// Export the main client
-export const supabase = supabaseClient;
-
-// Export client getter for testing purposes
-export const getSupabaseClient = () => supabaseClient;
-
-// Health check function
+/**
+ * Perform a health check on the Supabase connection
+ */
 export const healthCheck = async (): Promise<{
-  status: 'healthy' | 'unhealthy';
-  details: {
-    connection: boolean;
-    auth: boolean;
-    timestamp: string;
-  };
+  connected: boolean;
+  authenticated: boolean;
+  userId?: string;
+  error?: string;
 }> => {
-  const timestamp = new Date().toISOString();
-  
   try {
-    // Test basic connection
-    const connection = await testConnection();
+    // Test connection
+    const connectionTest = await testConnection();
+    if (!connectionTest.success) {
+      return { connected: false, authenticated: false, error: connectionTest.error };
+    }
     
-    // Test auth status
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    const auth = !authError;
-
-    const status = connection && auth ? 'healthy' : 'unhealthy';
-
+    // Check auth status
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    if (authError) {
+      return { connected: true, authenticated: false, error: authError.message };
+    }
+    
     return {
-      status,
-      details: {
-        connection,
-        auth,
-        timestamp,
-      },
+      connected: true,
+      authenticated: !!session,
+      userId: session?.user?.id,
     };
-  } catch (error) {
-    return {
-      status: 'unhealthy',
-      details: {
-        connection: false,
-        auth: false,
-        timestamp,
-      },
-    };
+  } catch (err: any) {
+    return { connected: false, authenticated: false, error: err.message };
   }
 };
-
-// Export types for use in other modules
-export type SupabaseClientType = typeof supabaseClient;
