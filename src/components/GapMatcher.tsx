@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Textarea } from './ui/textarea';
-import { supabase } from '../lib/supabase';
-import { useAppContext } from '../contexts/AppContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const GapMatcher: React.FC = () => {
   const [gaps, setGaps] = useState('');
   const [loading, setLoading] = useState(false);
   const [matches, setMatches] = useState<any[]>([]);
-  const { user } = useAppContext();
+  const { user } = useAuth();
 
   const findMatches = async () => {
     if (!gaps.trim() || !user?.id) return;

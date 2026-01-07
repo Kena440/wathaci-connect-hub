@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAppContext } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { 
   Home, 
@@ -53,14 +53,14 @@ export const AppSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
-  const { user, signOut, loading } = useAppContext();
+  const { user, profile, loading, signOut } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
     setIsMobileOpen(false);
   };
 
-  const showGetStarted = !user || !user.profile_completed;
+  const showGetStarted = !user || !profile?.is_profile_complete;
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -181,8 +181,8 @@ export const AppSidebar = () => {
                   </div>
                   {!isCollapsed && (
                     <div className="flex-1 text-left">
-                      <p className="text-sm font-medium truncate">{user.email.split('@')[0]}</p>
-                      <p className="text-xs text-sidebar-foreground/60 truncate">{user.email}</p>
+                      <p className="text-sm font-medium truncate">{user.email?.split('@')[0] || 'User'}</p>
+                      <p className="text-xs text-sidebar-foreground/60 truncate">{user.email || ''}</p>
                     </div>
                   )}
                 </button>

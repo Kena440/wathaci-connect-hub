@@ -2,6 +2,13 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+/**
+ * AuthContext - the SINGLE source of truth for auth state.
+ * 
+ * IMPORTANT: Only ONE onAuthStateChange listener should exist in the entire app.
+ * This context owns that listener. Do NOT add auth listeners elsewhere!
+ */
+
 interface Profile {
   id: string;
   full_name: string | null;

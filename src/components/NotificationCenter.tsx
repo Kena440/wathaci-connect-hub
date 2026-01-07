@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, X, CheckCircle, Users, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
-import { supabase } from '../lib/supabase';
-import { useAppContext } from '../contexts/AppContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Notification {
   id: string;
   type: string;
   title: string;
-  message: string;
+  body: string;
   data: any;
-  read: boolean;
+  read_at: string | null;
   created_at: string;
 }
 
@@ -21,12 +21,13 @@ export const NotificationCenter: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
-  const { user } = useAppContext();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (user?.id) {
       fetchNotifications();
-      subscribeToNotifications();
+      const cleanup = subscribeToNotifications();
+      return cleanup;
     }
   }, [user?.id]);
 
@@ -35,14 +36,14 @@ export const NotificationCenter: React.FC = () => {
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('recipient_id', user?.id)
+        .eq('user_id', user?.id || '')
         .order('created_at', { ascending: false })
         .limit(20);
 
       if (error) throw error;
 
       setNotifications(data || []);
-      setUnreadCount(data?.filter(n => !n.read).length || 0);
+      setUnreadCount(data?.filter(n => !n.read_at).length || 0);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
@@ -56,7 +57,7 @@ export const NotificationCenter: React.FC = () => {
           event: 'INSERT', 
           schema: 'public', 
           table: 'notifications',
-          filter: `recipient_id=eq.${user?.id}`
+          filter: `user_id=eq.${user?.id}`
         }, 
         (payload) => {
           setNotifications(prev => [payload.new as Notification, ...prev]);
@@ -65,18 +66,18 @@ export const NotificationCenter: React.FC = () => {
       )
       .subscribe();
 
-    return () => subscription.unsubscribe();
+    return () => { subscription.unsubscribe(); };
   };
 
   const markAsRead = async (notificationId: string) => {
     try {
       await supabase
         .from('notifications')
-        .update({ read: true })
+        .update({ read_at: new Date().toISOString() })
         .eq('id', notificationId);
 
       setNotifications(prev => 
-        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+        prev.map(n => n.id === notificationId ? { ...n, read_at: new Date().toISOString() } : n)
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
@@ -129,18 +130,18 @@ export const NotificationCenter: React.FC = () => {
             <p className="text-center text-gray-500 py-8">No notifications yet</p>
           ) : (
             notifications.map((notification) => (
-              <Card key={notification.id} className={`${!notification.read ? 'border-blue-200 bg-blue-50' : ''}`}>
+              <Card key={notification.id} className={`${!notification.read_at ? 'border-blue-200 bg-blue-50' : ''}`}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-3">
                       {getNotificationIcon(notification.type)}
                       <div className="flex-1">
                         <h4 className="font-medium text-sm">{notification.title}</h4>
-                        <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                        <p className="text-sm text-gray-600 mt-1">{notification.body}</p>
                         <p className="text-xs text-gray-400 mt-2">{formatDate(notification.created_at)}</p>
                       </div>
                     </div>
-                    {!notification.read && (
+                    {!notification.read_at && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -154,9 +155,9 @@ export const NotificationCenter: React.FC = () => {
                   {notification.type === 'gap_match' && notification.data && (
                     <div className="mt-3 p-3 bg-gray-50 rounded-lg">
                       <p className="text-xs font-medium">SME Details:</p>
-                      <p className="text-xs text-gray-600">{notification.data.smeDetails?.business_name}</p>
+                      <p className="text-xs text-gray-600">{(notification.data as any)?.smeDetails?.business_name}</p>
                       <p className="text-xs font-medium mt-2">Gaps to Address:</p>
-                      <p className="text-xs text-gray-600">{notification.data.gaps?.join(', ')}</p>
+                      <p className="text-xs text-gray-600">{(notification.data as any)?.gaps?.join(', ')}</p>
                       <div className="flex space-x-2 mt-3">
                         <Button size="sm" className="text-xs">Accept</Button>
                         <Button size="sm" variant="outline" className="text-xs">Decline</Button>

@@ -4,10 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { useAppContext } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Users, TrendingUp, Calendar, Plus, DollarSign } from 'lucide-react';
 
 interface CoInvestment {
@@ -26,7 +25,7 @@ const CoInvestmentHub = () => {
   const [coInvestments, setCoInvestments] = useState<CoInvestment[]>([]);
   const [loading, setLoading] = useState(true);
   const [participationAmount, setParticipationAmount] = useState('');
-  const { user } = useAppContext();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchCoInvestments();

@@ -4,7 +4,7 @@ import { Menu, X, Globe, User, LogOut, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { NotificationCenter } from './NotificationCenter';
 import { DonateButton } from './DonateButton';
-import { useAppContext } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +15,7 @@ import {
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, signOut, loading } = useAppContext();
+  const { user, profile, loading, signOut } = useAuth();
 
   const navItems = [
     { name: 'Home', href: '/' },
@@ -30,7 +30,7 @@ const Header = () => {
     setIsMenuOpen(false);
   };
 
-  const showGetStarted = !user || !user.profile_completed;
+  const showGetStarted = !user || !profile?.is_profile_complete;
 
   return (
     <header className="bg-gradient-to-r from-orange-50 to-green-50 shadow-lg sticky top-0 z-50 border-b-2 border-orange-200">
@@ -81,7 +81,7 @@ const Header = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="flex items-center gap-2 border-orange-300 hover:bg-orange-50">
                     <User className="w-4 h-4" />
-                    {user.email.split('@')[0]}
+                    {user.email?.split('@')[0] || 'User'}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
