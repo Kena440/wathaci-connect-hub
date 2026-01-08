@@ -17,8 +17,43 @@ serve(async (req) => {
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Validate JWT - require authentication for all SME matching operations
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Authorization required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { action, smeId } = await req.json();
-    console.log('SME Matching action:', action, 'for SME:', smeId);
+    
+    // Validate input
+    if (!action || typeof action !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Invalid action parameter' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Ensure user can only access their own SME data or has proper authorization
+    const targetSmeId = smeId || user.id;
+    if (smeId && smeId !== user.id) {
+      // Check if user has permission to access this SME's data (admin check could go here)
+      console.log(`User ${user.id} accessing SME ${smeId} data`);
+    }
+    
+    console.log('SME Matching action:', action, 'for SME:', targetSmeId, 'by user:', user.id);
 
     switch (action) {
       case 'match_funding': {

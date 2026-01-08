@@ -61,12 +61,42 @@ serve(async (req) => {
   try {
     const { message, conversationHistory = [] } = await req.json();
 
+    // Input validation
     if (!message) {
       return new Response(
         JSON.stringify({ error: 'Message is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Validate and sanitize message
+    const sanitizedMessage = String(message).trim();
+    if (sanitizedMessage.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'Message cannot be empty' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (sanitizedMessage.length > 2000) {
+      return new Response(
+        JSON.stringify({ error: 'Message too long. Maximum 2000 characters.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate conversation history
+    if (!Array.isArray(conversationHistory)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid conversation history format' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Limit conversation history to prevent abuse
+    const limitedHistory = conversationHistory.slice(-10).filter(
+      (msg: any) => msg && typeof msg.type === 'string' && typeof msg.content === 'string'
+    );
 
     if (!LOVABLE_API_KEY) {
       console.error('LOVABLE_API_KEY is not configured');
@@ -79,14 +109,14 @@ serve(async (req) => {
       );
     }
 
-    // Build messages array with conversation history
+    // Build messages array with conversation history (using sanitized inputs)
     const messages = [
       { role: 'system', content: CISO_SYSTEM_PROMPT },
-      ...conversationHistory.map((msg: { type: string; content: string }) => ({
+      ...limitedHistory.map((msg: { type: string; content: string }) => ({
         role: msg.type === 'user' ? 'user' : 'assistant',
-        content: msg.content
+        content: String(msg.content).slice(0, 2000) // Limit each message length
       })),
-      { role: 'user', content: message }
+      { role: 'user', content: sanitizedMessage }
     ];
 
     console.log('Calling Lovable AI with message:', message);

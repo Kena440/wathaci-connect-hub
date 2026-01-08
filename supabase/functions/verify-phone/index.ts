@@ -73,23 +73,33 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Verifying phone number: ${phone_number}`);
+    // Input validation: sanitize and validate phone number format
+    const sanitizedPhone = String(phone_number).replace(/[^\d+\-\s\(\)]/g, '').trim();
+    
+    if (sanitizedPhone.length < 9 || sanitizedPhone.length > 20) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid phone number length' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Verifying phone number: ${sanitizedPhone}`);
 
     // Detect provider from phone number
-    const providerInfo = detectProvider(phone_number);
+    const providerInfo = detectProvider(sanitizedPhone);
     
     if (!providerInfo) {
       return new Response(
         JSON.stringify({ 
           success: false, 
           error: 'Unable to detect provider. Please use a valid Zambian mobile number.',
-          phone_number 
+          phone_number: sanitizedPhone 
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const formattedPhone = formatPhoneNumber(phone_number);
+    const formattedPhone = formatPhoneNumber(sanitizedPhone);
     const lencoApiToken = Deno.env.get('LENCO_API_TOKEN');
     const lencoBaseUrl = Deno.env.get('LENCO_BASE_URL') || 'https://api.lenco.co';
     const LENCO_API_URL = lencoBaseUrl.endsWith('/v2') ? lencoBaseUrl : `${lencoBaseUrl}/v2`;
