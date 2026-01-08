@@ -1,5 +1,7 @@
 /**
  * Base database service class providing common database operations
+ * Note: Uses 'as any' type assertions for table names since Supabase
+ * generates strict types, but our generic service needs flexibility
  */
 
 import { supabase, withErrorHandling, withRetry } from '@/lib/supabase-enhanced';
@@ -16,7 +18,7 @@ export abstract class BaseService<T = any> {
     return withErrorHandling(
       async () => {
         const result = await supabase
-          .from(this.tableName)
+          .from(this.tableName as any)
           .select(select)
           .eq('id', id)
           .single();
@@ -38,7 +40,7 @@ export abstract class BaseService<T = any> {
         const to = from + limit - 1;
 
         let query = supabase
-          .from(this.tableName)
+          .from(this.tableName as any)
           .select(select, { count: 'exact' })
           .range(from, to)
           .order(sortBy, { ascending: sortOrder === 'asc' });
@@ -71,7 +73,11 @@ export abstract class BaseService<T = any> {
   async create(data: Partial<T>): Promise<DatabaseResponse<T>> {
     return withErrorHandling(
       async () => {
-        const result = await supabase.from(this.tableName).insert(data).select().single();
+        const result = await supabase
+          .from(this.tableName as any)
+          .insert(data as any)
+          .select()
+          .single();
         return { data: result.data as T | null, error: result.error };
       },
       `${this.tableName}.create`
@@ -82,8 +88,8 @@ export abstract class BaseService<T = any> {
     return withErrorHandling(
       async () => {
         const result = await supabase
-          .from(this.tableName)
-          .update({ ...data, updated_at: new Date().toISOString() })
+          .from(this.tableName as any)
+          .update({ ...data, updated_at: new Date().toISOString() } as any)
           .eq('id', id)
           .select()
           .single();
@@ -96,7 +102,10 @@ export abstract class BaseService<T = any> {
   async delete(id: string): Promise<DatabaseResponse<void>> {
     return withErrorHandling(
       async () => {
-        const result = await supabase.from(this.tableName).delete().eq('id', id);
+        const result = await supabase
+          .from(this.tableName as any)
+          .delete()
+          .eq('id', id);
         return { data: undefined, error: result.error };
       },
       `${this.tableName}.delete`

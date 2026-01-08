@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { createSearchPattern } from '@/lib/utils/search';
 
 export type AccountType = 'freelancer' | 'sme' | 'investor' | 'government';
 
@@ -68,27 +69,29 @@ export function useDirectoryProfiles({ accountType, pageSize = 20 }: UseDirector
         .eq('is_profile_complete', true)
         .order('created_at', { ascending: false });
 
-      // Apply search filter
+      // Apply search filter with escaped patterns
       if (debouncedSearch) {
-        const searchPattern = `%${debouncedSearch}%`;
+        const safePattern = createSearchPattern(debouncedSearch);
         query = query.or(
-          `display_name.ilike.${searchPattern},` +
-          `bio.ilike.${searchPattern},` +
-          `professional_title.ilike.${searchPattern},` +
-          `business_name.ilike.${searchPattern},` +
-          `institution_name.ilike.${searchPattern}`
+          `display_name.ilike.${safePattern},` +
+          `bio.ilike.${safePattern},` +
+          `professional_title.ilike.${safePattern},` +
+          `business_name.ilike.${safePattern},` +
+          `institution_name.ilike.${safePattern}`
         );
       }
 
-      // Apply location filter
+      // Apply location filter with escaped pattern
       if (locationFilter && locationFilter !== 'all') {
-        query = query.ilike('city', `%${locationFilter}%`);
+        const locationPattern = createSearchPattern(locationFilter);
+        query = query.ilike('city', locationPattern);
       }
 
-      // Apply industry filter for SME and Investor
+      // Apply industry filter for SME and Investor with escaped pattern
       if (industryFilter && industryFilter !== 'all') {
         if (accountType === 'sme') {
-          query = query.ilike('industry', `%${industryFilter}%`);
+          const industryPattern = createSearchPattern(industryFilter);
+          query = query.ilike('industry', industryPattern);
         }
       }
 

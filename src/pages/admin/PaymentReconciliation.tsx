@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { createSearchPattern } from '@/lib/utils/search';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -93,7 +94,8 @@ export default function PaymentReconciliation() {
       }
 
       if (searchTerm) {
-        query = query.or(`lenco_reference.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+        const safePattern = createSearchPattern(searchTerm);
+        query = query.or(`lenco_reference.ilike.${safePattern},description.ilike.${safePattern}`);
       }
 
       const { data, error } = await query;
