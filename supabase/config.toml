@@ -1,25 +1,29 @@
 project_id = "xvnkpvmyyumnmwdycuee"
 
+# IMPORTANT: verify_jwt = true is deprecated with signing-keys system
+# All functions that require auth must validate JWT in code using getUser() or getClaims()
+# Setting verify_jwt = false allows the function to handle auth validation directly
+
 [functions.lenco-payments]
-verify_jwt = true
+verify_jwt = false  # Auth validated in code via getUser()
 
 [functions.lenco-webhook]
-verify_jwt = false
+verify_jwt = false  # Public webhook - validates signature instead
 
 [functions.lenco-subscriptions]
-verify_jwt = true
+verify_jwt = false  # Auth validated in code via getUser()
 
 [functions.marketplace-manager]
 verify_jwt = false
 
 [functions.negotiation-manager]
-verify_jwt = true
+verify_jwt = false  # Auth validated in code via getUser()
 
 [functions.funding-opportunities]
 verify_jwt = false
 
 [functions.ai-funding-analyzer]
-verify_jwt = true
+verify_jwt = false  # Auth validated in code via getUser()
 
 [functions.partnership-manager]
 verify_jwt = false
@@ -31,19 +35,19 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.donation-payment]
-verify_jwt = false
+verify_jwt = false  # Public donations supported
 
 [functions.verify-phone]
 verify_jwt = false
 
 [functions.ciso-assistant]
-verify_jwt = false
+verify_jwt = false  # Public chatbot
 
 [functions.send-notification]
-verify_jwt = true
+verify_jwt = false  # Auth validated in code via getUser()
 
 [functions.ai-funding-search]
 verify_jwt = false
 
 [functions.sme-matching]
-verify_jwt = true
+verify_jwt = false  # Auth validated in code via getUser()

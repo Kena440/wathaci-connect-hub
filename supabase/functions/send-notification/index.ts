@@ -141,9 +141,44 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Validate JWT - require authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Authorization required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { type, userId, title, message, relatedId, data }: NotificationRequest = await req.json();
 
-    console.log(`Processing ${type} notification for user ${userId}`);
+    // Validate required fields
+    if (!type || !userId || !title || !message) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields: type, userId, title, message' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate notification type
+    if (!['order', 'message', 'funding'].includes(type)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid notification type' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Processing ${type} notification for user ${userId} by ${user.id}`);
 
     // Get user email from profiles
     const { data: profile, error: profileError } = await supabase
