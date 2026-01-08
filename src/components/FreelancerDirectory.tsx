@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Star, MapPin, Clock, Search, Filter, ExternalLink, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { createSearchPattern } from '@/lib/utils/search';
 
 export const FreelancerDirectory = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,15 +28,17 @@ export const FreelancerDirectory = () => {
         .limit(50);
 
       if (searchTerm) {
+        const safePattern = createSearchPattern(searchTerm);
         query = query.or(
-          `display_name.ilike.%${searchTerm}%,` +
-          `professional_title.ilike.%${searchTerm}%,` +
-          `bio.ilike.%${searchTerm}%`
+          `display_name.ilike.${safePattern},` +
+          `professional_title.ilike.${safePattern},` +
+          `bio.ilike.${safePattern}`
         );
       }
 
       if (selectedLocation && selectedLocation !== 'all-locations') {
-        query = query.ilike('city', `%${selectedLocation}%`);
+        const locationPattern = createSearchPattern(selectedLocation);
+        query = query.ilike('city', locationPattern);
       }
 
       if (experienceFilter && experienceFilter !== 'all') {

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppContext } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/AppLayout';
 import { SubscriptionManager } from '@/components/payments';
@@ -11,8 +10,7 @@ import { CreditCard, Crown, HelpCircle } from 'lucide-react';
 
 export const SubscriptionPlans = () => {
   const [selectedUserType, setSelectedUserType] = useState<string | undefined>(undefined);
-  const { user: appUser } = useAppContext();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
 
   const userTypes = [
@@ -25,10 +23,10 @@ export const SubscriptionPlans = () => {
   ];
 
   useEffect(() => {
-    if (appUser?.account_type) {
-      setSelectedUserType(appUser.account_type);
+    if (profile?.account_type) {
+      setSelectedUserType(profile.account_type);
     }
-  }, [appUser]);
+  }, [profile]);
 
   return (
     <AppLayout>

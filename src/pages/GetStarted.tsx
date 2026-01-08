@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Building, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAppContext } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import wathciLogo from '@/assets/wathaci-logo.png';
 
 export const GetStarted = () => {
@@ -28,7 +28,7 @@ export const GetStarted = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signUp } = useAppContext();
+  const { signUp } = useAuth();
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -52,14 +52,12 @@ export const GetStarted = () => {
     }
 
     try {
-      await signUp(formData.email, formData.password, {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        company: formData.company,
-        account_type: formData.accountType,
-        full_name: `${formData.firstName} ${formData.lastName}`,
-        profile_completed: false
-      });
+      const fullName = `${formData.firstName} ${formData.lastName}`;
+      const result = await signUp(formData.email, formData.password, fullName);
+      
+      if (result.error) {
+        throw result.error;
+      }
       
       navigate('/profile-setup');
     } catch (error: any) {

@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAppContext } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Validation schema
 const signInSchema = z.object({
@@ -29,7 +29,7 @@ const SignIn = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { signIn } = useAppContext();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
 
   const {
@@ -46,7 +46,10 @@ const SignIn = () => {
     setError('');
 
     try {
-      await signIn(data.email, data.password);
+      const result = await signIn(data.email, data.password);
+      if (result.error) {
+        throw result.error;
+      }
       navigate('/');
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');

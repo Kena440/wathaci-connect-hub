@@ -1,34 +1,62 @@
 /**
  * Subscription service for handling subscription plans and user subscriptions
+ * Uses 'as any' type assertions for Supabase queries since the actual
+ * database schema differs from the generated types
  */
 
 import { BaseService } from './base-service';
 import { supabase, withErrorHandling } from '@/lib/supabase-enhanced';
-import type { 
-  SubscriptionPlan, 
-  UserSubscription, 
-  Transaction,
-  AccountType,
-  DatabaseResponse 
-} from '@/@types/database';
+import type { DatabaseResponse } from '@/@types/database';
 
-export class SubscriptionService extends BaseService<UserSubscription> {
+// Local type definitions matching actual database schema
+interface SubscriptionPlanRow {
+  id: string;
+  name: string;
+  account_type: string;
+  billing_interval: string;
+  price_usd: number;
+  price_zmw: number;
+  description: string | null;
+  features: any;
+  is_active: boolean | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface UserSubscriptionRow {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  status: string;
+  current_period_start: string;
+  current_period_end: string;
+  trial_end: string | null;
+  cancel_at_period_end: boolean | null;
+  cancelled_at: string | null;
+  currency: string;
+  created_at: string;
+  updated_at: string;
+  subscription_plans?: SubscriptionPlanRow;
+}
+
+export class SubscriptionService extends BaseService<UserSubscriptionRow> {
   constructor() {
-    super('user_subscriptions');
+    super('subscriptions');
   }
 
   /**
    * Get subscription plans for a specific account type
    */
-  async getPlansByAccountType(accountType: AccountType): Promise<DatabaseResponse<SubscriptionPlan[]>> {
+  async getPlansByAccountType(accountType: string): Promise<DatabaseResponse<SubscriptionPlanRow[]>> {
     return withErrorHandling(
       async () => {
         const result = await supabase
           .from('subscription_plans')
           .select('*')
-          .contains('user_types', [accountType])
-          .order('lenco_amount', { ascending: true });
-        return result;
+          .eq('account_type', accountType)
+          .eq('is_active', true)
+          .order('price_usd', { ascending: true });
+        return { data: result.data as SubscriptionPlanRow[] | null, error: result.error };
       },
       'SubscriptionService.getPlansByAccountType'
     );
@@ -37,15 +65,16 @@ export class SubscriptionService extends BaseService<UserSubscription> {
   /**
    * Get all subscription plans
    */
-  async getAllPlans(): Promise<DatabaseResponse<SubscriptionPlan[]>> {
+  async getAllPlans(): Promise<DatabaseResponse<SubscriptionPlanRow[]>> {
     return withErrorHandling(
       async () => {
         const result = await supabase
           .from('subscription_plans')
           .select('*')
-          .order('category', { ascending: true })
-          .order('lenco_amount', { ascending: true });
-        return result;
+          .eq('is_active', true)
+          .order('account_type', { ascending: true })
+          .order('price_usd', { ascending: true });
+        return { data: result.data as SubscriptionPlanRow[] | null, error: result.error };
       },
       'SubscriptionService.getAllPlans'
     );
@@ -54,7 +83,7 @@ export class SubscriptionService extends BaseService<UserSubscription> {
   /**
    * Get a specific subscription plan by ID
    */
-  async getPlanById(planId: string): Promise<DatabaseResponse<SubscriptionPlan>> {
+  async getPlanById(planId: string): Promise<DatabaseResponse<SubscriptionPlanRow>> {
     return withErrorHandling(
       async () => {
         const result = await supabase
@@ -62,7 +91,7 @@ export class SubscriptionService extends BaseService<UserSubscription> {
           .select('*')
           .eq('id', planId)
           .single();
-        return result;
+        return { data: result.data as SubscriptionPlanRow | null, error: result.error };
       },
       'SubscriptionService.getPlanById'
     );
@@ -71,28 +100,20 @@ export class SubscriptionService extends BaseService<UserSubscription> {
   /**
    * Get user's current active subscription
    */
-  async getCurrentUserSubscription(userId: string): Promise<DatabaseResponse<UserSubscription | null>> {
+  async getCurrentUserSubscription(userId: string): Promise<DatabaseResponse<UserSubscriptionRow | null>> {
     return withErrorHandling(
       async () => {
         const result = await supabase
-          .from('user_subscriptions')
+          .from('subscriptions')
           .select(`
             *,
-            subscription_plans (
-              id,
-              name,
-              price,
-              period,
-              features,
-              category,
-              lenco_amount
-            )
+            subscription_plans (*)
           `)
           .eq('user_id', userId)
           .eq('status', 'active')
-          .gte('end_date', new Date().toISOString())
-          .single();
-        return result;
+          .gte('current_period_end', new Date().toISOString())
+          .maybeSingle();
+        return { data: result.data as UserSubscriptionRow | null, error: result.error };
       },
       'SubscriptionService.getCurrentUserSubscription'
     );
@@ -101,26 +122,18 @@ export class SubscriptionService extends BaseService<UserSubscription> {
   /**
    * Get all user subscriptions (including expired)
    */
-  async getUserSubscriptions(userId: string): Promise<DatabaseResponse<UserSubscription[]>> {
+  async getUserSubscriptions(userId: string): Promise<DatabaseResponse<UserSubscriptionRow[]>> {
     return withErrorHandling(
       async () => {
         const result = await supabase
-          .from('user_subscriptions')
+          .from('subscriptions')
           .select(`
             *,
-            subscription_plans (
-              id,
-              name,
-              price,
-              period,
-              features,
-              category,
-              lenco_amount
-            )
+            subscription_plans (*)
           `)
           .eq('user_id', userId)
           .order('created_at', { ascending: false });
-        return result;
+        return { data: result.data as UserSubscriptionRow[] | null, error: result.error };
       },
       'SubscriptionService.getUserSubscriptions'
     );
@@ -133,7 +146,7 @@ export class SubscriptionService extends BaseService<UserSubscription> {
     userId: string,
     planId: string,
     durationMonths: number = 1
-  ): Promise<DatabaseResponse<UserSubscription>> {
+  ): Promise<DatabaseResponse<UserSubscriptionRow>> {
     return withErrorHandling(
       async () => {
         const startDate = new Date();
@@ -143,32 +156,22 @@ export class SubscriptionService extends BaseService<UserSubscription> {
         const subscriptionData = {
           user_id: userId,
           plan_id: planId,
-          status: 'pending' as const,
-          start_date: startDate.toISOString(),
-          end_date: endDate.toISOString(),
-          payment_status: 'pending' as const,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          status: 'trialing' as const,
+          current_period_start: startDate.toISOString(),
+          current_period_end: endDate.toISOString(),
+          currency: 'ZMW',
         };
 
         const result = await supabase
-          .from('user_subscriptions')
-          .insert(subscriptionData)
+          .from('subscriptions')
+          .insert(subscriptionData as any)
           .select(`
             *,
-            subscription_plans (
-              id,
-              name,
-              price,
-              period,
-              features,
-              category,
-              lenco_amount
-            )
+            subscription_plans (*)
           `)
           .single();
 
-        return result;
+        return { data: result.data as UserSubscriptionRow | null, error: result.error };
       },
       'SubscriptionService.createSubscription'
     );
@@ -177,31 +180,22 @@ export class SubscriptionService extends BaseService<UserSubscription> {
   /**
    * Activate a subscription (mark as active and paid)
    */
-  async activateSubscription(subscriptionId: string): Promise<DatabaseResponse<UserSubscription>> {
+  async activateSubscription(subscriptionId: string): Promise<DatabaseResponse<UserSubscriptionRow>> {
     return withErrorHandling(
       async () => {
         const result = await supabase
-          .from('user_subscriptions')
+          .from('subscriptions')
           .update({
             status: 'active',
-            payment_status: 'paid',
             updated_at: new Date().toISOString(),
           })
           .eq('id', subscriptionId)
           .select(`
             *,
-            subscription_plans (
-              id,
-              name,
-              price,
-              period,
-              features,
-              category,
-              lenco_amount
-            )
+            subscription_plans (*)
           `)
           .single();
-        return result;
+        return { data: result.data as UserSubscriptionRow | null, error: result.error };
       },
       'SubscriptionService.activateSubscription'
     );
@@ -210,30 +204,24 @@ export class SubscriptionService extends BaseService<UserSubscription> {
   /**
    * Cancel a subscription
    */
-  async cancelSubscription(subscriptionId: string): Promise<DatabaseResponse<UserSubscription>> {
+  async cancelSubscription(subscriptionId: string): Promise<DatabaseResponse<UserSubscriptionRow>> {
     return withErrorHandling(
       async () => {
         const result = await supabase
-          .from('user_subscriptions')
+          .from('subscriptions')
           .update({
-            status: 'cancelled',
+            status: 'cancelled' as const,
+            cancel_at_period_end: true,
+            cancelled_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-          })
+          } as any)
           .eq('id', subscriptionId)
           .select(`
             *,
-            subscription_plans (
-              id,
-              name,
-              price,
-              period,
-              features,
-              category,
-              lenco_amount
-            )
+            subscription_plans (*)
           `)
           .single();
-        return result;
+        return { data: result.data as UserSubscriptionRow | null, error: result.error };
       },
       'SubscriptionService.cancelSubscription'
     );
@@ -245,12 +233,12 @@ export class SubscriptionService extends BaseService<UserSubscription> {
   async renewSubscription(
     subscriptionId: string,
     durationMonths: number = 1
-  ): Promise<DatabaseResponse<UserSubscription>> {
+  ): Promise<DatabaseResponse<UserSubscriptionRow>> {
     return withErrorHandling(
       async () => {
         // Get current subscription
         const { data: currentSub, error: fetchError } = await supabase
-          .from('user_subscriptions')
+          .from('subscriptions')
           .select('*')
           .eq('id', subscriptionId)
           .single();
@@ -260,34 +248,26 @@ export class SubscriptionService extends BaseService<UserSubscription> {
         }
 
         // Calculate new end date
-        const currentEndDate = new Date(currentSub.end_date);
+        const currentEndDate = new Date(currentSub.current_period_end);
         const newEndDate = new Date(currentEndDate);
         newEndDate.setMonth(newEndDate.getMonth() + durationMonths);
 
         const result = await supabase
-          .from('user_subscriptions')
+          .from('subscriptions')
           .update({
-            end_date: newEndDate.toISOString(),
+            current_period_end: newEndDate.toISOString(),
             status: 'active',
-            payment_status: 'paid',
+            cancel_at_period_end: false,
             updated_at: new Date().toISOString(),
           })
           .eq('id', subscriptionId)
           .select(`
             *,
-            subscription_plans (
-              id,
-              name,
-              price,
-              period,
-              features,
-              category,
-              lenco_amount
-            )
+            subscription_plans (*)
           `)
           .single();
 
-        return result;
+        return { data: result.data as UserSubscriptionRow | null, error: result.error };
       },
       'SubscriptionService.renewSubscription'
     );
@@ -300,12 +280,12 @@ export class SubscriptionService extends BaseService<UserSubscription> {
     return withErrorHandling(
       async () => {
         const { data, error } = await supabase
-          .from('user_subscriptions')
+          .from('subscriptions')
           .select('id')
           .eq('user_id', userId)
           .eq('status', 'active')
-          .gte('end_date', new Date().toISOString())
-          .single();
+          .gte('current_period_end', new Date().toISOString())
+          .maybeSingle();
 
         return { 
           data: !error && !!data, 
@@ -323,14 +303,14 @@ export class SubscriptionService extends BaseService<UserSubscription> {
     return withErrorHandling(
       async () => {
         const { data: subscription, error } = await supabase
-          .from('user_subscriptions')
+          .from('subscriptions')
           .select(`
             subscription_plans (features)
           `)
           .eq('user_id', userId)
           .eq('status', 'active')
-          .gte('end_date', new Date().toISOString())
-          .single();
+          .gte('current_period_end', new Date().toISOString())
+          .maybeSingle();
 
         if (error || !subscription) {
           return { data: [], error: null }; // Return empty array for non-subscribers
@@ -367,24 +347,23 @@ export class SubscriptionService extends BaseService<UserSubscription> {
   /**
    * Get expiring subscriptions (within 7 days)
    */
-  async getExpiringSubscriptions(): Promise<DatabaseResponse<UserSubscription[]>> {
+  async getExpiringSubscriptions(): Promise<DatabaseResponse<UserSubscriptionRow[]>> {
     return withErrorHandling(
       async () => {
         const sevenDaysFromNow = new Date();
         sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
 
         const result = await supabase
-          .from('user_subscriptions')
+          .from('subscriptions')
           .select(`
             *,
-            profiles (first_name, last_name, email),
-            subscription_plans (name, price, period)
+            subscription_plans (*)
           `)
           .eq('status', 'active')
-          .lte('end_date', sevenDaysFromNow.toISOString())
-          .gte('end_date', new Date().toISOString())
-          .order('end_date', { ascending: true });
-        return result;
+          .lte('current_period_end', sevenDaysFromNow.toISOString())
+          .gte('current_period_end', new Date().toISOString())
+          .order('current_period_end', { ascending: true });
+        return { data: result.data as UserSubscriptionRow[] | null, error: result.error };
       },
       'SubscriptionService.getExpiringSubscriptions'
     );
@@ -395,40 +374,30 @@ export class SubscriptionService extends BaseService<UserSubscription> {
    */
   async updateSubscriptionStatus(
     subscriptionId: string,
-    status: 'pending' | 'active' | 'cancelled' | 'expired',
-    paymentStatus: 'pending' | 'paid' | 'failed'
-  ): Promise<DatabaseResponse<UserSubscription>> {
+    status: 'trialing' | 'active' | 'cancelled' | 'expired' | 'past_due'
+  ): Promise<DatabaseResponse<UserSubscriptionRow>> {
     return withErrorHandling(
       async () => {
         const result = await supabase
-          .from('user_subscriptions')
+          .from('subscriptions')
           .update({
             status,
-            payment_status: paymentStatus,
             updated_at: new Date().toISOString(),
-          })
+          } as any)
           .eq('id', subscriptionId)
           .select(`
             *,
-            subscription_plans (
-              id,
-              name,
-              price,
-              period,
-              features,
-              category,
-              lenco_amount
-            )
+            subscription_plans (*)
           `)
           .single();
-        return result;
+        return { data: result.data as UserSubscriptionRow | null, error: result.error };
       },
       'SubscriptionService.updateSubscriptionStatus'
     );
   }
 }
 
-export class TransactionService extends BaseService<Transaction> {
+export class TransactionService extends BaseService<any> {
   constructor() {
     super('transactions');
   }
@@ -442,17 +411,15 @@ export class TransactionService extends BaseService<Transaction> {
     amount: number,
     paymentMethod: 'phone' | 'card',
     referenceNumber: string
-  ): Promise<DatabaseResponse<Transaction>> {
+  ): Promise<DatabaseResponse<any>> {
     const transactionData = {
       user_id: userId,
       subscription_id: subscriptionId,
       amount,
       currency: 'ZMW', // Zambian Kwacha
-      status: 'pending' as const,
-      payment_method: paymentMethod,
-      reference_number: referenceNumber,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      status: 'pending',
+      transaction_type: 'subscription_payment',
+      description: `Subscription payment - ${referenceNumber}`,
     };
 
     return this.create(transactionData);
@@ -463,8 +430,8 @@ export class TransactionService extends BaseService<Transaction> {
    */
   async updateTransactionStatus(
     transactionId: string,
-    status: 'pending' | 'processing' | 'successful' | 'failed' | 'refunded' | 'cancelled'
-  ): Promise<DatabaseResponse<Transaction>> {
+    status: 'pending' | 'successful' | 'failed'
+  ): Promise<DatabaseResponse<any>> {
     return this.update(transactionId, {
       status,
       updated_at: new Date().toISOString(),
@@ -474,21 +441,15 @@ export class TransactionService extends BaseService<Transaction> {
   /**
    * Get user transactions
    */
-  async getUserTransactions(userId: string): Promise<DatabaseResponse<Transaction[]>> {
+  async getUserTransactions(userId: string): Promise<DatabaseResponse<any[]>> {
     return withErrorHandling(
       async () => {
         const result = await supabase
           .from('transactions')
-          .select(`
-            *,
-            user_subscriptions (
-              id,
-              subscription_plans (name, price, period)
-            )
-          `)
+          .select('*')
           .eq('user_id', userId)
           .order('created_at', { ascending: false });
-        return result;
+        return { data: result.data, error: result.error };
       },
       'TransactionService.getUserTransactions'
     );
@@ -497,15 +458,15 @@ export class TransactionService extends BaseService<Transaction> {
   /**
    * Get transaction by reference number
    */
-  async getByReference(referenceNumber: string): Promise<DatabaseResponse<Transaction>> {
+  async getByReference(referenceNumber: string): Promise<DatabaseResponse<any>> {
     return withErrorHandling(
       async () => {
         const result = await supabase
           .from('transactions')
           .select('*')
-          .eq('reference_number', referenceNumber)
-          .single();
-        return result;
+          .eq('lenco_reference', referenceNumber)
+          .maybeSingle();
+        return { data: result.data, error: result.error };
       },
       'TransactionService.getByReference'
     );

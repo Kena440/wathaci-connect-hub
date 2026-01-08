@@ -4,6 +4,7 @@
 
 import { BaseService } from './base-service';
 import { supabase, withErrorHandling } from '@/lib/supabase-enhanced';
+import { createSearchPattern } from '@/lib/utils/search';
 import type { 
   User, 
   Profile, 
@@ -131,7 +132,7 @@ export class ProfileService extends BaseService<Profile> {
   /**
    * Get profile by user ID with full details
    */
-  async getByUserId(userId: string): Promise<DatabaseResponse<Profile>> {
+  async getByUserId(userId: string): Promise<DatabaseResponse<any>> {
     return withErrorHandling(
       async () => {
         const result = await supabase
@@ -139,7 +140,7 @@ export class ProfileService extends BaseService<Profile> {
           .select('*')
           .eq('id', userId)
           .single();
-        return result;
+        return { data: result.data, error: result.error };
       },
       'ProfileService.getByUserId'
     );
@@ -209,7 +210,8 @@ export class ProfileService extends BaseService<Profile> {
         }
 
         if (filters.search) {
-          query = query.or(`business_name.ilike.%${filters.search}%,first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+          const safePattern = createSearchPattern(filters.search);
+          query = query.or(`business_name.ilike.${safePattern},first_name.ilike.${safePattern},last_name.ilike.${safePattern},description.ilike.${safePattern}`);
         }
 
         const result = await query.order('updated_at', { ascending: false });

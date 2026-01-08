@@ -7,7 +7,7 @@ import MarketplacePreview from '@/components/MarketplacePreview';
 import StatsSection from '@/components/StatsSection';
 import TestimonialsSection from '@/components/TestimonialsSection';
 import { SubscriptionBanner } from '@/components/SubscriptionBanner';
-import { useAppContext } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Heart, Users, Sparkles } from 'lucide-react';
 
@@ -55,15 +55,15 @@ const DonateCTA = () => (
 );
 
 const Index: React.FC = () => {
-  const { user } = useAppContext();
+  const { profile } = useAuth();
 
   return (
     <AppLayout>
       <HeroSection />
-      {user && (
+      {profile && (
         <div className="container mx-auto px-4 py-6">
           <SubscriptionBanner 
-            userType={user.account_type} 
+            userType={profile.account_type || undefined} 
             compact={true}
             dismissible={true}
           />
