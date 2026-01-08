@@ -2575,20 +2575,34 @@ export type Database = {
         }
         Returns: Json
       }
-      apply_wallet_transaction: {
-        Args: {
-          p_amount: number
-          p_currency: string
-          p_description?: string
-          p_idempotency_key?: string
-          p_metadata?: Json
-          p_provider?: string
-          p_provider_reference?: string
-          p_transaction_type: string
-          p_user_id: string
-        }
-        Returns: Json
-      }
+      apply_wallet_transaction:
+        | {
+            Args: {
+              p_amount: number
+              p_currency: string
+              p_description?: string
+              p_idempotency_key?: string
+              p_metadata?: Json
+              p_provider?: string
+              p_provider_reference?: string
+              p_transaction_type: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_amount: number
+              p_currency: string
+              p_description?: string
+              p_idempotency_key?: string
+              p_metadata?: Json
+              p_provider_reference?: string
+              p_transaction_type: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
       assign_admin_role: {
         Args: {
           p_notes?: string
