@@ -2,7 +2,20 @@
  * Utility helpers for validating and normalising Lenco webhook events.
  */
 
-export interface LencoWebhookEventData {
+interface LencoWebhookEnvelope<TEvent extends string, TData> {
+  event: TEvent;
+  data: TData;
+  created_at: string;
+}
+
+export interface LencoPaymentEventMetadata {
+  user_id?: string;
+  subscription_id?: string;
+  service_id?: string;
+  [key: string]: unknown;
+}
+
+export interface LencoPaymentEventData {
   id: string;
   reference: string;
   amount: number;
@@ -10,13 +23,135 @@ export interface LencoWebhookEventData {
   status: string;
   gateway_response: string;
   paid_at?: string;
-  metadata?: Record<string, any>;
+  metadata?: LencoPaymentEventMetadata;
 }
 
-export interface LencoWebhookPayload {
-  event: 'payment.success' | 'payment.failed' | 'payment.pending' | 'payment.cancelled';
-  data: LencoWebhookEventData;
-  created_at: string;
+export type LencoPaymentWebhookPayload = LencoWebhookEnvelope<
+  'payment.success' | 'payment.failed' | 'payment.pending' | 'payment.cancelled',
+  LencoPaymentEventData
+>;
+
+export interface LencoTransferAccountDetails {
+  id: string | null;
+  type: string;
+  accountName: string;
+  accountNumber: string | null;
+  bank: {
+    id: string;
+    name: string;
+    country: string;
+  } | null;
+  phone: string | null;
+  operator: string | null;
+  walletNumber: string | null;
+  tillNumber: string | null;
+}
+
+export interface LencoTransferEventData {
+  id: string;
+  amount: string;
+  fee: string;
+  currency: string;
+  narration: string;
+  initiatedAt: string;
+  completedAt: string | null;
+  accountId: string;
+  creditAccount: LencoTransferAccountDetails;
+  status: 'pending' | 'successful' | 'failed';
+  reasonForFailure: string | null;
+  reference: string | null;
+  lencoReference: string;
+  extraData: {
+    nipSessionId: string | null;
+    [key: string]: unknown;
+  };
+  source: 'banking-app' | 'api';
+}
+
+export type LencoTransferWebhookPayload = LencoWebhookEnvelope<
+  'transfer.successful' | 'transfer.failed',
+  LencoTransferEventData
+>;
+
+export interface LencoCollectionSettlementDetails {
+  id: string;
+  amountSettled: string;
+  currency: string;
+  createdAt: string;
+  settledAt: string | null;
+  status: 'pending' | 'settled';
+  type: 'instant' | 'next-day';
+  accountId: string;
+}
+
+export interface LencoCollectionEventData {
+  id: string;
+  initiatedAt: string;
+  completedAt: string | null;
+  amount: string;
+  fee: string | null;
+  bearer: 'merchant' | 'customer';
+  currency: string;
+  reference: string | null;
+  lencoReference: string;
+  type: 'card' | 'mobile-money' | 'bank-account' | null;
+  status: 'pending' | 'successful' | 'failed' | 'otp-required' | 'pay-offline';
+  source: 'banking-app' | 'api';
+  reasonForFailure: string | null;
+  settlementStatus: 'pending' | 'settled' | null;
+  settlement: LencoCollectionSettlementDetails | null;
+  mobileMoneyDetails: {
+    country: string;
+    phone: string;
+    operator: string;
+    accountName: string | null;
+    operatorTransactionId: string | null;
+  } | null;
+  bankAccountDetails: unknown;
+  cardDetails: unknown;
+}
+
+export type LencoCollectionWebhookPayload = LencoWebhookEnvelope<
+  'collection.successful' | 'collection.failed' | 'collection.settled',
+  LencoCollectionEventData
+>;
+
+export interface LencoTransactionEventData {
+  id: string;
+  amount: string;
+  currency: string;
+  narration: string;
+  type: 'credit' | 'debit';
+  datetime: string;
+  accountId: string;
+  balance: string | null;
+}
+
+export type LencoTransactionWebhookPayload = LencoWebhookEnvelope<
+  'transaction.credit' | 'transaction.debit',
+  LencoTransactionEventData
+>;
+
+export type LencoWebhookPayload =
+  | LencoPaymentWebhookPayload
+  | LencoTransferWebhookPayload
+  | LencoCollectionWebhookPayload
+  | LencoTransactionWebhookPayload;
+
+export function isPaymentEventPayload(payload: LencoWebhookPayload): payload is LencoPaymentWebhookPayload {
+  return payload.event.startsWith('payment.');
+}
+
+export function isTransferEventPayload(payload: LencoWebhookPayload): payload is LencoTransferWebhookPayload {
+  return payload.event.startsWith('transfer.');
+}
+
+export function isCollectionEventPayload(payload: LencoWebhookPayload): payload is LencoCollectionWebhookPayload {
+  return payload.event.startsWith('collection.');
+}
+
+export function isTransactionEventPayload(payload: LencoWebhookPayload): payload is LencoTransactionWebhookPayload {
+  return payload.event.startsWith('transaction.');
 }
 
 /**
