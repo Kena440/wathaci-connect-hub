@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,6 +26,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { getOnboardingStartPath, normalizeAccountType } from "@/lib/onboardingPaths";
+
+const PASSWORD_VALIDATION_DEBOUNCE_MS = 180;
 
 const formSchema = z.object({
   fullName: z
@@ -89,9 +91,12 @@ export const SignupForm = ({
     handleSubmit,
     control,
     watch,
+    trigger,
     formState: { errors, isSubmitting },
   } = useForm<SignupFormValues>({
     resolver: zodResolver(formSchema),
+    mode: "onBlur",
+    reValidateMode: "onBlur",
     defaultValues: {
       acceptedTerms: false,
       newsletterOptIn: false,
@@ -135,6 +140,45 @@ export const SignupForm = ({
   const emailValue = watch("email");
 
   const isDisabled = disabled || isSubmitting;
+  const passwordValidationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const queuePasswordValidation = useCallback(
+    (value: string) => {
+      if (!value || isDisabled) {
+        if (passwordValidationTimer.current) {
+          clearTimeout(passwordValidationTimer.current);
+          passwordValidationTimer.current = null;
+        }
+        return;
+      }
+
+      if (passwordValidationTimer.current) {
+        clearTimeout(passwordValidationTimer.current);
+      }
+
+      passwordValidationTimer.current = setTimeout(() => {
+        trigger("password");
+      }, PASSWORD_VALIDATION_DEBOUNCE_MS);
+    },
+    [isDisabled, trigger]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (passwordValidationTimer.current) {
+        clearTimeout(passwordValidationTimer.current);
+      }
+    };
+  }, []);
+
+  const passwordField = register("password");
+  const handlePasswordChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      passwordField.onChange(event);
+      queuePasswordValidation(event.target.value);
+    },
+    [passwordField, queuePasswordValidation]
+  );
 
   // Check blocked status when email changes
   useEffect(() => {
@@ -441,7 +485,8 @@ export const SignupForm = ({
           placeholder="••••••••"
           autoComplete="new-password"
           disabled={isDisabled}
-          {...register("password")}
+          {...passwordField}
+          onChange={handlePasswordChange}
         />
         {errors.password?.message ? <p className="text-sm text-red-600">{errors.password.message}</p> : null}
         <p className="text-xs text-gray-500">{passwordStrengthMessage}</p>
