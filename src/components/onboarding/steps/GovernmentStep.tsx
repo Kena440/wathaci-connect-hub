@@ -59,7 +59,7 @@ export function GovernmentStep({ form }: GovernmentStepProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Institution Type *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select onValueChange={field.onChange} value={field.value ?? ''}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select type" />
@@ -85,7 +85,7 @@ export function GovernmentStep({ form }: GovernmentStepProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Your Title *</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value ?? ''}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select your title" />

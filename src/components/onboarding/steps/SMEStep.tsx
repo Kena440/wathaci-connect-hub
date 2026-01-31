@@ -53,7 +53,7 @@ export function SMEStep({ form }: SMEStepProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Industry *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select onValueChange={field.onChange} value={field.value ?? ''}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select industry" />
@@ -76,7 +76,7 @@ export function SMEStep({ form }: SMEStepProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Business Stage *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select onValueChange={field.onChange} value={field.value ?? ''}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select stage" />

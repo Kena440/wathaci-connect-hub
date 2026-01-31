@@ -95,7 +95,7 @@ export function FreelancerStep({ form }: FreelancerStepProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Experience Level *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select onValueChange={field.onChange} value={field.value ?? ''}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select level" />
@@ -120,7 +120,7 @@ export function FreelancerStep({ form }: FreelancerStepProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Availability *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select onValueChange={field.onChange} value={field.value ?? ''}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select availability" />
@@ -146,7 +146,7 @@ export function FreelancerStep({ form }: FreelancerStepProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Work Mode *</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value ?? ''}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select work mode" />
@@ -177,7 +177,7 @@ export function FreelancerStep({ form }: FreelancerStepProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Rate Type *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select onValueChange={field.onChange} value={field.value ?? ''}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select rate type" />
@@ -204,7 +204,7 @@ export function FreelancerStep({ form }: FreelancerStepProps) {
                 <FormLabel>Rate Range *</FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
-                  value={field.value}
+                  value={field.value ?? ''}
                   disabled={!watchRateType}
                 >
                   <FormControl>

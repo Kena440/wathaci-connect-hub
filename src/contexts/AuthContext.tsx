@@ -15,6 +15,8 @@ interface Profile {
   avatar_url: string | null;
   account_type: string | null;
   is_profile_complete: boolean;
+  profile_completed?: boolean;
+  onboarding_step?: number;
 }
 
 interface AuthContextType {
@@ -56,8 +58,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setProfileLoading(true);
       
-      const { data, error } = await supabase
-        .rpc('get_my_profile');
+      // Ensure the profile row exists (idempotent) so downstream code never hits "profile not found".
+      // IMPORTANT: do not call this inside onAuthStateChange directly; this function is invoked via setTimeout.
+      await supabase.rpc('save_onboarding_progress', {
+        p_onboarding_step: 1,
+      });
+
+      const { data, error } = await supabase.rpc('get_my_profile');
 
       if (error) {
         console.error('Error fetching profile:', error);
@@ -71,6 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         avatar_url: row.avatar_url,
         account_type: row.account_type,
         is_profile_complete: row.is_profile_complete ?? false,
+        profile_completed: row.profile_completed ?? false,
+        onboarding_step: row.onboarding_step ?? 1,
       } : null;
 
       // Check admin role

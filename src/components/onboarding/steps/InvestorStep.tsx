@@ -33,7 +33,7 @@ export function InvestorStep({ form }: InvestorStepProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Investor Type *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select onValueChange={field.onChange} value={field.value ?? ''}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select investor type" />
@@ -58,7 +58,7 @@ export function InvestorStep({ form }: InvestorStepProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Ticket Size Range *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select onValueChange={field.onChange} value={field.value ?? ''}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select ticket size" />

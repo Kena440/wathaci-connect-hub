@@ -28,14 +28,13 @@ export const smeProfileSchema = z.object({
     .min(2, 'Business name must be at least 2 characters')
     .max(100, 'Business name must be less than 100 characters'),
   industry: z.string().min(1, 'Industry is required'),
-  business_stage: z.enum(['idea', 'early', 'growth', 'established'], {
-    required_error: 'Business stage is required'
-  }),
+  // Step 3 must accept partial role profiles; only enforce strictness at later stages if needed.
+  business_stage: z.enum(['idea', 'early', 'growth', 'established']).optional().nullable(),
   services_or_products: z.string()
     .min(10, 'Please describe your products/services (at least 10 characters)')
     .max(500, 'Description must be less than 500 characters'),
-  top_needs: z.array(z.string()).min(1, 'Select at least one business need'),
-  areas_served: z.array(z.string()).min(1, 'Select at least one area served'),
+  top_needs: z.array(z.string()).optional().default([]),
+  areas_served: z.array(z.string()).optional().default([]),
   registration_status: z.string().optional().nullable(),
   registration_number: z.string().optional().nullable(),
   year_established: z.number().min(1900).max(new Date().getFullYear()).optional().nullable(),
@@ -52,23 +51,15 @@ export const freelancerProfileSchema = z.object({
   professional_title: z.string()
     .min(2, 'Professional title is required')
     .max(100, 'Title must be less than 100 characters'),
-  primary_skills: z.array(z.string()).min(1, 'Select at least one skill'),
+  primary_skills: z.array(z.string()).optional().default([]),
   services_offered: z.string()
     .min(10, 'Please describe your services (at least 10 characters)')
     .max(500, 'Description must be less than 500 characters'),
-  experience_level: z.enum(['junior', 'mid', 'senior', 'expert'], {
-    required_error: 'Experience level is required'
-  }),
-  availability: z.enum(['available', 'limited', 'unavailable'], {
-    required_error: 'Availability is required'
-  }),
-  work_mode: z.enum(['remote', 'hybrid', 'on-site'], {
-    required_error: 'Work mode is required'
-  }),
-  rate_type: z.enum(['hourly', 'daily', 'project'], {
-    required_error: 'Rate type is required'
-  }),
-  rate_range: z.string().min(1, 'Rate range is required'),
+  experience_level: z.enum(['junior', 'mid', 'senior', 'expert']).optional().nullable(),
+  availability: z.enum(['available', 'limited', 'unavailable']).optional().nullable(),
+  work_mode: z.enum(['remote', 'hybrid', 'on-site']).optional().nullable(),
+  rate_type: z.enum(['hourly', 'daily', 'project']).optional().nullable(),
+  rate_range: z.string().optional().nullable().or(z.literal('')),
   portfolio_url: z.string().url('Invalid URL').optional().nullable().or(z.literal('')),
   certifications: z.array(z.string()).optional().default([]),
   languages: z.array(z.string()).optional().default([]),
@@ -78,14 +69,12 @@ export const freelancerProfileSchema = z.object({
 
 // Investor profile schema
 export const investorProfileSchema = z.object({
-  investor_type: z.enum(['angel', 'vc', 'fund', 'corporate', 'dfi', 'other'], {
-    required_error: 'Investor type is required'
-  }),
-  ticket_size_range: z.string().min(1, 'Ticket size is required'),
-  investment_stage_focus: z.array(z.string()).min(1, 'Select at least one investment stage'),
-  sectors_of_interest: z.array(z.string()).min(1, 'Select at least one sector'),
-  investment_preferences: z.array(z.string()).min(1, 'Select at least one investment preference'),
-  geo_focus: z.array(z.string()).min(1, 'Select at least one geographic focus'),
+  investor_type: z.enum(['angel', 'vc', 'fund', 'corporate', 'dfi', 'other']).optional().nullable(),
+  ticket_size_range: z.string().optional().nullable().or(z.literal('')),
+  investment_stage_focus: z.array(z.string()).optional().default([]),
+  sectors_of_interest: z.array(z.string()).optional().default([]),
+  investment_preferences: z.array(z.string()).optional().default([]),
+  geo_focus: z.array(z.string()).optional().default([]),
   thesis: z.string().max(1000).optional().nullable(),
   portfolio_companies: z.array(z.string()).optional().default([]),
   decision_timeline: z.string().optional().nullable(),
@@ -101,15 +90,13 @@ export const governmentProfileSchema = z.object({
   department_or_unit: z.string()
     .min(2, 'Department is required')
     .max(100, 'Department must be less than 100 characters'),
-  institution_type: z.enum(['ministry', 'agency', 'parastatal', 'local_authority', 'regulator', 'other'], {
-    required_error: 'Institution type is required'
-  }),
-  mandate_areas: z.array(z.string()).min(1, 'Select at least one mandate area'),
+  institution_type: z.enum(['ministry', 'agency', 'parastatal', 'local_authority', 'regulator', 'other']).optional().nullable(),
+  mandate_areas: z.array(z.string()).optional().default([]),
   services_or_programmes: z.string()
     .min(10, 'Please describe services/programmes (at least 10 characters)')
     .max(500, 'Description must be less than 500 characters'),
-  collaboration_interests: z.array(z.string()).min(1, 'Select at least one collaboration interest'),
-  contact_person_title: z.string().min(1, 'Contact person title is required'),
+  collaboration_interests: z.array(z.string()).optional().default([]),
+  contact_person_title: z.string().optional().nullable().or(z.literal('')),
   procurement_portal_url: z.string().url('Invalid URL').optional().nullable().or(z.literal('')),
   current_initiatives: z.string().max(500).optional().nullable(),
   eligibility_criteria: z.string().max(500).optional().nullable()

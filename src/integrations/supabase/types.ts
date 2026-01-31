@@ -1380,18 +1380,21 @@ export type Database = {
           license_number: string | null
           linkedin_url: string | null
           notification_preferences: Json | null
+          onboarding_step: number
           ownership_structure: string | null
           phone: string | null
           portfolio_url: string | null
           preferred_contact_method: string | null
           preferred_sectors: string[] | null
-          profile_completed: boolean | null
+          profile_completed: boolean
           profile_image_url: string | null
           province: string | null
           qualifications: Json | null
           rating: number | null
           registration_number: string | null
           reviews_count: number | null
+          role_metadata: Json
+          role_type: string | null
           sectors: string[] | null
           services_offered: string[] | null
           skills: string[] | null
@@ -1445,18 +1448,21 @@ export type Database = {
           license_number?: string | null
           linkedin_url?: string | null
           notification_preferences?: Json | null
+          onboarding_step?: number
           ownership_structure?: string | null
           phone?: string | null
           portfolio_url?: string | null
           preferred_contact_method?: string | null
           preferred_sectors?: string[] | null
-          profile_completed?: boolean | null
+          profile_completed?: boolean
           profile_image_url?: string | null
           province?: string | null
           qualifications?: Json | null
           rating?: number | null
           registration_number?: string | null
           reviews_count?: number | null
+          role_metadata?: Json
+          role_type?: string | null
           sectors?: string[] | null
           services_offered?: string[] | null
           skills?: string[] | null
@@ -1510,18 +1516,21 @@ export type Database = {
           license_number?: string | null
           linkedin_url?: string | null
           notification_preferences?: Json | null
+          onboarding_step?: number
           ownership_structure?: string | null
           phone?: string | null
           portfolio_url?: string | null
           preferred_contact_method?: string | null
           preferred_sectors?: string[] | null
-          profile_completed?: boolean | null
+          profile_completed?: boolean
           profile_image_url?: string | null
           province?: string | null
           qualifications?: Json | null
           rating?: number | null
           registration_number?: string | null
           reviews_count?: number | null
+          role_metadata?: Json
+          role_type?: string | null
           sectors?: string[] | null
           services_offered?: string[] | null
           skills?: string[] | null
@@ -2531,18 +2540,21 @@ export type Database = {
           license_number: string | null
           linkedin_url: string | null
           notification_preferences: Json | null
+          onboarding_step: number
           ownership_structure: string | null
           phone: string | null
           portfolio_url: string | null
           preferred_contact_method: string | null
           preferred_sectors: string[] | null
-          profile_completed: boolean | null
+          profile_completed: boolean
           profile_image_url: string | null
           province: string | null
           qualifications: Json | null
           rating: number | null
           registration_number: string | null
           reviews_count: number | null
+          role_metadata: Json
+          role_type: string | null
           sectors: string[] | null
           services_offered: string[] | null
           skills: string[] | null
@@ -2664,18 +2676,21 @@ export type Database = {
           license_number: string | null
           linkedin_url: string | null
           notification_preferences: Json | null
+          onboarding_step: number
           ownership_structure: string | null
           phone: string | null
           portfolio_url: string | null
           preferred_contact_method: string | null
           preferred_sectors: string[] | null
-          profile_completed: boolean | null
+          profile_completed: boolean
           profile_image_url: string | null
           province: string | null
           qualifications: Json | null
           rating: number | null
           registration_number: string | null
           reviews_count: number | null
+          role_metadata: Json
+          role_type: string | null
           sectors: string[] | null
           services_offered: string[] | null
           skills: string[] | null
@@ -2713,6 +2728,15 @@ export type Database = {
         Args: {
           p_role: Database["public"]["Enums"]["app_role"]
           p_target_user_id: string
+        }
+        Returns: Json
+      }
+      save_onboarding_progress: {
+        Args: {
+          p_account_type?: string
+          p_onboarding_step: number
+          p_role_metadata?: Json
+          p_role_type?: string
         }
         Returns: Json
       }
