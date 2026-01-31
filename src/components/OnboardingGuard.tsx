@@ -70,7 +70,7 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
   }
 
   // User is logged in - check profile completion
-  const isProfileComplete = profile?.is_profile_complete === true;
+  const isProfileComplete = profile?.is_profile_complete === true || (profile as any)?.profile_completed === true;
 
   // Already on onboarding page
   if (location.pathname.startsWith('/onboarding/profile')) {

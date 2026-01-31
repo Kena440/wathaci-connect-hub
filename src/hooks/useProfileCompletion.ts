@@ -3,6 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
+type SaveOnboardingProgressResponse = {
+  success: boolean;
+  nextStep?: number;
+  profileCompleted?: boolean;
+  onboarding_step?: number;
+  error?: string;
+};
+
 interface BaseProfileData {
   full_name: string;
   display_name?: string | null;
@@ -113,9 +121,36 @@ export function useProfileCompletion() {
     }
   }, [user]);
 
+  const saveOnboardingProgress = useCallback(async (params: {
+    step: 1 | 2 | 3 | 4;
+    accountType?: string | null;
+    roleType?: string | null;
+    roleMetadata?: Record<string, any> | null;
+  }): Promise<SaveOnboardingProgressResponse> => {
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    try {
+      const { data, error } = await supabase.rpc('save_onboarding_progress', {
+        p_onboarding_step: params.step,
+        p_account_type: params.accountType ?? undefined,
+        p_role_type: params.roleType ?? undefined,
+        p_role_metadata: params.roleMetadata ?? undefined,
+      });
+
+      if (error) throw error;
+      return (data as any) as SaveOnboardingProgressResponse;
+    } catch (err: any) {
+      const message = err?.message ?? 'Failed to save onboarding progress';
+      console.error('[ProfileCompletion] saveOnboardingProgress error:', err);
+      toast.error(message);
+      return { success: false, error: message };
+    }
+  }, [user]);
+
   return {
     completeProfile,
     saveDraft,
+    saveOnboardingProgress,
     isCompleting,
   };
 }
