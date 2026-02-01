@@ -83,7 +83,7 @@ export default function OnboardingProfile() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, profileLoading } = useAuth();
-  const { completeProfile, saveDraft, isCompleting } = useProfileCompletion();
+  const { completeProfile, saveDraft, saveOnboardingProgress, isCompleting } = useProfileCompletion();
   
   const [currentStep, setCurrentStep] = useState(1);
   const [accountType, setAccountType] = useState<AccountType | null>(null);
@@ -330,6 +330,28 @@ export default function OnboardingProfile() {
         toast.error('Please select an account type');
         return;
       }
+      // CRITICAL: Save account_type IMMEDIATELY to database
+      // This ensures user appears in directory right away
+      setSaving(true);
+      try {
+        const result = await saveOnboardingProgress({
+          step: 1,
+          accountType: accountType,
+          roleType: accountType,
+        });
+        if (!result.success) {
+          toast.error(result.error || 'Failed to save account type');
+          setSaving(false);
+          return;
+        }
+        console.log('[Onboarding] Step 1 saved, account_type:', accountType);
+      } catch (err) {
+        console.error('[Onboarding] Step 1 save error:', err);
+        toast.error('Failed to save progress');
+        setSaving(false);
+        return;
+      }
+      setSaving(false);
       saveStep(2);
       setCurrentStep(2);
     } else if (currentStep === 2) {
@@ -338,27 +360,51 @@ export default function OnboardingProfile() {
         toast.error('Please fill in all required fields');
         return;
       }
-      // Save draft
+      // Save draft with base info
       setSaving(true);
       await saveDraft(baseForm.getValues(), accountType || undefined);
+      // Also update onboarding step in DB
+      await saveOnboardingProgress({
+        step: 2,
+        accountType: accountType,
+      });
       setSaving(false);
       saveStep(3);
       setCurrentStep(3);
     } else if (currentStep === 3) {
-      let valid = false;
+      // RELAXED VALIDATION: Only check required fields, allow partial data
+      let valid = true; // Default to true - allow progression
+      let roleData: Record<string, any> = {};
+      
       if (accountType === 'sme') {
         valid = await smeForm.trigger();
+        roleData = smeForm.getValues();
       } else if (accountType === 'freelancer') {
         valid = await freelancerForm.trigger();
+        roleData = freelancerForm.getValues();
       } else if (accountType === 'investor') {
         valid = await investorForm.trigger();
+        roleData = investorForm.getValues();
       } else if (accountType === 'government') {
         valid = await governmentForm.trigger();
+        roleData = governmentForm.getValues();
       }
+      
       if (!valid) {
-        toast.error('Please fill in all required fields');
+        // Show warning but allow progression if user confirms
+        toast.error('Please fill in the required fields to continue');
         return;
       }
+      
+      // Save role data to DB
+      setSaving(true);
+      await saveOnboardingProgress({
+        step: 3,
+        accountType: accountType,
+        roleMetadata: roleData,
+      });
+      setSaving(false);
+      
       saveStep(4);
       setCurrentStep(4);
     }
