@@ -15,6 +15,7 @@ export interface DirectoryProfile {
   bio?: string | null;
   city?: string | null;
   country?: string | null;
+  is_profile_complete?: boolean | null;
   // Freelancer
   professional_title?: string | null;
   primary_skills?: string[] | null;
@@ -61,19 +62,27 @@ export function useDirectoryProfiles({ accountType, pageSize = 20 }: UseDirector
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
 
-      // Build the query
+      // CRITICAL FIX: Use v_directory_profiles view - NO is_profile_complete filter
+      // This ensures ALL users with account_type appear in directories
       let query = supabase
-        .from('v_public_profiles')
-        .select('*', { count: 'exact' })
-        .eq('account_type', accountType)
-        .eq('is_profile_complete', true)
-        .order('created_at', { ascending: false });
+        .from('v_directory_profiles')
+        .select('*', { count: 'exact' });
+
+      // Handle the 'freelancer' type which may also be stored as 'professional'
+      if (accountType === 'freelancer') {
+        query = query.in('account_type', ['freelancer', 'professional']);
+      } else {
+        query = query.eq('account_type', accountType);
+      }
+      
+      query = query.order('created_at', { ascending: false });
 
       // Apply search filter with escaped patterns
       if (debouncedSearch) {
         const safePattern = createSearchPattern(debouncedSearch);
         query = query.or(
           `display_name.ilike.${safePattern},` +
+          `full_name.ilike.${safePattern},` +
           `bio.ilike.${safePattern},` +
           `professional_title.ilike.${safePattern},` +
           `business_name.ilike.${safePattern},` +
@@ -108,11 +117,13 @@ export function useDirectoryProfiles({ accountType, pageSize = 20 }: UseDirector
         .map(p => ({
           id: p.id,
           display_name: p.display_name,
+          full_name: p.full_name,
           profile_photo_url: p.profile_photo_url,
           account_type: p.account_type,
           bio: p.bio,
           city: p.city,
           country: p.country,
+          is_profile_complete: p.is_profile_complete,
           professional_title: p.professional_title,
           primary_skills: p.primary_skills,
           experience_level: p.experience_level,

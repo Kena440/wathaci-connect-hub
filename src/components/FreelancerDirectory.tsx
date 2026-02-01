@@ -19,11 +19,12 @@ export const FreelancerDirectory = () => {
   const { data: freelancers = [], isLoading } = useQuery({
     queryKey: ['freelancer-directory', searchTerm, selectedLocation, experienceFilter],
     queryFn: async () => {
+      // CRITICAL FIX: Use v_directory_profiles and include both 'freelancer' and 'professional' types
+      // NO is_profile_complete filter - show all users with relevant account_type
       let query = supabase
-        .from('v_public_profiles')
+        .from('v_directory_profiles')
         .select('*')
-        .eq('account_type', 'freelancer')
-        .eq('is_profile_complete', true)
+        .in('account_type', ['freelancer', 'professional'])
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -31,6 +32,7 @@ export const FreelancerDirectory = () => {
         const safePattern = createSearchPattern(searchTerm);
         query = query.or(
           `display_name.ilike.${safePattern},` +
+          `full_name.ilike.${safePattern},` +
           `professional_title.ilike.${safePattern},` +
           `bio.ilike.${safePattern}`
         );
@@ -119,77 +121,94 @@ export const FreelancerDirectory = () => {
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {freelancers.map((freelancer) => (
-            <Card key={freelancer.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="text-center">
-                <Avatar className="w-20 h-20 mx-auto mb-4">
-                  <AvatarImage src={freelancer.profile_photo_url || undefined} alt={freelancer.display_name || 'Freelancer'} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-lg">
-                    {getInitials(freelancer.display_name)}
-                  </AvatarFallback>
-                </Avatar>
-                <CardTitle className="text-xl">{freelancer.display_name || 'Anonymous'}</CardTitle>
-                <p className="text-muted-foreground">{freelancer.professional_title}</p>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between mb-4">
-                  {freelancer.experience_level && (
-                    <Badge variant="secondary" className="capitalize">
-                      {freelancer.experience_level}
-                    </Badge>
-                  )}
-                  {(freelancer.city || freelancer.country) && (
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      <MapPin className="w-4 h-4" />
-                      <span className="text-sm">{[freelancer.city, freelancer.country].filter(Boolean).join(', ')}</span>
-                    </div>
-                  )}
-                </div>
-                
-                {freelancer.primary_skills && freelancer.primary_skills.length > 0 && (
-                  <div className="mb-4">
-                    <div className="flex flex-wrap gap-1">
-                      {freelancer.primary_skills.slice(0, 3).map((skill: string, idx: number) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {skill}
-                        </Badge>
-                      ))}
-                      {freelancer.primary_skills.length > 3 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{freelancer.primary_skills.length - 3}
-                        </Badge>
-                      )}
-                    </div>
+          {freelancers.map((freelancer) => {
+            const isIncomplete = !freelancer.is_profile_complete;
+            return (
+              <Card key={freelancer.id} className={`hover:shadow-lg transition-shadow ${isIncomplete ? 'border-dashed border-muted-foreground/30' : ''}`}>
+                <CardHeader className="text-center">
+                  <Avatar className={`w-20 h-20 mx-auto mb-4 ${isIncomplete ? 'opacity-70' : ''}`}>
+                    <AvatarImage src={freelancer.profile_photo_url || undefined} alt={freelancer.display_name || freelancer.full_name || 'Freelancer'} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                      {getInitials(freelancer.display_name || freelancer.full_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex items-center justify-center gap-2">
+                    <CardTitle className="text-xl">{freelancer.display_name || freelancer.full_name || 'New Member'}</CardTitle>
+                    {isIncomplete && (
+                      <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-600">New</Badge>
+                    )}
                   </div>
-                )}
-                
-                <div className="flex items-center justify-between mb-4">
-                  {freelancer.rate_range && (
-                    <div>
-                      <span className="text-lg font-bold text-primary">{freelancer.rate_range}</span>
+                  <p className="text-muted-foreground">{freelancer.professional_title || (isIncomplete ? 'Professional' : 'Freelancer')}</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between mb-4">
+                    {freelancer.experience_level && (
+                      <Badge variant="secondary" className="capitalize">
+                        {freelancer.experience_level}
+                      </Badge>
+                    )}
+                    {(freelancer.city || freelancer.country) ? (
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <MapPin className="w-4 h-4" />
+                        <span className="text-sm">{[freelancer.city, freelancer.country].filter(Boolean).join(', ')}</span>
+                      </div>
+                    ) : isIncomplete ? (
+                      <div className="flex items-center gap-1 text-muted-foreground/50">
+                        <MapPin className="w-4 h-4" />
+                        <span className="text-sm italic">Location TBD</span>
+                      </div>
+                    ) : null}
+                  </div>
+                  
+                  {freelancer.primary_skills && freelancer.primary_skills.length > 0 ? (
+                    <div className="mb-4">
+                      <div className="flex flex-wrap gap-1">
+                        {freelancer.primary_skills.slice(0, 3).map((skill: string, idx: number) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {skill}
+                          </Badge>
+                        ))}
+                        {freelancer.primary_skills.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{freelancer.primary_skills.length - 3}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                  )}
-                  {freelancer.availability && (
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4 text-muted-foreground" />
-                      <span className={`text-sm capitalize ${
-                        freelancer.availability === 'available' ? 'text-green-600' : 'text-orange-600'
-                      }`}>
-                        {freelancer.availability}
-                      </span>
+                  ) : isIncomplete ? (
+                    <div className="mb-4">
+                      <p className="text-sm text-muted-foreground/50 italic">Skills coming soon...</p>
                     </div>
-                  )}
-                </div>
-                
-                <Button asChild className="w-full" variant="outline">
-                  <Link to={`/profile/${freelancer.id}`}>
-                    View Profile
-                    <ExternalLink className="h-4 w-4 ml-2" />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                  ) : null}
+                  
+                  <div className="flex items-center justify-between mb-4">
+                    {freelancer.rate_range && (
+                      <div>
+                        <span className="text-lg font-bold text-primary">{freelancer.rate_range}</span>
+                      </div>
+                    )}
+                    {freelancer.availability && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-4 h-4 text-muted-foreground" />
+                        <span className={`text-sm capitalize ${
+                          freelancer.availability === 'available' ? 'text-green-600' : 'text-orange-600'
+                        }`}>
+                          {freelancer.availability}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <Button asChild className="w-full" variant={isIncomplete ? "outline" : "default"}>
+                    <Link to={`/profile/${freelancer.id}`}>
+                      View Profile
+                      <ExternalLink className="h-4 w-4 ml-2" />
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 

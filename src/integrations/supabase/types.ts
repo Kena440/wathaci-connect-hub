@@ -287,6 +287,13 @@ export type Database = {
             foreignKeyName: "freelancer_profiles_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: true
+            referencedRelation: "v_directory_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "freelancer_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
             referencedRelation: "v_profile_match_features"
             referencedColumns: ["id"]
           },
@@ -412,6 +419,13 @@ export type Database = {
             columns: ["sme_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funding_matches_sme_id_fkey"
+            columns: ["sme_id"]
+            isOneToOne: false
+            referencedRelation: "v_directory_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -600,6 +614,13 @@ export type Database = {
             foreignKeyName: "government_profiles_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: true
+            referencedRelation: "v_directory_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "government_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
             referencedRelation: "v_profile_match_features"
             referencedColumns: ["id"]
           },
@@ -674,6 +695,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_directory_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -932,6 +960,13 @@ export type Database = {
             foreignKeyName: "notification_preferences_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "v_directory_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "v_profile_match_features"
             referencedColumns: ["id"]
           },
@@ -988,6 +1023,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_directory_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1601,6 +1643,13 @@ export type Database = {
             foreignKeyName: "push_subscriptions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "v_directory_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "v_profile_match_features"
             referencedColumns: ["id"]
           },
@@ -1648,6 +1697,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pwa_analytics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_directory_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1908,6 +1964,13 @@ export type Database = {
             foreignKeyName: "sme_professional_matches_professional_id_fkey"
             columns: ["professional_id"]
             isOneToOne: false
+            referencedRelation: "v_directory_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sme_professional_matches_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
             referencedRelation: "v_profile_match_features"
             referencedColumns: ["id"]
           },
@@ -1930,6 +1993,13 @@ export type Database = {
             columns: ["sme_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sme_professional_matches_sme_id_fkey"
+            columns: ["sme_id"]
+            isOneToOne: false
+            referencedRelation: "v_directory_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -2025,6 +2095,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sme_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_directory_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -2284,6 +2361,60 @@ export type Database = {
       }
     }
     Views: {
+      v_directory_profiles: {
+        Row: {
+          account_type: string | null
+          areas_served: string[] | null
+          availability: string | null
+          bio: string | null
+          business_name: string | null
+          business_stage: string | null
+          certifications: string[] | null
+          city: string | null
+          collaboration_interests: string[] | null
+          contact_person_title: string | null
+          country: string | null
+          created_at: string | null
+          department_or_unit: string | null
+          display_name: string | null
+          experience_level: string | null
+          freelancer_services: string | null
+          full_name: string | null
+          funding_needed: boolean | null
+          geo_focus: string[] | null
+          id: string | null
+          industry: string | null
+          institution_name: string | null
+          institution_type: string | null
+          investment_preferences: string[] | null
+          investment_stage_focus: string[] | null
+          investor_sectors: string[] | null
+          investor_type: string | null
+          is_profile_complete: boolean | null
+          languages: string[] | null
+          linkedin: string | null
+          mandate_areas: string[] | null
+          onboarding_step: number | null
+          preferred_industries: string[] | null
+          primary_skills: string[] | null
+          professional_title: string | null
+          profile_completed: boolean | null
+          profile_photo_url: string | null
+          rate_range: string | null
+          rate_type: string | null
+          role_type: string | null
+          services_or_programmes: string | null
+          sme_sectors: string[] | null
+          sme_services: string | null
+          team_size_range: string | null
+          thesis: string | null
+          ticket_size_range: string | null
+          top_needs: string[] | null
+          website: string | null
+          work_mode: string | null
+        }
+        Relationships: []
+      }
       v_profile_match_features: {
         Row: {
           account_type: string | null
