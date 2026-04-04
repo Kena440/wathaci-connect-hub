@@ -13,6 +13,10 @@ export interface Entitlements {
     planName: string;
     currentPeriodEnd: string;
     features: string[];
+    environment?: string;
+    productId?: string;
+    priceId?: string;
+    cancelAtPeriodEnd?: boolean;
   } | null;
   limits: {
     fundingMatchesPerMonth: number;
