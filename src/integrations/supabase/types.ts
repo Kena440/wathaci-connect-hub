@@ -2177,8 +2177,13 @@ export type Database = {
           currency: string
           current_period_end: string
           current_period_start: string
+          environment: string
           id: string
+          paddle_customer_id: string | null
+          paddle_subscription_id: string | null
           plan_id: string
+          price_id: string | null
+          product_id: string | null
           status: Database["public"]["Enums"]["subscription_status"]
           trial_end: string | null
           updated_at: string
@@ -2191,8 +2196,13 @@ export type Database = {
           currency?: string
           current_period_end: string
           current_period_start?: string
+          environment?: string
           id?: string
+          paddle_customer_id?: string | null
+          paddle_subscription_id?: string | null
           plan_id: string
+          price_id?: string | null
+          product_id?: string | null
           status?: Database["public"]["Enums"]["subscription_status"]
           trial_end?: string | null
           updated_at?: string
@@ -2205,8 +2215,13 @@ export type Database = {
           currency?: string
           current_period_end?: string
           current_period_start?: string
+          environment?: string
           id?: string
+          paddle_customer_id?: string | null
+          paddle_subscription_id?: string | null
           plan_id?: string
+          price_id?: string | null
+          product_id?: string | null
           status?: Database["public"]["Enums"]["subscription_status"]
           trial_end?: string | null
           updated_at?: string
@@ -2846,6 +2861,10 @@ export type Database = {
         }
       }
       get_user_entitlements: { Args: { p_user_id: string }; Returns: Json }
+      has_active_subscription: {
+        Args: { check_env?: string; user_uuid: string }
+        Returns: boolean
+      }
       has_full_access: { Args: { p_user_id: string }; Returns: boolean }
       has_role: {
         Args: {
