@@ -103,6 +103,10 @@ export const useEntitlements = () => {
           planName: entData.subscription.plan_name,
           currentPeriodEnd: entData.subscription.current_period_end,
           features: entData.subscription.features || [],
+          environment: (entData.subscription as any).environment,
+          productId: (entData.subscription as any).product_id,
+          priceId: (entData.subscription as any).price_id,
+          cancelAtPeriodEnd: (entData.subscription as any).cancel_at_period_end,
         } : null,
         limits: {
           fundingMatchesPerMonth: entData.limits.funding_matches_per_month,
