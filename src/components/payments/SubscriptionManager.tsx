@@ -114,7 +114,7 @@ export const SubscriptionManager = ({ accountType }: SubscriptionManagerProps) =
     }
   }, []);
 
-  const currentProductId = subscription?.productId || entitlements?.subscription?.product_id;
+  const currentProductId = subscription?.productId;
 
   return (
     <div className="space-y-6">
@@ -147,7 +147,7 @@ export const SubscriptionManager = ({ accountType }: SubscriptionManagerProps) =
                 </div>
               )}
 
-              {entitlements?.subscription?.cancel_at_period_end && (
+              {entitlements?.subscription?.cancelAtPeriodEnd && (
                 <div className="flex items-center gap-2 text-amber-600 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg">
                   <AlertTriangle className="w-4 h-4" />
                   <span className="text-sm">
