@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Lightbulb, Users, TrendingUp, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 interface Suggestion {
   id: string;
@@ -19,26 +20,36 @@ interface Suggestion {
 export const CollaborationSuggestions = ({ userProfile }: { userProfile?: any }) => {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const generateSuggestions = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-professional-matcher', {
+        body: {
+          type: 'collaboration_suggestions',
+          userProfile,
+        },
+      });
+
+      if (error) throw error;
+
+      setSuggestions(data?.suggestions || []);
+    } catch (err) {
+      console.error('Error generating suggestions:', err);
+      setError('Failed to generate suggestions. Please try again.');
+      setSuggestions([]);
+    }
+
+    setLoading(false);
+  }, [userProfile]);
 
   useEffect(() => {
     generateSuggestions();
-  }, [userProfile]);
-
-  const generateSuggestions = async () => {
-    setLoading(true);
-    
-    try {
-      // TODO: Replace with actual AI-powered suggestion generation
-      // For now, return empty array for launch
-      setSuggestions([]);
-    } catch (error) {
-      console.error('Error generating suggestions:', error);
-      setSuggestions([]);
-    }
-    
-    setLoading(false);
-  };
+  }, [generateSuggestions]);
 
   const handleInterest = (suggestionId: string, action: 'interested' | 'not_interested') => {
     if (action === 'interested') {
@@ -95,6 +106,19 @@ export const CollaborationSuggestions = ({ userProfile }: { userProfile?: any })
           ))}
         </div>
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="text-center p-8">
+        <CardContent>
+          <Lightbulb className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Unable to load suggestions</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={generateSuggestions}>Try Again</Button>
+        </CardContent>
+      </Card>
     );
   }
 
