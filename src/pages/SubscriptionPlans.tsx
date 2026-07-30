@@ -35,7 +35,7 @@ export const SubscriptionPlans = () => {
             </p>
           </div>
 
-          {/* Subscription Manager with Paddle Checkout */}
+          {/* Subscription Manager (Lenco checkout) */}
           {user ? (
             <LencoSubscriptionManager accountType={selectedUserType} />
           ) : (
