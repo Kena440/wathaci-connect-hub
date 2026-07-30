@@ -194,9 +194,6 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
             ))}
-                </CardContent>
-              </Card>
-            ))}
           </div>
 
           {/* Admin Sections */}
