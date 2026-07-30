@@ -47,8 +47,15 @@ export default function PrivacyPolicy() {
               <h2 className="text-xl font-semibold mb-3">4. Cookies &amp; Advertising</h2>
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p>
-                  <strong className="text-foreground">Essential and session cookies:</strong> We use cookies and equivalent browser storage that are strictly necessary to run the platform — principally to keep you signed in. Authentication sessions are managed by Supabase, our database and hosting provider. Disabling these will prevent you from logging in.
+                  <strong className="text-foreground">Functional cookies and local storage:</strong> We use cookies and browser local storage that are necessary to run the platform — principally to keep you signed in and to remember preferences such as your theme and language. Authentication sessions are managed by Supabase, our database and hosting provider. Disabling these will prevent you from logging in.
                 </p>
+                <p>
+                  <strong className="text-foreground">Analytics:</strong> We may use limited analytics to understand how the platform is used (pages visited, features used, general device and browser information) so we can improve it. This information is used in aggregate and is not used to build advertising profiles by us.
+                </p>
+                <p>
+                  <strong className="text-foreground">Cookie choices:</strong> You can block, delete or restrict cookies at any time through your browser settings. Note that blocking functional cookies will stop parts of the platform from working.
+                </p>
+
                 <p>
                   <strong className="text-foreground">Third-party advertising:</strong> Some pages may display advertising served by third parties, including Google AdSense. These providers may set or read cookies and similar identifiers on your device to measure and personalise the ads you see. We do not share your account details with advertisers.
                 </p>
@@ -116,10 +123,10 @@ export default function PrivacyPolicy() {
               <h2 className="text-xl font-semibold mb-3">10. Related Pages</h2>
               <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                 <li>
-                  <Link to="/data-safety" className="text-primary hover:underline">Data Safety &amp; Security</Link> — plain-language summary of how your data is protected.
+                  <Link to="/data-safety-security" className="text-primary hover:underline">Data Safety &amp; Security</Link> — plain-language summary of how your data is protected.
                 </li>
                 <li>
-                  <Link to="/data-deletion" className="text-primary hover:underline">Account &amp; Data Deletion</Link> — how to request removal of your account and data.
+                  <Link to="/account-data-deletion" className="text-primary hover:underline">Account &amp; Data Deletion</Link> — how to request removal of your account and data.
                 </li>
               </ul>
             </section>

@@ -51,7 +51,7 @@ const categories = [
   },
 ];
 
-export default function DataSafety() {
+export default function DataSafetySecurity() {
   return (
     <AppLayout>
       <PageHero
@@ -117,7 +117,7 @@ export default function DataSafety() {
               </ul>
               <p>
                 See the{' '}
-                <Link to="/data-deletion" className="text-primary hover:underline">Account &amp; Data Deletion</Link>{' '}
+                <Link to="/account-data-deletion" className="text-primary hover:underline">Account &amp; Data Deletion</Link>{' '}
                 page for how to request deletion, or read the full{' '}
                 <Link to="/privacy-policy" className="text-primary hover:underline">Privacy Policy</Link>.
                 Questions? Email{' '}
