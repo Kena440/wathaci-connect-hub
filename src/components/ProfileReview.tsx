@@ -279,6 +279,24 @@ export const ProfileReview = () => {
             )}
           </CardContent>
         </Card>
+        </TabsContent>
+
+        <TabsContent value="documents" className="space-y-6 mt-0">
+          <Card>
+            <CardHeader>
+              <CardTitle>Due Diligence Documents</CardTitle>
+              <CardDescription>
+                Upload and manage the documents required to offer products and services.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DueDiligenceUpload />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        </Tabs>
+
+
 
         {/* Actions */}
         <div className="flex gap-4 justify-center">
