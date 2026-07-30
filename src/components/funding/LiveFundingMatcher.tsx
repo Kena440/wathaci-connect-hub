@@ -33,9 +33,9 @@ interface Professional {
   title: string | null;
   specialization: string | null;
   skills: string[] | null;
-  experience_years: number | null;
+  experience_level: string | null;
   rating: number | null;
-  hourly_rate: number | null;
+  rate_display: string | null;
   availability_status: string | null;
   city: string | null;
   country: string | null;
