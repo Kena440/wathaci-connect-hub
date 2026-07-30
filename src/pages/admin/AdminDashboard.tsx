@@ -12,6 +12,7 @@ import {
   Activity,
   TrendingUp,
   UserCheck,
+  Landmark,
   AlertCircle
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,25 +24,55 @@ import { supabase } from '@/integrations/supabase/client';
 const AdminDashboard = () => {
   const location = useLocation();
 
-  // Fetch dashboard stats
+  // Fetch dashboard stats (totals + month-over-month change)
   const { data: stats } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: async () => {
-      const [usersResult, smeResult, freelancerResult, investorResult] = await Promise.all([
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('sme_profiles').select('profile_id', { count: 'exact', head: true }),
-        supabase.from('freelancer_profiles').select('profile_id', { count: 'exact', head: true }),
-        supabase.from('investor_profiles').select('profile_id', { count: 'exact', head: true }),
-      ]);
-      
+      const now = new Date();
+      const startOfThisMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+      const startOfLastMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)).toISOString();
+
+      const countAll = (table: 'profiles' | 'sme_profiles' | 'freelancer_profiles' | 'investor_profiles' | 'government_profiles') =>
+        supabase.from(table).select('created_at', { count: 'exact', head: true });
+      const countThisMonth = (table: 'profiles' | 'sme_profiles' | 'freelancer_profiles' | 'investor_profiles' | 'government_profiles') =>
+        supabase.from(table).select('created_at', { count: 'exact', head: true }).gte('created_at', startOfThisMonth);
+      const countLastMonth = (table: 'profiles' | 'sme_profiles' | 'freelancer_profiles' | 'investor_profiles' | 'government_profiles') =>
+        supabase
+          .from(table)
+          .select('created_at', { count: 'exact', head: true })
+          .gte('created_at', startOfLastMonth)
+          .lt('created_at', startOfThisMonth);
+
+      const tables = ['profiles', 'sme_profiles', 'freelancer_profiles', 'investor_profiles', 'government_profiles'] as const;
+
+      const results = await Promise.all(
+        tables.flatMap((t) => [countAll(t), countThisMonth(t), countLastMonth(t)])
+      );
+
+      const pick = (i: number) => ({
+        total: results[i * 3].count || 0,
+        thisMonth: results[i * 3 + 1].count || 0,
+        lastMonth: results[i * 3 + 2].count || 0,
+      });
+
       return {
-        totalUsers: usersResult.count || 0,
-        smeCount: smeResult.count || 0,
-        freelancerCount: freelancerResult.count || 0,
-        investorCount: investorResult.count || 0,
+        users: pick(0),
+        sme: pick(1),
+        freelancer: pick(2),
+        investor: pick(3),
+        government: pick(4),
       };
     }
   });
+
+  const trendFor = (entry?: { thisMonth: number; lastMonth: number }) => {
+    if (!entry) return null;
+    if (entry.lastMonth === 0) {
+      return entry.thisMonth > 0 ? `+${entry.thisMonth} new` : null;
+    }
+    const pct = Math.round(((entry.thisMonth - entry.lastMonth) / entry.lastMonth) * 100);
+    return `${pct >= 0 ? '+' : ''}${pct}%`;
+  };
 
   const adminLinks = [
     {
@@ -49,7 +80,7 @@ const AdminDashboard = () => {
       description: 'View, edit, and manage all platform users',
       icon: Users,
       href: '/admin/users',
-      badge: stats?.totalUsers,
+      badge: stats?.users.total,
     },
     {
       title: 'Role Management',
@@ -80,33 +111,41 @@ const AdminDashboard = () => {
   const quickStats = [
     {
       title: 'Total Users',
-      value: stats?.totalUsers || 0,
+      value: stats?.users.total || 0,
       icon: Users,
-      trend: '+12%',
+      trend: trendFor(stats?.users),
       color: 'text-primary',
     },
     {
       title: 'SMEs',
-      value: stats?.smeCount || 0,
+      value: stats?.sme.total || 0,
       icon: Activity,
-      trend: '+8%',
+      trend: trendFor(stats?.sme),
       color: 'text-zambia-green',
     },
     {
       title: 'Freelancers',
-      value: stats?.freelancerCount || 0,
+      value: stats?.freelancer.total || 0,
       icon: UserCheck,
-      trend: '+15%',
+      trend: trendFor(stats?.freelancer),
       color: 'text-zambia-orange',
     },
     {
       title: 'Investors',
-      value: stats?.investorCount || 0,
+      value: stats?.investor.total || 0,
       icon: TrendingUp,
-      trend: '+5%',
+      trend: trendFor(stats?.investor),
       color: 'text-blue-500',
     },
+    {
+      title: 'Government',
+      value: stats?.government.total || 0,
+      icon: Landmark,
+      trend: trendFor(stats?.government),
+      color: 'text-muted-foreground',
+    },
   ];
+
 
   return (
     <>
@@ -131,7 +170,7 @@ const AdminDashboard = () => {
 
         <div className="container mx-auto px-4 py-8">
           {/* Quick Stats */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-8">
             {quickStats.map((stat) => (
               <Card key={stat.title}>
                 <CardContent className="p-6">
@@ -144,12 +183,14 @@ const AdminDashboard = () => {
                       <stat.icon className="h-6 w-6" />
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center text-sm">
-                    <Badge variant="secondary" className="text-xs">
-                      {stat.trend}
-                    </Badge>
-                    <span className="ml-2 text-muted-foreground">from last month</span>
-                  </div>
+                  {stat.trend && (
+                    <div className="mt-3 flex items-center text-sm">
+                      <Badge variant="secondary" className="text-xs">
+                        {stat.trend}
+                      </Badge>
+                      <span className="ml-2 text-muted-foreground">from last month</span>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
