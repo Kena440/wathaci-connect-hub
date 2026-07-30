@@ -27,8 +27,8 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import AboutUs from "./pages/AboutUs";
 import Contact from "./pages/Contact";
-import DataSafety from "./pages/DataSafety";
-import DataDeletion from "./pages/DataDeletion";
+import DataSafetySecurity from "./pages/DataSafetySecurity";
+import AccountDataDeletion from "./pages/AccountDataDeletion";
 import Messages from "./pages/Messages";
 import Wallet from "./pages/Wallet";
 import Donate from "./pages/Donate";
@@ -77,8 +77,8 @@ export const AppRoutes = () => (
     <Route path="/terms-of-service" element={<TermsOfService />} />
     <Route path="/about-us" element={<AboutUs />} />
     <Route path="/contact" element={<Contact />} />
-    <Route path="/data-safety" element={<DataSafety />} />
-    <Route path="/data-deletion" element={<DataDeletion />} />
+    <Route path="/data-safety-security" element={<DataSafetySecurity />} />
+    <Route path="/account-data-deletion" element={<AccountDataDeletion />} />
     <Route path="/messages" element={
       <ProtectedRoute>
         <Messages />

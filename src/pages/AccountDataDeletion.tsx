@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { Mail, Trash2, Archive } from 'lucide-react';
 import heroAbout from '@/assets/hero-about.jpg';
 
-export default function DataDeletion() {
+export default function AccountDataDeletion() {
   return (
     <AppLayout>
       <PageHero
@@ -101,7 +101,7 @@ export default function DataDeletion() {
               For more detail, see our{' '}
               <Link to="/privacy-policy" className="text-primary hover:underline">Privacy Policy</Link>{' '}
               and{' '}
-              <Link to="/data-safety" className="text-primary hover:underline">Data Safety &amp; Security</Link> pages.
+              <Link to="/data-safety-security" className="text-primary hover:underline">Data Safety &amp; Security</Link> pages.
             </p>
           </CardContent>
         </Card>

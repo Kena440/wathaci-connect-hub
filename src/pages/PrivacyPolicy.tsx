@@ -116,10 +116,10 @@ export default function PrivacyPolicy() {
               <h2 className="text-xl font-semibold mb-3">10. Related Pages</h2>
               <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
                 <li>
-                  <Link to="/data-safety" className="text-primary hover:underline">Data Safety &amp; Security</Link> — plain-language summary of how your data is protected.
+                  <Link to="/data-safety-security" className="text-primary hover:underline">Data Safety &amp; Security</Link> — plain-language summary of how your data is protected.
                 </li>
                 <li>
-                  <Link to="/data-deletion" className="text-primary hover:underline">Account &amp; Data Deletion</Link> — how to request removal of your account and data.
+                  <Link to="/account-data-deletion" className="text-primary hover:underline">Account &amp; Data Deletion</Link> — how to request removal of your account and data.
                 </li>
               </ul>
             </section>
