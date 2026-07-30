@@ -212,9 +212,20 @@ serve(async (req) => {
           }
         }
 
+        // Safety net: the lenco-webhook is the primary path that activates a
+        // subscription, but it can be delayed or never fire. If the payment is
+        // confirmed successful, make sure the linked subscription is active.
+        // This is idempotent — a no-op when the webhook already handled it.
+        let subscriptionActivated = false;
+        if (transaction.status === 'successful') {
+          const activation = await activateSubscriptionForTransaction(supabase, transaction);
+          subscriptionActivated = activation.activated;
+        }
+
         return new Response(
           JSON.stringify({
             success: true,
+            subscription_activated: subscriptionActivated,
             transaction: {
               id: transaction.id,
               reference: transaction.lenco_reference,
