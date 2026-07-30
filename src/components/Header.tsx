@@ -89,7 +89,7 @@ const Header = () => {
                     <Link to="/profile-review">View Profile</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/profile-setup">Edit Profile</Link>
+                    <Link to="/onboarding/profile">Edit Profile</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/subscription-plans">Subscription Plans</Link>
@@ -110,7 +110,7 @@ const Header = () => {
             )}
             
             {showGetStarted && (
-              <Link to="/get-started">
+              <Link to="/auth">
                 <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white">
                   Get Started
                 </Button>
@@ -185,7 +185,7 @@ const Header = () => {
                 )}
                 
                 {showGetStarted && (
-                  <Link to="/get-started">
+                  <Link to="/auth">
                     <Button size="sm" className="bg-orange-600 hover:bg-orange-700 w-full">
                       Get Started
                     </Button>
