@@ -56,7 +56,13 @@ export default function AboutUs() {
             that facilitates business matching, funding discovery, and professional collaboration 
             to drive economic growth across Zambia.
           </p>
+          <p className="text-base text-muted-foreground max-w-3xl mx-auto leading-relaxed mt-4">
+            WATHACI Connect is operated by WATHACI Corporate Services, based in Lusaka, Zambia.
+            For any inquiries, contact us at{' '}
+            <a href="mailto:support@wathaci.com" className="text-primary font-medium hover:underline">support@wathaci.com</a>.
+          </p>
         </section>
+
 
         {/* Values Grid */}
         <section className="mb-16">
