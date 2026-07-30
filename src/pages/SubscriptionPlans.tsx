@@ -20,7 +20,6 @@ export const SubscriptionPlans = () => {
 
   return (
     <AppLayout>
-      <PaymentTestModeBanner />
       <div className="min-h-screen bg-background py-12 px-4">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
@@ -38,7 +37,7 @@ export const SubscriptionPlans = () => {
 
           {/* Subscription Manager with Paddle Checkout */}
           {user ? (
-            <SubscriptionManager accountType={selectedUserType} />
+            <LencoSubscriptionManager accountType={selectedUserType} />
           ) : (
             <div className="text-center py-12">
               <Card className="max-w-md mx-auto bg-card border-border">
