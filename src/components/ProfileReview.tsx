@@ -140,6 +140,20 @@ export const ProfileReview = () => {
           </CardHeader>
         </Card>
 
+        <Tabs value={activeTab} onValueChange={(v) => setSearchParams(v === 'documents' ? { tab: 'documents' } : {}, { replace: true })} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="overview" className="gap-2">
+              <User className="h-4 w-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="gap-2">
+              <FileCheck className="h-4 w-4" />
+              <span className="hidden sm:inline">Due Diligence Documents</span>
+              <span className="sm:hidden">Documents</span>
+            </TabsTrigger>
+          </TabsList>
+
+        <TabsContent value="overview" className="space-y-6 mt-0">
         {/* Contact Information */}
         <Card>
           <CardHeader>
