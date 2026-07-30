@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AppProvider } from "@/contexts/AppContext";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -18,10 +18,8 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import { GetStarted } from "./pages/GetStarted";
 import { SubscriptionPlans } from "./pages/SubscriptionPlans";
 import { PartnershipHub } from "./pages/PartnershipHub";
-import { ProfileSetup } from "./pages/ProfileSetup";
 import { ProfileReview } from "./components/ProfileReview";
 import FreelancerHub from "./pages/FreelancerHub";
 import FundingHub from "./pages/FundingHub";
@@ -57,12 +55,8 @@ export const AppRoutes = () => (
     <Route path="/freelancer-hub" element={<FreelancerHub />} />
     <Route path="/funding-hub" element={<FundingHub />} />
     <Route path="/resources" element={<Resources />} />
-    <Route path="/get-started" element={<GetStarted />} />
-    <Route path="/profile-setup" element={
-      <ProtectedRoute>
-        <ProfileSetup />
-      </ProtectedRoute>
-    } />
+    <Route path="/get-started" element={<Navigate to="/auth" replace />} />
+    <Route path="/profile-setup" element={<Navigate to="/onboarding/profile" replace />} />
     <Route path="/profile-review" element={
       <ProtectedRoute>
         <ProfileReview />

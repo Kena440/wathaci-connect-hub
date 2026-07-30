@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Edit, MapPin, Phone, Mail, Building, Calendar, Users, DollarSign } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DueDiligenceUpload } from '@/components/DueDiligenceUpload';
+import { Edit, MapPin, Phone, Mail, Building, Calendar, Users, DollarSign, User, FileCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+
 
 export const ProfileReview = () => {
   const [profileData, setProfileData] = useState<any>(null);
@@ -15,6 +18,8 @@ export const ProfileReview = () => {
   const [loading, setLoading] = useState(true);
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') === 'documents' ? 'documents' : 'overview';
   const { toast } = useToast();
 
   useEffect(() => {
@@ -24,7 +29,7 @@ export const ProfileReview = () => {
     }
     
     if (profile && !profile.is_profile_complete) {
-      navigate('/profile-setup');
+      navigate('/onboarding/profile');
       return;
     }
 
@@ -65,7 +70,7 @@ export const ProfileReview = () => {
   };
 
   const handleEditProfile = () => {
-    navigate('/profile-setup');
+    navigate('/onboarding/profile');
   };
 
   if (loading) {
@@ -78,7 +83,7 @@ export const ProfileReview = () => {
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground mb-4">Profile not found.</p>
-            <Button onClick={() => navigate('/profile-setup')}>
+            <Button onClick={() => navigate('/onboarding/profile')}>
               Create Profile
             </Button>
           </CardContent>
@@ -135,6 +140,20 @@ export const ProfileReview = () => {
           </CardHeader>
         </Card>
 
+        <Tabs value={activeTab} onValueChange={(v) => setSearchParams(v === 'documents' ? { tab: 'documents' } : {}, { replace: true })} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="overview" className="gap-2">
+              <User className="h-4 w-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="gap-2">
+              <FileCheck className="h-4 w-4" />
+              <span className="hidden sm:inline">Due Diligence Documents</span>
+              <span className="sm:hidden">Documents</span>
+            </TabsTrigger>
+          </TabsList>
+
+        <TabsContent value="overview" className="space-y-6 mt-0">
         {/* Contact Information */}
         <Card>
           <CardHeader>
@@ -274,6 +293,24 @@ export const ProfileReview = () => {
             )}
           </CardContent>
         </Card>
+        </TabsContent>
+
+        <TabsContent value="documents" className="space-y-6 mt-0">
+          <Card>
+            <CardHeader>
+              <CardTitle>Due Diligence Documents</CardTitle>
+              <CardDescription>
+                Upload and manage the documents required to offer products and services.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DueDiligenceUpload />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        </Tabs>
+
+
 
         {/* Actions */}
         <div className="flex gap-4 justify-center">

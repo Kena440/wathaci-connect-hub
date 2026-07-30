@@ -195,7 +195,7 @@ export const AppSidebar = () => {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/profile-setup" className="flex items-center gap-2">
+                  <Link to="/onboarding/profile" className="flex items-center gap-2">
                     <Settings className="w-4 h-4" />
                     Edit Profile
                   </Link>
@@ -229,7 +229,7 @@ export const AppSidebar = () => {
               </Button>
             </Link>
             {showGetStarted && !isCollapsed && (
-              <Link to="/get-started" onClick={() => setIsMobileOpen(false)}>
+              <Link to="/auth" onClick={() => setIsMobileOpen(false)}>
                 <Button 
                   size="sm" 
                   className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"

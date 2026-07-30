@@ -116,7 +116,7 @@ export const FreelancerDirectory = () => {
             We're building our network of verified professionals. Check back soon!
           </p>
           <Button asChild className="mt-4">
-            <Link to="/get-started">Join as a Professional</Link>
+            <Link to="/auth">Join as a Professional</Link>
           </Button>
         </div>
       ) : (

@@ -139,7 +139,7 @@ export const ComplianceGate = ({ children, requireCompliance = true }: Complianc
 
           <div className="text-center">
             <Button 
-              onClick={() => window.location.href = '/profile-setup?tab=documents'}
+              onClick={() => window.location.href = '/profile-review?tab=documents'}
               className="bg-blue-600 hover:bg-blue-700"
             >
               <Upload className="w-4 h-4 mr-2" />
