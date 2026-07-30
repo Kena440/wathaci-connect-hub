@@ -101,7 +101,7 @@ const Footer = () => {
 
         <div className="mt-6 pt-6 text-center">
           <p className="text-primary-foreground/60 text-sm">
-            © 2024 WATHACI CONNECT. All rights reserved. | Transforming Zambian Business Excellence
+            © 2026 WATHACI CONNECT. Operated by WATHACI Corporate Services. All rights reserved.
           </p>
         </div>
       </div>
