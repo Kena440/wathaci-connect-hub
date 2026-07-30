@@ -2874,6 +2874,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { check_user_id: string }; Returns: boolean }
+      jsonb_to_text_array: { Args: { p: Json }; Returns: string[] }
       revoke_admin_role: {
         Args: {
           p_role: Database["public"]["Enums"]["app_role"]
