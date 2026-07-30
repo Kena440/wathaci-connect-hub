@@ -18,6 +18,8 @@ export const ProfileReview = () => {
   const [loading, setLoading] = useState(true);
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') === 'documents' ? 'documents' : 'overview';
   const { toast } = useToast();
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export const ProfileReview = () => {
     }
     
     if (profile && !profile.is_profile_complete) {
-      navigate('/profile-setup');
+      navigate('/onboarding/profile');
       return;
     }
 
