@@ -170,7 +170,7 @@ const AdminDashboard = () => {
 
         <div className="container mx-auto px-4 py-8">
           {/* Quick Stats */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-8">
             {quickStats.map((stat) => (
               <Card key={stat.title}>
                 <CardContent className="p-6">
@@ -183,12 +183,17 @@ const AdminDashboard = () => {
                       <stat.icon className="h-6 w-6" />
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center text-sm">
-                    <Badge variant="secondary" className="text-xs">
-                      {stat.trend}
-                    </Badge>
-                    <span className="ml-2 text-muted-foreground">from last month</span>
-                  </div>
+                  {stat.trend && (
+                    <div className="mt-3 flex items-center text-sm">
+                      <Badge variant="secondary" className="text-xs">
+                        {stat.trend}
+                      </Badge>
+                      <span className="ml-2 text-muted-foreground">from last month</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
                 </CardContent>
               </Card>
             ))}
