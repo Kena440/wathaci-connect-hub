@@ -6,7 +6,7 @@ const Footer = () => {
   return (
     <footer className="bg-primary text-primary-foreground">
       <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="grid md:grid-cols-4 gap-8">
+        <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-8">
           <div className="space-y-4">
             <Link to="/" className="inline-block cursor-pointer group">
               <img
