@@ -52,10 +52,21 @@ const Footer = () => {
               <li><Link to="/donate" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors flex items-center gap-1">❤️ Donate</Link></li>
               <li><Link to="/auth" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Get Started</Link></li>
               <li><Link to="/resources" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Help Center</Link></li>
-              <li><Link to="/privacy-policy" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Privacy Policy</Link></li>
-              <li><Link to="/terms-of-service" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Terms of Service</Link></li>
+              <li><Link to="/about-us" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">About Us</Link></li>
+              <li><Link to="/contact" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Contact</Link></li>
             </ul>
           </div>
+
+          <div>
+            <h3 className="text-lg font-semibold mb-4 text-accent">Legal & Trust</h3>
+            <ul className="space-y-2">
+              <li><Link to="/privacy-policy" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/terms-of-service" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Terms of Service</Link></li>
+              <li><Link to="/data-safety" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Data Safety & Security</Link></li>
+              <li><Link to="/data-deletion" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Account & Data Deletion</Link></li>
+            </ul>
+          </div>
+
 
           <div>
             <h3 className="text-lg font-semibold mb-4 text-accent">Contact</h3>
