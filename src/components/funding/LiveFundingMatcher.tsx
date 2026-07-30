@@ -393,20 +393,20 @@ export default function LiveFundingMatcher() {
                             </div>
                           </div>
                         )}
-                        {professional.experience_years && (
+                        {professional.experience_level && (
                           <div className="flex items-center gap-2">
                             <Award className="w-4 h-4 text-purple-500" />
                             <span className="font-medium">Experience:</span>
-                            <span>{professional.experience_years} years</span>
+                            <span className="capitalize">{professional.experience_level}</span>
                           </div>
                         )}
                       </div>
                       <div className="space-y-2">
-                        {professional.hourly_rate && (
+                        {professional.rate_display && (
                           <div className="flex items-center gap-2">
                             <TrendingUp className="w-4 h-4 text-green-500" />
                             <span className="font-medium">Rate:</span>
-                            <span>K{professional.hourly_rate}/hour</span>
+                            <span>{professional.rate_display}</span>
                           </div>
                         )}
                         <div className="flex items-center gap-2">
