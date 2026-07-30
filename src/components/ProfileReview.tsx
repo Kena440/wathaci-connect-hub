@@ -83,7 +83,7 @@ export const ProfileReview = () => {
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
             <p className="text-muted-foreground mb-4">Profile not found.</p>
-            <Button onClick={() => navigate('/profile-setup')}>
+            <Button onClick={() => navigate('/onboarding/profile')}>
               Create Profile
             </Button>
           </CardContent>
