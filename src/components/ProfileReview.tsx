@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Edit, MapPin, Phone, Mail, Building, Calendar, Users, DollarSign } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DueDiligenceUpload } from '@/components/DueDiligenceUpload';
+import { Edit, MapPin, Phone, Mail, Building, Calendar, Users, DollarSign, User, FileCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+
 
 export const ProfileReview = () => {
   const [profileData, setProfileData] = useState<any>(null);
