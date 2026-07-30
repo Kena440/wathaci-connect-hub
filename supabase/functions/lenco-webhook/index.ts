@@ -191,13 +191,8 @@ serve(async (req) => {
             }
           }
 
-          // If this is a subscription payment, activate subscription
-          if (transaction.transaction_type === 'subscription' && transaction.subscription_id) {
-            await supabase
-              .from('subscriptions')
-              .update({ status: 'active' })
-              .eq('id', transaction.subscription_id);
-          }
+          // If this is a subscription payment, activate subscription (idempotent)
+          await activateSubscriptionForTransaction(supabase, transaction);
 
           console.log(`Transaction ${transaction.id} marked as successful`);
           break;
