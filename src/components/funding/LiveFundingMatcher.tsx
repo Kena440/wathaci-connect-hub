@@ -78,31 +78,79 @@ export default function LiveFundingMatcher() {
   const fetchMatchedProfessionals = async (opportunity: FundingOpportunity) => {
     setLoading(true);
     setSelectedOpportunity(opportunity);
-    
-    try {
-      // Fetch professionals with relevant skills for this funding opportunity
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('account_type', ['professional', 'freelancer'])
-        .eq('availability_status', 'available')
-        .not('skills', 'is', null)
-        .limit(10);
 
-      if (error) throw error;
-      
-      // Filter professionals whose skills match the opportunity sectors
-      const matchedProfessionals = (data || []).filter(prof => {
-        if (!prof.skills || !opportunity.sectors) return false;
-        return prof.skills.some((skill: string) => 
-          opportunity.sectors?.some(sector => 
-            skill.toLowerCase().includes(sector.toLowerCase()) ||
-            sector.toLowerCase().includes(skill.toLowerCase())
-          )
-        );
+    try {
+      // Primary source: freelancer_profiles (current onboarding flow)
+      const { data: freelancerRows, error: freelancerError } = await supabase
+        .from('freelancer_profiles')
+        .select(
+          'profile_id, professional_title, primary_skills, experience_level, availability, rate_type, rate_range, preferred_industries, profiles!inner(id, full_name, display_name, city, country, rating, account_type)'
+        )
+        .limit(50);
+
+      if (freelancerError) throw freelancerError;
+
+      const fromFreelancers: Professional[] = (freelancerRows || []).map((row) => {
+        const p = row.profiles as unknown as {
+          full_name: string | null;
+          display_name: string | null;
+          city: string | null;
+          country: string | null;
+          rating: number | null;
+        };
+        return {
+          id: row.profile_id,
+          full_name: p?.display_name || p?.full_name || null,
+          title: row.professional_title,
+          specialization: (row.preferred_industries || []).join(', ') || null,
+          skills: row.primary_skills || [],
+          experience_level: row.experience_level,
+          rating: p?.rating ?? null,
+          rate_display: row.rate_range ? `${row.rate_range} (${row.rate_type})` : null,
+          availability_status: row.availability,
+          city: p?.city ?? null,
+          country: p?.country ?? null,
+        };
       });
 
-      setProfessionals(matchedProfessionals.length > 0 ? matchedProfessionals : data || []);
+      // Backward compatibility: legacy flat profiles rows
+      const freelancerIds = fromFreelancers.map((f) => f.id);
+      const { data: legacyRows } = await supabase
+        .from('profiles')
+        .select('id, full_name, display_name, title, specialization, skills, experience_years, rating, hourly_rate, availability_status, city, country, account_type')
+        .in('account_type', ['freelancer', 'professional'])
+        .not('skills', 'is', null)
+        .limit(50);
+
+      const fromLegacy: Professional[] = (legacyRows || [])
+        .filter((p) => !freelancerIds.includes(p.id))
+        .map((p) => ({
+          id: p.id,
+          full_name: p.display_name || p.full_name,
+          title: p.title,
+          specialization: p.specialization,
+          skills: p.skills || [],
+          experience_level: p.experience_years ? `${p.experience_years} years` : null,
+          rating: p.rating,
+          rate_display: p.hourly_rate ? `K${p.hourly_rate}/hour` : null,
+          availability_status: p.availability_status,
+          city: p.city,
+          country: p.country,
+        }));
+
+      const all = [...fromFreelancers, ...fromLegacy];
+
+      // Prefer professionals whose skills/industries overlap the opportunity sectors
+      const matched = all.filter((prof) => {
+        if (!prof.skills?.length || !opportunity.sectors?.length) return false;
+        const haystack = [...prof.skills, prof.specialization || ''].join(' ').toLowerCase();
+        return opportunity.sectors.some((sector) => {
+          const s = sector.toLowerCase();
+          return haystack.includes(s) || s.split(/\s+/).some((w) => w.length > 3 && haystack.includes(w));
+        });
+      });
+
+      setProfessionals(matched.length > 0 ? matched : all);
       setActiveTab('professionals');
     } catch (error) {
       console.error('Error fetching professionals:', error);
