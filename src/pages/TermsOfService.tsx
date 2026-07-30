@@ -15,12 +15,16 @@ export default function TermsOfService() {
         <Card>
           <CardContent className="pt-6 space-y-6">
             <p className="text-center text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
+            <p className="text-center text-sm text-muted-foreground">
+              WATHACI Connect is operated by WATHACI Corporate Services, Lusaka, Zambia.
+            </p>
           <section>
             <h2 className="text-xl font-semibold mb-3">1. Acceptance of Terms</h2>
             <p className="text-sm leading-relaxed">
-              By accessing and using Business Consult Market, you accept and agree to be bound by these Terms of Service and our Privacy Policy. These terms are governed by the laws of Zambia.
+              By accessing and using WATHACI Connect, a platform operated by WATHACI Corporate Services, you accept and agree to be bound by these Terms of Service and our Privacy Policy. These terms are governed by the laws of Zambia.
             </p>
           </section>
+
 
           <section>
             <h2 className="text-xl font-semibold mb-3">2. Services Provided</h2>
