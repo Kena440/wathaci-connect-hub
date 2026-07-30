@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/AppLayout';
-import { SubscriptionManager } from '@/components/payments';
-import { PaymentTestModeBanner } from '@/components/PaymentTestModeBanner';
+import { LencoSubscriptionManager } from '@/components/payments';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Crown, HelpCircle } from 'lucide-react';
@@ -21,7 +20,6 @@ export const SubscriptionPlans = () => {
 
   return (
     <AppLayout>
-      <PaymentTestModeBanner />
       <div className="min-h-screen bg-background py-12 px-4">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
@@ -37,9 +35,9 @@ export const SubscriptionPlans = () => {
             </p>
           </div>
 
-          {/* Subscription Manager with Paddle Checkout */}
+          {/* Subscription Manager (Lenco checkout) */}
           {user ? (
-            <SubscriptionManager accountType={selectedUserType} />
+            <LencoSubscriptionManager accountType={selectedUserType} />
           ) : (
             <div className="text-center py-12">
               <Card className="max-w-md mx-auto bg-card border-border">
