@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { activateSubscriptionForTransaction } from "../_shared/subscription-activation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -191,13 +192,8 @@ serve(async (req) => {
             }
           }
 
-          // If this is a subscription payment, activate subscription
-          if (transaction.transaction_type === 'subscription' && transaction.subscription_id) {
-            await supabase
-              .from('subscriptions')
-              .update({ status: 'active' })
-              .eq('id', transaction.subscription_id);
-          }
+          // If this is a subscription payment, activate subscription (idempotent)
+          await activateSubscriptionForTransaction(supabase, transaction);
 
           console.log(`Transaction ${transaction.id} marked as successful`);
           break;
