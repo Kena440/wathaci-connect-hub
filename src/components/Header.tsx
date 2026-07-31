@@ -15,7 +15,7 @@ import {
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, profile, loading, signOut } = useAuth();
+  const { user, loading, signOut } = useAuth();
 
   const navItems = [
     { name: 'Home', href: '/' },
@@ -30,7 +30,8 @@ const Header = () => {
     setIsMenuOpen(false);
   };
 
-  const showGetStarted = !user || !profile?.is_profile_complete;
+  // Signed-out visitors get Log In + Sign Up. Signed-in users get neither.
+  const showSignUp = !user;
 
   return (
     <header className="bg-gradient-to-r from-orange-50 to-green-50 shadow-lg sticky top-0 z-50 border-b-2 border-orange-200">
@@ -102,17 +103,17 @@ const Header = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link to="/auth">
+              <Link to="/auth?mode=signin">
                 <Button variant="outline" size="sm" className="border-orange-300 hover:bg-orange-50">
-                  Sign In
+                  Log In
                 </Button>
               </Link>
             )}
             
-            {showGetStarted && (
+            {showSignUp && (
               <Link to="/auth?mode=signup">
                 <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white">
-                  Get Started
+                  Sign Up
                 </Button>
               </Link>
             )}
@@ -177,17 +178,17 @@ const Header = () => {
                     </Button>
                   </>
                 ) : (
-                  <Link to="/auth">
+                  <Link to="/auth?mode=signin">
                     <Button variant="outline" size="sm" className="w-full border-orange-300">
-                      Sign In
+                      Log In
                     </Button>
                   </Link>
                 )}
                 
-                {showGetStarted && (
+                {showSignUp && (
                   <Link to="/auth?mode=signup">
                     <Button size="sm" className="bg-orange-600 hover:bg-orange-700 w-full">
-                      Get Started
+                      Sign Up
                     </Button>
                   </Link>
                 )}
