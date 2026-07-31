@@ -300,6 +300,28 @@ export default function OnboardingProfile() {
             }
           }
 
+          // Restore unsaved local draft (survives refresh) — takes priority over DB values
+          try {
+            const raw = localStorage.getItem(`onboarding_draft_${user.id}`);
+            if (raw) {
+              const draft = JSON.parse(raw);
+              if (draft?.accountType) setAccountType(draft.accountType as AccountType);
+              if (draft?.avatarUrl) setAvatarUrl(draft.avatarUrl);
+              if (draft?.base) baseForm.reset({ ...baseForm.getValues(), ...draft.base });
+              const type = draft?.accountType || profileData.account_type;
+              if (draft?.role) {
+                if (type === 'sme') smeForm.reset({ ...smeForm.getValues(), ...draft.role });
+                else if (type === 'freelancer') freelancerForm.reset({ ...freelancerForm.getValues(), ...draft.role });
+                else if (type === 'investor') investorForm.reset({ ...investorForm.getValues(), ...draft.role });
+                else if (type === 'government') governmentForm.reset({ ...governmentForm.getValues(), ...draft.role });
+              }
+              if (draft?.step >= 1 && draft?.step <= 4) setCurrentStep(draft.step);
+              if (draft?.savedAt) setLastSavedAt(new Date(draft.savedAt));
+            }
+          } catch (e) {
+            console.warn('[Onboarding] Failed to restore draft', e);
+          }
+
           // Restore step from localStorage if available
           const savedStep = localStorage.getItem(`onboarding_step_${user.id}`);
           if (savedStep && !profileData.is_profile_complete) {
