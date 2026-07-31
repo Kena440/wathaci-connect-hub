@@ -90,7 +90,7 @@ const Header = () => {
                     <Link to="/profile-review">View Profile</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/onboarding/profile">Edit Profile</Link>
+                    <Link to="/onboarding/profile?edit=1">Edit Profile</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/subscription-plans">Subscription Plans</Link>

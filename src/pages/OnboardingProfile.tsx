@@ -173,14 +173,16 @@ export default function OnboardingProfile() {
     },
   });
 
-  // Redirect if profile is already complete
+  const isEditMode = new URLSearchParams(location.search).get('edit') === '1';
+
+  // Redirect if profile is already complete (unless explicitly editing)
   useEffect(() => {
-    if (!profileLoading && profile?.is_profile_complete) {
+    if (!isEditMode && !profileLoading && profile?.is_profile_complete) {
       console.log('[Onboarding] Profile already complete, redirecting...');
       const from = (location.state as any)?.from?.pathname || '/';
       navigate(from, { replace: true });
     }
-  }, [profile, profileLoading, navigate, location.state]);
+  }, [profile, profileLoading, navigate, location.state, isEditMode]);
 
   // Load existing profile data
   useEffect(() => {
@@ -469,11 +471,13 @@ export default function OnboardingProfile() {
 
     if (result.success) {
       setShowSuccess(true);
-      toast.success('Profile completed successfully!');
+      toast.success(isEditMode ? 'Profile updated successfully!' : 'Profile completed successfully!');
       
       // Short delay to show success animation
       setTimeout(() => {
-        const from = (location.state as any)?.from?.pathname || '/';
+        const from = isEditMode
+          ? '/profile-review'
+          : (location.state as any)?.from?.pathname || '/';
         navigate(from, { replace: true });
       }, 2000);
     }

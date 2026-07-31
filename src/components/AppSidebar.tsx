@@ -195,7 +195,7 @@ export const AppSidebar = () => {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/onboarding/profile" className="flex items-center gap-2">
+                  <Link to="/onboarding/profile?edit=1" className="flex items-center gap-2">
                     <Settings className="w-4 h-4" />
                     Edit Profile
                   </Link>

@@ -70,7 +70,7 @@ export const ProfileReview = () => {
   };
 
   const handleEditProfile = () => {
-    navigate('/onboarding/profile');
+    navigate('/onboarding/profile?edit=1');
   };
 
   if (loading) {
