@@ -49,6 +49,8 @@ interface TransformedService {
   reviews: number;
   currency: string;
   price: number;
+  minPrice: number | null;
+  maxPrice: number | null;
   image: string;
   providerId: string;
   providerAvatar: string | null;
@@ -123,6 +125,8 @@ export const IntegratedMarketplace = () => {
       reviews: service.reviews_count || 0,
       currency: service.currency,
       price: service.price,
+      minPrice: service.min_price,
+      maxPrice: service.max_price,
       image: service.images?.[0] || '/placeholder.svg',
       providerId: service.provider_id,
     }));
@@ -211,6 +215,15 @@ export const IntegratedMarketplace = () => {
     });
   };
 
+  const formatPrice = (service: TransformedService) => {
+    const minimum = service.minPrice ?? service.price;
+    const maximum = service.maxPrice ?? service.price;
+    if (minimum !== maximum) {
+      return `${service.currency} ${minimum.toLocaleString()}–${maximum.toLocaleString()}`;
+    }
+    return `${service.currency} ${service.price.toLocaleString()}`;
+  };
+
   const filteredServices = services.filter((service) =>
     service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -281,7 +294,7 @@ export const IntegratedMarketplace = () => {
                         <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{option.location}</span>
                       </div>
                       <span className="text-lg font-bold text-primary">
-                        {option.currency}{option.price.toLocaleString()}
+                        {formatPrice(option)}
                       </span>
                     </div>
                   </div>
@@ -371,7 +384,7 @@ export const IntegratedMarketplace = () => {
                   </div>
                   <div className="border-t pt-4">
                     <div className="text-3xl font-bold text-primary mb-4">
-                      {selectedService.currency} {selectedService.price.toLocaleString()}
+                      {formatPrice(selectedService)}
                     </div>
                     <div className="flex gap-2">
                       <Dialog open={showNegotiation} onOpenChange={setShowNegotiation}>

@@ -13,6 +13,8 @@ interface ServiceProviderCardProps {
     providerType: 'freelancer' | 'partnership' | 'resource';
     category: string;
     price: number;
+    minPrice?: number | null;
+    maxPrice?: number | null;
     currency: string;
     rating: number;
     reviews: number;
@@ -26,6 +28,11 @@ interface ServiceProviderCardProps {
 }
 
 export const ServiceProviderCard = ({ service, onSelect }: ServiceProviderCardProps) => {
+  const minimumPrice = service.minPrice ?? service.price;
+  const maximumPrice = service.maxPrice ?? service.price;
+  const priceLabel = minimumPrice !== maximumPrice
+    ? `${service.currency} ${minimumPrice.toLocaleString()}–${maximumPrice.toLocaleString()}`
+    : `${service.currency} ${service.price.toLocaleString()}`;
   const getProviderIcon = () => {
     switch (service.providerType) {
       case 'freelancer':
@@ -144,7 +151,7 @@ export const ServiceProviderCard = ({ service, onSelect }: ServiceProviderCardPr
         <div className="flex items-center justify-between">
           <div>
             <span className="text-2xl font-bold text-blue-600">
-              {service.currency}{service.price.toLocaleString()}
+              {priceLabel}
             </span>
           </div>
           <Button size="sm" className="group-hover:bg-blue-600 transition-colors">
