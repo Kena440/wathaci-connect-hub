@@ -7,8 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { ServiceProviderCard } from './ServiceProviderCard';
 import { PriceNegotiation } from '@/components/PriceNegotiation';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Filter, Grid, List, Loader2, Users, Building, BookOpen, Star, MapPin, Clock } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Search, Filter, Grid, List, Loader2, Users, Building, BookOpen, Star, MapPin, Clock, MessageSquare } from 'lucide-react';
 
 interface Service {
   id: string;
@@ -49,6 +51,9 @@ interface TransformedService {
   price: number;
   image: string;
   providerId: string;
+  providerAvatar: string | null;
+  subcategory: string | null;
+  deliveryTimeRaw: string | null;
 }
 
 export const IntegratedMarketplace = () => {
@@ -61,6 +66,10 @@ export const IntegratedMarketplace = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [selectedService, setSelectedService] = useState<TransformedService | null>(null);
   const [showNegotiation, setShowNegotiation] = useState(false);
+  const [providerOptions, setProviderOptions] = useState<TransformedService[] | null>(null);
+  const [providerOptionsContext, setProviderOptionsContext] = useState<TransformedService | null>(null);
+  const [optionsLoading, setOptionsLoading] = useState(false);
+  const { toast } = useToast();
 
   const categories = [
     'all', 'technology', 'marketing', 'design', 'business', 
@@ -78,10 +87,50 @@ export const IntegratedMarketplace = () => {
     loadServices();
   }, [selectedCategory, selectedProviderType, selectedLocation]);
 
+  const fetchProviderProfiles = async (ids: string[]) => {
+    const unique = Array.from(new Set(ids.filter(Boolean)));
+    if (unique.length === 0) return {} as Record<string, { name: string; avatar: string | null }>;
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, display_name, full_name, business_name, avatar_url, profile_image_url')
+      .in('id', unique);
+    const map: Record<string, { name: string; avatar: string | null }> = {};
+    (data || []).forEach((p) => {
+      map[p.id] = {
+        name: p.display_name || p.full_name || p.business_name || 'Service Provider',
+        avatar: p.profile_image_url || p.avatar_url || null,
+      };
+    });
+    return map;
+  };
+
+  const transformServices = async (rows: Service[]): Promise<TransformedService[]> => {
+    const profileMap = await fetchProviderProfiles(rows.map((r) => r.provider_id));
+    return rows.map((service) => ({
+      id: service.id,
+      title: service.title,
+      description: service.description || '',
+      provider: profileMap[service.provider_id]?.name || 'Service Provider',
+      providerAvatar: profileMap[service.provider_id]?.avatar || null,
+      providerType: (service.provider_type as 'freelancer' | 'partnership' | 'resource') || 'freelancer',
+      category: service.category,
+      subcategory: service.subcategory,
+      skills: service.skills || [],
+      location: service.location || 'Remote',
+      deliveryTime: service.delivery_time || 'Varies',
+      deliveryTimeRaw: service.delivery_time,
+      rating: service.rating || 0,
+      reviews: service.reviews_count || 0,
+      currency: service.currency,
+      price: service.price,
+      image: service.images?.[0] || '/placeholder.svg',
+      providerId: service.provider_id,
+    }));
+  };
+
   const loadServices = async () => {
     setLoading(true);
     try {
-      // Query directly from the services table
       let query = supabase
         .from('services')
         .select('*')
@@ -100,33 +149,66 @@ export const IntegratedMarketplace = () => {
       const { data, error } = await query.order('is_featured', { ascending: false });
 
       if (error) throw error;
-      
-      // Transform the data
-      const transformed: TransformedService[] = (data || []).map((service: Service) => ({
-        id: service.id,
-        title: service.title,
-        description: service.description || '',
-        provider: 'Service Provider', // Would need to join with profiles for actual name
-        providerType: (service.provider_type as 'freelancer' | 'partnership' | 'resource') || 'freelancer',
-        category: service.category,
-        skills: service.skills || [],
-        location: service.location || 'Remote',
-        deliveryTime: service.delivery_time || 'Varies',
-        rating: service.rating || 0,
-        reviews: service.reviews_count || 0,
-        currency: service.currency,
-        price: service.price,
-        image: service.images?.[0] || '/placeholder.svg',
-        providerId: service.provider_id
-      }));
 
-      setServices(transformed);
+      setServices(await transformServices((data || []) as Service[]));
     } catch (error) {
       console.error('Error loading services:', error);
       setServices([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Step between clicking a service and negotiating: show every freelancer
+  // offering this type of service.
+  const handleServiceClick = async (service: TransformedService) => {
+    setOptionsLoading(true);
+    setProviderOptionsContext(service);
+    try {
+      let query = supabase
+        .from('services')
+        .select('*')
+        .eq('is_active', true)
+        .eq('category', service.category);
+
+      let { data, error } = await query.order('is_featured', { ascending: false });
+      if (error) throw error;
+
+      let rows = (data || []) as Service[];
+
+      // Narrow by subcategory only when it meaningfully narrows the list
+      if (service.subcategory) {
+        const narrowed = rows.filter((r) => r.subcategory === service.subcategory);
+        if (narrowed.length > 1) rows = narrowed;
+      }
+
+      const options = await transformServices(rows);
+
+      if (options.length <= 1) {
+        setProviderOptions(null);
+        setProviderOptionsContext(null);
+        setSelectedService(options[0] || service);
+        return;
+      }
+
+      setProviderOptions(options);
+    } catch (error) {
+      console.error('Error loading providers:', error);
+      setProviderOptions(null);
+      setProviderOptionsContext(null);
+      setSelectedService(service);
+    } finally {
+      setOptionsLoading(false);
+    }
+  };
+
+  const handleContactProvider = () => {
+    if (!selectedService) return;
+    setShowNegotiation(true);
+    toast({
+      title: `Conversation with ${selectedService.provider}`,
+      description: 'Send a message or an offer to start the conversation.',
+    });
   };
 
   const filteredServices = services.filter((service) =>
