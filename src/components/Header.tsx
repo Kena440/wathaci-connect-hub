@@ -15,7 +15,7 @@ import {
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, profile, loading, signOut } = useAuth();
+  const { user, loading, signOut } = useAuth();
 
   const navItems = [
     { name: 'Home', href: '/' },
