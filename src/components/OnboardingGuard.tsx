@@ -72,10 +72,13 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
   // User is logged in - check profile completion
   const isProfileComplete = profile?.is_profile_complete === true || (profile as any)?.profile_completed === true;
 
+  // Explicit edit mode - user intentionally editing a completed profile
+  const isEditMode = new URLSearchParams(location.search).get('edit') === '1';
+
   // Already on onboarding page
   if (location.pathname.startsWith('/onboarding/profile')) {
-    // If profile is complete, redirect away from onboarding
-    if (isProfileComplete && !redirectingRef.current) {
+    // If profile is complete, redirect away from onboarding (unless editing)
+    if (isProfileComplete && !isEditMode && !redirectingRef.current) {
       redirectingRef.current = true;
       const from = (location.state as any)?.from?.pathname || '/';
       return <Navigate to={from} replace />;
