@@ -48,7 +48,7 @@ export const SubscriptionPlans = () => {
                     Create an account or sign in to choose a subscription plan
                   </p>
                   <Button 
-                    onClick={() => navigate('/auth')}
+                    onClick={() => navigate('/auth?mode=signup')}
                     className="bg-accent hover:bg-accent/90 text-accent-foreground"
                   >
                     Sign In / Sign Up
@@ -74,7 +74,7 @@ export const SubscriptionPlans = () => {
                     Contact Sales
                   </Button>
                   <Button 
-                    onClick={() => user ? navigate('/wallet') : navigate('/auth')}
+                    onClick={() => user ? navigate('/wallet') : navigate('/auth?mode=signup')}
                     className="bg-accent hover:bg-accent/90 text-accent-foreground"
                   >
                     {user ? 'View My Wallet' : 'Get Started'}

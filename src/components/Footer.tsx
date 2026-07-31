@@ -50,7 +50,7 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-4 text-accent">Support</h3>
             <ul className="space-y-2">
               <li><Link to="/donate" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors flex items-center gap-1">❤️ Donate</Link></li>
-              <li><Link to="/auth" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Get Started</Link></li>
+              <li><Link to="/auth?mode=signup" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Get Started</Link></li>
               <li><Link to="/resources" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Help Center</Link></li>
               <li><Link to="/about-us" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">About Us</Link></li>
               <li><Link to="/contact" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Contact</Link></li>

@@ -110,7 +110,7 @@ const Header = () => {
             )}
             
             {showGetStarted && (
-              <Link to="/auth">
+              <Link to="/auth?mode=signup">
                 <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white">
                   Get Started
                 </Button>
@@ -185,7 +185,7 @@ const Header = () => {
                 )}
                 
                 {showGetStarted && (
-                  <Link to="/auth">
+                  <Link to="/auth?mode=signup">
                     <Button size="sm" className="bg-orange-600 hover:bg-orange-700 w-full">
                       Get Started
                     </Button>

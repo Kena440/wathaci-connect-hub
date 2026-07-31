@@ -38,7 +38,7 @@ const HeroSection = () => {
             designed specifically for Zambian businesses. Your gateway to growth and success.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/auth">
+            <Link to="/auth?mode=signup">
               <Button 
                 size="lg" 
                 className="bg-accent hover:bg-accent/90 text-accent-foreground px-8 py-3 text-lg shadow-glow hover:shadow-glow-lg transition-all duration-300"
