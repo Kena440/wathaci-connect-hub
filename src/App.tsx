@@ -58,7 +58,7 @@ export const AppRoutes = () => (
     <Route path="/freelancer-hub" element={<FreelancerHub />} />
     <Route path="/funding-hub" element={<FundingHub />} />
     <Route path="/resources" element={<Resources />} />
-    <Route path="/get-started" element={<Navigate to="/auth" replace />} />
+    <Route path="/get-started" element={<Navigate to="/auth?mode=signup" replace />} />
     <Route path="/profile-setup" element={<Navigate to="/onboarding/profile" replace />} />
     <Route path="/profile-review" element={
       <ProtectedRoute>

@@ -229,7 +229,7 @@ export const AppSidebar = () => {
               </Button>
             </Link>
             {showGetStarted && !isCollapsed && (
-              <Link to="/auth" onClick={() => setIsMobileOpen(false)}>
+              <Link to="/auth?mode=signup" onClick={() => setIsMobileOpen(false)}>
                 <Button 
                   size="sm" 
                   className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
