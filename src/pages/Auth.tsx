@@ -82,7 +82,7 @@ export default function Auth() {
     if (!validateInputs(true)) return;
     
     setIsLoading(true);
-    const { error } = await signUp(email, password, fullName);
+    const { error, session } = await signUp(email, password, fullName);
     setIsLoading(false);
 
     if (error) {
@@ -92,9 +92,13 @@ export default function Auth() {
       } else {
         toast.error(error.message);
       }
+    } else if (session) {
+      toast.success('Account created! Let\u2019s set up your profile.');
+      navigate('/onboarding/profile', { replace: true });
     } else {
       toast.success('Account created! Please check your email to confirm your account.');
     }
+
   };
 
   const features = [
