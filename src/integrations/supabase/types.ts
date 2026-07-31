@@ -222,10 +222,10 @@ export type Database = {
       }
       freelancer_profiles: {
         Row: {
-          availability: string
+          availability: string | null
           certifications: string[] | null
           created_at: string
-          experience_level: string
+          experience_level: string | null
           languages: string[] | null
           past_clients: string | null
           portfolio_url: string | null
@@ -233,17 +233,17 @@ export type Database = {
           primary_skills: string[]
           professional_title: string
           profile_id: string
-          rate_range: string
-          rate_type: string
+          rate_range: string | null
+          rate_type: string | null
           services_offered: string
           updated_at: string
-          work_mode: string
+          work_mode: string | null
         }
         Insert: {
-          availability: string
+          availability?: string | null
           certifications?: string[] | null
           created_at?: string
-          experience_level: string
+          experience_level?: string | null
           languages?: string[] | null
           past_clients?: string | null
           portfolio_url?: string | null
@@ -251,17 +251,17 @@ export type Database = {
           primary_skills?: string[]
           professional_title: string
           profile_id: string
-          rate_range: string
-          rate_type: string
+          rate_range?: string | null
+          rate_type?: string | null
           services_offered: string
           updated_at?: string
-          work_mode: string
+          work_mode?: string | null
         }
         Update: {
-          availability?: string
+          availability?: string | null
           certifications?: string[] | null
           created_at?: string
-          experience_level?: string
+          experience_level?: string | null
           languages?: string[] | null
           past_clients?: string | null
           portfolio_url?: string | null
@@ -269,11 +269,11 @@ export type Database = {
           primary_skills?: string[]
           professional_title?: string
           profile_id?: string
-          rate_range?: string
-          rate_type?: string
+          rate_range?: string | null
+          rate_type?: string | null
           services_offered?: string
           updated_at?: string
-          work_mode?: string
+          work_mode?: string | null
         }
         Relationships: [
           {
@@ -556,14 +556,14 @@ export type Database = {
       government_profiles: {
         Row: {
           collaboration_interests: string[]
-          contact_person_title: string
+          contact_person_title: string | null
           created_at: string
           current_initiatives: string | null
           department_or_unit: string
           documents_urls: string[] | null
           eligibility_criteria: string | null
           institution_name: string
-          institution_type: string
+          institution_type: string | null
           mandate_areas: string[]
           procurement_portal_url: string | null
           profile_id: string
@@ -572,14 +572,14 @@ export type Database = {
         }
         Insert: {
           collaboration_interests?: string[]
-          contact_person_title: string
+          contact_person_title?: string | null
           created_at?: string
           current_initiatives?: string | null
           department_or_unit: string
           documents_urls?: string[] | null
           eligibility_criteria?: string | null
           institution_name: string
-          institution_type: string
+          institution_type?: string | null
           mandate_areas?: string[]
           procurement_portal_url?: string | null
           profile_id: string
@@ -588,14 +588,14 @@ export type Database = {
         }
         Update: {
           collaboration_interests?: string[]
-          contact_person_title?: string
+          contact_person_title?: string | null
           created_at?: string
           current_initiatives?: string | null
           department_or_unit?: string
           documents_urls?: string[] | null
           eligibility_criteria?: string | null
           institution_name?: string
-          institution_type?: string
+          institution_type?: string | null
           mandate_areas?: string[]
           procurement_portal_url?: string | null
           profile_id?: string
@@ -647,13 +647,13 @@ export type Database = {
           geo_focus: string[]
           investment_preferences: string[]
           investment_stage_focus: string[]
-          investor_type: string
+          investor_type: string | null
           portfolio_companies: string[] | null
           profile_id: string
           required_documents: string | null
           sectors_of_interest: string[]
           thesis: string | null
-          ticket_size_range: string
+          ticket_size_range: string | null
           updated_at: string
           website_override: string | null
         }
@@ -663,13 +663,13 @@ export type Database = {
           geo_focus?: string[]
           investment_preferences?: string[]
           investment_stage_focus?: string[]
-          investor_type: string
+          investor_type?: string | null
           portfolio_companies?: string[] | null
           profile_id: string
           required_documents?: string | null
           sectors_of_interest?: string[]
           thesis?: string | null
-          ticket_size_range: string
+          ticket_size_range?: string | null
           updated_at?: string
           website_override?: string | null
         }
@@ -679,13 +679,13 @@ export type Database = {
           geo_focus?: string[]
           investment_preferences?: string[]
           investment_stage_focus?: string[]
-          investor_type?: string
+          investor_type?: string | null
           portfolio_companies?: string[] | null
           profile_id?: string
           required_documents?: string | null
           sectors_of_interest?: string[]
           thesis?: string | null
-          ticket_size_range?: string
+          ticket_size_range?: string | null
           updated_at?: string
           website_override?: string | null
         }
@@ -2029,7 +2029,7 @@ export type Database = {
         Row: {
           areas_served: string[]
           business_name: string
-          business_stage: string
+          business_stage: string | null
           created_at: string
           documents_urls: string[] | null
           funding_needed: boolean | null
@@ -2050,7 +2050,7 @@ export type Database = {
         Insert: {
           areas_served?: string[]
           business_name: string
-          business_stage: string
+          business_stage?: string | null
           created_at?: string
           documents_urls?: string[] | null
           funding_needed?: boolean | null
@@ -2071,7 +2071,7 @@ export type Database = {
         Update: {
           areas_served?: string[]
           business_name?: string
-          business_stage?: string
+          business_stage?: string | null
           created_at?: string
           documents_urls?: string[] | null
           funding_needed?: boolean | null
@@ -2496,6 +2496,7 @@ export type Database = {
           display_name: string | null
           experience_level: string | null
           freelancer_services: string | null
+          full_name: string | null
           funding_needed: boolean | null
           geo_focus: string[] | null
           id: string | null
@@ -2510,12 +2511,15 @@ export type Database = {
           languages: string[] | null
           linkedin: string | null
           mandate_areas: string[] | null
+          onboarding_step: number | null
           preferred_industries: string[] | null
           primary_skills: string[] | null
           professional_title: string | null
+          profile_completed: boolean | null
           profile_photo_url: string | null
           rate_range: string | null
           rate_type: string | null
+          role_type: string | null
           services_or_programmes: string | null
           sme_sectors: string[] | null
           sme_services: string | null
