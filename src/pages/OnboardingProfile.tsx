@@ -91,6 +91,9 @@ export default function OnboardingProfile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const draftRestoredRef = React.useRef(false);
 
   // Base form
   const baseForm = useForm<BaseProfileData>({
@@ -300,9 +303,32 @@ export default function OnboardingProfile() {
             }
           }
 
+          // Restore unsaved local draft (survives refresh) — takes priority over DB values
+          try {
+            const raw = localStorage.getItem(`onboarding_draft_${user.id}`);
+            if (raw) {
+              const draft = JSON.parse(raw);
+              if (draft?.accountType) setAccountType(draft.accountType as AccountType);
+              if (draft?.avatarUrl) setAvatarUrl(draft.avatarUrl);
+              if (draft?.base) baseForm.reset({ ...baseForm.getValues(), ...draft.base });
+              const type = draft?.accountType || profileData.account_type;
+              if (draft?.role) {
+                if (type === 'sme') smeForm.reset({ ...smeForm.getValues(), ...draft.role });
+                else if (type === 'freelancer') freelancerForm.reset({ ...freelancerForm.getValues(), ...draft.role });
+                else if (type === 'investor') investorForm.reset({ ...investorForm.getValues(), ...draft.role });
+                else if (type === 'government') governmentForm.reset({ ...governmentForm.getValues(), ...draft.role });
+              }
+              if (draft?.step >= 1 && draft?.step <= 4) setCurrentStep(draft.step);
+              if (draft?.savedAt) setLastSavedAt(new Date(draft.savedAt));
+              draftRestoredRef.current = true;
+            }
+          } catch (e) {
+            console.warn('[Onboarding] Failed to restore draft', e);
+          }
+
           // Restore step from localStorage if available
           const savedStep = localStorage.getItem(`onboarding_step_${user.id}`);
-          if (savedStep && !profileData.is_profile_complete) {
+          if (savedStep && !draftRestoredRef.current && !profileData.is_profile_complete) {
             const step = parseInt(savedStep, 10);
             if (step >= 1 && step <= 4) {
               setCurrentStep(step);
@@ -325,6 +351,73 @@ export default function OnboardingProfile() {
       localStorage.setItem(`onboarding_step_${user.id}`, step.toString());
     }
   }, [user]);
+
+  // ---- Autosave: persist in-progress edits locally + to the server draft ----
+  const roleFormForType = useCallback(() => {
+    if (accountType === 'sme') return smeForm;
+    if (accountType === 'freelancer') return freelancerForm;
+    if (accountType === 'investor') return investorForm;
+    if (accountType === 'government') return governmentForm;
+    return null;
+  }, [accountType, smeForm, freelancerForm, investorForm, governmentForm]);
+
+  useEffect(() => {
+    if (!user || loading || showSuccess) return;
+
+    let timer: ReturnType<typeof setTimeout>;
+
+    const persist = () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        try {
+          const roleForm = roleFormForType();
+          const payload = {
+            step: currentStep,
+            accountType,
+            avatarUrl,
+            base: baseForm.getValues(),
+            role: roleForm ? roleForm.getValues() : {},
+            savedAt: new Date().toISOString(),
+          };
+          localStorage.setItem(`onboarding_draft_${user.id}`, JSON.stringify(payload));
+          setAutoSaving(true);
+          await saveDraft(payload.base as any, accountType || undefined);
+          if (accountType) {
+            await saveOnboardingProgress({
+              step: currentStep as 1 | 2 | 3 | 4,
+              accountType,
+              roleType: accountType,
+              roleMetadata: payload.role,
+            });
+          }
+          setLastSavedAt(new Date());
+        } catch (e) {
+          console.warn('[Onboarding] Autosave failed', e);
+        } finally {
+          setAutoSaving(false);
+        }
+      }, 1500);
+    };
+
+    const subs: { unsubscribe: () => void }[] = [baseForm.watch(persist) as any];
+    const roleForm = roleFormForType();
+    if (roleForm) subs.push((roleForm as any).watch(persist));
+
+    // Also persist on step / account type changes
+    persist();
+
+    return () => {
+      clearTimeout(timer);
+      subs.forEach((s) => s.unsubscribe());
+    };
+  }, [user, loading, showSuccess, currentStep, accountType, avatarUrl, baseForm, roleFormForType, saveDraft, saveOnboardingProgress]);
+
+  // Clear the local draft once the profile is submitted
+  useEffect(() => {
+    if (showSuccess && user) {
+      localStorage.removeItem(`onboarding_draft_${user.id}`);
+    }
+  }, [showSuccess, user]);
 
   const handleNext = async () => {
     if (currentStep === 1) {
@@ -752,6 +845,22 @@ export default function OnboardingProfile() {
                 <ArrowLeft className="h-4 w-4" />
                 Back
               </Button>
+
+              <div className="flex-1 text-center text-xs text-muted-foreground" aria-live="polite">
+                {autoSaving ? (
+                  <span className="inline-flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Saving draft...
+                  </span>
+                ) : lastSavedAt ? (
+                  <span className="inline-flex items-center gap-1">
+                    <Check className="h-3 w-3" />
+                    Draft saved {lastSavedAt.toLocaleTimeString()}
+                  </span>
+                ) : null}
+              </div>
+
+
 
               {currentStep < 4 ? (
                 <Button
