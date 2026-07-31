@@ -384,7 +384,7 @@ export default function OnboardingProfile() {
           await saveDraft(payload.base as any, accountType || undefined);
           if (accountType) {
             await saveOnboardingProgress({
-              step: currentStep,
+              step: currentStep as 1 | 2 | 3 | 4,
               accountType,
               roleType: accountType,
               roleMetadata: payload.role,
@@ -399,9 +399,9 @@ export default function OnboardingProfile() {
       }, 1500);
     };
 
-    const subs = [baseForm.watch(persist)];
+    const subs: { unsubscribe: () => void }[] = [baseForm.watch(persist) as any];
     const roleForm = roleFormForType();
-    if (roleForm) subs.push(roleForm.watch(persist));
+    if (roleForm) subs.push((roleForm as any).watch(persist));
 
     // Also persist on step / account type changes
     persist();
