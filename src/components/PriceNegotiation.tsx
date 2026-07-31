@@ -154,8 +154,10 @@ const PriceNegotiation = ({
       });
 
       if (error) throw error;
-      setNegotiationId(data.negotiation.id);
-      return data.negotiation.id;
+      const createdNegotiation = data?.data;
+      if (!createdNegotiation?.id) throw new Error('Negotiation was not created');
+      setNegotiationId(createdNegotiation.id);
+      return createdNegotiation.id;
     } catch (error) {
       console.error('Error creating negotiation:', error);
       toast({
@@ -184,7 +186,7 @@ const PriceNegotiation = ({
       
       const { data, error } = await supabase.functions.invoke('negotiation-manager', {
         body: {
-          action: 'counter',
+          action: 'counter_offer',
           negotiationId: negId,
           proposedPrice: price,
           message,
@@ -236,8 +238,6 @@ const PriceNegotiation = ({
       if (error) throw error;
       
       setStatus('agreed');
-      onNegotiationComplete?.(currentPrice);
-      
       toast({
         title: "Price Accepted",
         description: "The negotiation has been completed successfully!",
@@ -262,6 +262,7 @@ const PriceNegotiation = ({
   const handlePaymentSuccess = () => {
     setStatus('agreed');
     setShowPayment(false);
+    onNegotiationComplete?.(currentPrice);
     toast({
       title: "Payment Successful",
       description: "Your payment has been processed successfully!",
