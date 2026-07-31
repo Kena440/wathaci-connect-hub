@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Star, MapPin, Clock, User, Building, BookOpen } from 'lucide-react';
 
 interface ServiceProviderCardProps {
@@ -19,6 +20,7 @@ interface ServiceProviderCardProps {
     deliveryTime: string;
     location: string;
     image: string;
+    providerAvatar?: string | null;
   };
   onSelect: (service: any) => void;
 }
@@ -111,7 +113,13 @@ export const ServiceProviderCard = ({ service, onSelect }: ServiceProviderCardPr
         </div>
 
         <div className="mb-3">
-          <p className="text-sm text-gray-600 mb-1">By {service.provider}</p>
+          <div className="flex items-center gap-2 mb-1">
+            <Avatar className="w-6 h-6">
+              <AvatarImage src={service.providerAvatar || undefined} alt={service.provider} />
+              <AvatarFallback className="text-[10px]">{service.provider.slice(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <p className="text-sm text-gray-600">By {service.provider}</p>
+          </div>
           <div className="flex items-center gap-1 text-sm text-gray-500">
             <Clock className="w-3 h-3" />
             <span>{service.deliveryTime}</span>

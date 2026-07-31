@@ -7,8 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { ServiceProviderCard } from './ServiceProviderCard';
 import { PriceNegotiation } from '@/components/PriceNegotiation';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Filter, Grid, List, Loader2, Users, Building, BookOpen, Star, MapPin, Clock } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Search, Filter, Grid, List, Loader2, Users, Building, BookOpen, Star, MapPin, Clock, MessageSquare } from 'lucide-react';
 
 interface Service {
   id: string;
@@ -49,6 +51,9 @@ interface TransformedService {
   price: number;
   image: string;
   providerId: string;
+  providerAvatar: string | null;
+  subcategory: string | null;
+  deliveryTimeRaw: string | null;
 }
 
 export const IntegratedMarketplace = () => {
@@ -61,6 +66,10 @@ export const IntegratedMarketplace = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [selectedService, setSelectedService] = useState<TransformedService | null>(null);
   const [showNegotiation, setShowNegotiation] = useState(false);
+  const [providerOptions, setProviderOptions] = useState<TransformedService[] | null>(null);
+  const [providerOptionsContext, setProviderOptionsContext] = useState<TransformedService | null>(null);
+  const [optionsLoading, setOptionsLoading] = useState(false);
+  const { toast } = useToast();
 
   const categories = [
     'all', 'technology', 'marketing', 'design', 'business', 
@@ -78,10 +87,50 @@ export const IntegratedMarketplace = () => {
     loadServices();
   }, [selectedCategory, selectedProviderType, selectedLocation]);
 
+  const fetchProviderProfiles = async (ids: string[]) => {
+    const unique = Array.from(new Set(ids.filter(Boolean)));
+    if (unique.length === 0) return {} as Record<string, { name: string; avatar: string | null }>;
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, display_name, full_name, business_name, avatar_url, profile_image_url')
+      .in('id', unique);
+    const map: Record<string, { name: string; avatar: string | null }> = {};
+    (data || []).forEach((p) => {
+      map[p.id] = {
+        name: p.display_name || p.full_name || p.business_name || 'Service Provider',
+        avatar: p.profile_image_url || p.avatar_url || null,
+      };
+    });
+    return map;
+  };
+
+  const transformServices = async (rows: Service[]): Promise<TransformedService[]> => {
+    const profileMap = await fetchProviderProfiles(rows.map((r) => r.provider_id));
+    return rows.map((service) => ({
+      id: service.id,
+      title: service.title,
+      description: service.description || '',
+      provider: profileMap[service.provider_id]?.name || 'Service Provider',
+      providerAvatar: profileMap[service.provider_id]?.avatar || null,
+      providerType: (service.provider_type as 'freelancer' | 'partnership' | 'resource') || 'freelancer',
+      category: service.category,
+      subcategory: service.subcategory,
+      skills: service.skills || [],
+      location: service.location || 'Remote',
+      deliveryTime: service.delivery_time || 'Varies',
+      deliveryTimeRaw: service.delivery_time,
+      rating: service.rating || 0,
+      reviews: service.reviews_count || 0,
+      currency: service.currency,
+      price: service.price,
+      image: service.images?.[0] || '/placeholder.svg',
+      providerId: service.provider_id,
+    }));
+  };
+
   const loadServices = async () => {
     setLoading(true);
     try {
-      // Query directly from the services table
       let query = supabase
         .from('services')
         .select('*')
@@ -100,33 +149,66 @@ export const IntegratedMarketplace = () => {
       const { data, error } = await query.order('is_featured', { ascending: false });
 
       if (error) throw error;
-      
-      // Transform the data
-      const transformed: TransformedService[] = (data || []).map((service: Service) => ({
-        id: service.id,
-        title: service.title,
-        description: service.description || '',
-        provider: 'Service Provider', // Would need to join with profiles for actual name
-        providerType: (service.provider_type as 'freelancer' | 'partnership' | 'resource') || 'freelancer',
-        category: service.category,
-        skills: service.skills || [],
-        location: service.location || 'Remote',
-        deliveryTime: service.delivery_time || 'Varies',
-        rating: service.rating || 0,
-        reviews: service.reviews_count || 0,
-        currency: service.currency,
-        price: service.price,
-        image: service.images?.[0] || '/placeholder.svg',
-        providerId: service.provider_id
-      }));
 
-      setServices(transformed);
+      setServices(await transformServices((data || []) as Service[]));
     } catch (error) {
       console.error('Error loading services:', error);
       setServices([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Step between clicking a service and negotiating: show every freelancer
+  // offering this type of service.
+  const handleServiceClick = async (service: TransformedService) => {
+    setOptionsLoading(true);
+    setProviderOptionsContext(service);
+    try {
+      let query = supabase
+        .from('services')
+        .select('*')
+        .eq('is_active', true)
+        .eq('category', service.category);
+
+      let { data, error } = await query.order('is_featured', { ascending: false });
+      if (error) throw error;
+
+      let rows = (data || []) as Service[];
+
+      // Narrow by subcategory only when it meaningfully narrows the list
+      if (service.subcategory) {
+        const narrowed = rows.filter((r) => r.subcategory === service.subcategory);
+        if (narrowed.length > 1) rows = narrowed;
+      }
+
+      const options = await transformServices(rows);
+
+      if (options.length <= 1) {
+        setProviderOptions(null);
+        setProviderOptionsContext(null);
+        setSelectedService(options[0] || service);
+        return;
+      }
+
+      setProviderOptions(options);
+    } catch (error) {
+      console.error('Error loading providers:', error);
+      setProviderOptions(null);
+      setProviderOptionsContext(null);
+      setSelectedService(service);
+    } finally {
+      setOptionsLoading(false);
+    }
+  };
+
+  const handleContactProvider = () => {
+    if (!selectedService) return;
+    setShowNegotiation(true);
+    toast({
+      title: `Conversation with ${selectedService.provider}`,
+      description: 'Send a message or an offer to start the conversation.',
+    });
   };
 
   const filteredServices = services.filter((service) =>
@@ -146,15 +228,84 @@ export const IntegratedMarketplace = () => {
 
   const stats = getProviderTypeStats();
 
-  if (selectedService && !showNegotiation) {
+  if (providerOptions && !selectedService) {
+    const prices = providerOptions.map((o) => o.price);
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    return (
+      <div className="max-w-5xl mx-auto p-6 space-y-6">
+        <Button
+          variant="outline"
+          onClick={() => {
+            setProviderOptions(null);
+            setProviderOptionsContext(null);
+          }}
+        >
+          ← Back to Marketplace
+        </Button>
+        <div>
+          <h2 className="text-2xl font-bold">Choose a freelancer</h2>
+          <p className="text-muted-foreground">
+            {providerOptions.length} providers offering{' '}
+            {providerOptionsContext?.subcategory || providerOptionsContext?.category} services
+            {min !== max && ` · ${providerOptions[0].currency}${min.toLocaleString()} – ${providerOptions[0].currency}${max.toLocaleString()}`}
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {providerOptions.map((option) => (
+            <Card
+              key={option.id}
+              className="hover:shadow-lg transition-all cursor-pointer"
+              onClick={() => setSelectedService(option)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage src={option.providerAvatar || undefined} alt={option.provider} />
+                    <AvatarFallback>{option.provider.slice(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-semibold truncate">{option.provider}</p>
+                      <div className="flex items-center gap-1 text-sm">
+                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                        <span>{option.rating}</span>
+                        <span className="text-muted-foreground">({option.reviews})</span>
+                      </div>
+                    </div>
+                    <p className="text-sm font-medium">{option.title}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{option.description}</p>
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{option.deliveryTime}</span>
+                        <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{option.location}</span>
+                      </div>
+                      <span className="text-lg font-bold text-primary">
+                        {option.currency}{option.price.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (selectedService) {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <Button 
           variant="outline" 
-          onClick={() => setSelectedService(null)}
+          onClick={() => {
+            setSelectedService(null);
+            if (!providerOptions) setProviderOptionsContext(null);
+          }}
           className="mb-6"
         >
-          ← Back to Marketplace
+          {providerOptions ? '← Back to freelancers' : '← Back to Marketplace'}
         </Button>
         <Card>
           <CardHeader>
@@ -190,9 +341,15 @@ export const IntegratedMarketplace = () => {
               <div>
                 <p className="text-muted-foreground mb-6">{selectedService.description}</p>
                 <div className="space-y-4">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Provider:</span>
-                    <span className="font-medium">{selectedService.provider}</span>
+                    <span className="flex items-center gap-2 font-medium">
+                      <Avatar className="w-7 h-7">
+                        <AvatarImage src={selectedService.providerAvatar || undefined} alt={selectedService.provider} />
+                        <AvatarFallback>{selectedService.provider.slice(0, 2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      {selectedService.provider}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground flex items-center gap-1">
@@ -233,7 +390,13 @@ export const IntegratedMarketplace = () => {
                           />
                         </DialogContent>
                       </Dialog>
-                      <Button variant="outline" className="flex-1" size="lg">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        size="lg"
+                        onClick={handleContactProvider}
+                      >
+                        <MessageSquare className="w-4 h-4 mr-2" />
                         Contact Provider
                       </Button>
                     </div>
@@ -249,6 +412,13 @@ export const IntegratedMarketplace = () => {
 
   return (
     <div className="space-y-6">
+      {optionsLoading && (
+        <div className="flex items-center justify-center py-4">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span className="ml-2 text-sm text-muted-foreground">Finding freelancers…</span>
+        </div>
+      )}
+
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -366,7 +536,7 @@ export const IntegratedMarketplace = () => {
             <ServiceProviderCard 
               key={service.id} 
               service={service} 
-              onSelect={setSelectedService}
+              onSelect={handleServiceClick}
             />
           ))}
         </div>
