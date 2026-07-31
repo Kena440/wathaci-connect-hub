@@ -228,15 +228,84 @@ export const IntegratedMarketplace = () => {
 
   const stats = getProviderTypeStats();
 
+  if (providerOptions && !selectedService) {
+    const prices = providerOptions.map((o) => o.price);
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    return (
+      <div className="max-w-5xl mx-auto p-6 space-y-6">
+        <Button
+          variant="outline"
+          onClick={() => {
+            setProviderOptions(null);
+            setProviderOptionsContext(null);
+          }}
+        >
+          ← Back to Marketplace
+        </Button>
+        <div>
+          <h2 className="text-2xl font-bold">Choose a freelancer</h2>
+          <p className="text-muted-foreground">
+            {providerOptions.length} providers offering{' '}
+            {providerOptionsContext?.subcategory || providerOptionsContext?.category} services
+            {min !== max && ` · ${providerOptions[0].currency}${min.toLocaleString()} – ${providerOptions[0].currency}${max.toLocaleString()}`}
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {providerOptions.map((option) => (
+            <Card
+              key={option.id}
+              className="hover:shadow-lg transition-all cursor-pointer"
+              onClick={() => setSelectedService(option)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage src={option.providerAvatar || undefined} alt={option.provider} />
+                    <AvatarFallback>{option.provider.slice(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-semibold truncate">{option.provider}</p>
+                      <div className="flex items-center gap-1 text-sm">
+                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                        <span>{option.rating}</span>
+                        <span className="text-muted-foreground">({option.reviews})</span>
+                      </div>
+                    </div>
+                    <p className="text-sm font-medium">{option.title}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{option.description}</p>
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{option.deliveryTime}</span>
+                        <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{option.location}</span>
+                      </div>
+                      <span className="text-lg font-bold text-primary">
+                        {option.currency}{option.price.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (selectedService && !showNegotiation) {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <Button 
           variant="outline" 
-          onClick={() => setSelectedService(null)}
+          onClick={() => {
+            setSelectedService(null);
+            if (!providerOptions) setProviderOptionsContext(null);
+          }}
           className="mb-6"
         >
-          ← Back to Marketplace
+          {providerOptions ? '← Back to freelancers' : '← Back to Marketplace'}
         </Button>
         <Card>
           <CardHeader>
@@ -272,9 +341,15 @@ export const IntegratedMarketplace = () => {
               <div>
                 <p className="text-muted-foreground mb-6">{selectedService.description}</p>
                 <div className="space-y-4">
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Provider:</span>
-                    <span className="font-medium">{selectedService.provider}</span>
+                    <span className="flex items-center gap-2 font-medium">
+                      <Avatar className="w-7 h-7">
+                        <AvatarImage src={selectedService.providerAvatar || undefined} alt={selectedService.provider} />
+                        <AvatarFallback>{selectedService.provider.slice(0, 2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      {selectedService.provider}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground flex items-center gap-1">
@@ -315,7 +390,13 @@ export const IntegratedMarketplace = () => {
                           />
                         </DialogContent>
                       </Dialog>
-                      <Button variant="outline" className="flex-1" size="lg">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        size="lg"
+                        onClick={handleContactProvider}
+                      >
+                        <MessageSquare className="w-4 h-4 mr-2" />
                         Contact Provider
                       </Button>
                     </div>
@@ -331,6 +412,13 @@ export const IntegratedMarketplace = () => {
 
   return (
     <div className="space-y-6">
+      {optionsLoading && (
+        <div className="flex items-center justify-center py-4">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span className="ml-2 text-sm text-muted-foreground">Finding freelancers…</span>
+        </div>
+      )}
+
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -448,7 +536,7 @@ export const IntegratedMarketplace = () => {
             <ServiceProviderCard 
               key={service.id} 
               service={service} 
-              onSelect={setSelectedService}
+              onSelect={handleServiceClick}
             />
           ))}
         </div>
