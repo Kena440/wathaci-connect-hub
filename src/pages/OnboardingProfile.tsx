@@ -846,6 +846,22 @@ export default function OnboardingProfile() {
                 Back
               </Button>
 
+              <div className="flex-1 text-center text-xs text-muted-foreground" aria-live="polite">
+                {autoSaving ? (
+                  <span className="inline-flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Saving draft...
+                  </span>
+                ) : lastSavedAt ? (
+                  <span className="inline-flex items-center gap-1">
+                    <Check className="h-3 w-3" />
+                    Draft saved {lastSavedAt.toLocaleTimeString()}
+                  </span>
+                ) : null}
+              </div>
+
+
+
               {currentStep < 4 ? (
                 <Button
                   type="button"
