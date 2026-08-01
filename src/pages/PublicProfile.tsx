@@ -83,7 +83,12 @@ export default function PublicProfile() {
     }
   };
 
-  const displayName = profile.display_name || 'Anonymous';
+  const displayName =
+    profile.display_name?.trim() ||
+    profile.full_name?.trim() ||
+    profile.business_name?.trim() ||
+    profile.institution_name?.trim() ||
+    'Anonymous';
   const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
