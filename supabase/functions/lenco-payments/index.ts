@@ -7,7 +7,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const LENCO_API_URL = "https://api.lenco.co/access/v1";
+// Lenco's collections API lives under /access/v2. The old hardcoded /access/v1
+// path returns {"success":false,"message":"Not Found"}, which surfaced in the app
+// as "Edge function returned a non 2xx status code" when funding a wallet.
+function resolveLencoApiUrl(): string {
+  const raw = (Deno.env.get("LENCO_BASE_URL") || "https://api.lenco.co").replace(/\/+$/, "");
+  if (/\/access\/v\d+$/.test(raw)) return raw;
+  if (/\/access$/.test(raw)) return `${raw}/v2`;
+  return `${raw}/access/v2`;
+}
+
+const LENCO_API_URL = resolveLencoApiUrl();
 
 interface PaymentRequest {
   action: "initiate" | "verify" | "get_fee" | "request_payout" | "submit_otp";
@@ -137,10 +147,9 @@ serve(async (req) => {
           });
         }
 
-        // Real Lenco mobile money collection call.
-        // NOTE: amount format (major units vs subunits) is assumed to match
-        // Lenco's documented example (e.g. "50" = K50) — verify against a
-        // real sandbox response before trusting this with live money.
+        // Lenco expects a local Zambian MSISDN in 0XXXXXXXXX form.
+        const normalizedPhone = phone.replace(/[^\d]/g, "").replace(/^260/, "0").replace(/^(?!0)/, "0");
+
         const lencoResponse = await fetch(`${LENCO_API_URL}/collections/mobile-money`, {
           method: "POST",
           headers: {
@@ -149,8 +158,9 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             amount: amount.toString(),
+            currency,
             reference,
-            phone,
+            phone: normalizedPhone,
             operator,
             country: "zm",
             bearer: "merchant",
@@ -159,7 +169,10 @@ serve(async (req) => {
 
         const lencoData = await lencoResponse.json().catch(() => null);
 
-        if (!lencoResponse.ok || !lencoData) {
+        // Lenco can answer HTTP 200 with { status: false, message } — treat that as a failure too.
+        const lencoFailed = !lencoResponse.ok || !lencoData || lencoData.status === false || !lencoData.data;
+
+        if (lencoFailed) {
           console.error("Lenco collection error:", lencoData);
           await supabase
             .from("transactions")
@@ -167,8 +180,12 @@ serve(async (req) => {
             .eq("id", transaction.id);
 
           return new Response(
-            JSON.stringify({ error: "Payment could not be initiated with the mobile money provider" }),
-            { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+            JSON.stringify({
+              error:
+                lencoData?.message ||
+                "Payment could not be initiated with the mobile money provider. Check the phone number and operator and try again.",
+            }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
           );
         }
 
