@@ -10,7 +10,7 @@ const corsHeaders = {
 const LENCO_API_URL = 'https://api.lenco.co/access/v1';
 
 interface PaymentRequest {
-  action: 'initiate' | 'verify' | 'get_fee' | 'request_payout';
+  action: 'initiate' | 'verify' | 'get_fee' | 'request_payout' | 'submit_otp';
   amount?: number;
   currency?: string;
   description?: string;
@@ -20,6 +20,10 @@ interface PaymentRequest {
   transaction_id?: string;
   bank_code?: string;
   account_number?: string;
+  phone?: string;
+  operator?: 'mtn' | 'airtel' | 'zamtel';
+  otp?: string;
+  collection_id?: string;
 }
 
 serve(async (req) => {
@@ -62,8 +66,11 @@ serve(async (req) => {
 
     switch (action) {
       case 'initiate': {
-        const { amount, currency = 'ZMW', description, recipient_id, transaction_type = 'service_purchase' } = body;
-        
+        const {
+          amount, currency = 'ZMW', description, recipient_id,
+          transaction_type = 'service_purchase', phone, operator
+        } = body;
+
         if (!amount || amount <= 0) {
           return new Response(
             JSON.stringify({ error: 'Invalid amount' }),
@@ -71,11 +78,18 @@ serve(async (req) => {
           );
         }
 
+        if (!phone || !operator) {
+          return new Response(
+            JSON.stringify({ error: 'Mobile money phone number and operator (mtn/airtel/zamtel) are required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
         // Calculate platform fee using the database function
         const { data: feeData } = await supabase
           .rpc('calculate_platform_fee', { p_amount: amount, p_currency: currency });
-        
-        const platformFee = feeData || (amount * 0.05);
+
+        const platformFee = transaction_type === 'deposit' ? 0 : (feeData || (amount * 0.05));
         const netAmount = amount - platformFee;
 
         // Generate unique reference
@@ -97,7 +111,9 @@ serve(async (req) => {
             description,
             metadata: {
               initiated_at: new Date().toISOString(),
-              ip_address: req.headers.get('x-forwarded-for') || 'unknown'
+              ip_address: req.headers.get('x-forwarded-for') || 'unknown',
+              phone,
+              operator,
             }
           })
           .select()
@@ -111,20 +127,52 @@ serve(async (req) => {
           );
         }
 
-        // Initialize payment with Lenco
-        // Note: This is a simplified version - actual Lenco API may differ
-        const lencoResponse = await fetch(`${LENCO_API_URL}/virtual-accounts`, {
-          method: 'GET',
+        // Real Lenco mobile money collection call.
+        // NOTE: amount format (major units vs subunits) is assumed to match
+        // Lenco's documented example (e.g. "50" = K50) — verify against a
+        // real sandbox response before trusting this with live money.
+        const lencoResponse = await fetch(`${LENCO_API_URL}/collections/mobile-money`, {
+          method: 'POST',
           headers: {
             'Authorization': `Bearer ${lencoApiToken}`,
             'Content-Type': 'application/json',
           },
+          body: JSON.stringify({
+            amount: amount.toString(),
+            reference,
+            phone,
+            operator,
+            country: 'zm',
+            bearer: 'merchant',
+          }),
         });
 
-        if (!lencoResponse.ok) {
-          console.error('Lenco API error:', await lencoResponse.text());
-          // Still return success with pending status for manual processing
+        const lencoData = await lencoResponse.json().catch(() => null);
+
+        if (!lencoResponse.ok || !lencoData) {
+          console.error('Lenco collection error:', lencoData);
+          await supabase
+            .from('transactions')
+            .update({ status: 'failed', metadata: { ...transaction.metadata, lenco_error: lencoData } })
+            .eq('id', transaction.id);
+
+          return new Response(
+            JSON.stringify({ error: 'Payment could not be initiated with the mobile money provider' }),
+            { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
+
+        const collectionStatus = lencoData.data?.status; // 'otp-required' | 'pay-offline' | 'pending' | 'successful' | 'failed'
+        const collectionId = lencoData.data?.id;
+
+        await supabase
+          .from('transactions')
+          .update({
+            lenco_transaction_id: collectionId,
+            status: collectionStatus === 'successful' ? 'successful' : collectionStatus === 'failed' ? 'failed' : 'pending',
+            metadata: { ...transaction.metadata, lenco_status: collectionStatus },
+          })
+          .eq('id', transaction.id);
 
         return new Response(
           JSON.stringify({
@@ -135,13 +183,14 @@ serve(async (req) => {
             currency,
             platform_fee: platformFee,
             net_amount: netAmount,
-            status: 'pending',
-            message: 'Payment initiated. Please complete payment to the provided account.',
-            payment_details: {
-              bank_name: 'Lenco Bank',
-              account_number: 'Payment link will be provided',
-              reference,
-            }
+            status: collectionStatus,
+            collection_id: collectionId,
+            message:
+              collectionStatus === 'otp-required'
+                ? 'Enter the OTP sent to your phone to complete payment.'
+                : collectionStatus === 'pay-offline'
+                ? 'Authorize this payment on your phone to complete it.'
+                : 'Payment initiated.',
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
@@ -241,6 +290,52 @@ serve(async (req) => {
         );
       }
 
+      // NOTE: exact Submit-OTP endpoint path is my best reading of Lenco's docs,
+      // not confirmed against a live sandbox response — verify before relying
+      // on this in production, or dispatch me to verify it with real testing.
+      case 'submit_otp': {
+        const { collection_id, otp, transaction_id } = body;
+
+        if (!collection_id || !otp) {
+          return new Response(
+            JSON.stringify({ error: 'collection_id and otp are required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const otpResponse = await fetch(`${LENCO_API_URL}/collections/mobile-money/${collection_id}/otp`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${lencoApiToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ otp }),
+        });
+
+        const otpData = await otpResponse.json().catch(() => null);
+
+        if (!otpResponse.ok || !otpData) {
+          return new Response(
+            JSON.stringify({ error: 'OTP verification failed', details: otpData }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const finalStatus = otpData.data?.status;
+
+        if (transaction_id) {
+          await supabase
+            .from('transactions')
+            .update({ status: finalStatus === 'successful' ? 'successful' : 'pending' })
+            .eq('id', transaction_id);
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, status: finalStatus }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       case 'get_fee': {
         const { amount, currency = 'ZMW' } = body;
         
@@ -313,71 +408,4 @@ serve(async (req) => {
         }
 
         // Create payout transaction
-        const reference = `PAYOUT-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`;
-        
-        const { data: transaction, error: txError } = await supabase
-          .from('transactions')
-          .insert({
-            user_id: user.id,
-            transaction_type: 'payout',
-            amount,
-            currency,
-            status: 'processing',
-            lenco_reference: reference,
-            description: 'Withdrawal request',
-            metadata: {
-              bank_code,
-              account_number,
-              requested_at: new Date().toISOString()
-            }
-          })
-          .select()
-          .single();
-
-        if (txError) {
-          console.error('Error creating payout transaction:', txError);
-          return new Response(
-            JSON.stringify({ error: 'Failed to initiate payout' }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-
-        // Update pending balance
-        const pendingField = currency === 'USD' ? 'pending_balance_usd' : 'pending_balance_zmw';
-        await supabase
-          .from('payment_accounts')
-          .update({
-            [balanceField]: account[balanceField] - amount,
-            [pendingField]: account[pendingField] + amount
-          })
-          .eq('user_id', user.id);
-
-        return new Response(
-          JSON.stringify({
-            success: true,
-            message: 'Payout request submitted. Processing may take 1-3 business days.',
-            transaction_id: transaction.id,
-            reference,
-            amount,
-            currency,
-            status: 'processing'
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      default:
-        return new Response(
-          JSON.stringify({ error: 'Invalid action' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-    }
-  } catch (error) {
-    console.error('Payment processing error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(
-      JSON.stringify({ error: 'Internal server error', details: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-});
+        const reference =
