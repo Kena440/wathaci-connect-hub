@@ -147,10 +147,9 @@ serve(async (req) => {
           });
         }
 
-        // Real Lenco mobile money collection call.
-        // NOTE: amount format (major units vs subunits) is assumed to match
-        // Lenco's documented example (e.g. "50" = K50) — verify against a
-        // real sandbox response before trusting this with live money.
+        // Lenco expects a local Zambian MSISDN in 0XXXXXXXXX form.
+        const normalizedPhone = phone.replace(/[^\d]/g, "").replace(/^260/, "0").replace(/^(?!0)/, "0");
+
         const lencoResponse = await fetch(`${LENCO_API_URL}/collections/mobile-money`, {
           method: "POST",
           headers: {
@@ -159,8 +158,9 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             amount: amount.toString(),
+            currency,
             reference,
-            phone,
+            phone: normalizedPhone,
             operator,
             country: "zm",
             bearer: "merchant",
@@ -169,7 +169,10 @@ serve(async (req) => {
 
         const lencoData = await lencoResponse.json().catch(() => null);
 
-        if (!lencoResponse.ok || !lencoData) {
+        // Lenco can answer HTTP 200 with { status: false, message } — treat that as a failure too.
+        const lencoFailed = !lencoResponse.ok || !lencoData || lencoData.status === false || !lencoData.data;
+
+        if (lencoFailed) {
           console.error("Lenco collection error:", lencoData);
           await supabase
             .from("transactions")
@@ -177,8 +180,12 @@ serve(async (req) => {
             .eq("id", transaction.id);
 
           return new Response(
-            JSON.stringify({ error: "Payment could not be initiated with the mobile money provider" }),
-            { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+            JSON.stringify({
+              error:
+                lencoData?.message ||
+                "Payment could not be initiated with the mobile money provider. Check the phone number and operator and try again.",
+            }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
           );
         }
 
