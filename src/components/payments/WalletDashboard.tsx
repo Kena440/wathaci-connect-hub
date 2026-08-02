@@ -1,18 +1,12 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -21,25 +15,25 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
-import { 
-  Wallet, 
-  ArrowUpRight, 
-  ArrowDownLeft, 
-  Clock, 
-  CheckCircle, 
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import {
+  Wallet,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Clock,
+  CheckCircle,
   XCircle,
   Loader2,
   RefreshCw,
   DollarSign,
   Banknote,
   Crown,
-  Shield
-} from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
-import { useEntitlements } from '@/hooks/useEntitlements';
+  Shield,
+} from "lucide-react";
+import { format, differenceInDays } from "date-fns";
+import { useEntitlements } from "@/hooks/useEntitlements";
 
 interface PaymentAccount {
   id: string;
@@ -74,9 +68,19 @@ export const WalletDashboard = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
-  const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [withdrawCurrency, setWithdrawCurrency] = useState<'ZMW' | 'USD'>('ZMW');
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [withdrawCurrency, setWithdrawCurrency] = useState<"ZMW" | "USD">("ZMW");
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
+
+  // Fund Wallet state
+  const [fundDialogOpen, setFundDialogOpen] = useState(false);
+  const [fundAmount, setFundAmount] = useState("");
+  const [fundCurrency, setFundCurrency] = useState<"ZMW" | "USD">("ZMW");
+  const [fundPhone, setFundPhone] = useState("");
+  const [fundOperator, setFundOperator] = useState<"mtn" | "airtel" | "zamtel">("mtn");
+  const [isFunding, setIsFunding] = useState(false);
+  const [otpStep, setOtpStep] = useState<{ collectionId: string; transactionId: string } | null>(null);
+  const [otpValue, setOtpValue] = useState("");
 
   const fetchAccountData = async () => {
     if (!user) return;
@@ -85,9 +89,9 @@ export const WalletDashboard = () => {
     try {
       // Fetch payment account
       const { data: accountData, error: accountError } = await supabase
-        .from('payment_accounts')
-        .select('*')
-        .eq('user_id', user.id)
+        .from("payment_accounts")
+        .select("*")
+        .eq("user_id", user.id)
         .maybeSingle();
 
       if (accountError) throw accountError;
@@ -95,17 +99,17 @@ export const WalletDashboard = () => {
 
       // Fetch transactions
       const { data: txData, error: txError } = await supabase
-        .from('transactions')
-        .select('*')
+        .from("transactions")
+        .select("*")
         .or(`user_id.eq.${user.id},recipient_id.eq.${user.id}`)
-        .order('created_at', { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(50);
 
       if (txError) throw txError;
       setTransactions(txData || []);
     } catch (error) {
-      console.error('Error fetching wallet data:', error);
-      toast.error('Failed to load wallet data');
+      console.error("Error fetching wallet data:", error);
+      toast.error("Failed to load wallet data");
     } finally {
       setIsLoading(false);
     }
@@ -120,49 +124,124 @@ export const WalletDashboard = () => {
 
     const amount = parseFloat(withdrawAmount);
     if (isNaN(amount) || amount <= 0) {
-      toast.error('Please enter a valid amount');
+      toast.error("Please enter a valid amount");
       return;
     }
 
-    const balance = withdrawCurrency === 'USD' ? account?.balance_usd : account?.balance_zmw;
+    const balance = withdrawCurrency === "USD" ? account?.balance_usd : account?.balance_zmw;
     if (!balance || amount > balance) {
-      toast.error('Insufficient balance');
+      toast.error("Insufficient balance");
       return;
     }
 
     setIsWithdrawing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('lenco-payments', {
+      const { data, error } = await supabase.functions.invoke("lenco-payments", {
         body: {
-          action: 'request_payout',
+          action: "request_payout",
           amount,
-          currency: withdrawCurrency
-        }
+          currency: withdrawCurrency,
+        },
       });
 
       if (error) throw error;
 
       if (data.success) {
-        toast.success('Withdrawal request submitted');
+        toast.success("Withdrawal request submitted");
         setWithdrawDialogOpen(false);
-        setWithdrawAmount('');
+        setWithdrawAmount("");
         fetchAccountData();
       } else {
-        throw new Error(data.error || 'Withdrawal failed');
+        throw new Error(data.error || "Withdrawal failed");
       }
     } catch (error) {
-      console.error('Withdrawal error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to request withdrawal');
+      console.error("Withdrawal error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to request withdrawal");
     } finally {
       setIsWithdrawing(false);
     }
   };
 
+  const handleFundWallet = async () => {
+    if (!session?.access_token || !fundAmount || !fundPhone) return;
+    const amount = parseFloat(fundAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+
+    setIsFunding(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("lenco-payments", {
+        body: {
+          action: "initiate",
+          transaction_type: "deposit",
+          amount,
+          currency: fundCurrency,
+          phone: fundPhone,
+          operator: fundOperator,
+          description: "Wallet top-up",
+        },
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error || "Failed to initiate deposit");
+
+      if (data.status === "otp-required") {
+        setOtpStep({ collectionId: data.collection_id, transactionId: data.transaction_id });
+        toast.info("Enter the OTP sent to your phone");
+      } else if (data.status === "pay-offline") {
+        toast.success("Check your phone to authorize the payment. Your balance updates once confirmed.");
+        setFundDialogOpen(false);
+      } else {
+        toast.success("Deposit initiated.");
+        setFundDialogOpen(false);
+      }
+      setFundAmount("");
+      setFundPhone("");
+      fetchAccountData();
+    } catch (error) {
+      console.error("Fund wallet error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to fund wallet");
+    } finally {
+      setIsFunding(false);
+    }
+  };
+
+  const handleSubmitOtp = async () => {
+    if (!otpStep || !otpValue) return;
+    setIsFunding(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("lenco-payments", {
+        body: {
+          action: "submit_otp",
+          collection_id: otpStep.collectionId,
+          transaction_id: otpStep.transactionId,
+          otp: otpValue,
+        },
+      });
+      if (error) throw error;
+      if (data.status === "successful") {
+        toast.success("Wallet funded successfully!");
+      } else {
+        toast.info("Payment pending confirmation.");
+      }
+      setOtpStep(null);
+      setOtpValue("");
+      setFundDialogOpen(false);
+      fetchAccountData();
+    } catch (error) {
+      toast.error("OTP verification failed");
+    } finally {
+      setIsFunding(false);
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'successful':
+      case "successful":
         return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'failed':
+      case "failed":
         return <XCircle className="w-4 h-4 text-destructive" />;
       default:
         return <Clock className="w-4 h-4 text-accent" />;
@@ -170,21 +249,21 @@ export const WalletDashboard = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-      successful: 'default',
-      pending: 'secondary',
-      processing: 'secondary',
-      failed: 'destructive'
+    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+      successful: "default",
+      pending: "secondary",
+      processing: "secondary",
+      failed: "destructive",
     };
     return (
-      <Badge variant={variants[status] || 'outline'} className="text-xs">
+      <Badge variant={variants[status] || "outline"} className="text-xs">
         {status}
       </Badge>
     );
   };
 
   const getTransactionIcon = (type: string, userId: string, recipientId?: string) => {
-    if (type === 'payout') {
+    if (type === "payout") {
       return <ArrowUpRight className="w-5 h-5 text-destructive" />;
     }
     if (recipientId === userId) {
@@ -193,9 +272,9 @@ export const WalletDashboard = () => {
     return <ArrowUpRight className="w-5 h-5 text-accent" />;
   };
 
-  const gracePeriodEnd = entitlements?.gracePeriodEnd 
-    ? new Date(entitlements.gracePeriodEnd) 
-    : new Date('2026-01-20T00:00:00+02:00');
+  const gracePeriodEnd = entitlements?.gracePeriodEnd
+    ? new Date(entitlements.gracePeriodEnd)
+    : new Date("2026-01-20T00:00:00+02:00");
   const daysRemaining = differenceInDays(gracePeriodEnd, new Date());
 
   if (isLoading) {
@@ -220,14 +299,12 @@ export const WalletDashboard = () => {
                 <div>
                   <p className="font-medium text-foreground">Free Access Active</p>
                   <p className="text-sm text-muted-foreground">
-                    All premium features unlocked until {format(gracePeriodEnd, 'MMM d, yyyy')}
-                    {daysRemaining > 0 && (
-                      <span className="ml-1 text-accent">({daysRemaining} days remaining)</span>
-                    )}
+                    All premium features unlocked until {format(gracePeriodEnd, "MMM d, yyyy")}
+                    {daysRemaining > 0 && <span className="ml-1 text-accent">({daysRemaining} days remaining)</span>}
                   </p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={() => window.location.href = '/subscription-plans'}>
+              <Button variant="outline" size="sm" onClick={() => (window.location.href = "/subscription-plans")}>
                 <Shield className="w-4 h-4 mr-1" />
                 Subscribe Now
               </Button>
@@ -247,7 +324,7 @@ export const WalletDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
-              K{(account?.balance_zmw || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              K{(account?.balance_zmw || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </div>
             {(account?.pending_balance_zmw || 0) > 0 && (
               <p className="text-sm text-primary-foreground/70 mt-1">
@@ -266,7 +343,7 @@ export const WalletDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
-              ${(account?.balance_usd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              ${(account?.balance_usd || 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </div>
             {(account?.pending_balance_usd || 0) > 0 && (
               <p className="text-sm text-accent-foreground/70 mt-1">
@@ -279,6 +356,118 @@ export const WalletDashboard = () => {
 
       {/* Actions */}
       <div className="flex gap-3">
+        <Dialog
+          open={fundDialogOpen}
+          onOpenChange={(open) => {
+            setFundDialogOpen(open);
+            if (!open) setOtpStep(null);
+          }}
+        >
+          <DialogTrigger asChild>
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              <ArrowDownLeft className="w-4 h-4 mr-2" />
+              Fund Wallet
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-card border-border">
+            <DialogHeader>
+              <DialogTitle className="text-foreground">Fund Your Wallet</DialogTitle>
+              <DialogDescription className="text-muted-foreground">Top up via mobile money</DialogDescription>
+            </DialogHeader>
+            {!otpStep ? (
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label className="text-foreground">Currency</Label>
+                  <Select value={fundCurrency} onValueChange={(value: "ZMW" | "USD") => setFundCurrency(value)}>
+                    <SelectTrigger className="bg-background border-input">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border z-50">
+                      <SelectItem value="ZMW">ZMW</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground">Amount</Label>
+                  <Input
+                    type="number"
+                    placeholder="Enter amount"
+                    value={fundAmount}
+                    onChange={(e) => setFundAmount(e.target.value)}
+                    className="bg-background border-input"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground">Mobile Money Provider</Label>
+                  <Select
+                    value={fundOperator}
+                    onValueChange={(value: "mtn" | "airtel" | "zamtel") => setFundOperator(value)}
+                  >
+                    <SelectTrigger className="bg-background border-input">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border z-50">
+                      <SelectItem value="mtn">MTN Mobile Money</SelectItem>
+                      <SelectItem value="airtel">Airtel Money</SelectItem>
+                      <SelectItem value="zamtel">Zamtel Kwacha</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground">Phone Number</Label>
+                  <Input
+                    placeholder="09XXXXXXXX"
+                    value={fundPhone}
+                    onChange={(e) => setFundPhone(e.target.value)}
+                    className="bg-background border-input"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 py-4">
+                <p className="text-sm text-muted-foreground">Enter the OTP sent to your phone.</p>
+                <Input
+                  placeholder="OTP"
+                  value={otpValue}
+                  onChange={(e) => setOtpValue(e.target.value)}
+                  className="bg-background border-input"
+                />
+              </div>
+            )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setFundDialogOpen(false);
+                  setOtpStep(null);
+                }}
+              >
+                Cancel
+              </Button>
+              {!otpStep ? (
+                <Button
+                  onClick={handleFundWallet}
+                  disabled={isFunding || !fundAmount || !fundPhone}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  {isFunding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Fund Wallet
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmitOtp}
+                  disabled={isFunding || !otpValue}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  {isFunding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Submit OTP
+                </Button>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <Dialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-accent hover:bg-accent/90 text-accent-foreground">
@@ -296,10 +485,7 @@ export const WalletDashboard = () => {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label className="text-foreground">Currency</Label>
-                <Select
-                  value={withdrawCurrency}
-                  onValueChange={(value: 'ZMW' | 'USD') => setWithdrawCurrency(value)}
-                >
+                <Select value={withdrawCurrency} onValueChange={(value: "ZMW" | "USD") => setWithdrawCurrency(value)}>
                   <SelectTrigger className="bg-background border-input">
                     <SelectValue />
                   </SelectTrigger>
@@ -335,7 +521,7 @@ export const WalletDashboard = () => {
                     Processing...
                   </>
                 ) : (
-                  'Request Withdrawal'
+                  "Request Withdrawal"
                 )}
               </Button>
             </DialogFooter>
@@ -371,23 +557,25 @@ export const WalletDashboard = () => {
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center">
-                      {getTransactionIcon(tx.transaction_type, user?.id || '', tx.recipient_id || undefined)}
+                      {getTransactionIcon(tx.transaction_type, user?.id || "", tx.recipient_id || undefined)}
                     </div>
                     <div>
                       <p className="font-medium text-foreground text-sm">
-                        {tx.description || tx.transaction_type.replace('_', ' ')}
+                        {tx.description || tx.transaction_type.replace("_", " ")}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {format(new Date(tx.created_at), 'MMM d, yyyy HH:mm')}
+                        {format(new Date(tx.created_at), "MMM d, yyyy HH:mm")}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className={`font-semibold ${
-                      tx.transaction_type === 'payout' ? 'text-destructive' : 'text-foreground'
-                    }`}>
-                      {tx.transaction_type === 'payout' ? '-' : '+'}
-                      {tx.currency === 'USD' ? '$' : 'K'}
+                    <p
+                      className={`font-semibold ${
+                        tx.transaction_type === "payout" ? "text-destructive" : "text-foreground"
+                      }`}
+                    >
+                      {tx.transaction_type === "payout" ? "-" : "+"}
+                      {tx.currency === "USD" ? "$" : "K"}
                       {tx.amount.toFixed(2)}
                     </p>
                     <div className="flex items-center gap-1 justify-end">
