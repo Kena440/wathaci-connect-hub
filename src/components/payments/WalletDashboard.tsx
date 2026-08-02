@@ -184,7 +184,18 @@ export const WalletDashboard = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Pull the real error message out of the response body instead of
+        // showing the generic "non-2xx status code" wrapper.
+        let detail = error.message;
+        try {
+          const body = await (error as any).context?.json();
+          detail = body?.error || detail;
+        } catch {
+          // response body wasn't JSON or context unavailable — fall back to error.message
+        }
+        throw new Error(detail);
+      }
       if (!data.success) throw new Error(data.error || "Failed to initiate deposit");
 
       if (data.status === "otp-required") {
