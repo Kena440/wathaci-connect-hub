@@ -43,6 +43,15 @@ const unlimitedLimits = {
   premiumAnalytics: true,
 };
 
+// Time-boxed promotion: August 2026 is free for everyone (UTC).
+// Expires automatically on 2026-09-01; mirrors public.is_promo_free_period() in the DB.
+const PROMO_FREE_START = Date.UTC(2026, 7, 1, 0, 0, 0);
+const PROMO_FREE_END = Date.UTC(2026, 8, 1, 0, 0, 0);
+const isPromoFreePeriod = () => {
+  const now = Date.now();
+  return now >= PROMO_FREE_START && now < PROMO_FREE_END;
+};
+
 export const useEntitlements = () => {
   const { user, isAdmin } = useAuth();
   const [entitlements, setEntitlements] = useState<Entitlements | null>(null);
@@ -66,17 +75,18 @@ export const useEntitlements = () => {
 
       if (rpcError || !data) {
         console.error('Error fetching entitlements:', rpcError);
-        // Fallback: check grace period client-side
+        // Fallback: check grace period / promo window client-side
         const gracePeriodEnd = new Date('2026-01-20T00:00:00+02:00');
         const inGracePeriod = new Date() < gracePeriodEnd;
+        const promoFree = isPromoFreePeriod();
 
         setEntitlements({
-          hasFullAccess: isAdmin || inGracePeriod,
+          hasFullAccess: promoFree || isAdmin || inGracePeriod,
           isAdmin: isAdmin,
           inGracePeriod: inGracePeriod,
           gracePeriodEnd: gracePeriodEnd.toISOString(),
           subscription: null,
-          limits: isAdmin || inGracePeriod ? unlimitedLimits : defaultLimits,
+          limits: promoFree || isAdmin || inGracePeriod ? unlimitedLimits : defaultLimits,
         });
         return;
       }
@@ -122,17 +132,18 @@ export const useEntitlements = () => {
       console.error('Failed to fetch entitlements:', err);
       setError('Failed to load access information');
       
-      // Fallback with grace period check
+      // Fallback with grace period / promo window check
       const gracePeriodEnd = new Date('2026-01-20T00:00:00+02:00');
       const inGracePeriod = new Date() < gracePeriodEnd;
+      const promoFree = isPromoFreePeriod();
 
       setEntitlements({
-        hasFullAccess: isAdmin || inGracePeriod,
+        hasFullAccess: promoFree || isAdmin || inGracePeriod,
         isAdmin: isAdmin,
         inGracePeriod: inGracePeriod,
         gracePeriodEnd: gracePeriodEnd.toISOString(),
         subscription: null,
-        limits: isAdmin || inGracePeriod ? unlimitedLimits : defaultLimits,
+        limits: promoFree || isAdmin || inGracePeriod ? unlimitedLimits : defaultLimits,
       });
     } finally {
       setLoading(false);

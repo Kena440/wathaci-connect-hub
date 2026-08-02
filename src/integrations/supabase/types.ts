@@ -2878,6 +2878,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { check_user_id: string }; Returns: boolean }
+      is_promo_free_period: { Args: never; Returns: boolean }
       jsonb_to_text_array: { Args: { p: Json }; Returns: string[] }
       revoke_admin_role: {
         Args: {
