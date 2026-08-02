@@ -43,6 +43,15 @@ const unlimitedLimits = {
   premiumAnalytics: true,
 };
 
+// Time-boxed promotion: August 2026 is free for everyone (UTC).
+// Expires automatically on 2026-09-01; mirrors public.is_promo_free_period() in the DB.
+const PROMO_FREE_START = Date.UTC(2026, 7, 1, 0, 0, 0);
+const PROMO_FREE_END = Date.UTC(2026, 8, 1, 0, 0, 0);
+const isPromoFreePeriod = () => {
+  const now = Date.now();
+  return now >= PROMO_FREE_START && now < PROMO_FREE_END;
+};
+
 export const useEntitlements = () => {
   const { user, isAdmin } = useAuth();
   const [entitlements, setEntitlements] = useState<Entitlements | null>(null);
