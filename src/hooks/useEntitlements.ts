@@ -75,17 +75,18 @@ export const useEntitlements = () => {
 
       if (rpcError || !data) {
         console.error('Error fetching entitlements:', rpcError);
-        // Fallback: check grace period client-side
+        // Fallback: check grace period / promo window client-side
         const gracePeriodEnd = new Date('2026-01-20T00:00:00+02:00');
         const inGracePeriod = new Date() < gracePeriodEnd;
+        const promoFree = isPromoFreePeriod();
 
         setEntitlements({
-          hasFullAccess: isAdmin || inGracePeriod,
+          hasFullAccess: promoFree || isAdmin || inGracePeriod,
           isAdmin: isAdmin,
           inGracePeriod: inGracePeriod,
           gracePeriodEnd: gracePeriodEnd.toISOString(),
           subscription: null,
-          limits: isAdmin || inGracePeriod ? unlimitedLimits : defaultLimits,
+          limits: promoFree || isAdmin || inGracePeriod ? unlimitedLimits : defaultLimits,
         });
         return;
       }
