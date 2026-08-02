@@ -7,7 +7,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const LENCO_API_URL = "https://api.lenco.co/access/v1";
+// Lenco's collections API lives under /access/v2. The old hardcoded /access/v1
+// path returns {"success":false,"message":"Not Found"}, which surfaced in the app
+// as "Edge function returned a non 2xx status code" when funding a wallet.
+function resolveLencoApiUrl(): string {
+  const raw = (Deno.env.get("LENCO_BASE_URL") || "https://api.lenco.co").replace(/\/+$/, "");
+  if (/\/access\/v\d+$/.test(raw)) return raw;
+  if (/\/access$/.test(raw)) return `${raw}/v2`;
+  return `${raw}/access/v2`;
+}
+
+const LENCO_API_URL = resolveLencoApiUrl();
 
 interface PaymentRequest {
   action: "initiate" | "verify" | "get_fee" | "request_payout" | "submit_otp";
