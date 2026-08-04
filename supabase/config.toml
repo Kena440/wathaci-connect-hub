@@ -51,3 +51,6 @@ verify_jwt = false
 
 [functions.sme-matching]
 verify_jwt = false  # Auth validated in code via getUser()
+
+[functions.process-email-queue]
+verify_jwt = true
