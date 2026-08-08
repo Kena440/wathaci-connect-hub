@@ -125,7 +125,7 @@ Return JSON with exactly this shape:
         'Authorization': `Bearer ${lovableApiKey}`,
       },
       body: JSON.stringify({
-        model: 'google/gemini-3-flash',
+        model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: 'You extract structured profile data from LinkedIn text. Respond with JSON only.' },
           { role: 'user', content: prompt },
