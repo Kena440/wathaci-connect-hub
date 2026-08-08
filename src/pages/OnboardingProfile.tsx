@@ -420,6 +420,61 @@ export default function OnboardingProfile() {
     }
   }, [showSuccess, user]);
 
+  // Apply AI-extracted LinkedIn data into the wizard forms (user can still edit everything).
+  const applyLinkedInImport = useCallback((result: LinkedInImportResult) => {
+    const setIfPresent = (
+      form: { setValue: (name: any, value: any, opts?: any) => void },
+      data: Record<string, unknown>,
+      allowed: string[],
+    ) => {
+      allowed.forEach((key) => {
+        const value = data?.[key];
+        const isEmpty =
+          value === null ||
+          value === undefined ||
+          (typeof value === 'string' && value.trim() === '') ||
+          (Array.isArray(value) && value.length === 0);
+        if (!isEmpty) {
+          form.setValue(key as never, value as never, { shouldDirty: true, shouldValidate: false });
+        }
+      });
+    };
+
+    setIfPresent(baseForm, result.base || {}, [
+      'full_name', 'display_name', 'city', 'country', 'bio', 'website_url',
+    ]);
+    if (result.linkedin_url) {
+      baseForm.setValue('linkedin_url', result.linkedin_url, { shouldDirty: true });
+    }
+
+    const role = result.role || {};
+    if (accountType === 'freelancer') {
+      setIfPresent(freelancerForm, role, [
+        'professional_title', 'primary_skills', 'services_offered', 'experience_level',
+        'work_mode', 'certifications', 'languages', 'preferred_industries', 'portfolio_url',
+      ]);
+    } else if (accountType === 'sme') {
+      setIfPresent(smeForm, role, [
+        'business_name', 'industry', 'business_stage', 'services_or_products',
+        'top_needs', 'areas_served', 'sectors_of_interest',
+      ]);
+    } else if (accountType === 'investor') {
+      setIfPresent(investorForm, role, [
+        'investor_type', 'investment_stage_focus', 'sectors_of_interest', 'geo_focus', 'thesis',
+      ]);
+    } else if (accountType === 'government') {
+      setIfPresent(governmentForm, role, [
+        'institution_name', 'department_or_unit', 'institution_type', 'mandate_areas',
+        'services_or_programmes', 'collaboration_interests', 'contact_person_title',
+      ]);
+    }
+
+    if (result.notes) {
+      toast.info(result.notes);
+    }
+  }, [accountType, baseForm, freelancerForm, smeForm, investorForm, governmentForm]);
+
+
   const handleNext = async () => {
     if (currentStep === 1) {
       if (!accountType) {
