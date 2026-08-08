@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { Loader2, Mail, Lock, User, ArrowRight, CheckCircle } from 'lucide-react';
 import { z } from 'zod';
 import wathciLogo from '@/assets/wathaci-logo.png';
+import { lovable } from '@/integrations/lovable/index';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
