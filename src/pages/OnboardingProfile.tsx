@@ -722,6 +722,11 @@ export default function OnboardingProfile() {
             {currentStep === 2 && (
               <Form {...baseForm}>
                 <form className="space-y-6">
+                  <LinkedInImport
+                    accountType={accountType}
+                    defaultUrl={baseForm.getValues('linkedin_url')}
+                    onImported={applyLinkedInImport}
+                  />
                   <BaseInfoStep 
                     form={baseForm} 
                     onAvatarChange={setAvatarUrl}
