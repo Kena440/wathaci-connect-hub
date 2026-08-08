@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { OnboardingStepper } from '@/components/onboarding/OnboardingStepper';
+import { LinkedInImport, type LinkedInImportResult } from '@/components/onboarding/LinkedInImport';
 import { BaseInfoStep } from '@/components/onboarding/steps/BaseInfoStep';
 import { SMEStep } from '@/components/onboarding/steps/SMEStep';
 import { FreelancerStep } from '@/components/onboarding/steps/FreelancerStep';
